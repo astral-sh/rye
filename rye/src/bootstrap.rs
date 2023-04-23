@@ -13,8 +13,8 @@ use crate::config::{get_app_dir, get_py_bin, get_py_dir};
 use crate::sources::{get_download_url, PythonVersion};
 use crate::utils::CommandOutput;
 
-const SELF_PYTHON_VERSION: &'static str = "3.10.9";
-const SELF_SITE_PACKAGES: &'static str = "python3.10/site-packages";
+const SELF_PYTHON_VERSION: &str = "3.10.9";
+const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
 
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
@@ -28,11 +28,11 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         eprintln!("Bootstrapping rye internals");
     }
 
-    let version = fetch(&SELF_PYTHON_VERSION, output)?;
+    let version = fetch(SELF_PYTHON_VERSION, output)?;
     let py_bin = get_py_bin(&version)?;
 
     // initialize the virtualenv
-    let mut venv_cmd = Command::new(&py_bin);
+    let mut venv_cmd = Command::new(py_bin);
     venv_cmd.arg("-mvenv");
     venv_cmd.arg("--upgrade-deps");
     venv_cmd.arg(&dir);
@@ -46,7 +46,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     if output != CommandOutput::Quiet {
         eprintln!("Upgrading pip");
     }
-    let mut pip_install_cmd = Command::new(&dir.join("bin/pip"));
+    let mut pip_install_cmd = Command::new(dir.join("bin/pip"));
     pip_install_cmd.arg("install");
     pip_install_cmd.arg("--upgrade");
     pip_install_cmd.arg("pip");
@@ -62,7 +62,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     }
 
     // install virtualenv and unearth
-    let mut pip_install_cmd = Command::new(&dir.join("bin/pip"));
+    let mut pip_install_cmd = Command::new(dir.join("bin/pip"));
     pip_install_cmd.arg("install");
     pip_install_cmd.arg("virtualenv");
     pip_install_cmd.arg("unearth");
@@ -108,7 +108,7 @@ pub fn get_pip_module(venv: &Path) -> PathBuf {
 
 /// Fetches a version if missing.
 pub fn fetch(version: &str, output: CommandOutput) -> Result<PythonVersion, Error> {
-    let (version, url) = match get_download_url(&version, OS, ARCH) {
+    let (version, url) = match get_download_url(version, OS, ARCH) {
         Some(result) => result,
         None => bail!("unknown version {}", version),
     };
@@ -142,7 +142,7 @@ pub fn fetch(version: &str, output: CommandOutput) -> Result<PythonVersion, Erro
     }
 
     let mut handle = curl::easy::Easy::new();
-    handle.url(&url)?;
+    handle.url(url)?;
     handle.progress(true)?;
     handle.follow_location(true)?;
     {

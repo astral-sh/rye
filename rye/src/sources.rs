@@ -11,7 +11,7 @@ mod indygreg_python {
     include!("downloads.inc");
 }
 
-const DEFAULT_KIND: &'static str = "cpython";
+const DEFAULT_KIND: &str = "cpython";
 
 /// Internal descriptor for a python version.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Copy, Clone)]

@@ -35,7 +35,7 @@ pub struct Args {
 /// The pyproject.toml template
 ///
 /// This uses a template just to simplify the flexibility of emitting it.
-const TOML_TEMPLATE: &'static str = r#"[project]
+const TOML_TEMPLATE: &str = r#"[project]
 name = {{ name }}
 version = {{ version }}
 description = "Add a short description here"
@@ -66,7 +66,7 @@ managed = true
 
 "#;
 
-const README_TEMPLATE: &'static str = r#"# {{ name }}
+const README_TEMPLATE: &str = r#"# {{ name }}
 
 Describe your project here.
 
@@ -74,7 +74,7 @@ Describe your project here.
 
 "#;
 
-const GITIGNORE_TEMPLATE: &'static str = r#"# python generated files
+const GITIGNORE_TEMPLATE: &str = r#"# python generated files
 __pycache__/
 *.py[oc]
 build/

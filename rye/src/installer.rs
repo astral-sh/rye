@@ -14,7 +14,7 @@ use crate::sources::PythonVersion;
 use crate::sync::create_virtualenv;
 use crate::utils::CommandOutput;
 
-const FIND_SCRIPT_SCRIPT: &'static str = r#"
+const FIND_SCRIPT_SCRIPT: &str = r#"
 import os
 import sys
 from importlib.metadata import distribution
@@ -77,7 +77,7 @@ pub fn install(
 
     for file in files {
         if let Ok(rest) = file.strip_prefix(&target_venv_bin_path) {
-            let shim_target = shim_dir.join(&rest);
+            let shim_target = shim_dir.join(rest);
             symlink(file, shim_target)?;
             if output != CommandOutput::Quiet {
                 eprintln!("installed script {}", style(rest.display()).cyan());
@@ -106,15 +106,15 @@ pub fn uninstall(package: &str, output: CommandOutput) -> Result<(), Error> {
 }
 
 fn uninstall_helper(target_venv_path: &Path, shim_dir: &Path) -> Result<(), Error> {
-    fs::remove_dir_all(&target_venv_path).ok();
+    fs::remove_dir_all(target_venv_path).ok();
 
-    for script in fs::read_dir(&shim_dir)? {
+    for script in fs::read_dir(shim_dir)? {
         let script = script?;
         if !script.path().is_symlink() {
             continue;
         }
         if let Ok(target) = fs::read_link(&script.path()) {
-            if target.strip_prefix(&target_venv_path).is_ok() {
+            if target.strip_prefix(target_venv_path).is_ok() {
                 fs::remove_file(&script.path())?;
             }
         }

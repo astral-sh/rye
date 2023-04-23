@@ -127,14 +127,14 @@ fn generate_lockfile(
     extra_args: &[&str],
 ) -> Result<(), Error> {
     let pip_compile_path = get_pip_compile(output)?;
-    let mut cmd = Command::new(&pip_compile_path);
+    let mut cmd = Command::new(pip_compile_path);
     cmd.arg("--resolver=backtracking")
         .arg("--no-annotate")
         .arg("--strip-extras")
         .arg("--allow-unsafe")
         .arg("--no-header")
         .arg("-o")
-        .arg(&lockfile)
+        .arg(lockfile)
         .arg(requirements_file_in)
         .env("PYTHONWARNINGS", "ignore");
     if output == CommandOutput::Verbose {
@@ -147,7 +147,8 @@ fn generate_lockfile(
     }
     cmd.args(extra_args);
     let status = cmd.status()?;
-    Ok(if !status.success() {
+    if !status.success() {
         bail!("failed to generate lockfile");
-    })
+    };
+    Ok(())
 }
