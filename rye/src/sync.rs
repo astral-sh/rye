@@ -178,7 +178,11 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             pip_sync_cmd
                 .env("PYTHONPATH", dir.path())
                 .arg("--python-executable")
-                .arg(venv.join("bin/python"));
+                .arg(venv.join("bin/python"))
+                .arg(format!(
+                    "--pip-args=--python={}",
+                    venv.join("bin/python").display()
+                ));
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);
