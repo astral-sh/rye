@@ -120,9 +120,9 @@ pub fn get_download_url(
 #[test]
 fn test_get_download_url() {
     let url = get_download_url("3.8.14", "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 8, patch: 14 }, "https://github.com/indygreg/python-build-standalone/releases/download/20221002/cpython-3.8.14%2B20221002-aarch64-apple-darwin-debug-full.tar.zst")));
+    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 8, patch: 14 }, "https://github.com/indygreg/python-build-standalone/releases/download/20221002/cpython-3.8.14%2B20221002-aarch64-apple-darwin-pgo-full.tar.zst")));
     let url = get_download_url("3.8", "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 8, patch: 16 }, "https://github.com/indygreg/python-build-standalone/releases/download/20221220/cpython-3.8.16%2B20221220-aarch64-apple-darwin-debug-full.tar.zst")));
+    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 8, patch: 16 }, "https://github.com/indygreg/python-build-standalone/releases/download/20221220/cpython-3.8.16%2B20221220-aarch64-apple-darwin-pgo-full.tar.zst")));
     let url = get_download_url("3", "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 11, patch: 1}, "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-aarch64-apple-darwin-debug-full.tar.zst")));
+    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 11, patch: 1}, "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-aarch64-apple-darwin-pgo-full.tar.zst")));
 }
