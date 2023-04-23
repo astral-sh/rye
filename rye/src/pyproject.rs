@@ -44,7 +44,7 @@ impl fmt::Display for Script {
                     if idx > 0 {
                         write!(f, " ")?;
                     }
-                    write!(f, "{}", shlex::quote(&arg))?;
+                    write!(f, "{}", shlex::quote(arg))?;
                 }
                 Ok(())
             }
@@ -116,7 +116,7 @@ impl Workspace {
             } else {
                 let path = relative.to_string_lossy();
                 for pattern in &self.members {
-                    if let Ok(glob) = Glob::new(&pattern) {
+                    if let Ok(glob) = Glob::new(pattern) {
                         if glob.compile_matcher().is_match(&*path) {
                             return true;
                         }
@@ -141,7 +141,7 @@ impl Workspace {
                         && entry.file_name() == OsStr::new("pyproject.toml")
                     {
                         let project =
-                            match PyProject::load_with_workspace(&entry.path(), self.clone()) {
+                            match PyProject::load_with_workspace(entry.path(), self.clone()) {
                                 Ok(Some(project)) => project,
                                 Ok(None) => return None,
                                 Err(err) => return Some(Err(err)),
@@ -191,8 +191,8 @@ impl PyProject {
     /// Loads a pyproject toml.
     pub fn load(filename: &Path) -> Result<PyProject, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
-        let doc = fs::read_to_string(&filename)?.parse::<Document>()?;
-        let mut workspace = Workspace::try_load_from_toml(&doc, &root).map(Arc::new);
+        let doc = fs::read_to_string(filename)?.parse::<Document>()?;
+        let mut workspace = Workspace::try_load_from_toml(&doc, root).map(Arc::new);
 
         if workspace.is_none() {
             workspace = Workspace::discover_from_path(root).map(Arc::new);
@@ -219,7 +219,7 @@ impl PyProject {
         workspace: Arc<Workspace>,
     ) -> Result<Option<PyProject>, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
-        let doc = fs::read_to_string(&filename)?.parse::<Document>()?;
+        let doc = fs::read_to_string(filename)?.parse::<Document>()?;
 
         if !workspace.is_member(root) {
             return Ok(None);
@@ -260,7 +260,7 @@ impl PyProject {
     /// Returns the location of the virtualenv.
     pub fn venv_path(&self) -> Cow<'_, Path> {
         match self.workspace() {
-            Some(ref ws) => ws.venv_path(),
+            Some(ws) => ws.venv_path(),
             None => self.root.join(".venv").into(),
         }
     }
@@ -280,7 +280,7 @@ impl PyProject {
 
     /// Returns the normalized name.
     pub fn normalized_name(&self) -> Option<String> {
-        self.name().map(|x| normalize_package_name(x))
+        self.name().map(normalize_package_name)
     }
 
     /// Looks up a script
@@ -298,18 +298,18 @@ impl PyProject {
             .and_then(|x| x.get(key))?;
         if let Some(cmd) = value.as_str() {
             shlex::split(cmd).map(Script::Cmd)
-        } else if let Some(cmd) = value.as_array() {
-            Some(Script::Cmd(
-                cmd.iter()
-                    .map(|x| {
-                        x.as_str()
-                            .map(|x| x.to_string())
-                            .unwrap_or_else(|| x.to_string())
-                    })
-                    .collect(),
-            ))
         } else {
-            None
+            value.as_array().map(|cmd| {
+                Script::Cmd(
+                    cmd.iter()
+                        .map(|x| {
+                            x.as_str()
+                                .map(|x| x.to_string())
+                                .unwrap_or_else(|| x.to_string())
+                        })
+                        .collect(),
+                )
+            })
         }
     }
 
@@ -328,18 +328,17 @@ impl PyProject {
                     .ok()
                     .into_iter()
                     .flatten()
+                    .flatten()
                 {
-                    if let Ok(entry) = entry {
-                        if entry.metadata().map_or(false, |x| (x.mode() & 0o001) != 0) {
-                            rv.insert(
-                                entry
-                                    .path()
-                                    .file_name()
-                                    .unwrap()
-                                    .to_string_lossy()
-                                    .to_string(),
-                            );
-                        }
+                    if entry.metadata().map_or(false, |x| (x.mode() & 0o001) != 0) {
+                        rv.insert(
+                            entry
+                                .path()
+                                .file_name()
+                                .unwrap()
+                                .to_string_lossy()
+                                .to_string(),
+                        );
                     }
                 }
                 rv
@@ -369,7 +368,7 @@ impl PyProject {
             dependencies
                 .as_array_mut()
                 .ok_or_else(|| anyhow!("dependencies in pyproject.toml are malformed"))?,
-            &req,
+            req,
         );
         Ok(())
     }
@@ -392,7 +391,7 @@ impl PyProject {
                 dependencies
                     .as_array_mut()
                     .ok_or_else(|| anyhow!("dependencies in pyproject.toml are malformed"))?,
-                &req,
+                req,
             ))
         } else {
             Ok(None)
@@ -426,7 +425,7 @@ impl PyProject {
 
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
-        fs::write(&self.toml_path(), self.doc.to_string())?;
+        fs::write(self.toml_path(), self.doc.to_string())?;
         Ok(())
     }
 }

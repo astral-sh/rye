@@ -66,7 +66,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     let lockfile = pyproject.workspace_path().join("requirements.lock");
     let dev_lockfile = pyproject.workspace_path().join("requirements-dev.lock");
     let venv = pyproject.venv_path();
-    let py_ver = load_python_version().unwrap_or_else(|| PythonVersion::latest_cpython());
+    let py_ver = load_python_version().unwrap_or_else(PythonVersion::latest_cpython);
     let marker_file = venv.join("rye-venv.json");
     let output = cmd.output;
 
@@ -174,7 +174,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             if output != CommandOutput::Quiet {
                 eprintln!("Installing dependencies");
             }
-            let mut pip_sync_cmd = Command::new(&self_venv.join("bin/pip-sync"));
+            let mut pip_sync_cmd = Command::new(self_venv.join("bin/pip-sync"));
             pip_sync_cmd
                 .env("PYTHONPATH", dir.path())
                 .arg("--python-executable")
@@ -217,7 +217,7 @@ pub fn create_virtualenv(
     venv: &Path,
 ) -> Result<(), Error> {
     let py_bin = get_py_bin(&py_ver)?;
-    let mut venv_cmd = Command::new(&self_venv.join("bin/virtualenv"));
+    let mut venv_cmd = Command::new(self_venv.join("bin/virtualenv"));
     if output == CommandOutput::Verbose {
         venv_cmd.arg("--verbose");
     } else {

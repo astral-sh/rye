@@ -68,7 +68,7 @@ fn print_installed_deps(project: &PyProject) -> Result<(), Error> {
     }
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
-    let status = Command::new(&self_venv.join("bin/pip"))
+    let status = Command::new(self_venv.join("bin/pip"))
         .arg("--python")
         .arg(&python)
         .arg("freeze")

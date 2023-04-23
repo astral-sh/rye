@@ -52,7 +52,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let mut requirement = Requirement::from_str(&str_requirement)?;
         for feature in cmd.features.iter().flat_map(|x| x.split(',')) {
             let feature = feature.trim();
-            let extras = requirement.extras.get_or_insert_with(|| Vec::new());
+            let extras = requirement.extras.get_or_insert_with(Vec::new);
             if !extras.iter().any(|x| x == feature) {
                 extras.push(feature.into());
             }
@@ -92,7 +92,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     if output != CommandOutput::Quiet {
         for ref requirement in added {
-            println!("Added {}", format_requirement(&requirement));
+            println!("Added {}", format_requirement(requirement));
         }
     }
 
