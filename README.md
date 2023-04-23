@@ -8,6 +8,13 @@ monorepos as well as global tool installations.
 It is a wish of what Python was, with no guarantee to work for anyone else.  It's
 an exploration, and it's far from perfect.
 
+<div align="center">
+  <a href="https://youtu.be/CyI8TBuKPF0">
+    <img src="https://img.youtube.com/vi/CyI8TBuKPF0/sddefault.jpg" alt="Watch the instruction" width="40%">
+  </a>
+  <p><em>Click on the thumbnail to watch a 9 minute introduction video</em></p>
+</div>
+
 ## Some of the things it does
 
 It automatically installs and manages Python:
