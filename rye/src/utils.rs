@@ -78,7 +78,9 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
             components.next();
         }
         let path = dst.join(components.as_path());
-        if path != Path::new("") {
+
+        // only unpack if it's save to do so
+        if path != Path::new("") && path.strip_prefix(dst).is_ok() {
             if let Some(dir) = path.parent() {
                 fs::create_dir_all(dir).ok();
             }
