@@ -90,7 +90,7 @@ To understand why things are the way they are:
 
 * **No System Python:** I can't deal with any more linux distribution weird Python
   installations or whatever mess there is on macOS.  I used to build my own Pythons
-  that are the same everywhere, not I use [indygreg's Python builds](https://github.com/indygreg/python-build-standalone).
+  that are the same everywhere, now I use [indygreg's Python builds](https://github.com/indygreg/python-build-standalone).
   Rye will automatically download and manage Python builds from there.  No compiling,
   no divergence.
 
