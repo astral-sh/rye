@@ -32,7 +32,7 @@ impl fmt::Display for LockMode {
 }
 
 /// Controls how locking should work.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct LockOptions {
     /// Instruct all packages to update.
     pub update_all: bool,
@@ -40,16 +40,6 @@ pub struct LockOptions {
     pub update: Vec<String>,
     /// Pick pre-release versions.
     pub pre: bool,
-}
-
-impl Default for LockOptions {
-    fn default() -> Self {
-        Self {
-            update_all: false,
-            update: Vec::new(),
-            pre: false,
-        }
-    }
 }
 
 fn get_pip_compile(output: CommandOutput) -> Result<PathBuf, Error> {
