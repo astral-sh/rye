@@ -11,6 +11,8 @@ anyhow = "1.0.70"
 clap = { version = "4.2.2", default-features = false, features = ["derive", "usage", "wrap_help", "std"] }
 console = "0.15.5"
 curl = { version = "0.4.44", features = ["ssl", "static-curl"] }
+decompress = { version = "0.6.0", default-features = false, features = ["tarzst", "targz"] }
+flate2 = "1.0.25"
 globset = "0.4.10"
 indicatif = "0.17.3"
 memchr = "2.5.0"
@@ -25,7 +27,9 @@ serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0.94"
 shlex = "1.1.0"
 simple-home-dir = "0.1.2"
+tar = "0.4.38"
 tempfile = "3.5.0"
 toml_edit = "0.19.8"
 walkdir = "2.3.3"
 which = "4.4.0"
+zstd = "0.12.3"

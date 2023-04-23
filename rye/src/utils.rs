@@ -1,5 +1,8 @@
-use std::fmt;
+use std::io::{BufReader, Cursor};
+use std::path::Path;
+use std::{fmt, fs};
 
+use anyhow::Error;
 use pep508_rs::{Requirement, VersionOrUrl};
 
 /// Controls the fetch output.
@@ -57,4 +60,30 @@ pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
     }
 
     Helper(req)
+}
+
+/// Unpacks a tarball.
+///
+/// Today this assumes that the tarball is zstd compressed which happens
+/// to be what the indygreg python builds use.
+pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> Result<(), Error> {
+    let reader = Cursor::new(contents);
+    let decoder = zstd::stream::read::Decoder::with_buffer(reader)?;
+    let mut archive = tar::Archive::new(decoder);
+    for entry in archive.entries()? {
+        let mut entry = entry?;
+        let name = entry.path()?;
+        let mut components = name.components();
+        for _ in 0..strip_components {
+            components.next();
+        }
+        let path = dst.join(components.as_path());
+        if path != Path::new("") {
+            if let Some(dir) = path.parent() {
+                fs::create_dir_all(dir).ok();
+            }
+            entry.unpack(&path)?;
+        }
+    }
+    Ok(())
 }

@@ -1,17 +1,18 @@
 use std::env::consts::{ARCH, OS};
-use std::io::Write;
+use std::io::{BufWriter, Write};
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::Command;
 use std::{env, fs};
 
 use anyhow::{bail, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
+use tempfile::NamedTempFile;
 
 use crate::config::{get_app_dir, get_py_bin, get_py_dir};
 use crate::sources::{get_download_url, PythonVersion};
-use crate::utils::CommandOutput;
+use crate::utils::{unpack_tarball, CommandOutput};
 
 const SELF_PYTHON_VERSION: &str = "3.10.9";
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
@@ -126,13 +127,7 @@ pub fn fetch(version: &str, output: CommandOutput) -> Result<PythonVersion, Erro
 
     fs::create_dir_all(&target_dir)?;
 
-    let mut cmd = Command::new("tar");
-    cmd.current_dir(&target_dir);
-    cmd.arg("-x");
-    cmd.arg("--strip-components=1");
-    cmd.stdin(Stdio::piped());
-    let mut proc = cmd.spawn()?;
-    let mut stdin = proc.stdin.take().unwrap();
+    let mut archive_buffer = Vec::new();
 
     if output == CommandOutput::Verbose {
         eprintln!("download url: {}", url);
@@ -145,10 +140,11 @@ pub fn fetch(version: &str, output: CommandOutput) -> Result<PythonVersion, Erro
     handle.url(url)?;
     handle.progress(true)?;
     handle.follow_location(true)?;
+
+    let mut write_archive = &mut archive_buffer;
     {
         let mut transfer = handle.transfer();
         let mut pb = None;
-        let stdin = &mut stdin;
         transfer.progress_function(move |a, b, _, _| {
             if output == CommandOutput::Quiet {
                 return true;
@@ -173,11 +169,13 @@ pub fn fetch(version: &str, output: CommandOutput) -> Result<PythonVersion, Erro
             true
         })?;
         transfer.write_function(move |data| {
-            stdin.write_all(data).unwrap();
+            write_archive.write_all(data).unwrap();
             Ok(data.len())
         })?;
         transfer.perform()?;
     }
+
+    unpack_tarball(&archive_buffer, &target_dir, 1)?;
 
     if output != CommandOutput::Quiet {
         eprintln!("{} Downloaded {}", style("success:").green(), version);
