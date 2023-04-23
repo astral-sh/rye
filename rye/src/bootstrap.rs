@@ -1,5 +1,5 @@
 use std::env::consts::{ARCH, OS};
-use std::io::{BufWriter, Write};
+use std::io::Write;
 use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -8,7 +8,6 @@ use std::{env, fs};
 use anyhow::{bail, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
-use tempfile::NamedTempFile;
 
 use crate::config::{get_app_dir, get_py_bin, get_py_dir};
 use crate::sources::{get_download_url, PythonVersion};
@@ -141,7 +140,7 @@ pub fn fetch(version: &str, output: CommandOutput) -> Result<PythonVersion, Erro
     handle.progress(true)?;
     handle.follow_location(true)?;
 
-    let mut write_archive = &mut archive_buffer;
+    let write_archive = &mut archive_buffer;
     {
         let mut transfer = handle.transfer();
         let mut pb = None;
