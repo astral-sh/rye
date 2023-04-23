@@ -5,7 +5,8 @@ manages Python installations, manages `pyproject.toml` files, installs and
 uninstalls dependencies, manages virtualenvs behind the scenes.  It supports monorepos and global tool installations.
 
 It is a wish of what Python was, with no guarantee to work for anyone else.  It's
-an exploration, and it's far from perfect.
+an exploration, and it's far from perfect.  Thus also the question:
+**[Should it exist?](https://github.com/mitsuhiko/rye/discussions/6)**?
 
 <div align="center">
   <a href="https://youtu.be/CyI8TBuKPF0">
