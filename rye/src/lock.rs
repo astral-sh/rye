@@ -31,6 +31,27 @@ impl fmt::Display for LockMode {
     }
 }
 
+/// Controls how locking should work.
+#[derive(Debug, Clone)]
+pub struct LockOptions {
+    /// Instruct all packages to update.
+    pub update_all: bool,
+    /// Update specific packages.
+    pub update: Vec<String>,
+    /// Pick pre-release versions.
+    pub pre: bool,
+}
+
+impl Default for LockOptions {
+    fn default() -> Self {
+        Self {
+            update_all: false,
+            update: Vec::new(),
+            pre: false,
+        }
+    }
+}
+
 fn get_pip_compile(output: CommandOutput) -> Result<PathBuf, Error> {
     let mut pip_compile = ensure_self_venv(output)?;
     pip_compile.push("bin");
@@ -44,7 +65,7 @@ pub fn update_workspace_lockfile(
     lock_mode: LockMode,
     lockfile: &Path,
     output: CommandOutput,
-    upgrade_all: bool,
+    lock_options: &LockOptions,
 ) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
         eprintln!("Generating {} lockfile: {}", lock_mode, lockfile.display());
@@ -79,12 +100,12 @@ pub fn update_workspace_lockfile(
         }
     }
 
-    generate_lockfile(output, req_file.path(), lockfile, upgrade_all, &[])?;
+    generate_lockfile(output, req_file.path(), lockfile, lock_options, &[])?;
     generate_lockfile(
         output,
         local_req_file.path(),
         lockfile,
-        upgrade_all,
+        lock_options,
         &["--pip-args=--no-deps"],
     )?;
 
@@ -97,7 +118,7 @@ pub fn update_single_project_lockfile(
     lock_mode: LockMode,
     lockfile: &Path,
     output: CommandOutput,
-    upgrade_all: bool,
+    lock_options: &LockOptions,
 ) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
         eprintln!("Generating {} lockfile: {}", lock_mode, lockfile.display());
@@ -114,7 +135,7 @@ pub fn update_single_project_lockfile(
         }
     }
 
-    generate_lockfile(output, req_file.path(), lockfile, upgrade_all, &[])?;
+    generate_lockfile(output, req_file.path(), lockfile, lock_options, &[])?;
 
     Ok(())
 }
@@ -123,7 +144,7 @@ fn generate_lockfile(
     output: CommandOutput,
     requirements_file_in: &Path,
     lockfile: &Path,
-    upgrade_all: bool,
+    lock_options: &LockOptions,
     extra_args: &[&str],
 ) -> Result<(), Error> {
     let pip_compile_path = get_pip_compile(output)?;
@@ -142,8 +163,15 @@ fn generate_lockfile(
     } else {
         cmd.arg("-q");
     }
-    if upgrade_all {
+    for pkg in &lock_options.update {
+        cmd.arg("--upgrade-package");
+        cmd.arg(pkg);
+    }
+    if lock_options.update_all {
         cmd.arg("--upgrade");
+    }
+    if lock_options.pre {
+        cmd.arg("--pre");
     }
     cmd.args(extra_args);
     let status = cmd.status()?;

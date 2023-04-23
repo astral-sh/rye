@@ -10,7 +10,9 @@ use tempfile::TempDir;
 
 use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
 use crate::config::{get_py_bin, load_python_version};
-use crate::lock::{update_single_project_lockfile, update_workspace_lockfile, LockMode};
+use crate::lock::{
+    update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
+};
 use crate::pyproject::PyProject;
 use crate::sources::PythonVersion;
 use crate::utils::CommandOutput;
@@ -40,8 +42,8 @@ pub struct SyncOptions {
     pub mode: SyncMode,
     /// Forces venv creation even when unsafe.
     pub force: bool,
-    /// Should all packages be upgraded?
-    pub upgrade_all: bool,
+    /// Controls locking.
+    pub lock_options: LockOptions,
 }
 
 impl SyncOptions {
@@ -142,14 +144,14 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Production,
                 &lockfile,
                 cmd.output,
-                cmd.upgrade_all,
+                &cmd.lock_options,
             )?;
             update_workspace_lockfile(
                 workspace,
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
-                cmd.upgrade_all,
+                &cmd.lock_options,
             )?;
         } else {
             // make sure we have an up-to-date lockfile
@@ -158,14 +160,14 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Production,
                 &lockfile,
                 cmd.output,
-                cmd.upgrade_all,
+                &cmd.lock_options,
             )?;
             update_single_project_lockfile(
                 &pyproject,
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
-                cmd.upgrade_all,
+                &cmd.lock_options,
             )?;
         }
 

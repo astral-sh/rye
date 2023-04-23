@@ -1,6 +1,7 @@
 use anyhow::Error;
 use clap::Parser;
 
+use crate::lock::LockOptions;
 use crate::sync::{sync, SyncMode, SyncOptions};
 use crate::utils::CommandOutput;
 
@@ -13,9 +14,15 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
-    /// Upgrade all packages to the latest
+    /// Update a specific package.
     #[arg(long)]
-    upgrade_all: bool,
+    update: Vec<String>,
+    /// Update all packages to the latest
+    #[arg(long)]
+    update_all: bool,
+    /// Update to pre-release versions
+    #[arg(long)]
+    pre: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -23,7 +30,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     sync(SyncOptions {
         output,
         mode: SyncMode::LockOnly,
-        upgrade_all: cmd.upgrade_all,
+        lock_options: LockOptions {
+            update: cmd.update,
+            update_all: cmd.update_all,
+            pre: cmd.pre,
+        },
         ..SyncOptions::default()
     })?;
     Ok(())
