@@ -104,7 +104,7 @@ There are a few shortcomings in the Python packaging world, largely as a result 
 lack of standardization.  Here is what this project ran into over the years:
 
 * **No Python Binary Distributions:** CPython builds from python.org are completely
-  inadequate.  On some platforms you only get an .msi in installer, on some you
+  inadequate.  On some platforms you only get an .msi installer, on some you
   literally only get tarballs.  The various Python distributions that became popular
   over the years are diverging greatly and cause all kinds of nonsense downstream.
   This is why this Project uses the indygreg standalone builds.  I hope that with
