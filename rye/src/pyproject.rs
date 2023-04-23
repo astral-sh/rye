@@ -315,36 +315,34 @@ impl PyProject {
 
     /// Returns a list of known scripts.
     pub fn list_scripts(&self) -> HashSet<String> {
-        match self
+        let mut rv = match self
             .doc
             .get("tool")
             .and_then(|x| x.get("rye"))
             .and_then(|x| x.get("scripts"))
             .and_then(|x| x.as_table_like())
         {
-            Some(tbl) => {
-                let mut rv: HashSet<String> = tbl.iter().map(|x| x.0.to_string()).collect();
-                for entry in fs::read_dir(&self.venv_bin_path())
-                    .ok()
-                    .into_iter()
-                    .flatten()
-                    .flatten()
-                {
-                    if entry.metadata().map_or(false, |x| (x.mode() & 0o001) != 0) {
-                        rv.insert(
-                            entry
-                                .path()
-                                .file_name()
-                                .unwrap()
-                                .to_string_lossy()
-                                .to_string(),
-                        );
-                    }
-                }
-                rv
-            }
+            Some(tbl) => tbl.iter().map(|x| x.0.to_string()).collect(),
             None => HashSet::new(),
+        };
+        for entry in fs::read_dir(&self.venv_bin_path())
+            .ok()
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
+            if entry.metadata().map_or(false, |x| (x.mode() & 0o001) != 0) {
+                rv.insert(
+                    entry
+                        .path()
+                        .file_name()
+                        .unwrap()
+                        .to_string_lossy()
+                        .to_string(),
+                );
+            }
         }
+        rv
     }
 
     /// Adds a dependency.
