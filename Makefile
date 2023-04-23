@@ -26,4 +26,4 @@ format-check:
 .PHONY: lint
 lint:
 	@rustup component add clippy 2> /dev/null
-	@cargo clippy --all -- -F clippy::dbg-macro -D warnings
+	@cargo clippy --all -- -D clippy::dbg-macro -D warnings
