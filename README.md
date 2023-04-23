@@ -6,7 +6,7 @@ uninstalls dependencies, manages virtualenvs behind the scenes.  It supports mon
 
 It is a wish of what Python was, with no guarantee to work for anyone else.  It's
 an exploration, and it's far from perfect.  Thus also the question:
-**[Should it exist?](https://github.com/mitsuhiko/rye/discussions/6)**?
+**[Should it exist?](https://github.com/mitsuhiko/rye/discussions/6)**
 
 <div align="center">
   <a href="https://youtu.be/CyI8TBuKPF0">
