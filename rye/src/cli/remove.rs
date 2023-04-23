@@ -5,7 +5,7 @@ use clap::Parser;
 use pep508_rs::Requirement;
 
 use crate::pyproject::{DependencyKind, PyProject};
-use crate::utils::CommandOutput;
+use crate::utils::{format_requirement, CommandOutput};
 
 /// Removes a package from this project.
 #[derive(Parser, Debug)]
@@ -51,7 +51,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     if output != CommandOutput::Quiet {
         for requirement in removed_packages {
-            println!("Removed {}", requirement);
+            println!("Removed {}", format_requirement(&requirement));
         }
     }
 
