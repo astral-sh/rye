@@ -90,7 +90,7 @@ To understand why things are the way they are:
 
 * **No System Python:** I can't deal with any more linux distribution weird Python
   installations or whatever mess there is on macOS.  I used to build my own Pythons
-  that are the same everywhere, not I use [indygreg's Python builds](https://github.com/indygreg/python-build-standalone).
+  that are the same everywhere, now I use [indygreg's Python builds](https://github.com/indygreg/python-build-standalone).
   Rye will automatically download and manage Python builds from there.  No compiling,
   no divergence.
 
@@ -105,7 +105,7 @@ There are a few shortcomings in the Python packaging world, largely as a result 
 lack of standardization.  Here is what this project ran into over the years:
 
 * **No Python Binary Distributions:** CPython builds from python.org are completely
-  inadequate.  On some platforms you only get an .msi in installer, on some you
+  inadequate.  On some platforms you only get an .msi installer, on some you
   literally only get tarballs.  The various Python distributions that became popular
   over the years are diverging greatly and cause all kinds of nonsense downstream.
   This is why this Project uses the indygreg standalone builds.  I hope that with
