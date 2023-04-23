@@ -2,8 +2,7 @@
 
 Rye is Armin's personal one-stop-shop for all his Python needs.  It installs and
 manages Python installations, manages `pyproject.toml` files, installs and
-uninstalls dependencies, manages virtualenvs behind the scenes.  It supports both
-monorepos as well as global tool installations.
+uninstalls dependencies, manages virtualenvs behind the scenes.  It supports monorepos and global tool installations.
 
 It is a wish of what Python was, with no guarantee to work for anyone else.  It's
 an exploration, and it's far from perfect.
@@ -85,7 +84,7 @@ To understand why things are the way they are:
   requirements as you would expect.  It also does not use a proprietary lock file
   and use [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
 
-* **No Pip:** Rye uses pip, but it does not expose it.  I manage dependencies in
+* **No Pip:** Rye uses pip, but it does not expose it.  It manage dependencies in
   `pyproject.toml` only.
 
 * **No System Python:** I can't deal with any more linux distribution weird Python
@@ -178,11 +177,11 @@ section:
 serve = "python -m http.server 8000"
 ```
 
-They are only available via `rye run <script_name>`.  They can either be a string or an
+They are only available via `rye run <script_name>`.  Each script can either be a string or an
 array where each item is an argument to the script.  The scripts will be run with the
 virtualenv activated.
 
-To see what's available run `rye run` without arguments and it will list all scripts.
+To see what's available, run `rye run` without arguments and it will list all scripts.
 
 ## Python Distributions
 
