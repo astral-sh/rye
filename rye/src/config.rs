@@ -17,7 +17,7 @@ pub fn get_app_dir() -> Result<&'static Path, Error> {
         .ok_or_else(|| anyhow!("cannot determine app directory"))
 }
 
-/// Returns the cache directory for a particular python verison.
+/// Returns the cache directory for a particular python version.
 pub fn get_py_dir(version: &PythonVersion) -> Result<PathBuf, Error> {
     let mut rv = get_app_dir()?.to_path_buf();
     rv.push("py");

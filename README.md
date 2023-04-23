@@ -78,7 +78,7 @@ To understand why things are the way they are:
 
 * **No Default Dependencies:** the virtualenvs when they come up are completely void
   of dependencies.  Not even `pip` or `setuptools` are installed into it.  Rye
-  manages the virutalenv from outside the virtualenv.
+  manages the virtualenv from outside the virtualenv.
 
 * **No Core Proprietary Stuff:** Rye (with the exception of it's own `tool` section
   in the `pyproject.toml`) uses standardized keys.  That means it uses regular
@@ -121,7 +121,7 @@ lack of standardization.  Here is what this project ran into over the years:
   which allows both remote and local references to co-exist and it rewrites them
   on publish.
 
-* **No Exposed Pip:** pip is intentionally not exposed.  If you were to install somethign
+* **No Exposed Pip:** pip is intentionally not exposed.  If you were to install something
   into the virtualenv, it disappears next time you sync.  If you symlink `rye` to
   `~/.rye/shims/pip` you can get access to pip without installating it into the
   virtualenv.  There be dragons.

@@ -232,7 +232,7 @@ impl PyProject {
         }))
     }
 
-    /// Returns a refernce to the workspace.
+    /// Returns a reference to the workspace.
     ///
     /// If something isn't a workspace, it's not returned.
     pub fn workspace(&self) -> Option<&Arc<Workspace>> {
