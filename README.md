@@ -58,7 +58,8 @@ installation in it does not contain `pip`.
 Note that `python` will by default just be your regular Python.  To have it automatically
 pick up the right Python without manually activating the virtualenv, you can add
 `~/.rye/shims` to your `PATH` at higher preference than normal.  If you operate outside
-of a rye managed project, the regular Python is picked up automatically.
+of a rye managed project, the regular Python is picked up automatically.  For the global
+tool installation you need to add the shims to the path.
 
 ## Decisions Made
 
@@ -159,6 +160,23 @@ Rye uses generated `requirements.txt` files as replacement.  Whenever you run
 `rye sync` it updates the `requirements.lock` and `requirements-dev.lock` files
 automatically.
 
+## Scripts
+
+`rye run` can be used to invoke a binary from the virtualenv or a configured script.
+Rye allows you to define basic scripts in the `pyproject.toml` in the `tool.rye.scripts`
+section:
+
+```toml
+[tool.rye.scripts]
+serve = "python -m http.server 8000"
+```
+
+They are only available via `rye run <script_name>`.  They can either be a string or an
+array where each item is an argument to the script.  The scripts will be run with the
+virtualenv activated.
+
+To see what's available run `rye run` without arguments and it will list all scripts.
+
 ## Python Distributions
 
 Rye does not use system python installations.  Instead it uses Gregory Szorc's standalone
@@ -167,7 +185,7 @@ This is done to create a unified experience of Python installations and to avoid
 incompatibilities created by different Python distributions.  Most importantly this also
 means you never need to compile a Python any more, it just downloads prepared binaries.
 
-## Tools
+## Global Tools
 
 If you want tools to be installed into isolated virtualenvs (like pipsi and pipx), you
 can use `rye` too (requires `~/.rye/shims` to be on the path):
