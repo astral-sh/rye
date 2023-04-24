@@ -80,10 +80,10 @@ To understand why things are the way they are:
   of dependencies.  Not even `pip` or `setuptools` are installed into it.  Rye
   manages the virtualenv from outside the virtualenv.
 
-* **No Core Proprietary Stuff:** Rye (with the exception of it's own `tool` section
+* **No Core Non Standard Stuff:** Rye (with the exception of it's own `tool` section
   in the `pyproject.toml`) uses standardized keys.  That means it uses regular
-  requirements as you would expect.  It also does not use a proprietary lock file
-  and use [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
+  requirements as you would expect.  It also does not use a custom lock file
+  format and uses [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
 
 * **No Pip:** Rye uses pip, but it does not expose it.  It manage dependencies in
   `pyproject.toml` only.
