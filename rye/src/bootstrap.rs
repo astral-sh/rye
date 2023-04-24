@@ -88,14 +88,26 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         bail!("failed to initialize virtualenv");
     }
 
-    // create thims
+    // create shims
     let shims = app_dir.join("shims");
     fs::remove_dir_all(&shims).ok();
     fs::create_dir_all(&shims)?;
     let this = env::current_exe()?;
 
-    symlink(&this, shims.join("python"))?;
-    symlink(&this, shims.join("python3"))?;
+    // on linux symlinks cause us to mis-detect the shim because
+    // it points to the actual executable.  While there is a workaround
+    // placed in `current_exe_portable`, it won't work in all cases which
+    // is why bootstrapping should place a hardlink instead.
+    #[cfg(target_os = "linux")]
+    {
+        fs::hard_link(&this, shims.join("python"))?;
+        fs::hard_link(&this, shims.join("python3"))?;
+    }
+    #[cfg(not(target_os = "linux"))]
+    {
+        symlink(&this, shims.join("python"))?;
+        symlink(&this, shims.join("python3"))?;
+    }
 
     Ok(dir)
 }
