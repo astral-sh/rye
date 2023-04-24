@@ -110,6 +110,11 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
         bail!("target Python path {} is already in use", target.display());
     }
 
+    // for the unlikely case that no python installation has been bootstrapped yet
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).ok();
+    }
+
     symlink(&cmd.path, target)?;
     println!("Registered {} as {}", cmd.path.display(), target_version);
 
