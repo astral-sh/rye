@@ -9,6 +9,7 @@ mod lock;
 mod pin;
 mod remove;
 mod run;
+mod rye;
 mod shim;
 mod show;
 mod sync;
@@ -34,6 +35,8 @@ enum Command {
     Show(show::Args),
     Sync(sync::Args),
     Toolchain(toolchain::Args),
+    #[command(name = "self")]
+    Rye(rye::Args),
     Uninstall(uninstall::Args),
 }
 
@@ -55,6 +58,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
         Command::Toolchain(cmd) => toolchain::execute(cmd),
+        Command::Rye(cmd) => rye::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
     }
 }
