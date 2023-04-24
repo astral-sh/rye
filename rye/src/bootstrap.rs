@@ -24,7 +24,7 @@ const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
 
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
-    let app_dir = get_app_dir()?;
+    let app_dir = get_app_dir().context("could not get app dir")?;
     let dir = app_dir.join("self");
     if dir.is_dir() {
         return Ok(dir);
