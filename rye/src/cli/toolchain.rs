@@ -6,7 +6,7 @@ use std::os::unix::fs::symlink;
 use std::path::PathBuf;
 use std::process::Command;
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use clap::Parser;
 use console::style;
 use serde::Deserialize;
@@ -86,12 +86,14 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
     let output = Command::new(&cmd.path)
         .arg("-c")
         .arg(INSPECT_SCRIPT)
-        .output()?;
+        .output()
+        .context("error executing interpreter to inspect version")?;
     if !output.status.success() {
         bail!("passed path does not appear to be a valid Python installation");
     }
 
-    let info: InspectInfo = serde_json::from_slice(&output.stdout)?;
+    let info: InspectInfo = serde_json::from_slice(&output.stdout)
+        .context("could not parse interpreter output as json")?;
     let target_version = match cmd.name {
         Some(ref name) => format!("{}@{}", name, info.python_version),
         None => {
@@ -110,7 +112,7 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
         bail!("target Python path {} is already in use", target.display());
     }
 
-    symlink(&cmd.path, target)?;
+    symlink(&cmd.path, target).context("could not symlink interpreter")?;
     println!("Registered {} as {}", cmd.path.display(), target_version);
 
     Ok(())
