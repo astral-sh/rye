@@ -93,6 +93,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     fs::remove_dir_all(&shims).ok();
     fs::create_dir_all(&shims)?;
     let this = env::current_exe()?;
+
     symlink(&this, shims.join("python"))?;
     symlink(&this, shims.join("python3"))?;
 

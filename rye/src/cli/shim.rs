@@ -8,7 +8,7 @@ use same_file::is_same_file;
 use crate::bootstrap::{ensure_self_venv, get_pip_runner};
 use crate::pyproject::PyProject;
 use crate::sync::{sync, SyncOptions};
-use crate::utils::CommandOutput;
+use crate::utils::{current_exe_portable, CommandOutput};
 
 fn detect_shim() -> Option<(String, Vec<OsString>)> {
     // Shims are detected if the executable is linked into
@@ -19,7 +19,7 @@ fn detect_shim() -> Option<(String, Vec<OsString>)> {
         return None;
     }
 
-    let path = env::current_exe().ok()?;
+    let path = current_exe_portable().ok()?;
     let shim_name = path.file_name()?;
     if path.parent()?.file_name() != Some(OsStr::new("shims")) {
         return None;
@@ -63,7 +63,7 @@ fn find_shadowed_target(
     target: &str,
     mut args: Vec<OsString>,
 ) -> Result<Option<Vec<OsString>>, Error> {
-    let exe = std::env::current_exe()?;
+    let exe = current_exe_portable()?;
     for bin in which::which_all(target)? {
         if is_same_file(&bin, &exe).unwrap_or(false) {
             continue;
