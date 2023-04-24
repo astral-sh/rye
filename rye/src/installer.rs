@@ -7,10 +7,10 @@ use anyhow::{bail, Error};
 use console::style;
 use pep508_rs::Requirement;
 
-use crate::bootstrap::ensure_self_venv;
+use crate::bootstrap::{ensure_self_venv, fetch};
 use crate::config::get_app_dir;
 use crate::pyproject::normalize_package_name;
-use crate::sources::PythonVersion;
+use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
 use crate::utils::CommandOutput;
 
@@ -26,7 +26,7 @@ for file in dist.files:
 
 pub fn install(
     requirement: Requirement,
-    py_ver: PythonVersion,
+    py_ver: &PythonVersionRequest,
     force: bool,
     output: CommandOutput,
 ) -> Result<(), Error> {
@@ -42,6 +42,10 @@ pub fn install(
     let target_venv_bin_path = target_venv_path.join("bin");
 
     uninstall_helper(&target_venv_path, &shim_dir)?;
+
+    // make sure we have a compatible python version
+    let py_ver = fetch(py_ver, output)?;
+
     create_virtualenv(output, &self_venv, &py_ver, &target_venv_path)?;
 
     let mut cmd = Command::new(&self_venv.join("bin/pip"));
