@@ -1,6 +1,6 @@
 use std::io::Cursor;
-use std::path::{Path, PathBuf};
-use std::{env, fmt, fs};
+use std::path::Path;
+use std::{fmt, fs};
 
 use anyhow::Error;
 use pep508_rs::{Requirement, VersionOrUrl};
@@ -88,21 +88,4 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
         }
     }
     Ok(())
-}
-
-/// Returns the current exe.
-///
-/// This tries to work around symlink related issues on Linux.
-pub fn current_exe_portable() -> Result<PathBuf, Error> {
-    #[cfg(target_os = "linux")]
-    {
-        // support symlinks by using args[0], when possible, with
-        // fallback to current_exe()
-        if let Some(ref s) = env::args_os().next() {
-            if !s.is_empty() && s.is_file() {
-                return Ok(PathBuf::from(s));
-            }
-        }
-    }
-    Ok(env::current_exe()?)
 }

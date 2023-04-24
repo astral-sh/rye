@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, OS};
 use std::io::Write;
-use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
@@ -95,9 +94,8 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     let this = env::current_exe()?;
 
     // on linux symlinks cause us to mis-detect the shim because
-    // it points to the actual executable.  While there is a workaround
-    // placed in `current_exe_portable`, it won't work in all cases which
-    // is why bootstrapping should place a hardlink instead.
+    // it points to the actual executable.  So there we need to do
+    // hardlinks instead.
     #[cfg(target_os = "linux")]
     {
         fs::hard_link(&this, shims.join("python"))?;
@@ -105,6 +103,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     }
     #[cfg(not(target_os = "linux"))]
     {
+        use std::os::unix::fs::symlink;
         symlink(&this, shims.join("python"))?;
         symlink(&this, shims.join("python3"))?;
     }
