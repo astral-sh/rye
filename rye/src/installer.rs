@@ -3,7 +3,7 @@ use std::os::unix::fs::symlink;
 use std::path::Path;
 use std::process::{Command, Stdio};
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use console::style;
 use pep508_rs::Requirement;
 
@@ -73,8 +73,10 @@ pub fn install(
         .arg(FIND_SCRIPT_SCRIPT)
         .arg(&requirement.name)
         .stdout(Stdio::piped())
-        .output()?;
-    let files = std::str::from_utf8(&out.stdout)?
+        .output()
+        .context("unable to dump package manifest from installed package")?;
+    let files = std::str::from_utf8(&out.stdout)
+        .context("non utf-8 package manifest")?
         .lines()
         .map(Path::new)
         .collect::<Vec<_>>();
@@ -82,7 +84,8 @@ pub fn install(
     for file in files {
         if let Ok(rest) = file.strip_prefix(&target_venv_bin_path) {
             let shim_target = shim_dir.join(rest);
-            symlink(file, shim_target)?;
+            symlink(file, shim_target)
+                .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
             if output != CommandOutput::Quiet {
                 eprintln!("installed script {}", style(rest.display()).cyan());
             }
@@ -102,7 +105,8 @@ pub fn uninstall(package: &str, output: CommandOutput) -> Result<(), Error> {
         return Ok(());
     }
 
-    uninstall_helper(&target_venv_path, &shim_dir)?;
+    uninstall_helper(&target_venv_path, &shim_dir)
+        .with_context(|| format!("unable to uninstall {}", target_venv_path.display()))?;
     if output != CommandOutput::Quiet {
         eprintln!("Uninstalled {}", style(package).cyan());
     }

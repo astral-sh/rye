@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 
@@ -43,9 +43,9 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     venv_cmd.arg("--upgrade-deps");
     venv_cmd.arg(&dir);
 
-    let status = venv_cmd.status()?;
+    let status = venv_cmd.status().context("unable to create self venv")?;
     if !status.success() {
-        bail!("failed to initialize virtualenv");
+        bail!("failed to initialize virtualenv in {}", dir.display());
     }
 
     // upgrade pip
@@ -62,9 +62,11 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         pip_install_cmd.arg("--quiet");
         pip_install_cmd.env("PYTHONWARNINGS", "ignore");
     }
-    let status = pip_install_cmd.status()?;
+    let status = pip_install_cmd
+        .status()
+        .context("unable to self-upgrade pip")?;
     if !status.success() {
-        bail!("failed to initialize virtualenv");
+        bail!("failed to initialize virtualenv (upgrade pip)");
     }
 
     // install virtualenv and unearth
@@ -82,15 +84,17 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         pip_install_cmd.arg("--quiet");
         pip_install_cmd.env("PYTHONWARNINGS", "ignore");
     }
-    let status = pip_install_cmd.status()?;
+    let status = pip_install_cmd
+        .status()
+        .context("unable to install self-dependencies")?;
     if !status.success() {
-        bail!("failed to initialize virtualenv");
+        bail!("failed to initialize virtualenv (install dependencies)");
     }
 
     // create shims
     let shims = app_dir.join("shims");
     fs::remove_dir_all(&shims).ok();
-    fs::create_dir_all(&shims)?;
+    fs::create_dir_all(&shims).context("tried to crate shim folder")?;
     let this = env::current_exe()?;
 
     // on linux symlinks cause us to mis-detect the shim because
@@ -98,14 +102,14 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     // hardlinks instead.
     #[cfg(target_os = "linux")]
     {
-        fs::hard_link(&this, shims.join("python"))?;
-        fs::hard_link(&this, shims.join("python3"))?;
+        fs::hard_link(&this, shims.join("python")).context("tried to hard-link python shim")?;
+        fs::hard_link(&this, shims.join("python3")).context("tried to hard-link python3 shim")?;
     }
     #[cfg(not(target_os = "linux"))]
     {
         use std::os::unix::fs::symlink;
-        symlink(&this, shims.join("python"))?;
-        symlink(&this, shims.join("python3"))?;
+        symlink(&this, shims.join("python")).context("tried to symlink python shim")?;
+        symlink(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
     }
 
     Ok(dir)
@@ -132,7 +136,7 @@ pub fn fetch(
 ) -> Result<PythonVersion, Error> {
     if let Ok(version) = PythonVersion::try_from(version.clone()) {
         let py_path = get_canonical_py_path(&version)?;
-        if py_path.is_dir() | py_path.is_file() {
+        if py_path.is_dir() || py_path.is_file() {
             if output == CommandOutput::Verbose {
                 eprintln!("Python version already downloaded. Skipping.");
             }
@@ -156,7 +160,8 @@ pub fn fetch(
         return Ok(version);
     }
 
-    fs::create_dir_all(&target_dir)?;
+    fs::create_dir_all(&target_dir)
+        .with_context(|| format!("failed to create target folder {}", target_dir.display()))?;
 
     let mut archive_buffer = Vec::new();
 
@@ -203,10 +208,13 @@ pub fn fetch(
             write_archive.write_all(data).unwrap();
             Ok(data.len())
         })?;
-        transfer.perform()?;
+        transfer
+            .perform()
+            .with_context(|| format!("download of {} failed", &url))?;
     }
 
-    unpack_tarball(&archive_buffer, &target_dir, 1)?;
+    unpack_tarball(&archive_buffer, &target_dir, 1)
+        .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
 
     if output != CommandOutput::Quiet {
         eprintln!("{} Downloaded {}", style("success:").green(), version);

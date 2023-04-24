@@ -1,6 +1,7 @@
 use std::env;
 use std::fs;
 
+use anyhow::Context;
 use anyhow::{anyhow, Error};
 use clap::Parser;
 
@@ -24,7 +25,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         Ok(proj) => proj.root_path().join(".python-version"),
         Err(_) => env::current_dir()?.join(".python-version"),
     };
-    fs::write(&version_file, format!("{}\n", to_write))?;
+    fs::write(&version_file, format!("{}\n", to_write))
+        .context("failed to write .python-version file")?;
 
     eprintln!("pinned {} in {}", to_write, version_file.display());
 

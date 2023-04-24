@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{Context, Error};
 use clap::Parser;
 
 use crate::bootstrap::fetch;
@@ -19,6 +19,6 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    fetch(&cmd.version.parse()?, output)?;
+    fetch(&cmd.version.parse()?, output).context("error while fetching python installation")?;
     Ok(())
 }

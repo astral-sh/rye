@@ -9,7 +9,7 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use globset::Glob;
 use once_cell::sync::Lazy;
 use pep508_rs::Requirement;
@@ -191,7 +191,14 @@ impl PyProject {
     /// Loads a pyproject toml.
     pub fn load(filename: &Path) -> Result<PyProject, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
-        let doc = fs::read_to_string(filename)?.parse::<Document>()?;
+        let doc = fs::read_to_string(filename)?
+            .parse::<Document>()
+            .with_context(|| {
+                format!(
+                    "failed to parse pyproject.toml from {}",
+                    &filename.display()
+                )
+            })?;
         let mut workspace = Workspace::try_load_from_toml(&doc, root).map(Arc::new);
 
         if workspace.is_none() {
@@ -200,7 +207,11 @@ impl PyProject {
 
         if let Some(ref workspace) = workspace {
             if !workspace.is_member(root) {
-                bail!("project is not part of pyproject");
+                bail!(
+                    "project {} is not part of pyproject workspace {}",
+                    filename.display(),
+                    workspace.path().display()
+                );
             }
         }
 
@@ -219,7 +230,15 @@ impl PyProject {
         workspace: Arc<Workspace>,
     ) -> Result<Option<PyProject>, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
-        let doc = fs::read_to_string(filename)?.parse::<Document>()?;
+        let doc = fs::read_to_string(filename)?
+            .parse::<Document>()
+            .with_context(|| {
+                format!(
+                    "failed to parse pyproject.toml from {} in context of workspace {}",
+                    &filename.display(),
+                    workspace.path().display(),
+                )
+            })?;
 
         if !workspace.is_member(root) {
             return Ok(None);
@@ -423,7 +442,9 @@ impl PyProject {
 
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
-        fs::write(self.toml_path(), self.doc.to_string())?;
+        fs::write(self.toml_path(), self.doc.to_string()).with_context(|| {
+            format!("unable to write changes to {}", self.toml_path().display())
+        })?;
         Ok(())
     }
 }

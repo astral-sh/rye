@@ -2,7 +2,7 @@ use std::env;
 use std::ffi::{CString, OsString};
 use std::os::unix::prelude::OsStrExt;
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use clap::Parser;
 use console::style;
 
@@ -31,7 +31,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let pyproject = PyProject::discover()?;
 
     // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only())?;
+    sync(SyncOptions::python_only()).context("failed to sync ahead of run")?;
     let venv_bin = pyproject.venv_bin_path();
 
     if cmd.list || cmd.cmd.is_none() {

@@ -3,7 +3,7 @@ use std::path::Path;
 use std::process::Command;
 use std::{env, fs};
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use console::style;
 use serde::{Deserialize, Serialize};
 use tempfile::TempDir;
@@ -73,13 +73,14 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     let output = cmd.output;
 
     // ensure we are bootstrapped
-    let self_venv = ensure_self_venv(output)?;
+    let self_venv = ensure_self_venv(output).context("could not sync because bootstrap failed")?;
 
     let mut recreate = cmd.mode == SyncMode::Full;
     if venv.is_dir() {
         if marker_file.is_file() {
-            let contents = fs::read(&marker_file)?;
-            let marker: VenvMarker = serde_json::from_slice(&contents)?;
+            let contents = fs::read(&marker_file).context("could not read venv marker file")?;
+            let marker: VenvMarker =
+                serde_json::from_slice(&contents).context("malformed venv marker file")?;
             if marker.python != py_ver {
                 if cmd.output != CommandOutput::Quiet {
                     eprintln!(
@@ -100,7 +101,8 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     }
 
     // make sure we have a compatible python version
-    let py_ver = fetch(&py_ver.into(), output)?;
+    let py_ver =
+        fetch(&py_ver.into(), output).context("failed fetching toolchain ahead of sync")?;
 
     // kill the virtualenv if it's there and we need to get rid of it.
     if recreate {
@@ -122,11 +124,13 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             );
             eprintln!("Python version: {}", style(&py_ver).cyan());
         }
-        create_virtualenv(output, &self_venv, &py_ver, &venv)?;
+        create_virtualenv(output, &self_venv, &py_ver, &venv)
+            .context("failed creating virtualenv ahead of sync")?;
         fs::write(
             &marker_file,
             serde_json::to_string_pretty(&VenvMarker { python: py_ver })?,
-        )?;
+        )
+        .context("failed writing venv marker file")?;
     }
 
     // prepare necessary utilities for pip-sync.  This is a super crude
@@ -135,7 +139,8 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     // can pass to pip-sync to install the local package.
     if recreate || cmd.mode != SyncMode::PythonOnly {
         let dir = TempDir::new()?;
-        symlink(get_pip_module(&self_venv), dir.path().join("pip"))?;
+        symlink(get_pip_module(&self_venv), dir.path().join("pip"))
+            .context("failed linking pip module into for pip-sync")?;
 
         if let Some(workspace) = pyproject.workspace() {
             // make sure we have an up-to-date lockfile
@@ -145,14 +150,16 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 &lockfile,
                 cmd.output,
                 &cmd.lock_options,
-            )?;
+            )
+            .context("could not write production lockfile for workspace")?;
             update_workspace_lockfile(
                 workspace,
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
                 &cmd.lock_options,
-            )?;
+            )
+            .context("could not write dev lockfile for workspace")?;
         } else {
             // make sure we have an up-to-date lockfile
             update_single_project_lockfile(
@@ -161,14 +168,16 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 &lockfile,
                 cmd.output,
                 &cmd.lock_options,
-            )?;
+            )
+            .context("could not write production lockfile for project")?;
             update_single_project_lockfile(
                 &pyproject,
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
                 &cmd.lock_options,
-            )?;
+            )
+            .context("could not write dev lockfile for project")?;
         }
 
         // run pip install with the lockfile.
@@ -202,7 +211,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             } else {
                 pip_sync_cmd.arg("-q");
             }
-            let status = pip_sync_cmd.status()?;
+            let status = pip_sync_cmd.status().context("unable to run pip-sync")?;
             if !status.success() {
                 bail!("Installation of dependencies failed");
             }
@@ -235,7 +244,9 @@ pub fn create_virtualenv(
     venv_cmd.arg("--no-seed");
     venv_cmd.arg("--");
     venv_cmd.arg(venv);
-    let status = venv_cmd.status()?;
+    let status = venv_cmd
+        .status()
+        .context("unable to invoke virtualenv command")?;
     if !status.success() {
         bail!("failed to initialize virtualenv");
     }

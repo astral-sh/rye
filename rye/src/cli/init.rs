@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 use std::{env, fs};
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use clap::{Parser, ValueEnum};
 use console::style;
 use minijinja::{context, Environment};
@@ -94,7 +94,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let readme = dir.join("README.md");
     let gitignore = dir.join(".gitignore");
 
-    if fs::metadata(&toml).map_or(false, |x| x.is_file()) {
+    if toml.is_file() {
         bail!("pyproject.toml already exists");
     }
 
@@ -109,21 +109,19 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let author = get_default_author();
     let license = "MIT";
 
-    let rv = env
-        .render_named_str(
-            "pyproject.json",
-            TOML_TEMPLATE,
-            context! {
-                name,
-                version,
-                author,
-                requires_python,
-                license,
-                build_system => cmd.build_system,
-            },
-        )
-        .unwrap();
-    fs::write(&toml, rv)?;
+    let rv = env.render_named_str(
+        "pyproject.json",
+        TOML_TEMPLATE,
+        context! {
+            name,
+            version,
+            author,
+            requires_python,
+            license,
+            build_system => cmd.build_system,
+        },
+    )?;
+    fs::write(&toml, rv).context("failed to write pyproject.toml")?;
 
     // create a readme if one is missing
     if !readme.is_file() {
@@ -141,7 +139,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // create a .gitignore if one is missing
     if !gitignore.is_file() {
         let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
-        fs::write(&gitignore, rv)?;
+        fs::write(&gitignore, rv).context("failed to write .gitignore")?;
     }
 
     eprintln!(

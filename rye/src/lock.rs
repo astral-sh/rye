@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use tempfile::NamedTempFile;
 
 use crate::bootstrap::ensure_self_venv;
@@ -164,7 +164,7 @@ fn generate_lockfile(
         cmd.arg("--pre");
     }
     cmd.args(extra_args);
-    let status = cmd.status()?;
+    let status = cmd.status().context("unable to run pip-compile")?;
     if !status.success() {
         bail!("failed to generate lockfile");
     };

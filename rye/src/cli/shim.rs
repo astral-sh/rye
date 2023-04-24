@@ -2,7 +2,7 @@ use std::env;
 use std::ffi::{CString, OsStr, OsString};
 use std::os::unix::prelude::OsStrExt;
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use same_file::is_same_file;
 
 use crate::bootstrap::{ensure_self_venv, get_pip_runner};
@@ -82,7 +82,7 @@ fn get_shim_target(target: &str, mut args: Vec<OsString>) -> Result<Option<Vec<O
     };
 
     // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only())?;
+    sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
 
     let path = pyproject.venv_path().join("bin").join(target);
 
@@ -104,12 +104,14 @@ fn get_shim_target(target: &str, mut args: Vec<OsString>) -> Result<Option<Vec<O
 pub fn execute_shim() -> Result<(), Error> {
     if let Some((shim_name, args)) = detect_shim() {
         if let Some(args) = get_shim_target(&shim_name, args)? {
+            let target = &args[0];
             let args = args
                 .iter()
                 .filter_map(|x| CString::new(x.as_bytes()).ok())
                 .collect::<Vec<_>>();
             let path = CString::new(args[0].as_bytes())?;
-            nix::unistd::execv(&path, &args)?;
+            nix::unistd::execv(&path, &args)
+                .with_context(|| format!("unable to spawn shim {}", target.to_string_lossy()))?;
         } else {
             bail!("target shim binary not found");
         }
