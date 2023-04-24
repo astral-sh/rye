@@ -18,8 +18,8 @@ pub fn get_app_dir() -> Result<&'static Path, Error> {
         .ok_or_else(|| anyhow!("cannot determine app directory"))
 }
 
-/// Returns the cache directory for a particular python version.
-pub fn get_downloadable_py_dir(version: &PythonVersion) -> Result<PathBuf, Error> {
+/// Returns the cache directory for a particular python version that can be downloaded.
+pub fn get_canonical_py_path(version: &PythonVersion) -> Result<PathBuf, Error> {
     let mut rv = get_app_dir()?.to_path_buf();
     rv.push("py");
     rv.push(version.to_string());
@@ -28,8 +28,13 @@ pub fn get_downloadable_py_dir(version: &PythonVersion) -> Result<PathBuf, Error
 
 /// Returns the path of the python binary for the given version.
 pub fn get_py_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
-    // TODO: this only supports the redistributable pythons for now
-    let mut p = get_downloadable_py_dir(version)?;
+    let mut p = get_canonical_py_path(version)?;
+
+    // It's permissible to link Python binaries directly
+    if p.is_file() {
+        return Ok(p);
+    }
+
     p.push("install");
     p.push("bin");
     p.push("python3");
@@ -40,13 +45,50 @@ pub fn get_py_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
 ///
 /// This is the version number that will be written into `.python-version`
 pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
-    if let Some((version, _)) = get_download_url(req, OS, ARCH) {
-        let serialized_version = version.to_string();
-        if let Some(rest) = serialized_version.strip_prefix("cpython@") {
-            return Some(rest.to_string());
+    let mut target_version = None;
+
+    // If the version request points directly to a known version for which we
+    // have a known binary, we can use that.
+    if let Ok(ver) = PythonVersion::try_from(req.clone()) {
+        if let Ok(path) = get_py_bin(&ver) {
+            if path.is_file() {
+                target_version = Some(ver);
+            }
         }
     }
-    None
+
+    // otherwise, any version we can download is an acceptable version
+    if let Some((version, _)) = get_download_url(req, OS, ARCH) {
+        target_version = Some(version);
+    }
+
+    // we return the stringified version of the version, but if always remove the
+    // cpython@ prefix to make it reusable with other toolchains such as pyenv.
+    if let Some(version) = target_version {
+        let serialized_version = version.to_string();
+        Some(
+            if let Some(rest) = serialized_version.strip_prefix("cpython@") {
+                rest.to_string()
+            } else {
+                serialized_version
+            },
+        )
+    } else {
+        None
+    }
+}
+
+/// Returns a list of all registered toolchains.
+pub fn list_known_toolchains() -> Result<Vec<PythonVersion>, Error> {
+    let folder = get_app_dir()?.join("py");
+    let mut rv = Vec::new();
+    for entry in folder.read_dir()? {
+        let entry = entry?;
+        if let Ok(ver) = entry.file_name().as_os_str().to_string_lossy().parse() {
+            rv.push(ver);
+        }
+    }
+    Ok(rv)
 }
 
 /// Returns the default author from git.

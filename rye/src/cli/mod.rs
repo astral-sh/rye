@@ -12,6 +12,7 @@ mod run;
 mod shim;
 mod show;
 mod sync;
+mod toolchain;
 mod uninstall;
 
 #[derive(Parser, Debug)]
@@ -32,6 +33,7 @@ enum Command {
     Run(run::Args),
     Show(show::Args),
     Sync(sync::Args),
+    Toolchain(toolchain::Args),
     Uninstall(uninstall::Args),
 }
 
@@ -52,6 +54,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Run(cmd) => run::execute(cmd),
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
+        Command::Toolchain(cmd) => toolchain::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
     }
 }

@@ -192,6 +192,20 @@ This is done to create a unified experience of Python installations and to avoid
 incompatibilities created by different Python distributions.  Most importantly this also
 means you never need to compile a Python any more, it just downloads prepared binaries.
 
+## Managing Python Toolchains
+
+You can register custom Python toolchains with `rye toolchain register`:
+
+```
+$ rye toolchain register ~/Downloads/pypy3.9-v7.3.11-macos_arm64/bin/python
+Registered /Users/mitsuhiko/Downloads/pypy3.9-v7.3.11-macos_arm64/bin/python as pypy@3.9.16
+```
+
+Afterwards you can pin it, in this case with `rye pin pypy@3.9.16`.  The auto detection of
+the name might not be great, in which case you can provide an explicit name with `--name`.
+To remove downloaded or linked toolchains, you can use the `rye toolchain remove` command.
+To list what's available, use `rye toolchain list`.
+
 ## Global Tools
 
 If you want tools to be installed into isolated virtualenvs (like pipsi and pipx), you

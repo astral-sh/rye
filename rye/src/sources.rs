@@ -79,13 +79,34 @@ impl FromStr for PythonVersion {
     }
 }
 
+impl TryFrom<PythonVersionRequest> for PythonVersion {
+    type Error = Error;
+
+    fn try_from(req: PythonVersionRequest) -> Result<Self, Self::Error> {
+        Ok(PythonVersion {
+            kind: match req.kind {
+                None => Cow::Borrowed(DEFAULT_KIND),
+                Some(other) => other,
+            },
+            major: req.major,
+            minor: req.minor.ok_or_else(|| anyhow!("missing minor version"))?,
+            patch: req.patch.ok_or_else(|| anyhow!("missing patch version"))?,
+            suffix: req.suffix,
+        })
+    }
+}
+
 impl fmt::Display for PythonVersion {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
             "{}@{}.{}.{}",
             self.kind, self.major, self.minor, self.patch
-        )
+        )?;
+        if let Some(ref suffix) = self.suffix {
+            write!(f, ".{}", suffix)?;
+        }
+        Ok(())
     }
 }
 
@@ -194,6 +215,22 @@ pub fn get_download_url(
         }
     }
     None
+}
+
+/// Returns an iterator over downloadable installations.
+pub fn iter_downloadable<'s>(
+    platform: &'s str,
+    arch: &'s str,
+) -> impl Iterator<Item = PythonVersion> + 's {
+    indygreg_python::CPYTHON_VERSIONS.iter().filter_map(
+        move |(version, it_arch, it_platform, _)| {
+            if *it_arch == arch && *it_platform == platform {
+                Some(version.clone())
+            } else {
+                None
+            }
+        },
+    )
 }
 
 #[test]

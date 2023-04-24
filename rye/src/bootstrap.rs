@@ -10,7 +10,7 @@ use anyhow::{bail, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::config::{get_app_dir, get_downloadable_py_dir, get_py_bin};
+use crate::config::{get_app_dir, get_canonical_py_path, get_py_bin};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{unpack_tarball, CommandOutput};
 
@@ -118,12 +118,22 @@ pub fn fetch(
     version: &PythonVersionRequest,
     output: CommandOutput,
 ) -> Result<PythonVersion, Error> {
+    if let Ok(version) = PythonVersion::try_from(version.clone()) {
+        let py_path = get_canonical_py_path(&version)?;
+        if py_path.is_dir() | py_path.is_file() {
+            if output == CommandOutput::Verbose {
+                eprintln!("Python version already downloaded. Skipping.");
+            }
+            return Ok(version);
+        }
+    }
+
     let (version, url) = match get_download_url(version, OS, ARCH) {
         Some(result) => result,
         None => bail!("unknown version {}", version),
     };
 
-    let target_dir = get_downloadable_py_dir(&version)?;
+    let target_dir = get_canonical_py_path(&version)?;
     if output == CommandOutput::Verbose {
         eprintln!("target dir: {}", target_dir.display());
     }

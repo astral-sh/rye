@@ -18,7 +18,7 @@ pub struct Args {
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let req: PythonVersionRequest = cmd.version.parse()?;
     let to_write = get_pinnable_version(&req)
-        .ok_or_else(|| anyhow!("unsupported version for this platform"))?;
+        .ok_or_else(|| anyhow!("unsupported/unknown version for this platform"))?;
 
     let version_file = match PyProject::discover() {
         Ok(proj) => proj.root_path().join(".python-version"),
