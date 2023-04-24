@@ -63,7 +63,7 @@ fn find_shadowed_target(
     target: &str,
     mut args: Vec<OsString>,
 ) -> Result<Option<Vec<OsString>>, Error> {
-    let exe = std::env::current_exe()?;
+    let exe = env::current_exe()?;
     for bin in which::which_all(target)? {
         if is_same_file(&bin, &exe).unwrap_or(false) {
             continue;
