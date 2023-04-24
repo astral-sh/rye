@@ -82,10 +82,12 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
 pub fn list_known_toolchains() -> Result<Vec<PythonVersion>, Error> {
     let folder = get_app_dir()?.join("py");
     let mut rv = Vec::new();
-    for entry in folder.read_dir()? {
-        let entry = entry?;
-        if let Ok(ver) = entry.file_name().as_os_str().to_string_lossy().parse() {
-            rv.push(ver);
+    if let Ok(iter) = folder.read_dir() {
+        for entry in iter {
+            let entry = entry?;
+            if let Ok(ver) = entry.file_name().as_os_str().to_string_lossy().parse() {
+                rv.push(ver);
+            }
         }
     }
     Ok(rv)
