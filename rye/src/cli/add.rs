@@ -1,7 +1,7 @@
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 
-use anyhow::{bail, Error, Context};
+use anyhow::{bail, Context, Error};
 use clap::Parser;
 use pep440_rs::VersionSpecifiers;
 use pep508_rs::{Requirement, VersionOrUrl};
