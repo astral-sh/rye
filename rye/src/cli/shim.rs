@@ -99,7 +99,7 @@ fn get_shim_target(target: &str, mut args: Vec<OsString>) -> Result<Option<Vec<O
     Ok(None)
 }
 
-/// This replaces outselves with the shim target for when the
+/// This replaces ourselves with the shim target for when the
 /// executable is invoked as a shim executable.
 pub fn execute_shim() -> Result<(), Error> {
     if let Some((shim_name, args)) = detect_shim() {
