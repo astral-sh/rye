@@ -1,7 +1,7 @@
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Error, Context};
 use clap::Parser;
 use pep440_rs::VersionSpecifiers;
 use pep508_rs::{Requirement, VersionOrUrl};
@@ -41,7 +41,7 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let mut unearth_path = ensure_self_venv(output)?;
+    let mut unearth_path = ensure_self_venv(output).context("error bootstrapping venv")?;
     let mut added = Vec::new();
     unearth_path.push("bin");
     unearth_path.push("unearth");
