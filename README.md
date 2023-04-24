@@ -20,7 +20,7 @@ an exploration, and it's far from perfect.  Thus also the question:
 It automatically installs and manages Python:
 
 ```
-$ rye pin 3.1
+$ rye pin 3.11
 $ rye run python
 Python 3.11.1 (main, Jan 16 2023, 16:02:03) [Clang 15.0.7 ] on darwin
 Type "help", "copyright", "credits" or "license" for more information.
