@@ -14,20 +14,31 @@ mod indygreg_python {
 const DEFAULT_KIND: &str = "cpython";
 
 /// Internal descriptor for a python version.
-#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Copy, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct PythonVersion {
-    pub kind: &'static str,
+    pub kind: Cow<'static, str>,
     pub major: u8,
     pub minor: u8,
     pub patch: u8,
+    pub suffix: Option<Cow<'static, str>>,
 }
 
 impl PythonVersion {
     /// Returns the latest version for this OS.
     pub fn latest_cpython() -> PythonVersion {
-        get_download_url("3", OS, ARCH)
-            .expect("unsupported platform")
-            .0
+        get_download_url(
+            &PythonVersionRequest {
+                kind: None,
+                major: 3,
+                minor: None,
+                patch: None,
+                suffix: None,
+            },
+            OS,
+            ARCH,
+        )
+        .expect("unsupported platform")
+        .0
     }
 }
 
@@ -54,18 +65,17 @@ impl FromStr for PythonVersion {
     type Err = Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        parse_version(s)
-            .map(|(kind, major, minor, patch)| PythonVersion {
-                kind: if kind == "cpython" {
-                    "cpython"
-                } else {
-                    "unknown"
-                },
-                major,
-                minor: minor.unwrap_or(0),
-                patch: patch.unwrap_or(0),
-            })
-            .ok_or_else(|| anyhow!("invalid version"))
+        let req: PythonVersionRequest = s.parse()?;
+        Ok(PythonVersion {
+            kind: match req.kind {
+                None => Cow::Borrowed(DEFAULT_KIND),
+                Some(other) => other,
+            },
+            major: req.major,
+            minor: req.minor.unwrap_or(0),
+            patch: req.patch.unwrap_or(0),
+            suffix: req.suffix,
+        })
     }
 }
 
@@ -79,39 +89,108 @@ impl fmt::Display for PythonVersion {
     }
 }
 
-fn parse_version(version: &str) -> Option<(&str, u8, Option<u8>, Option<u8>)> {
-    let (kind, version) = match version.split_once('@') {
-        Some(rv) => rv,
-        None => (DEFAULT_KIND, version),
-    };
-    let mut iter = version.split('.').flat_map(|x| x.parse().ok());
-    let a = iter.next()?;
-    Some((kind, a, iter.next(), iter.next()))
+/// Internal descriptor for a python version request.
+#[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
+pub struct PythonVersionRequest {
+    pub kind: Option<Cow<'static, str>>,
+    pub major: u8,
+    pub minor: Option<u8>,
+    pub patch: Option<u8>,
+    pub suffix: Option<Cow<'static, str>>,
 }
 
-fn matches_version(ref_version: (&str, u8, Option<u8>, Option<u8>), v: PythonVersion) -> bool {
-    match ref_version {
-        (kind, major, Some(minor), Some(patch)) => {
-            (v.kind, v.major, v.minor, v.patch) == (kind, major, minor, patch)
+impl From<PythonVersion> for PythonVersionRequest {
+    fn from(value: PythonVersion) -> Self {
+        PythonVersionRequest {
+            kind: Some(value.kind),
+            major: value.major,
+            minor: Some(value.minor),
+            patch: Some(value.patch),
+            suffix: value.suffix,
         }
-        (kind, major, Some(minor), None) => v.kind == kind && v.major == major && v.minor == minor,
-        (kind, major, None, None | Some(_)) => v.kind == kind && v.major == major,
     }
+}
+
+impl FromStr for PythonVersionRequest {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let (kind, version) = match s.split_once('@') {
+            Some((kind, version)) => (Some(kind), version),
+            None => (None, s),
+        };
+        let mut iter = version.split('.');
+        let major = iter
+            .next()
+            .and_then(|x| x.parse::<u8>().ok())
+            .ok_or_else(|| anyhow!("invalid version"))?;
+        let minor = iter.next().and_then(|x| x.parse::<u8>().ok());
+        let patch = iter.next().and_then(|x| x.parse::<u8>().ok());
+        let suffix = iter.next().map(|x| Cow::Owned(x.to_string()));
+
+        Ok(PythonVersionRequest {
+            kind: kind.map(|x| x.to_string().into()),
+            major,
+            minor,
+            patch,
+            suffix,
+        })
+    }
+}
+
+impl fmt::Display for PythonVersionRequest {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        if let Some(ref kind) = self.kind {
+            write!(f, "{}@", kind)?;
+        }
+        write!(f, "{}", self.major)?;
+        if let Some(ref minor) = self.minor {
+            write!(f, ".{}", minor)?;
+            if let Some(ref patch) = self.patch {
+                write!(f, ".{}", patch)?;
+            }
+        }
+        Ok(())
+    }
+}
+
+fn matches_version(req: &PythonVersionRequest, v: &PythonVersion) -> bool {
+    if req.kind.as_deref().unwrap_or(DEFAULT_KIND) != v.kind {
+        return false;
+    }
+    if req.major != v.major {
+        return false;
+    }
+    if let Some(minor) = req.minor {
+        if minor != v.minor {
+            return false;
+        }
+    }
+    if let Some(patch) = req.patch {
+        if patch != v.patch {
+            return false;
+        }
+    }
+    if let Some(ref suffix) = req.suffix {
+        if Some(suffix) != v.suffix.as_ref() {
+            return false;
+        }
+    }
+    true
 }
 
 /// Given a version, platform and architecture returns the download URL.
 pub fn get_download_url(
-    version: &str,
+    requested_version: &PythonVersionRequest,
     platform: &str,
     arch: &str,
 ) -> Option<(PythonVersion, &'static str)> {
-    let parsed_version = parse_version(version)?;
     for (it_version, it_arch, it_platform, it_url) in indygreg_python::CPYTHON_VERSIONS {
         if platform == *it_platform
             && arch == *it_arch
-            && matches_version(parsed_version, *it_version)
+            && matches_version(requested_version, it_version)
         {
-            return Some((*it_version, it_url));
+            return Some((it_version.clone(), it_url));
         }
     }
     None
@@ -119,10 +198,10 @@ pub fn get_download_url(
 
 #[test]
 fn test_get_download_url() {
-    let url = get_download_url("3.8.14", "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 8, patch: 14 }, "https://github.com/indygreg/python-build-standalone/releases/download/20221002/cpython-3.8.14%2B20221002-aarch64-apple-darwin-pgo-full.tar.zst")));
-    let url = get_download_url("3.8", "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 8, patch: 16 }, "https://github.com/indygreg/python-build-standalone/releases/download/20221220/cpython-3.8.16%2B20221220-aarch64-apple-darwin-pgo-full.tar.zst")));
-    let url = get_download_url("3", "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython", major: 3, minor: 11, patch: 1}, "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-aarch64-apple-darwin-pgo-full.tar.zst")));
+    let url = get_download_url(&"3.8.14".parse().unwrap(), "macos", "aarch64");
+    assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 8, patch: 14, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20221002/cpython-3.8.14%2B20221002-aarch64-apple-darwin-pgo-full.tar.zst")));
+    let url = get_download_url(&"3.8".parse().unwrap(), "macos", "aarch64");
+    assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 8, patch: 16, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20221220/cpython-3.8.16%2B20221220-aarch64-apple-darwin-pgo-full.tar.zst")));
+    let url = get_download_url(&"3".parse().unwrap(), "macos", "aarch64");
+    assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 11, patch: 1, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-aarch64-apple-darwin-pgo-full.tar.zst")));
 }

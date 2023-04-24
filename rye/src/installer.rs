@@ -42,7 +42,7 @@ pub fn install(
     let target_venv_bin_path = target_venv_path.join("bin");
 
     uninstall_helper(&target_venv_path, &shim_dir)?;
-    create_virtualenv(output, &self_venv, py_ver, &target_venv_path)?;
+    create_virtualenv(output, &self_venv, &py_ver, &target_venv_path)?;
 
     let mut cmd = Command::new(&self_venv.join("bin/pip"));
     cmd.arg("--python")
