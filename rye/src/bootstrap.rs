@@ -34,16 +34,23 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         eprintln!("Bootstrapping rye internals");
     }
 
-    let version = fetch(&SELF_PYTHON_VERSION, output)?;
+    let version = fetch(&SELF_PYTHON_VERSION, output).with_context(|| {
+        format!(
+            "failed to fetch internal cpython toolchain {}",
+            SELF_PYTHON_VERSION
+        )
+    })?;
     let py_bin = get_py_bin(&version)?;
 
     // initialize the virtualenv
-    let mut venv_cmd = Command::new(py_bin);
+    let mut venv_cmd = Command::new(&py_bin);
     venv_cmd.arg("-mvenv");
     venv_cmd.arg("--upgrade-deps");
     venv_cmd.arg(&dir);
 
-    let status = venv_cmd.status().context("unable to create self venv")?;
+    let status = venv_cmd
+        .status()
+        .with_context(|| format!("unable to create self venv using {}", py_bin.display()))?;
     if !status.success() {
         bail!("failed to initialize virtualenv in {}", dir.display());
     }
