@@ -100,7 +100,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     }
 
     // make sure we have a compatible python version
-    fetch(&py_ver.to_string(), output)?;
+    let py_ver = fetch(&py_ver.into(), output)?;
 
     // kill the virtualenv if it's there and we need to get rid of it.
     if recreate {
@@ -122,7 +122,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             );
             eprintln!("Python version: {}", style(&py_ver).cyan());
         }
-        create_virtualenv(output, &self_venv, py_ver, &venv)?;
+        create_virtualenv(output, &self_venv, &py_ver, &venv)?;
         fs::write(
             &marker_file,
             serde_json::to_string_pretty(&VenvMarker { python: py_ver })?,
@@ -219,10 +219,10 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
 pub fn create_virtualenv(
     output: CommandOutput,
     self_venv: &Path,
-    py_ver: PythonVersion,
+    py_ver: &PythonVersion,
     venv: &Path,
 ) -> Result<(), Error> {
-    let py_bin = get_py_bin(&py_ver)?;
+    let py_bin = get_py_bin(py_ver)?;
     let mut venv_cmd = Command::new(self_venv.join("bin/virtualenv"));
     if output == CommandOutput::Verbose {
         venv_cmd.arg("--verbose");

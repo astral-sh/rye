@@ -152,10 +152,11 @@ for py_ver, choices in results.items():
 
 
 print("// generated code, do not edit")
+print("use std::borrow::Cow;")
 print("pub const CPYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str)] = &[")
 for py_ver, choices in sorted(
     final_results.items(), key=lambda x: x[0], reverse=True
 ):
     for (arch, platform), url in sorted(choices.items()):
-        print('    (PythonVersion { kind: "cpython", major: %d, minor: %d, patch: %d }, "%s", "%s", "%s"),' % (py_ver + (arch, platform, url)))
+        print('    (PythonVersion { kind: Cow::Borrowed("cpython"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s"),' % (py_ver + (arch, platform, url)))
 print("];")

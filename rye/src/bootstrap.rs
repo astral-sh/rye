@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::env::consts::{ARCH, OS};
 use std::io::Write;
 use std::os::unix::fs::symlink;
@@ -9,11 +10,17 @@ use anyhow::{bail, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 
-use crate::config::{get_app_dir, get_py_bin, get_py_dir};
-use crate::sources::{get_download_url, PythonVersion};
+use crate::config::{get_app_dir, get_canonical_py_path, get_py_bin};
+use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{unpack_tarball, CommandOutput};
 
-const SELF_PYTHON_VERSION: &str = "3.10.9";
+const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
+    kind: Some(Cow::Borrowed("cpython")),
+    major: 3,
+    minor: Some(10),
+    patch: None,
+    suffix: None,
+};
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
 
 /// Bootstraps the venv for rye itself
@@ -28,7 +35,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         eprintln!("Bootstrapping rye internals");
     }
 
-    let version = fetch(SELF_PYTHON_VERSION, output)?;
+    let version = fetch(&SELF_PYTHON_VERSION, output)?;
     let py_bin = get_py_bin(&version)?;
 
     // initialize the virtualenv
@@ -107,13 +114,26 @@ pub fn get_pip_module(venv: &Path) -> PathBuf {
 }
 
 /// Fetches a version if missing.
-pub fn fetch(version: &str, output: CommandOutput) -> Result<PythonVersion, Error> {
+pub fn fetch(
+    version: &PythonVersionRequest,
+    output: CommandOutput,
+) -> Result<PythonVersion, Error> {
+    if let Ok(version) = PythonVersion::try_from(version.clone()) {
+        let py_path = get_canonical_py_path(&version)?;
+        if py_path.is_dir() | py_path.is_file() {
+            if output == CommandOutput::Verbose {
+                eprintln!("Python version already downloaded. Skipping.");
+            }
+            return Ok(version);
+        }
+    }
+
     let (version, url) = match get_download_url(version, OS, ARCH) {
         Some(result) => result,
         None => bail!("unknown version {}", version),
     };
 
-    let target_dir = get_py_dir(&version)?;
+    let target_dir = get_canonical_py_path(&version)?;
     if output == CommandOutput::Verbose {
         eprintln!("target dir: {}", target_dir.display());
     }

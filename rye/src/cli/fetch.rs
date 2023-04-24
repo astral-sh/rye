@@ -19,6 +19,6 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    fetch(&cmd.version, output)?;
+    fetch(&cmd.version.parse()?, output)?;
     Ok(())
 }
