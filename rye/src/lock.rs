@@ -77,10 +77,10 @@ pub fn update_workspace_lockfile(
     let mut projects = Vec::new();
     for pyproject_result in workspace.iter_projects() {
         let pyproject = pyproject_result?;
-        let rel_path = make_relative_path(&pyproject.root_path(), &workspace.path())?;
-        writeln!(local_req_file, "-e {}", rel_path.display())?;
+        let rel_url = make_relative_url(&pyproject.root_path(), &workspace.path())?;
+        writeln!(local_req_file, "-e {}", rel_url)?;
         if let Some(name) = pyproject.normalized_name() {
-            local_projects.insert(name, rel_path.display().to_string());
+            local_projects.insert(name, rel_url);
         }
         projects.push(pyproject);
     }
@@ -160,7 +160,7 @@ pub fn update_single_project_lockfile(
     writeln!(
         req_file,
         "-e {}",
-        make_relative_path(&pyproject.root_path(), &pyproject.workspace_path())?.display()
+        make_relative_url(&pyproject.root_path(), &pyproject.workspace_path())?
     )?;
     for dep in pyproject.iter_dependencies(DependencyKind::Normal) {
         writeln!(req_file, "{}", dep)?;
@@ -243,8 +243,8 @@ fn finalize_lockfile(generated: &Path, out: &Path, workspace_root: &Path) -> Res
         if let Some(m) = FILE_EDITABLE_RE.captures(line) {
             let url = Url::parse(&m[1]).context("invalid editable URL generated")?;
             if url.scheme() == "file" {
-                let rel_path = make_relative_path(Path::new(url.path()), workspace_root)?;
-                writeln!(rv, "-e file:{}", rel_path.display())?;
+                let rel_url = make_relative_url(Path::new(url.path()), workspace_root)?;
+                writeln!(rv, "-e {}", rel_url)?;
                 continue;
             }
         }
@@ -253,7 +253,7 @@ fn finalize_lockfile(generated: &Path, out: &Path, workspace_root: &Path) -> Res
     Ok(())
 }
 
-fn make_relative_path(path: &Path, base: &Path) -> Result<PathBuf, Error> {
+fn make_relative_url(path: &Path, base: &Path) -> Result<String, Error> {
     let rv = pathdiff::diff_paths(path, base).ok_or_else(|| {
         anyhow!(
             "unable to create relative path from {} to {}",
@@ -262,8 +262,26 @@ fn make_relative_path(path: &Path, base: &Path) -> Result<PathBuf, Error> {
         )
     })?;
     if rv == Path::new("") {
-        Ok(PathBuf::from("."))
+        Ok("file:.".into())
     } else {
-        Ok(rv)
+        // XXX: there might be a better way to do this, but this appears to be enough
+        // to make this work for now.
+        let mut buf = String::new();
+        for chunk in url::form_urlencoded::byte_serialize(rv.to_string_lossy().as_bytes()) {
+            buf.push_str(&chunk.replace('+', "%20").replace("%2F", "/"));
+        }
+        Ok(format!("file:{}", buf))
     }
+}
+
+#[test]
+fn test_make_relativec_url() {
+    assert_eq!(
+        make_relative_url(Path::new("foo/bar/baz blah"), Path::new("foo")).unwrap(),
+        "file:bar/baz%20blah"
+    );
+    assert_eq!(
+        make_relative_url(Path::new("/foo"), Path::new("/foo")).unwrap(),
+        "file:."
+    );
 }

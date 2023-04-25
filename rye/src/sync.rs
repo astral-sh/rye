@@ -191,8 +191,10 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .current_dir(pyproject.workspace_path())
                 .arg("--python-executable")
                 .arg(venv.join("bin/python"))
+                // note that the double quotes are necessary to properly handle
+                // spaces in paths
                 .arg(format!(
-                    "--pip-args=--python={}",
+                    "--pip-args=\"--python={}\"",
                     venv.join("bin/python").display()
                 ));
 
