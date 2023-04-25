@@ -7,7 +7,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-anyhow = "1.0.70"
+anyhow = { version = "1.0.70", features = ["backtrace"] }
 clap = { version = "4.2.2", default-features = false, features = ["derive", "usage", "wrap_help", "std"] }
 console = "0.15.5"
 curl = { version = "0.4.44", features = ["ssl", "static-curl"] }
