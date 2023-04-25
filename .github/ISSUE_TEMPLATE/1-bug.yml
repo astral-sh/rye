@@ -26,14 +26,14 @@ body:
     validations:
       required: true
   - type: textarea
-    id: actual
+    id: version-info
     attributes:
       label: Version Info
       description: Paste the output of `rye --version`
     validations:
       required: true
   - type: textarea
-    id: actual
+    id: stacktrace
     attributes:
       label: Stacktrace
       description: If rye crashed, run it again with `RUST_BACKTRACE=1` set as environment variable and share the output.
