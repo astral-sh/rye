@@ -192,7 +192,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .arg("--python-executable")
                 .arg(venv.join("bin/python"))
                 .arg(format!(
-                    "--pip-args=--python={}",
+                    "--pip-args=--python='{}'",
                     venv.join("bin/python").display()
                 ));
 
