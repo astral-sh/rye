@@ -16,10 +16,20 @@ mod sync;
 mod toolchain;
 mod uninstall;
 
+use git_testament::git_testament;
+
+use crate::bootstrap::SELF_PYTHON_VERSION;
+
+git_testament!(TESTAMENT);
+
 #[derive(Parser, Debug)]
+#[command(arg_required_else_help = true)]
 struct Args {
     #[command(subcommand)]
-    command: Command,
+    command: Option<Command>,
+    /// Print the version
+    #[arg(long)]
+    version: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -46,7 +56,23 @@ pub fn execute() -> Result<(), Error> {
 
     let args = Args::parse();
 
-    match args.command {
+    let cmd = if args.version {
+        eprintln!("rye {}", env!("CARGO_PKG_VERSION"));
+        eprintln!("commit: {}", TESTAMENT.commit);
+        eprintln!(
+            "platform: {} ({})",
+            std::env::consts::OS,
+            std::env::consts::ARCH
+        );
+        eprintln!("self-python: {}", SELF_PYTHON_VERSION);
+        return Ok(());
+    } else if let Some(cmd) = args.command {
+        cmd
+    } else {
+        unreachable!()
+    };
+
+    match cmd {
         Command::Add(cmd) => add::execute(cmd),
         Command::Fetch(cmd) => fetch::execute(cmd),
         Command::Init(cmd) => init::execute(cmd),

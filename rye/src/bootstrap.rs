@@ -13,7 +13,7 @@ use crate::config::{get_app_dir, get_canonical_py_path, get_py_bin};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{unpack_tarball, CommandOutput};
 
-const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
+pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
     major: 3,
     minor: Some(10),

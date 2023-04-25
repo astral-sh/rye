@@ -13,6 +13,7 @@ console = "0.15.5"
 curl = { version = "0.4.44", features = ["ssl", "static-curl"] }
 decompress = { version = "0.6.0", default-features = false, features = ["tarzst", "targz"] }
 flate2 = "1.0.25"
+git-testament = "0.2.4"
 globset = "0.4.10"
 indicatif = "0.17.3"
 memchr = "2.5.0"
