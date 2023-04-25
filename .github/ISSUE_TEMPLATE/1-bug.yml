@@ -1,0 +1,41 @@
+name: Bug Report
+description: Report something not working correctly.
+body:
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to Reproduce
+      description: How can we see what you're seeing? Specific is terrific.
+      placeholder: |-
+        1. foo
+        2. bar
+        3. baz
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected Result
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual Result
+      description: Logs? Screenshots? Yes, please.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Version Info
+      description: Paste the output of `rye --version`
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Stacktrace
+      description: If rye crashed, run it again with `RUST_BACKTRACE=1` set as environment variable and share the output.
+    validations:
+      required: false
