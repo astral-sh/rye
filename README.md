@@ -1,8 +1,10 @@
 # Rye
 
-Rye is Armin's personal one-stop-shop for all his Python needs. It installs and
-manages Python installations, manages `pyproject.toml` files, installs and
-uninstalls dependencies, manages virtualenvs behind the scenes. It supports monorepos and global tool installations.
+Rye is [Armin's](https://github.com/mitsuhiko/) personal one-stop-shop for all
+his Python needs. It installs and manages Python installations, manages
+`pyproject.toml` files, installs and uninstalls dependencies, manages
+virtualenvs behind the scenes. It supports monorepos and global tool
+installations.
 
 It is a wish of what Python was, with no guarantee to work for anyone else. It's
 an exploration, and it's far from perfect. Thus also the question:
