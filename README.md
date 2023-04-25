@@ -1,5 +1,6 @@
 # Rye
 
+test
 Rye is Armin's personal one-stop-shop for all his Python needs.  It installs and
 manages Python installations, manages `pyproject.toml` files, installs and
 uninstalls dependencies, manages virtualenvs behind the scenes.  It supports monorepos and global tool installations.
