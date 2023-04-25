@@ -188,6 +188,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             let mut pip_sync_cmd = Command::new(self_venv.join("bin/pip-sync"));
             pip_sync_cmd
                 .env("PYTHONPATH", dir.path())
+                .current_dir(pyproject.workspace_path())
                 .arg("--python-executable")
                 .arg(venv.join("bin/python"))
                 .arg(format!(
