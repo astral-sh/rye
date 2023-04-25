@@ -103,7 +103,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     // Write pyproject.toml
     let py = cmd.py.as_deref().unwrap_or("3.8");
-    let name = dir.file_name().unwrap().to_string_lossy();
+    let name = slug::slugify(dir.file_name().unwrap().to_string_lossy());
     let version = "0.1.0";
     let requires_python = format!(">= {}", py);
     let author = get_default_author();
