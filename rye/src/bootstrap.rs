@@ -82,6 +82,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     pip_install_cmd.arg("virtualenv");
     pip_install_cmd.arg("unearth");
     pip_install_cmd.arg("pip-tools");
+    pip_install_cmd.arg("build");
     if output != CommandOutput::Quiet {
         eprintln!("Installing internal dependencies");
     }

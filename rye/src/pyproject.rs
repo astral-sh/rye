@@ -156,6 +156,18 @@ impl Workspace {
             })
     }
 
+    /// Looks up a single project.
+    pub fn get_project<'a>(self: &'a Arc<Self>, p: &str) -> Result<Option<PyProject>, Error> {
+        let normalized_name = normalize_package_name(p);
+        for project in self.iter_projects() {
+            let project = project?;
+            if project.normalized_name().as_deref() == Some(&normalized_name) {
+                return Ok(Some(project));
+            }
+        }
+        Ok(None)
+    }
+
     fn try_load_from_toml(doc: &Document, path: &Path) -> Option<Workspace> {
         doc.get("tool")
             .and_then(|x| x.get("rye"))

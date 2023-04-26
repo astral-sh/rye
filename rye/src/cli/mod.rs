@@ -2,6 +2,7 @@ use anyhow::Error;
 use clap::Parser;
 
 mod add;
+mod build;
 mod fetch;
 mod init;
 mod install;
@@ -35,6 +36,7 @@ struct Args {
 #[derive(Parser, Debug)]
 enum Command {
     Add(add::Args),
+    Build(build::Args),
     Fetch(fetch::Args),
     Init(init::Args),
     Install(install::Args),
@@ -65,6 +67,7 @@ pub fn execute() -> Result<(), Error> {
 
     match cmd {
         Command::Add(cmd) => add::execute(cmd),
+        Command::Build(cmd) => build::execute(cmd),
         Command::Fetch(cmd) => fetch::execute(cmd),
         Command::Init(cmd) => init::execute(cmd),
         Command::Install(cmd) => install::execute(cmd),
