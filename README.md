@@ -125,7 +125,7 @@ lack of standardization. Here is what this project ran into over the years:
 
 - **No Exposed Pip:** pip is intentionally not exposed. If you were to install something
   into the virtualenv, it disappears next time you sync. If you symlink `rye` to
-  `~/.rye/shims/pip` you can get access to pip without installating it into the
+  `~/.rye/shims/pip` you can get access to pip without installing it into the
   virtualenv. There be dragons.
 
 - **No Workspace Spec:** for monorepos and things of that nature, the Python ecosystem

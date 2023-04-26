@@ -39,7 +39,7 @@ pub struct Args {
 /// Register a Python binary.
 ///
 /// Rye by default will automatically download Python releases from the internet.
-/// Howver it's also possible to register already available local Python
+/// However it's also possible to register already available local Python
 /// installations.  This allows you to use rye with self compiled Pythons.
 #[derive(Parser, Debug)]
 pub struct RegisterCommand {
