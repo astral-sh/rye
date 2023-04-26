@@ -55,17 +55,8 @@ pub fn execute() -> Result<(), Error> {
     shim::execute_shim()?;
 
     let args = Args::parse();
-
     let cmd = if args.version {
-        eprintln!("rye {}", env!("CARGO_PKG_VERSION"));
-        eprintln!("commit: {}", TESTAMENT.commit);
-        eprintln!(
-            "platform: {} ({})",
-            std::env::consts::OS,
-            std::env::consts::ARCH
-        );
-        eprintln!("self-python: {}", SELF_PYTHON_VERSION);
-        return Ok(());
+        return print_version();
     } else if let Some(cmd) = args.command {
         cmd
     } else {
@@ -87,4 +78,16 @@ pub fn execute() -> Result<(), Error> {
         Command::Rye(cmd) => rye::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
     }
+}
+
+fn print_version() -> Result<(), Error> {
+    eprintln!("rye {}", env!("CARGO_PKG_VERSION"));
+    eprintln!("commit: {}", TESTAMENT.commit);
+    eprintln!(
+        "platform: {} ({})",
+        std::env::consts::OS,
+        std::env::consts::ARCH
+    );
+    eprintln!("self-python: {}", SELF_PYTHON_VERSION);
+    Ok(())
 }
