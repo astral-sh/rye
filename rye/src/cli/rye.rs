@@ -58,5 +58,6 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
     if !status.success() {
         bail!("failed to self-update via cargo-install");
     }
+
     Ok(())
 }

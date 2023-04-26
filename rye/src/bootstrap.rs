@@ -3,11 +3,14 @@ use std::env::consts::{ARCH, OS};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::atomic::{self, AtomicBool};
 use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
+use once_cell::sync::Lazy;
+use tempfile::NamedTempFile;
 
 use crate::config::{get_app_dir, get_canonical_py_path, get_py_bin};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
@@ -20,14 +23,53 @@ pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     patch: None,
     suffix: None,
 };
+const SELF_VERSION: u64 = 1;
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
+const SELF_REQUIREMENTS: &str = r#"
+build==0.10.0
+certifi==2022.12.7
+charset-normalizer==3.1.0
+click==8.1.3
+distlib==0.3.6
+filelock==3.12.0
+idna==3.4
+packaging==23.1
+pip-tools==6.13.0
+platformdirs==3.4.0
+pyproject_hooks==1.0.0
+requests==2.29.0
+tomli==2.0.1
+unearth==0.9.0
+urllib3==1.26.15
+virtualenv==20.22.0
+"#;
+
+static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
+
+fn is_up_to_date() -> bool {
+    static UP_TO_UPDATE: Lazy<bool> = Lazy::new(|| match get_app_dir() {
+        Ok(dir) => fs::read_to_string(dir.join("self").join("tool-version.txt"))
+            .ok()
+            .map_or(false, |x| x.parse() == Ok(SELF_VERSION)),
+        Err(_) => false,
+    });
+    *UP_TO_UPDATE || FORCED_TO_UPDATE.load(atomic::Ordering::Relaxed)
+}
 
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     let app_dir = get_app_dir().context("could not get app dir")?;
-    let dir = app_dir.join("self");
-    if dir.is_dir() {
-        return Ok(dir);
+    let venv_dir = app_dir.join("self");
+
+    if venv_dir.is_dir() {
+        if is_up_to_date() {
+            return Ok(venv_dir);
+        } else {
+            if output != CommandOutput::Quiet {
+                eprintln!("detected outdated rye internals. Refreshing");
+            }
+            fs::remove_dir_all(&venv_dir).context("could not remove self-venv for update")?;
+        }
     }
 
     if output != CommandOutput::Quiet {
@@ -46,20 +88,28 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     let mut venv_cmd = Command::new(&py_bin);
     venv_cmd.arg("-mvenv");
     venv_cmd.arg("--upgrade-deps");
-    venv_cmd.arg(&dir);
+    venv_cmd.arg(&venv_dir);
 
     let status = venv_cmd
         .status()
         .with_context(|| format!("unable to create self venv using {}", py_bin.display()))?;
     if !status.success() {
-        bail!("failed to initialize virtualenv in {}", dir.display());
+        bail!("failed to initialize virtualenv in {}", venv_dir.display());
     }
 
-    // upgrade pip
+    do_update(output, &venv_dir, app_dir)?;
+
+    fs::write(venv_dir.join("tool-version.txt"), SELF_VERSION.to_string())?;
+    FORCED_TO_UPDATE.store(true, atomic::Ordering::Relaxed);
+
+    Ok(venv_dir)
+}
+
+fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
         eprintln!("Upgrading pip");
     }
-    let mut pip_install_cmd = Command::new(dir.join("bin/pip"));
+    let mut pip_install_cmd = Command::new(venv_dir.join("bin/pip"));
     pip_install_cmd.arg("install");
     pip_install_cmd.arg("--upgrade");
     pip_install_cmd.arg("pip");
@@ -75,14 +125,13 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     if !status.success() {
         bail!("failed to initialize virtualenv (upgrade pip)");
     }
-
-    // install virtualenv and unearth
-    let mut pip_install_cmd = Command::new(dir.join("bin/pip"));
-    pip_install_cmd.arg("install");
-    pip_install_cmd.arg("virtualenv");
-    pip_install_cmd.arg("unearth");
-    pip_install_cmd.arg("pip-tools");
-    pip_install_cmd.arg("build");
+    let mut req_file = NamedTempFile::new()?;
+    writeln!(req_file, "{}", SELF_REQUIREMENTS)?;
+    let mut pip_install_cmd = Command::new(venv_dir.join("bin/pip"));
+    pip_install_cmd
+        .arg("install")
+        .arg("-r")
+        .arg(req_file.path());
     if output != CommandOutput::Quiet {
         eprintln!("Installing internal dependencies");
     }
@@ -98,16 +147,10 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     if !status.success() {
         bail!("failed to initialize virtualenv (install dependencies)");
     }
-
-    // create shims
     let shims = app_dir.join("shims");
     fs::remove_dir_all(&shims).ok();
-    fs::create_dir_all(&shims).context("tried to crate shim folder")?;
+    fs::create_dir_all(&shims).context("tried to create shim folder")?;
     let this = env::current_exe()?;
-
-    // on linux symlinks cause us to mis-detect the shim because
-    // it points to the actual executable.  So there we need to do
-    // hardlinks instead.
     #[cfg(target_os = "linux")]
     {
         fs::hard_link(&this, shims.join("python")).context("tried to hard-link python shim")?;
@@ -120,7 +163,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         symlink(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
     }
 
-    Ok(dir)
+    Ok(())
 }
 
 /// Returns the pip runner for the self venv
