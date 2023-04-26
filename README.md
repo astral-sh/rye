@@ -56,6 +56,11 @@ Type "help", "copyright", "credits" or "license" for more information.
 >>>
 ```
 
+**Note that does mean, that Rye will automatically download and
+install an appropriate Python binary for you.** These Python binaries
+are currently pulled from [the indygreg
+python-build-standalone releases](https://github.com/indygreg/python-build-standalone/releases).
+
 Install tools in isolation globally:
 
 ```
