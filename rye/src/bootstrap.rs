@@ -142,8 +142,8 @@ pub fn fetch(
     output: CommandOutput,
 ) -> Result<PythonVersion, Error> {
     if let Ok(version) = PythonVersion::try_from(version.clone()) {
-        let py_path = get_canonical_py_path(&version)?;
-        if py_path.is_dir() || py_path.is_file() {
+        let py_bin = get_py_bin(&version)?;
+        if py_bin.is_file() {
             if output == CommandOutput::Verbose {
                 eprintln!("Python version already downloaded. Skipping.");
             }
@@ -157,10 +157,11 @@ pub fn fetch(
     };
 
     let target_dir = get_canonical_py_path(&version)?;
+    let target_py_bin = get_py_bin(&version)?;
     if output == CommandOutput::Verbose {
         eprintln!("target dir: {}", target_dir.display());
     }
-    if target_dir.is_dir() {
+    if target_dir.is_dir() && target_py_bin.is_file() {
         if output == CommandOutput::Verbose {
             eprintln!("Python version already downloaded. Skipping.");
         }
