@@ -104,7 +104,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             build_cmd.arg("--wheel");
         }
         if cmd.sdist {
-            build_cmd.arg("--wheel");
+            build_cmd.arg("--sdist");
         }
 
         if output == CommandOutput::Quiet {
