@@ -1,11 +1,14 @@
-use std::fs;
 use std::os::unix::fs::symlink;
 use std::path::Path;
 use std::process::{Command, Stdio};
+use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
 use console::style;
-use pep508_rs::Requirement;
+use once_cell::sync::Lazy;
+use pep508_rs::{Requirement, VersionOrUrl};
+use regex::Regex;
+use url::Url;
 
 use crate::bootstrap::{ensure_self_venv, fetch};
 use crate::config::get_app_dir;
@@ -23,6 +26,8 @@ dist = distribution(sys.argv[1])
 for file in dist.files:
     print(os.path.normpath(dist.locate_file(file)))
 "#;
+static SUCCESSFULLY_DOWNLOADED_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new("(?m)^Successfully downloaded (.*?)$").unwrap());
 
 pub fn install(
     requirement: Requirement,
@@ -129,4 +134,41 @@ fn uninstall_helper(target_venv_path: &Path, shim_dir: &Path) -> Result<(), Erro
     }
 
     Ok(())
+}
+
+/// Super hacky way to ensure that if something points to a local path,
+/// we can figure out what the actual requirement name is.
+pub fn resolve_local_requirement(
+    maybe_path: &Path,
+    output: CommandOutput,
+) -> Result<Option<Requirement>, Error> {
+    let self_venv = ensure_self_venv(output)?;
+    if !maybe_path.exists() {
+        return Ok(None);
+    }
+
+    let output = Command::new(self_venv.join("bin/pip"))
+        .arg("download")
+        .arg("--no-deps")
+        .arg("--")
+        .arg(maybe_path)
+        .output()?;
+    let output = String::from_utf8_lossy(&output.stdout);
+    if let Some(c) = SUCCESSFULLY_DOWNLOADED_RE.captures(&output) {
+        let version_or_url = Some(VersionOrUrl::Url(
+            match Url::from_file_path(env::current_dir()?.join(maybe_path)) {
+                Ok(url) => url,
+                Err(()) => bail!("invalid path reference"),
+            },
+        ));
+        let name = c[1].trim().to_string();
+        Ok(Some(Requirement {
+            extras: None,
+            name,
+            version_or_url,
+            marker: None,
+        }))
+    } else {
+        Ok(None)
+    }
 }

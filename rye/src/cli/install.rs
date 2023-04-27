@@ -1,9 +1,11 @@
+use std::path::Path;
+
 use anyhow::{Context, Error};
 use clap::Parser;
 use pep508_rs::Requirement;
 
 use crate::cli::add::ReqExtras;
-use crate::installer::install;
+use crate::installer::{install, resolve_local_requirement};
 use crate::sources::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
@@ -31,16 +33,20 @@ pub struct Args {
 pub fn execute(mut cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
 
-    let mut requirement: Requirement = cmd
-        .requirement
-        .parse()
-        .with_context(|| {
+    let mut requirement = match resolve_local_requirement(Path::new(&cmd.requirement), output)? {
+        Some(req) => req,
+        None => cmd.requirement.parse::<Requirement>().with_context(|| {
             if cmd.requirement.contains("://") {
-                format!("failed to parse requirement '{}'. It looks like a URL, maybe you wanted to use --url or --git", cmd.requirement)
+                format!(
+                    "failed to parse requirement '{}'. It looks like a URL, maybe \
+                        you wanted to use --url or --git",
+                    cmd.requirement
+                )
             } else {
                 format!("failed to parse requirement '{}'", cmd.requirement)
             }
-        })?;
+        })?,
+    };
 
     // installations here always use absolute paths for local references
     // because we do not have a rye workspace to work with.
