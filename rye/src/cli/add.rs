@@ -54,6 +54,10 @@ pub struct ReqExtras {
 }
 
 impl ReqExtras {
+    pub fn force_absolute(&mut self) {
+        self.absolute = true;
+    }
+
     pub fn apply_to_requirement(&self, req: &mut Requirement) -> Result<(), Error> {
         if let Some(ref git) = self.git {
             // XXX: today they are all aliases, it might be better to change

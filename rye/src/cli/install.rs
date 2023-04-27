@@ -28,7 +28,7 @@ pub struct Args {
     quiet: bool,
 }
 
-pub fn execute(cmd: Args) -> Result<(), Error> {
+pub fn execute(mut cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
 
     let mut requirement: Requirement = cmd
@@ -41,6 +41,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 format!("failed to parse requirement '{}'", cmd.requirement)
             }
         })?;
+
+    // installations here always use absolute paths for local references
+    // because we do not have a rye workspace to work with.
+    cmd.req_extras.force_absolute();
     cmd.req_extras.apply_to_requirement(&mut requirement)?;
 
     let py_ver: PythonVersionRequest = match cmd.python {
