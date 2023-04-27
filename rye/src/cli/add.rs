@@ -1,11 +1,14 @@
+use std::env;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
 use pep440_rs::VersionSpecifiers;
 use pep508_rs::{Requirement, VersionOrUrl};
 use serde::Deserialize;
+use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::pyproject::{DependencyKind, PyProject};
@@ -23,8 +26,14 @@ pub struct ReqExtras {
     #[arg(long)]
     git: Option<String>,
     /// Install the given package from this URL
-    #[arg(long, conflicts_with = "git")]
+    #[arg(long, conflicts_with = "git", conflicts_with = "path")]
     url: Option<String>,
+    /// Install the given package from this local path
+    #[arg(long, conflicts_with = "git", conflicts_with = "url")]
+    path: Option<PathBuf>,
+    /// Force non interpolated absolute paths.
+    #[arg(long, requires = "path")]
+    absolute: bool,
     /// Install a specific tag.
     #[arg(long, requires = "git")]
     tag: Option<String>,
@@ -74,6 +83,25 @@ impl ReqExtras {
                     url.parse()
                         .with_context(|| format!("unable to parse '{}' as url", url))?,
                 )),
+            };
+        } else if let Some(ref path) = self.path {
+            let file_url = if self.absolute {
+                Url::from_file_path(env::current_dir()?.join(path))
+                    .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
+            } else {
+                let base = env::current_dir()?;
+                let rv = pathdiff::diff_paths(base.join(path), &base).ok_or_else(|| {
+                    anyhow!(
+                        "unable to create relative path from {} to {}",
+                        base.display(),
+                        path.display()
+                    )
+                })?;
+                Url::from_file_path(Path::new("/${PROJECT_ROOT}").join(rv)).unwrap()
+            };
+            req.version_or_url = match req.version_or_url {
+                Some(_) => bail!("requirement already has a version marker"),
+                None => Some(pep508_rs::VersionOrUrl::Url(file_url)),
             };
         }
         for feature in self.features.iter().flat_map(|x| x.split(',')) {

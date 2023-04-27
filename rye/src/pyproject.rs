@@ -16,7 +16,7 @@ use pep508_rs::Requirement;
 use regex::Regex;
 use toml_edit::{Array, Document, Item, Table, TableLike, Value};
 
-use crate::utils::format_requirement;
+use crate::utils::{expand_env_vars, format_requirement};
 
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
 
@@ -25,6 +25,34 @@ pub enum DependencyKind<'a> {
     Normal,
     Dev,
     Optional(Cow<'a, str>),
+}
+
+#[derive(Clone, Debug)]
+pub struct DependencyRef {
+    raw: String,
+}
+
+impl fmt::Display for DependencyRef {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.raw)
+    }
+}
+
+impl DependencyRef {
+    /// Creates a new dependency ref from the given string.
+    pub fn new(s: &str) -> DependencyRef {
+        DependencyRef { raw: s.to_string() }
+    }
+
+    /// Expands and parses the dependency ref into a requirement.
+    ///
+    /// The function is invoked for every referenced variable.
+    pub fn expand<F>(&self, f: F) -> Result<Requirement, Error>
+    where
+        F: for<'a> FnMut(&'a str) -> Option<String>,
+    {
+        Ok(expand_env_vars(&self.raw, f).parse()?)
+    }
 }
 
 /// A reference to a script
@@ -431,7 +459,7 @@ impl PyProject {
     pub fn iter_dependencies(
         &self,
         kind: DependencyKind,
-    ) -> impl Iterator<Item = Requirement> + '_ {
+    ) -> impl Iterator<Item = DependencyRef> + '_ {
         let sec = match kind {
             DependencyKind::Normal => self.doc.get("project").and_then(|x| x.get("dependencies")),
             DependencyKind::Dev => self
@@ -449,7 +477,7 @@ impl PyProject {
             .into_iter()
             .flatten()
             .filter_map(|x| x.as_str())
-            .filter_map(|x| Requirement::from_str(x).ok())
+            .map(DependencyRef::new)
     }
 
     /// Save back changes

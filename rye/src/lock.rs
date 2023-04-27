@@ -129,17 +129,23 @@ fn dump_dependencies(
     dep_kind: DependencyKind,
 ) -> Result<(), Error> {
     for dep in pyproject.iter_dependencies(dep_kind) {
-        if let Some(path) = local_projects.get(&normalize_package_name(&dep.name)) {
-            // if there are extras and we have a local dependency, we just write it
-            // out again for pip-compile to pick up the extras.
-            // XXX: this drops the marker, but pip-compile already has other
-            // problems with markers too: https://github.com/jazzband/pip-tools/issues/826
-            if let Some(ref extras) = dep.extras {
-                writeln!(out, "-e {}[{}]", path, extras.join(","))?;
+        if let Ok(expanded_dep) = dep.expand(|_| {
+            // we actually do not care what it expands to much, for as long
+            // as the end result parses
+            Some("VARIABLE".into())
+        }) {
+            if let Some(path) = local_projects.get(&normalize_package_name(&expanded_dep.name)) {
+                // if there are extras and we have a local dependency, we just write it
+                // out again for pip-compile to pick up the extras.
+                // XXX: this drops the marker, but pip-compile already has other
+                // problems with markers too: https://github.com/jazzband/pip-tools/issues/826
+                if let Some(ref extras) = expanded_dep.extras {
+                    writeln!(out, "-e {}[{}]", path, extras.join(","))?;
+                }
+                continue;
             }
-        } else {
-            writeln!(out, "{}", dep)?;
         }
+        writeln!(out, "{}", dep)?;
     }
     Ok(())
 }
@@ -254,6 +260,7 @@ fn finalize_lockfile(generated: &Path, out: &Path, workspace_root: &Path) -> Res
 }
 
 fn make_relative_url(path: &Path, base: &Path) -> Result<String, Error> {
+    // TODO: consider using ${PROJECT_ROOT} here which is what pdm does or make-req prints
     let rv = pathdiff::diff_paths(path, base).ok_or_else(|| {
         anyhow!(
             "unable to create relative path from {} to {}",

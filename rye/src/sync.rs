@@ -186,9 +186,14 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 eprintln!("Installing dependencies");
             }
             let mut pip_sync_cmd = Command::new(self_venv.join("bin/pip-sync"));
+            let root = pyproject.workspace_path();
             pip_sync_cmd
                 .env("PYTHONPATH", dir.path())
-                .current_dir(pyproject.workspace_path())
+                // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
+                // so let's make sure it is url escaped.  This is pretty hacky but
+                // good enough for now.
+                .env("PROJECT_ROOT", root.to_string_lossy().replace(' ', "%2F"))
+                .current_dir(&root)
                 .arg("--python-executable")
                 .arg(venv.join("bin/python"))
                 // note that the double quotes are necessary to properly handle

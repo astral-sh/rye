@@ -1,9 +1,14 @@
+use std::borrow::Cow;
 use std::io::Cursor;
 use std::path::Path;
 use std::{fmt, fs};
 
 use anyhow::Error;
+use once_cell::sync::Lazy;
 use pep508_rs::{Requirement, VersionOrUrl};
+use regex::{Captures, Regex};
+
+static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").unwrap());
 
 /// Controls the fetch output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -48,7 +53,12 @@ pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
                         write!(f, "{}", version_specifier.join(", "))?;
                     }
                     VersionOrUrl::Url(url) => {
-                        write!(f, " @ {}", url)?;
+                        // retain `{` and `}` for interpolation in URLs
+                        write!(
+                            f,
+                            " @ {}",
+                            url.to_string().replace("%7B", "{").replace("%7D", "}")
+                        )?;
                     }
                 }
             }
@@ -60,6 +70,14 @@ pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
     }
 
     Helper(req)
+}
+
+/// Helper to expand envvars
+pub fn expand_env_vars<F>(string: &str, mut f: F) -> Cow<'_, str>
+where
+    F: for<'a> FnMut(&'a str) -> Option<String>,
+{
+    ENV_VAR_RE.replace_all(string, |m: &Captures| f(&m[1]).unwrap_or_default())
 }
 
 /// Unpacks a tarball.
@@ -88,4 +106,15 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
         }
     }
     Ok(())
+}
+
+#[test]
+fn test_format_requirement() {
+    // this support is just for generating dependencies.  Parsing such requirements
+    // is only partially supported as expansion has to happen before parsing.
+    let req: Requirement = "foo @ file:///${PROJECT_ROOT}/foo".parse().unwrap();
+    assert_eq!(
+        format_requirement(&req).to_string(),
+        "foo @ file:///${PROJECT_ROOT}/foo"
+    );
 }
