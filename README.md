@@ -213,6 +213,9 @@ the name might not be great, in which case you can provide an explicit name with
 To remove downloaded or linked toolchains, you can use the `rye toolchain remove` command.
 To list what's available, use `rye toolchain list`.
 
+Additionally, you can view the list of downloadable Python toolchains with the command 
+`rye toolchain list --include-downloadable`.
+
 ## Global Tools
 
 If you want tools to be installed into isolated virtualenvs (like pipsi and pipx), you
