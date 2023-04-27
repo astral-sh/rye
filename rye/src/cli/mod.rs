@@ -7,6 +7,7 @@ mod fetch;
 mod init;
 mod install;
 mod lock;
+mod make_req;
 mod pin;
 mod remove;
 mod run;
@@ -41,6 +42,7 @@ enum Command {
     Init(init::Args),
     Install(install::Args),
     Lock(lock::Args),
+    MakeReq(make_req::Args),
     Pin(pin::Args),
     Remove(remove::Args),
     Run(run::Args),
@@ -72,6 +74,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Init(cmd) => init::execute(cmd),
         Command::Install(cmd) => install::execute(cmd),
         Command::Lock(cmd) => lock::execute(cmd),
+        Command::MakeReq(cmd) => make_req::execute(cmd),
         Command::Pin(cmd) => pin::execute(cmd),
         Command::Remove(cmd) => remove::execute(cmd),
         Command::Run(cmd) => run::execute(cmd),
