@@ -10,7 +10,7 @@ license = "MIT"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
 clap = { version = "4.2.2", default-features = false, features = ["derive", "usage", "wrap_help", "std"] }
 console = "0.15.5"
-curl = { version = "0.4.44", features = ["ssl", "static-curl"] }
+curl = { version = "0.4.44", default-features = false }
 decompress = { version = "0.6.0", default-features = false, features = ["tarzst", "targz"] }
 flate2 = "1.0.25"
 git-testament = "0.2.4"
@@ -37,3 +37,7 @@ url = "2.3.1"
 walkdir = "2.3.3"
 which = "4.4.0"
 zstd = "0.12.3"
+openssl = {version = "*", features = ["vendored"], optional = true}
+
+[features]
+ssl = ["curl/ssl", "curl/static-curl", "openssl"]
