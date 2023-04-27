@@ -44,6 +44,11 @@ pick up the right Python without manually activating the virtualenv, you can add
 of a rye managed project, the regular Python is picked up automatically. For the global
 tool installation you need to add the shims to the path.
 
+## Deinstallation
+
+If you no longer want anything to do with rye, all you need to delete is the `~/.rye`
+folder.  Everything that it has downloaded / created is placed in there.
+
 ## Some of the things it does
 
 It automatically installs and manages Python:
