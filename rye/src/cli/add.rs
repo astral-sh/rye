@@ -17,20 +17,89 @@ struct Match {
     version: String,
 }
 
+#[derive(Parser, Debug)]
+pub struct ReqExtras {
+    /// Install the given package from this git repository
+    #[arg(long)]
+    git: Option<String>,
+    /// Install the given package from this URL
+    #[arg(long, conflicts_with = "git")]
+    url: Option<String>,
+    /// Install a specific tag.
+    #[arg(long, requires = "git")]
+    tag: Option<String>,
+    /// Update to a specific git rev.
+    #[arg(
+        long,
+        conflicts_with = "tag",
+        conflicts_with = "branch",
+        requires = "git"
+    )]
+    rev: Option<String>,
+    /// Update to a specific git branch.
+    #[arg(long, conflicts_with = "tag", conflicts_with = "rev", requires = "git")]
+    branch: Option<String>,
+    /// Adds a dependency with a specific feature.
+    #[arg(long)]
+    features: Vec<String>,
+}
+
+impl ReqExtras {
+    pub fn apply_to_requirement(&self, req: &mut Requirement) -> Result<(), Error> {
+        if let Some(ref git) = self.git {
+            // XXX: today they are all aliases, it might be better to change
+            // tag to refs/tags/<tag> and branch to refs/heads/<branch> but
+            // this creates some ugly warnings in pip today
+            let suffix = match self
+                .rev
+                .as_ref()
+                .or(self.tag.as_ref())
+                .or(self.branch.as_ref())
+            {
+                Some(rev) => format!("@{}", rev),
+                None => "".into(),
+            };
+            req.version_or_url = match req.version_or_url {
+                Some(_) => bail!("requirement already has a version marker"),
+                None => Some(pep508_rs::VersionOrUrl::Url(
+                    format!("git+{}{}", git, suffix).parse().with_context(|| {
+                        format!("unable to interpret '{}{}' as git reference", git, suffix)
+                    })?,
+                )),
+            };
+        } else if let Some(ref url) = self.url {
+            req.version_or_url = match req.version_or_url {
+                Some(_) => bail!("requirement already has a version marker"),
+                None => Some(pep508_rs::VersionOrUrl::Url(
+                    url.parse()
+                        .with_context(|| format!("unable to parse '{}' as url", url))?,
+                )),
+            };
+        }
+        for feature in self.features.iter().flat_map(|x| x.split(',')) {
+            let feature = feature.trim();
+            let extras = req.extras.get_or_insert_with(Vec::new);
+            if !extras.iter().any(|x| x == feature) {
+                extras.push(feature.into());
+            }
+        }
+        Ok(())
+    }
+}
+
 /// Adds a Python package to this project.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The package to add as PEP 508 requirement string. e.g. 'flask==2.2.3'
     requirements: Vec<String>,
+    #[command(flatten)]
+    req_extras: ReqExtras,
     /// Add this as dev dependency.
     #[arg(long)]
     dev: bool,
     /// Add this to an optional dependency group.
     #[arg(long, conflicts_with = "dev")]
     optional: Option<String>,
-    /// Adds a dependency with a specific feature.
-    #[arg(short, long)]
-    features: Vec<String>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -50,13 +119,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     for str_requirement in cmd.requirements {
         let mut requirement = Requirement::from_str(&str_requirement)?;
-        for feature in cmd.features.iter().flat_map(|x| x.split(',')) {
-            let feature = feature.trim();
-            let extras = requirement.extras.get_or_insert_with(Vec::new);
-            if !extras.iter().any(|x| x == feature) {
-                extras.push(feature.into());
-            }
-        }
+        cmd.req_extras.apply_to_requirement(&mut requirement)?;
 
         let unearth = Command::new(&unearth_path)
             .arg("--")
