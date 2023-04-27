@@ -10,6 +10,17 @@ use regex::{Captures, Regex};
 
 static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").unwrap());
 
+#[derive(Debug)]
+pub struct QuietExit(pub i32);
+
+impl std::error::Error for QuietExit {}
+
+impl fmt::Display for QuietExit {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "exit with {}", self.0)
+    }
+}
+
 /// Controls the fetch output.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
 pub enum CommandOutput {

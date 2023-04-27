@@ -1,3 +1,7 @@
+use std::process;
+
+use crate::utils::QuietExit;
+
 mod bootstrap;
 mod cli;
 mod config;
@@ -9,5 +13,14 @@ mod sync;
 mod utils;
 
 pub fn main() -> Result<(), anyhow::Error> {
-    cli::execute()
+    match cli::execute() {
+        Ok(()) => Ok(()),
+        Err(err) => {
+            if let Some(QuietExit(code)) = err.downcast_ref() {
+                process::exit(*code);
+            } else {
+                Err(err)
+            }
+        }
+    }
 }

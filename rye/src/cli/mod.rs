@@ -12,6 +12,7 @@ mod pin;
 mod remove;
 mod run;
 mod rye;
+mod shell;
 mod shim;
 mod show;
 mod sync;
@@ -46,6 +47,7 @@ enum Command {
     Pin(pin::Args),
     Remove(remove::Args),
     Run(run::Args),
+    Shell(shell::Args),
     Show(show::Args),
     Sync(sync::Args),
     Toolchain(toolchain::Args),
@@ -78,6 +80,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Pin(cmd) => pin::execute(cmd),
         Command::Remove(cmd) => remove::execute(cmd),
         Command::Run(cmd) => run::execute(cmd),
+        Command::Shell(cmd) => shell::execute(cmd),
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
         Command::Toolchain(cmd) => toolchain::execute(cmd),
