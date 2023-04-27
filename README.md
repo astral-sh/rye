@@ -255,4 +255,12 @@ $ rye sync
 $ rye run black .
 ```
 
+## Updating Rye
+
+To update rye, you can use this command:
+
+```
+$ rye self update
+```
+
 License: MIT
