@@ -127,7 +127,7 @@ fn test_quiet_exit_display() {
 
 #[cfg(test)]
 mod test_format_requirement {
-    use super::*;
+    use super::{format_requirement, Requirement};
 
     #[test]
     fn test_format_requirement_simple() {
