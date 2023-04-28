@@ -120,12 +120,97 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
 }
 
 #[test]
-fn test_format_requirement() {
-    // this support is just for generating dependencies.  Parsing such requirements
-    // is only partially supported as expansion has to happen before parsing.
-    let req: Requirement = "foo @ file:///${PROJECT_ROOT}/foo".parse().unwrap();
-    assert_eq!(
-        format_requirement(&req).to_string(),
-        "foo @ file:///${PROJECT_ROOT}/foo"
-    );
+fn test_quiet_exit_display() {
+    let quiet_exit = QuietExit(0);
+    assert_eq!("exit with 0", format!("{}", quiet_exit));
+}
+
+#[cfg(test)]
+mod test_format_requirement {
+    use super::{format_requirement, Requirement};
+
+    #[test]
+    fn test_format_requirement_simple() {
+        let req: Requirement = "foo>=1.0.0".parse().unwrap();
+        assert_eq!("foo>=1.0.0", format_requirement(&req).to_string());
+    }
+
+    #[test]
+    fn test_format_requirement_complex() {
+        let req: Requirement = "foo[extra1,extra2]>=1.0.0,<2.0.0; python_version<'3.8'"
+            .parse()
+            .unwrap();
+        assert_eq!(
+            "foo[extra1,extra2]>=1.0.0, <2.0.0 ; python_version < '3.8'",
+            format_requirement(&req).to_string()
+        );
+    }
+    #[test]
+    fn test_format_requirement_file_path() {
+        // this support is just for generating dependencies.  Parsing such requirements
+        // is only partially supported as expansion has to happen before parsing.
+        let req: Requirement = "foo @ file:///${PROJECT_ROOT}/foo".parse().unwrap();
+        assert_eq!(
+            format_requirement(&req).to_string(),
+            "foo @ file:///${PROJECT_ROOT}/foo"
+        );
+    }
+}
+
+#[cfg(test)]
+mod test_command_output {
+    use super::CommandOutput;
+
+    #[test]
+    fn test_command_output_defaults() {
+        assert_eq!(CommandOutput::Normal, CommandOutput::default());
+    }
+
+    #[test]
+    fn test_command_output_from_quiet_and_verbose() {
+        let quiet = true;
+        let verbose = true;
+
+        assert_eq!(
+            CommandOutput::Quiet,
+            CommandOutput::from_quiet_and_verbose(quiet, false)
+        );
+        assert_eq!(
+            CommandOutput::Verbose,
+            CommandOutput::from_quiet_and_verbose(false, verbose)
+        );
+        assert_eq!(
+            CommandOutput::Normal,
+            CommandOutput::from_quiet_and_verbose(false, false)
+        );
+        assert_eq!(
+            CommandOutput::Quiet,
+            CommandOutput::from_quiet_and_verbose(quiet, verbose)
+        ); // Quiet takes precedence over verbose
+    }
+}
+
+#[cfg(test)]
+mod test_expand_env_vars {
+    use super::expand_env_vars;
+
+    #[test]
+    fn test_expand_env_vars_no_expansion() {
+        let input = "This string has no env vars";
+        let output = expand_env_vars(input, |_| None);
+        assert_eq!(input, output);
+    }
+
+    #[test]
+    fn test_expand_env_vars_with_expansion() {
+        let input = "This string has an env var: ${EXAMPLE_VAR}";
+        let output = expand_env_vars(input, |var| {
+            if var == "EXAMPLE_VAR" {
+                Some("Example value".to_string())
+            } else {
+                None
+            }
+        });
+        assert_eq!("This string has an env var: Example value", output);
+    }
 }
