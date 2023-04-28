@@ -16,6 +16,9 @@ pub struct Args {
     requirement: String,
     #[command(flatten)]
     req_extras: ReqExtras,
+    /// Include scripts from a given dependency.
+    #[arg(long)]
+    include_dep: Vec<String>,
     /// Optionally the Python version to use.
     #[arg(short, long)]
     python: Option<String>,
@@ -64,6 +67,6 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
         },
     };
 
-    install(requirement, &py_ver, cmd.force, output)?;
+    install(requirement, &py_ver, cmd.force, &cmd.include_dep, output)?;
     Ok(())
 }

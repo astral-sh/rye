@@ -6,6 +6,9 @@ most recent changes however.
 
 ## April
 
+- Rye's `install` command now accepts a `--include-dep` parameter to include
+  scripts from one or more given dependencies.
+
 - Rye now honors `requires-python` in the `add` command.  This means the the
   initial resolution will not pick a version higher than what's supported by
   the lower boundary.
