@@ -34,6 +34,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     if let Some(ver) = load_python_version() {
         println!("pinned python: {}", style(ver).cyan());
     }
+    if let Some(ver) = project.target_python_version() {
+        println!("min python: {}", ver);
+    }
 
     if let Some(workspace) = project.workspace() {
         println!(

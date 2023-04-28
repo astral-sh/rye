@@ -14,6 +14,24 @@ use crate::bootstrap::ensure_self_venv;
 use crate::pyproject::{DependencyKind, PyProject};
 use crate::utils::{format_requirement, CommandOutput};
 
+const PACKAGE_FINDER_SCRIPT: &str = r#"
+import sys
+import json
+from unearth.finder import PackageFinder
+
+py_ver = tuple(map(int, sys.argv[1].split('.')))
+package = sys.argv[2]
+
+finder = PackageFinder(
+    index_urls=["https://pypi.org/simple/"],
+)
+finder.target_python.py_ver = py_ver
+m = finder.find_matches(package)
+if not m:
+    sys.exit(1)
+print(json.dumps(m[0].as_json()))
+"#;
+
 #[derive(Deserialize, Debug)]
 struct Match {
     name: String,
@@ -142,24 +160,35 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let mut unearth_path = ensure_self_venv(output).context("error bootstrapping venv")?;
+    let mut python_path = ensure_self_venv(output).context("error bootstrapping venv")?;
     let mut added = Vec::new();
-    unearth_path.push("bin");
-    unearth_path.push("unearth");
+    python_path.push("bin");
+    python_path.push("python");
 
     let mut pyproject_toml = PyProject::discover()?;
+    let py_ver = match pyproject_toml.target_python_version() {
+        Some(ver) => ver.format_simple(),
+        None => "".to_string(),
+    };
 
     for str_requirement in cmd.requirements {
         let mut requirement = Requirement::from_str(&str_requirement)?;
         cmd.req_extras.apply_to_requirement(&mut requirement)?;
 
-        let unearth = Command::new(&unearth_path)
-            .arg("--")
-            .arg(&str_requirement)
+        let unearth = Command::new(&python_path)
+            .arg("-c")
+            .arg(PACKAGE_FINDER_SCRIPT)
+            .arg(&py_ver)
+            .arg(&format_requirement(&requirement).to_string())
             .stdout(Stdio::piped())
             .output()?;
         if !unearth.status.success() {
-            bail!("did not find package {}", format_requirement(&requirement));
+            let log = String::from_utf8_lossy(&unearth.stderr);
+            bail!(
+                "did not find package {}\n{}",
+                format_requirement(&requirement),
+                log
+            );
         }
 
         let m: Match = serde_json::from_slice(&unearth.stdout)?;

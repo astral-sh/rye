@@ -7,7 +7,7 @@ use console::style;
 use minijinja::{context, Environment};
 use serde::Serialize;
 
-use crate::config::get_default_author;
+use crate::config::{get_default_author, load_python_version};
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
 #[value(rename_all = "snake_case")]
@@ -102,7 +102,12 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     fs::create_dir_all(&dir).ok();
 
     // Write pyproject.toml
-    let py = cmd.py.as_deref().unwrap_or("3.8");
+    let py = match cmd.py {
+        Some(py) => py,
+        None => load_python_version()
+            .map(|x| format!("{}.{}", x.major, x.minor))
+            .unwrap_or_else(|| "3.8".into()),
+    };
     let name = slug::slugify(dir.file_name().unwrap().to_string_lossy());
     let version = "0.1.0";
     let requires_python = format!(">= {}", py);

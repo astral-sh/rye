@@ -58,8 +58,8 @@ impl SyncOptions {
 
 /// Config written into the virtualenv for sync purposes.
 #[derive(Serialize, Deserialize, Debug)]
-struct VenvMarker {
-    python: PythonVersion,
+pub struct VenvMarker {
+    pub python: PythonVersion,
 }
 
 /// Synchronizes a project's virtualenv.
@@ -69,7 +69,6 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     let dev_lockfile = pyproject.workspace_path().join("requirements-dev.lock");
     let venv = pyproject.venv_path();
     let py_ver = load_python_version().unwrap_or_else(PythonVersion::latest_cpython);
-    let marker_file = venv.join("rye-venv.json");
     let output = cmd.output;
 
     // ensure we are bootstrapped
@@ -77,15 +76,12 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
 
     let mut recreate = cmd.mode == SyncMode::Full;
     if venv.is_dir() {
-        if marker_file.is_file() {
-            let contents = fs::read(&marker_file).context("could not read venv marker file")?;
-            let marker: VenvMarker =
-                serde_json::from_slice(&contents).context("malformed venv marker file")?;
-            if marker.python != py_ver {
+        if let Some(marker_python) = pyproject.venv_python_version() {
+            if marker_python != py_ver {
                 if cmd.output != CommandOutput::Quiet {
                     eprintln!(
                         "Python version mismatch (found {}, expect {}), recreating.",
-                        marker.python, py_ver
+                        marker_python, py_ver
                     );
                 }
                 recreate = true;
@@ -127,7 +123,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         create_virtualenv(output, &self_venv, &py_ver, &venv)
             .context("failed creating virtualenv ahead of sync")?;
         fs::write(
-            &marker_file,
+            venv.join("rye-venv.json"),
             serde_json::to_string_pretty(&VenvMarker { python: py_ver })?,
         )
         .context("failed writing venv marker file")?;

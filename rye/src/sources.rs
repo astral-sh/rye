@@ -4,6 +4,7 @@ use std::fmt;
 use std::str::FromStr;
 
 use anyhow::{anyhow, Error};
+use pep440_rs::Version;
 use serde::{de, Deserialize, Serialize};
 
 mod indygreg_python {
@@ -120,6 +121,21 @@ pub struct PythonVersionRequest {
     pub suffix: Option<Cow<'static, str>>,
 }
 
+impl PythonVersionRequest {
+    /// Returns a simplified format of the version request.
+    pub fn format_simple(&self) -> String {
+        use std::fmt::Write;
+        let mut rv = format!("{}", self.major);
+        if let Some(minor) = self.minor {
+            write!(rv, ".{}", minor).unwrap();
+            if let Some(patch) = self.patch {
+                write!(rv, ".{}", patch).unwrap();
+            }
+        }
+        rv
+    }
+}
+
 impl From<PythonVersion> for PythonVersionRequest {
     fn from(value: PythonVersion) -> Self {
         PythonVersionRequest {
@@ -128,6 +144,18 @@ impl From<PythonVersion> for PythonVersionRequest {
             minor: Some(value.minor),
             patch: Some(value.patch),
             suffix: value.suffix,
+        }
+    }
+}
+
+impl From<Version> for PythonVersionRequest {
+    fn from(value: Version) -> Self {
+        PythonVersionRequest {
+            kind: None,
+            major: value.release.first().map(|x| *x as _).unwrap_or(3),
+            minor: value.release.get(1).map(|x| *x as _),
+            patch: value.release.get(2).map(|x| *x as _),
+            suffix: None,
         }
     }
 }

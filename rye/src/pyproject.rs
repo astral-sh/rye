@@ -12,10 +12,14 @@ use std::sync::Arc;
 use anyhow::{anyhow, bail, Context, Error};
 use globset::Glob;
 use once_cell::sync::Lazy;
+use pep440_rs::{Operator, VersionSpecifiers};
 use pep508_rs::Requirement;
 use regex::Regex;
 use toml_edit::{Array, Document, Item, Table, TableLike, Value};
 
+use crate::config::load_python_version;
+use crate::sources::{PythonVersion, PythonVersionRequest};
+use crate::sync::VenvMarker;
 use crate::utils::{expand_env_vars, format_requirement};
 
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
@@ -327,6 +331,68 @@ impl PyProject {
     /// Returns the virtualenv bin path of the virtualenv.
     pub fn venv_bin_path(&self) -> Cow<'_, Path> {
         Cow::Owned(self.venv_path().join("bin"))
+    }
+
+    /// Reads the venv python version marker.
+    pub fn venv_python_version(&self) -> Option<PythonVersion> {
+        let marker_file = self.venv_path().join("rye-venv.json");
+        let contents = fs::read(marker_file).ok()?;
+        let marker: VenvMarker = serde_json::from_slice(&contents).ok()?;
+        Some(marker.python)
+    }
+
+    /// Returns the project's target python version
+    pub fn target_python_version(&self) -> Option<PythonVersionRequest> {
+        // if there is a lower bound defined in requires-python, we go
+        // with that.
+        let lower_bound = self
+            .doc
+            .get("project")
+            .and_then(|x| x.get("requires-python"))
+            .and_then(|x| x.as_str())
+            .and_then(|s| s.parse::<VersionSpecifiers>().ok())
+            .and_then(|versions| {
+                versions
+                    .iter()
+                    .filter(|x| {
+                        matches!(
+                            x.operator(),
+                            Operator::Equal
+                                | Operator::EqualStar
+                                | Operator::GreaterThanEqual
+                                | Operator::GreaterThan
+                        )
+                    })
+                    .map(|x| {
+                        let mut rv = PythonVersionRequest::from(x.version().clone());
+                        // this is pretty shitty, but probably good enough
+                        if matches!(x.operator(), Operator::GreaterThan) {
+                            if let Some(ref mut patch) = rv.patch {
+                                *patch += 1;
+                            } else if let Some(ref mut minor) = rv.minor {
+                                *minor += 1;
+                            }
+                        }
+                        rv
+                    })
+                    .min()
+            });
+
+        if let Some(lower_bound) = lower_bound {
+            return Some(lower_bound);
+        }
+
+        // otherwise let's check if we have a version in the virtualenv
+        if let Some(marker_python) = self.venv_python_version() {
+            return Some(marker_python.into());
+        }
+
+        // if nothing else works, pick up the .python-version file
+        if let Some(pyenv_python) = load_python_version() {
+            return Some(pyenv_python.into());
+        }
+
+        None
     }
 
     /// Returns the project name.
