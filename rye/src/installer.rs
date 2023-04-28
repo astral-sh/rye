@@ -86,15 +86,24 @@ pub fn install(
         .map(Path::new)
         .collect::<Vec<_>>();
 
+    let mut installed_any = false;
     for file in files {
         if let Ok(rest) = file.strip_prefix(&target_venv_bin_path) {
             let shim_target = shim_dir.join(rest);
             symlink(file, shim_target)
                 .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
+            installed_any = true;
             if output != CommandOutput::Quiet {
                 eprintln!("installed script {}", style(rest.display()).cyan());
             }
         }
+    }
+
+    if !installed_any && output != CommandOutput::Quiet {
+        eprintln!(
+            "{}",
+            style("warning: installed package did not expose any scripts").red()
+        );
     }
 
     Ok(())
