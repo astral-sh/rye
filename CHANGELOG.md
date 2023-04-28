@@ -25,3 +25,13 @@ most recent changes however.
 
 - Added a `make-req` command to conveniently format out PEP 508 requirement
   strings from parts.
+
+- The internal virtualenv used to manage `pip-tools` and other libraries now
+  automatically updates when necessary.
+
+- `rye toolchain register` can now be used to register a local python installation
+  as toolchain with rye.
+
+- `rye build` was added to allow building `sdist` and `bdist_wheel` distributions.
+
+- Rye now correctly handles whitespace in folder names.
