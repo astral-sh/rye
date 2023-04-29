@@ -21,12 +21,16 @@ from unearth.finder import PackageFinder
 
 py_ver = tuple(map(int, sys.argv[1].split('.')))
 package = sys.argv[2]
+if len(sys.argv) > 3 and sys.argv[3] == "--pre=True":
+    allow_prereleases = True
+else:
+    allow_prereleases = False
 
 finder = PackageFinder(
     index_urls=["https://pypi.org/simple/"],
 )
 finder.target_python.py_ver = py_ver
-m = finder.find_matches(package)
+m = finder.find_matches(package, allow_prereleases=allow_prereleases)
 if not m:
     sys.exit(1)
 print(json.dumps(m[0].as_json()))
@@ -150,6 +154,9 @@ pub struct Args {
     /// Add this to an optional dependency group.
     #[arg(long, conflicts_with = "dev")]
     optional: Option<String>,
+    /// Include pre-releases when finding a package version.
+    #[arg(long)]
+    pre: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -175,13 +182,16 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let mut requirement = Requirement::from_str(&str_requirement)?;
         cmd.req_extras.apply_to_requirement(&mut requirement)?;
 
-        let unearth = Command::new(&python_path)
+        let mut unearth = Command::new(&python_path);
+        unearth
             .arg("-c")
             .arg(PACKAGE_FINDER_SCRIPT)
             .arg(&py_ver)
-            .arg(&format_requirement(&requirement).to_string())
-            .stdout(Stdio::piped())
-            .output()?;
+            .arg(&format_requirement(&requirement).to_string());
+        if cmd.pre {
+            unearth.arg("--pre=True");
+        }
+        let unearth = unearth.stdout(Stdio::piped()).output()?;
         if !unearth.status.success() {
             let log = String::from_utf8_lossy(&unearth.stderr);
             bail!(
