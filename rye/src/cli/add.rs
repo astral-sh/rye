@@ -18,22 +18,25 @@ const PACKAGE_FINDER_SCRIPT: &str = r#"
 import sys
 import json
 from unearth.finder import PackageFinder
+from packaging.version import Version
 
 py_ver = tuple(map(int, sys.argv[1].split('.')))
 package = sys.argv[2]
-if len(sys.argv) > 3 and sys.argv[3] == "--pre=True":
-    allow_prereleases = True
-else:
-    allow_prereleases = False
+pre = len(sys.argv) > 3 and sys.argv[3] == "--pre"
 
 finder = PackageFinder(
     index_urls=["https://pypi.org/simple/"],
 )
 finder.target_python.py_ver = py_ver
-m = finder.find_matches(package, allow_prereleases=allow_prereleases)
-if not m:
+choices = iter(finder.find_matches(package))
+if not pre:
+    choices = (m for m in choices if not Version(m.version).is_prerelease)
+
+best = next(choices, None)
+if best is None:
     sys.exit(1)
-print(json.dumps(m[0].as_json()))
+print(json.dumps(best.as_json()))
+
 "#;
 
 #[derive(Deserialize, Debug)]
@@ -189,7 +192,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .arg(&py_ver)
             .arg(&format_requirement(&requirement).to_string());
         if cmd.pre {
-            unearth.arg("--pre=True");
+            unearth.arg("--pre");
         }
         let unearth = unearth.stdout(Stdio::piped()).output()?;
         if !unearth.status.success() {
