@@ -28,6 +28,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     fs::write(&version_file, format!("{}\n", to_write))
         .context("failed to write .python-version file")?;
 
+    let mut pyproject_toml = PyProject::discover()?;
+    let new_version = to_write.parse::<PythonVersionRequest>()?;
+    if let Some(curr_version) = pyproject_toml.target_python_version() {
+        if new_version < curr_version {
+            pyproject_toml.set_target_python_version(&new_version);
+            pyproject_toml.save()?;
+        }
+    }
+
     eprintln!("pinned {} in {}", to_write, version_file.display());
 
     Ok(())
