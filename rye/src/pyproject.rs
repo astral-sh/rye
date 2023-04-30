@@ -15,7 +15,7 @@ use once_cell::sync::Lazy;
 use pep440_rs::{Operator, VersionSpecifiers};
 use pep508_rs::Requirement;
 use regex::Regex;
-use toml_edit::{Array, Document, Item, Table, TableLike, Value};
+use toml_edit::{Array, Document, Formatted, Item, Table, TableLike, Value};
 
 use crate::config::load_python_version;
 use crate::sources::{PythonVersion, PythonVersionRequest};
@@ -393,6 +393,21 @@ impl PyProject {
         }
 
         None
+    }
+
+    /// Set the target Python version.
+    pub fn set_target_python_version(&mut self, version: &PythonVersionRequest) {
+        let mut marker = format!(">= {}", version.major);
+        if let Some(minor) = version.minor {
+            marker.push('.');
+            marker.push_str(&minor.to_string());
+        }
+
+        let project = self
+            .doc
+            .entry("project")
+            .or_insert(Item::Table(Table::new()));
+        project["requires-python"] = Item::Value(Value::String(Formatted::new(marker)));
     }
 
     /// Returns the project name.
