@@ -11,13 +11,13 @@ use crate::utils::CommandOutput;
 /// Builds a package for distribution.
 #[derive(Parser, Debug)]
 pub struct Args {
-    /// A directory containing the build artifacts to publish.
-    #[arg(long)]
-    dist: Option<PathBuf>,
+    /// The distribution files to upload to the repository (defaults to <workspace-root>/dist/*).
+    dist: Option<Vec<PathBuf>>,
     /// The repository url to publish to (default is https://upload.pypi.org/legacy/).
     #[arg(short, long, default_value = "https://upload.pypi.org/legacy/")]
     repository_url: String,
     /// Sign files to upload using GPG.
+    #[arg(long)]
     sign: bool,
     /// GPG identity used to sign files.
     #[arg(short, long)]
@@ -41,9 +41,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let venv = ensure_self_venv(output)?;
     let project = PyProject::discover()?;
 
-    let dist: PathBuf = match cmd.dist {
-        Some(path) => path,
-        None => project.workspace_path().join("dist"),
+    let files = match cmd.dist {
+        Some(paths) => paths,
+        None => vec![project.workspace_path().join("dist").join("*")],
     };
 
     let mut publish_cmd = Command::new(venv.join("bin/python"));
@@ -51,7 +51,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .arg("-mtwine")
         .arg("--no-color")
         .arg("upload")
-        .arg(&dist.join("*"))
+        .args(files)
         .arg("--repository-url")
         .arg(cmd.repository_url);
     if cmd.sign {
