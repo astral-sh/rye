@@ -11,7 +11,7 @@
 | `lock` | Update the lockfile without installing dependencies |
 | `make-req` | Build and print a PEP 508 requirement string from parts |
 | `pin` | Pin a Python version to the project |
-| `publish` | Publish packages to a package repository.
+| `publish` | Publish packages to a package repository |
 | `remove` | Remove a Python package from the project |
 | `run` | Run a command installed to the project |
 | `shell` | Spawns a shell with the virtualenv activated |
