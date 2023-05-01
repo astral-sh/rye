@@ -30,6 +30,9 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
+    /// Opt-out of initializing with a version control system.
+    #[arg(long)]
+    no_vcs: bool,
 }
 
 /// The pyproject.toml template
@@ -92,7 +95,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
     let readme = dir.join("README.md");
-    let gitignore = dir.join(".gitignore");
 
     if toml.is_file() {
         bail!("pyproject.toml already exists");
@@ -141,10 +143,20 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         fs::write(&readme, rv)?;
     }
 
-    // create a .gitignore if one is missing
-    if !gitignore.is_file() {
-        let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
-        fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+    if !cmd.no_vcs {
+        let gitignore = dir.join(".gitignore");
+        let git_dir = dir.join(".git");
+
+        // create a .gitignore if one is missing
+        if !gitignore.is_file() {
+            let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
+            fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+        }
+
+        // initialize as a git repo if not already done
+        if !git_dir.is_dir() {
+            git2::Repository::init(&dir)?;
+        }
     }
 
     eprintln!(
