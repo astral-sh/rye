@@ -288,6 +288,7 @@ fn finalize_lockfile(
                     && (x.version_or_url.is_none() || x.version_or_url == req.version_or_url)
             }) {
                 // skip exclusions
+                writeln!(rv, "# excluded {}", line)?;
                 continue;
             }
         }
