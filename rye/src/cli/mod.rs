@@ -9,6 +9,7 @@ mod install;
 mod lock;
 mod make_req;
 mod pin;
+mod publish;
 mod remove;
 mod run;
 mod rye;
@@ -45,6 +46,7 @@ enum Command {
     Lock(lock::Args),
     MakeReq(make_req::Args),
     Pin(pin::Args),
+    Publish(publish::Args),
     Remove(remove::Args),
     Run(run::Args),
     Shell(shell::Args),
@@ -78,6 +80,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Lock(cmd) => lock::execute(cmd),
         Command::MakeReq(cmd) => make_req::execute(cmd),
         Command::Pin(cmd) => pin::execute(cmd),
+        Command::Publish(cmd) => publish::execute(cmd),
         Command::Remove(cmd) => remove::execute(cmd),
         Command::Run(cmd) => run::execute(cmd),
         Command::Shell(cmd) => shell::execute(cmd),
