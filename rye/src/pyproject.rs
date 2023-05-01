@@ -28,7 +28,19 @@ static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").
 pub enum DependencyKind<'a> {
     Normal,
     Dev,
+    Excluded,
     Optional(Cow<'a, str>),
+}
+
+impl<'a> fmt::Display for DependencyKind<'a> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            DependencyKind::Normal => f.write_str("regular"),
+            DependencyKind::Dev => f.write_str("dev"),
+            DependencyKind::Excluded => f.write_str("excluded"),
+            DependencyKind::Optional(ref sect) => write!(f, "optional ({})", sect),
+        }
+    }
 }
 
 #[derive(Clone, Debug)]
@@ -486,10 +498,15 @@ impl PyProject {
     }
 
     /// Adds a dependency.
-    pub fn add_dependency(&mut self, req: &Requirement, kind: DependencyKind) -> Result<(), Error> {
+    pub fn add_dependency(
+        &mut self,
+        req: &Requirement,
+        kind: &DependencyKind,
+    ) -> Result<(), Error> {
         let dependencies = match kind {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
             DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
+            DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
             DependencyKind::Optional(ref section) => {
                 // add this as a proper non-inline table if it's missing
                 let table = &mut self.doc["project"]["optional-dependencies"];
@@ -520,6 +537,7 @@ impl PyProject {
         let dependencies = match kind {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
             DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
+            DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
             DependencyKind::Optional(ref section) => {
                 &mut self.doc["project"]["optional-dependencies"][section as &str]
             }
@@ -548,6 +566,11 @@ impl PyProject {
                 .get("tool")
                 .and_then(|x| x.get("rye"))
                 .and_then(|x| x.get("dev-dependencies")),
+            DependencyKind::Excluded => self
+                .doc
+                .get("tool")
+                .and_then(|x| x.get("rye"))
+                .and_then(|x| x.get("excluded-dependencies")),
             DependencyKind::Optional(ref section) => self
                 .doc
                 .get("project")

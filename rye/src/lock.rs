@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::io::{BufWriter, Write};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -7,6 +7,7 @@ use std::{fmt, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use once_cell::sync::Lazy;
+use pep508_rs::Requirement;
 use regex::Regex;
 use tempfile::NamedTempFile;
 use url::Url;
@@ -85,16 +86,16 @@ pub fn update_workspace_lockfile(
         projects.push(pyproject);
     }
 
-    for pyproject in projects {
+    for pyproject in &projects {
         dump_dependencies(
-            &pyproject,
+            pyproject,
             &local_projects,
             req_file.as_file_mut(),
             DependencyKind::Normal,
         )?;
         if lock_mode == LockMode::Dev {
             dump_dependencies(
-                &pyproject,
+                pyproject,
                 &local_projects,
                 req_file.as_file_mut(),
                 DependencyKind::Dev,
@@ -102,12 +103,14 @@ pub fn update_workspace_lockfile(
         }
     }
 
+    let exclusions = find_exclusions(&projects)?;
     generate_lockfile(
         output,
         &workspace.path(),
         req_file.path(),
         lockfile,
         lock_options,
+        &exclusions,
         &[],
     )?;
     generate_lockfile(
@@ -116,10 +119,27 @@ pub fn update_workspace_lockfile(
         local_req_file.path(),
         lockfile,
         lock_options,
+        &exclusions,
         &["--pip-args=--no-deps"],
     )?;
 
     Ok(())
+}
+
+fn find_exclusions(projects: &[PyProject]) -> Result<HashSet<Requirement>, Error> {
+    let mut rv = HashSet::new();
+    for project in projects {
+        for dep in project.iter_dependencies(DependencyKind::Excluded) {
+            rv.insert(dep.expand(|name: &str| {
+                if name == "PROJECT_ROOT" {
+                    Some(project.workspace_path().to_string_lossy().to_string())
+                } else {
+                    std::env::var(name).ok()
+                }
+            })?);
+        }
+    }
+    Ok(rv)
 }
 
 fn dump_dependencies(
@@ -177,12 +197,14 @@ pub fn update_single_project_lockfile(
         }
     }
 
+    let exclusions = find_exclusions(std::slice::from_ref(pyproject))?;
     generate_lockfile(
         output,
         &pyproject.workspace_path(),
         req_file.path(),
         lockfile,
         lock_options,
+        &exclusions,
         &[],
     )?;
 
@@ -195,6 +217,7 @@ fn generate_lockfile(
     requirements_file_in: &Path,
     lockfile: &Path,
     lock_options: &LockOptions,
+    exclusions: &HashSet<Requirement>,
     extra_args: &[&str],
 ) -> Result<(), Error> {
     let scratch = tempfile::tempdir()?;
@@ -237,12 +260,17 @@ fn generate_lockfile(
         bail!("failed to generate lockfile");
     };
 
-    finalize_lockfile(&requirements_file, lockfile, workspace_path)?;
+    finalize_lockfile(&requirements_file, lockfile, workspace_path, exclusions)?;
 
     Ok(())
 }
 
-fn finalize_lockfile(generated: &Path, out: &Path, workspace_root: &Path) -> Result<(), Error> {
+fn finalize_lockfile(
+    generated: &Path,
+    out: &Path,
+    workspace_root: &Path,
+    exclusions: &HashSet<Requirement>,
+) -> Result<(), Error> {
     let mut rv = BufWriter::new(fs::File::create(out)?);
     writeln!(rv, "{}", REQUIREMENTS_HEADER)?;
     for line in fs::read_to_string(generated)?.lines() {
@@ -251,6 +279,15 @@ fn finalize_lockfile(generated: &Path, out: &Path, workspace_root: &Path) -> Res
             if url.scheme() == "file" {
                 let rel_url = make_relative_url(Path::new(url.path()), workspace_root)?;
                 writeln!(rv, "-e {}", rel_url)?;
+                continue;
+            }
+        } else if let Ok(ref req) = line.trim().parse::<Requirement>() {
+            // TODO: this does not evaluate markers
+            if exclusions.iter().any(|x| {
+                normalize_package_name(&x.name) == normalize_package_name(&req.name)
+                    && (x.version_or_url.is_none() || x.version_or_url == req.version_or_url)
+            }) {
+                // skip exclusions
                 continue;
             }
         }

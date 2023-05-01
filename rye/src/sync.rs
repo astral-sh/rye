@@ -42,6 +42,8 @@ pub struct SyncOptions {
     pub mode: SyncMode,
     /// Forces venv creation even when unsafe.
     pub force: bool,
+    /// Do not lock.
+    pub no_lock: bool,
     /// Controls locking.
     pub lock_options: LockOptions,
 }
@@ -138,7 +140,15 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         symlink(get_pip_module(&self_venv), dir.path().join("pip"))
             .context("failed linking pip module into for pip-sync")?;
 
-        if let Some(workspace) = pyproject.workspace() {
+        if cmd.no_lock {
+            let lockfile = if cmd.dev { &dev_lockfile } else { &lockfile };
+            if !lockfile.is_file() {
+                bail!(
+                    "Locking is disabled but lockfile '{}' does not exist",
+                    lockfile.display()
+                );
+            }
+        } else if let Some(workspace) = pyproject.workspace() {
             // make sure we have an up-to-date lockfile
             update_workspace_lockfile(
                 workspace,
@@ -192,10 +202,11 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .current_dir(&root)
                 .arg("--python-executable")
                 .arg(venv.join("bin/python"))
+                .arg("--pip-args")
                 // note that the double quotes are necessary to properly handle
                 // spaces in paths
                 .arg(format!(
-                    "--pip-args=\"--python={}\"",
+                    "--python=\"{}\" --no-deps",
                     venv.join("bin/python").display()
                 ));
 

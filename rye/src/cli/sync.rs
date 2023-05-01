@@ -14,6 +14,9 @@ pub struct Args {
     /// Do not include dev dependencies.
     #[arg(long)]
     no_dev: bool,
+    /// Do not update the lockfile.
+    #[arg(long)]
+    no_lock: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -42,6 +45,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             SyncMode::Regular
         },
         force: cmd.force,
+        no_lock: cmd.no_lock,
         lock_options: LockOptions {
             update: cmd.update,
             update_all: cmd.update_all,

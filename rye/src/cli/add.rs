@@ -154,8 +154,11 @@ pub struct Args {
     /// Add this as dev dependency.
     #[arg(long)]
     dev: bool,
+    /// Add this as an excluded dependency that will not be installed even if it's a sub dependency.
+    #[arg(long, conflicts_with = "dev", conflicts_with = "optional")]
+    excluded: bool,
     /// Add this to an optional dependency group.
-    #[arg(long, conflicts_with = "dev")]
+    #[arg(long, conflicts_with = "dev", conflicts_with = "excluded")]
     optional: Option<String>,
     /// Include pre-releases when finding a package version.
     #[arg(long)]
@@ -180,48 +183,52 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         Some(ver) => ver.format_simple(),
         None => "".to_string(),
     };
+    let dep_kind = if cmd.dev {
+        DependencyKind::Dev
+    } else if cmd.excluded {
+        DependencyKind::Excluded
+    } else if let Some(ref section) = cmd.optional {
+        DependencyKind::Optional(section.into())
+    } else {
+        DependencyKind::Normal
+    };
 
     for str_requirement in cmd.requirements {
         let mut requirement = Requirement::from_str(&str_requirement)?;
         cmd.req_extras.apply_to_requirement(&mut requirement)?;
 
-        let mut unearth = Command::new(&python_path);
-        unearth
-            .arg("-c")
-            .arg(PACKAGE_FINDER_SCRIPT)
-            .arg(&py_ver)
-            .arg(&format_requirement(&requirement).to_string());
-        if cmd.pre {
-            unearth.arg("--pre");
-        }
-        let unearth = unearth.stdout(Stdio::piped()).output()?;
-        if !unearth.status.success() {
-            let log = String::from_utf8_lossy(&unearth.stderr);
-            bail!(
-                "did not find package {}\n{}",
-                format_requirement(&requirement),
-                log
-            );
+        // if we are excluding, we do not want a specific dependency version
+        // stored, so we just skip the unearth step
+        if !cmd.excluded {
+            let mut unearth = Command::new(&python_path);
+            unearth
+                .arg("-c")
+                .arg(PACKAGE_FINDER_SCRIPT)
+                .arg(&py_ver)
+                .arg(&format_requirement(&requirement).to_string());
+            if cmd.pre {
+                unearth.arg("--pre");
+            }
+            let unearth = unearth.stdout(Stdio::piped()).output()?;
+            if !unearth.status.success() {
+                let log = String::from_utf8_lossy(&unearth.stderr);
+                bail!(
+                    "did not find package {}\n{}",
+                    format_requirement(&requirement),
+                    log
+                );
+            }
+
+            let m: Match = serde_json::from_slice(&unearth.stdout)?;
+            if requirement.version_or_url.is_none() {
+                requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
+                    VersionSpecifiers::from_str(&format!("~={}", m.version))?,
+                ));
+            }
+            requirement.name = m.name;
         }
 
-        let m: Match = serde_json::from_slice(&unearth.stdout)?;
-        if requirement.version_or_url.is_none() {
-            requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
-                VersionSpecifiers::from_str(&format!("~={}", m.version))?,
-            ));
-        }
-        requirement.name = m.name;
-
-        pyproject_toml.add_dependency(
-            &requirement,
-            if cmd.dev {
-                DependencyKind::Dev
-            } else if let Some(ref section) = cmd.optional {
-                DependencyKind::Optional(section.into())
-            } else {
-                DependencyKind::Normal
-            },
-        )?;
+        pyproject_toml.add_dependency(&requirement, &dep_kind)?;
         added.push(requirement);
     }
 
@@ -229,7 +236,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     if output != CommandOutput::Quiet {
         for ref requirement in added {
-            println!("Added {}", format_requirement(requirement));
+            println!(
+                "Added {} as {} dependency",
+                format_requirement(requirement),
+                &dep_kind
+            );
         }
     }
 

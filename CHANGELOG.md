@@ -6,8 +6,13 @@ most recent changes however.
 
 ## April
 
-- Rye's `add` command now accepts a `--pre` parameter to include pre-release
-  candidates.
+- Rye now supports negative (exclusion) dependencies.  These can be used to
+  prevent a dependency from installing, even if something else in the graph
+  depends on it.  Use `rye add --exclude package-name` to add such a dependency.
+
+- `sync` now accepts `--no-lock` to prevent updating the lock file.
+
+- Rye's `add` command now accepts a `--pre` parameter to include pre-release.
 
 - Rye's `pin` command now updates the pyproject.toml requires-python.
 
