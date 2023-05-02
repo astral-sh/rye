@@ -6,8 +6,7 @@ most recent changes however.
 
 # May
 
-- Rye's `init` command now initializes the project with `git`. Use `--no-vcs`
-  to opt-out.
+- Rye's `init` command now attempts to initialize projects with `git`.
 
 ## April
 
