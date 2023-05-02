@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 use std::io::{BufWriter, Write};
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
 use std::{fmt, fs};
@@ -12,7 +12,7 @@ use regex::Regex;
 use tempfile::NamedTempFile;
 use url::Url;
 
-use crate::bootstrap::ensure_self_venv;
+use crate::bootstrap::{ensure_self_venv, link_pip_tools};
 use crate::pyproject::{normalize_package_name, DependencyKind, PyProject, Workspace};
 use crate::utils::CommandOutput;
 
@@ -50,13 +50,6 @@ pub struct LockOptions {
     pub update: Vec<String>,
     /// Pick pre-release versions.
     pub pre: bool,
-}
-
-fn get_pip_compile(output: CommandOutput) -> Result<PathBuf, Error> {
-    let mut pip_compile = ensure_self_venv(output)?;
-    pip_compile.push("bin");
-    pip_compile.push("pip-compile");
-    Ok(pip_compile)
 }
 
 /// Creates lockfiles for all projects in the workspace.
@@ -220,17 +213,21 @@ fn generate_lockfile(
     exclusions: &HashSet<Requirement>,
     extra_args: &[&str],
 ) -> Result<(), Error> {
+    let self_venv = ensure_self_venv(output)?;
     let scratch = tempfile::tempdir()?;
     let requirements_file = scratch.path().join("requirements.txt");
     if lockfile.is_file() {
         fs::copy(lockfile, &requirements_file)?;
     } else {
-        fs::write(lockfile, b"")?;
+        fs::write(&requirements_file, b"")?;
     }
 
-    let pip_compile_path = get_pip_compile(output)?;
-    let mut cmd = Command::new(pip_compile_path);
-    cmd.arg("--resolver=backtracking")
+    link_pip_tools(&self_venv, scratch.path()).context("failed to link pip-tools internals")?;
+
+    let mut cmd = Command::new(workspace_path.join(".venv/bin/python"));
+    cmd.arg("-c")
+        .arg("from piptools.scripts.compile import cli; cli()")
+        .arg("--resolver=backtracking")
         .arg("--no-annotate")
         .arg("--strip-extras")
         .arg("--allow-unsafe")
@@ -238,7 +235,8 @@ fn generate_lockfile(
         .arg("-o")
         .arg(&requirements_file)
         .arg(requirements_file_in)
-        .env("PYTHONWARNINGS", "ignore");
+        .env("PYTHONWARNINGS", "ignore")
+        .env("PYTHONPATH", scratch.path());
     if output == CommandOutput::Verbose {
         cmd.arg("--verbose");
     } else {

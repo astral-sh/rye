@@ -1,4 +1,3 @@
-use std::os::unix::fs::symlink;
 use std::path::Path;
 use std::process::Command;
 use std::{env, fs};
@@ -8,7 +7,7 @@ use console::style;
 use serde::{Deserialize, Serialize};
 use tempfile::TempDir;
 
-use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
+use crate::bootstrap::{ensure_self_venv, fetch, link_pip_tools};
 use crate::config::{get_py_bin, load_python_version};
 use crate::lock::{
     update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
@@ -137,8 +136,6 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     // can pass to pip-sync to install the local package.
     if recreate || cmd.mode != SyncMode::PythonOnly {
         let dir = TempDir::new()?;
-        symlink(get_pip_module(&self_venv), dir.path().join("pip"))
-            .context("failed linking pip module into for pip-sync")?;
 
         if cmd.no_lock {
             let lockfile = if cmd.dev { &dev_lockfile } else { &lockfile };
@@ -191,17 +188,18 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             if output != CommandOutput::Quiet {
                 eprintln!("Installing dependencies");
             }
-            let mut pip_sync_cmd = Command::new(self_venv.join("bin/pip-sync"));
+            link_pip_tools(&self_venv, dir.path()).context("failed to link pip-tools internals")?;
+            let mut pip_sync_cmd = Command::new(pyproject.venv_bin_path().join("python"));
             let root = pyproject.workspace_path();
             pip_sync_cmd
+                .arg("-c")
+                .arg("from piptools.scripts.sync import cli; cli()")
                 .env("PYTHONPATH", dir.path())
                 // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
                 // so let's make sure it is url escaped.  This is pretty hacky but
                 // good enough for now.
                 .env("PROJECT_ROOT", root.to_string_lossy().replace(' ', "%2F"))
                 .current_dir(&root)
-                .arg("--python-executable")
-                .arg(venv.join("bin/python"))
                 .arg("--pip-args")
                 // note that the double quotes are necessary to properly handle
                 // spaces in paths
