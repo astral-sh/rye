@@ -16,7 +16,7 @@ pub struct Args {
 pub struct CompletionCommand {
     /// The shell to generate a completion script for (defaults to 'bash').
     #[arg(short, long)]
-    shell: Shell,
+    shell: Option<Shell>,
 }
 
 /// Performs an update of rye.
