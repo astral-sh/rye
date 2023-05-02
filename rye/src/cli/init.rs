@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
@@ -30,9 +31,6 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
-    /// Opt-out of initializing with a version control system.
-    #[arg(long)]
-    no_vcs: bool,
 }
 
 /// The pyproject.toml template
@@ -143,19 +141,22 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         fs::write(&readme, rv)?;
     }
 
-    if !cmd.no_vcs {
+    // if git init is successful prepare the local git repository
+    if Command::new("git")
+        .arg("init")
+        .current_dir(&dir)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+    {
         let gitignore = dir.join(".gitignore");
-        let git_dir = dir.join(".git");
 
         // create a .gitignore if one is missing
         if !gitignore.is_file() {
             let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
             fs::write(&gitignore, rv).context("failed to write .gitignore")?;
-        }
-
-        // initialize as a git repo if not already done
-        if !git_dir.is_dir() {
-            git2::Repository::init(&dir)?;
         }
     }
 
