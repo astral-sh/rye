@@ -14,7 +14,7 @@ pub struct Args {
     /// The distribution files to upload to the repository (defaults to <workspace-root>/dist/*).
     dist: Option<Vec<PathBuf>>,
     /// The repository url to publish to (default is https://upload.pypi.org/legacy/).
-    #[arg(short, long, default_value = "https://upload.pypi.org/legacy/")]
+    #[arg(long, default_value = "https://upload.pypi.org/legacy/")]
     repository_url: String,
     /// Sign files to upload using GPG.
     #[arg(long)]
