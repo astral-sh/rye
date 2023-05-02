@@ -4,6 +4,11 @@ There is currently no actual release of Rye.  The latest main branch revision
 is the one you can install as mainline should always be stable.  Here are the
 most recent changes however.
 
+## May
+
+- Rye's `self` command now includes a `completion` subcommand to generate
+  a completion script for your shell.
+
 ## April
 
 - Rye now supports negative (exclusion) dependencies.  These can be used to
