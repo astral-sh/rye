@@ -11,7 +11,7 @@ pub struct Args {
     command: SubCommand,
 }
 
-/// Generates completion script for a shell.
+/// Generates a completion script for a shell.
 #[derive(Parser, Debug)]
 pub struct CompletionCommand {
     /// The shell to generate a completion script for (defaults to 'bash').
