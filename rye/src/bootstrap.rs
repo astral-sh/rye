@@ -194,6 +194,8 @@ pub fn link_pip_tools(venv: &Path, folder: &Path) -> Result<(), Error> {
         "build",
         "click",
         "piptools",
+        "toml",
+        "tomli",
         "pyproject_hooks",
     ] {
         symlink(lib.join(module), folder.join(module))
