@@ -121,7 +121,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     let status = publish_cmd.status()?;
     if !status.success() {
-        bail!("failed to build dist");
+        bail!("failed to publish files");
     }
 
     Ok(())
