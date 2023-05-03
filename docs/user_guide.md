@@ -74,9 +74,13 @@ This command will bootstrap your directory as a Python project compatible with `
 ```zsh
 $ tree -a .
 .
+├── .git
 ├── .gitignore
 ├── README.md
-└── pyproject.toml
+├── pyproject.toml
+└── src
+    └── getting_started
+        └── __init__.py
 ```
 
 A `pyproject.toml` is used to store metadata about your project as well as some `rye` configuration. Most of `rye`'s commands will require a `pyproject.toml` to work.
@@ -88,15 +92,22 @@ The `pin` command is used to pin the current version of Python `rye` uses for th
 
 ```zsh
 $ rye pin 3.10.8
-$ tree -a .
-.
-├── .gitignore
-├── .python-version
-├── README.md
-└── pyproject.toml
 ```
 
 `rye` can be used to manage your project, its `pyproject.toml`, and its environment.
+
+```zsh
+$ tree -a .
+.
+├── .git
+├── .gitignore
+├── .python-version
+├── README.md
+├── pyproject.toml
+└── src
+    └── getting_started
+        └── __init__.py
+```
 
 ## Add a dependency
 
@@ -122,6 +133,22 @@ $ rye sync
 ```
 
 When `rye sync` is run in a workspace all packages are installed together. This also means that they can inter-depend as they will all be installed editable by default.
+
+```zsh
+$ tree -a .
+.
+├── .git
+├── .gitignore
+├── .python-version
+├── .venv
+├── README.md
+├── pyproject.toml
+├── requirements-dev.lock
+├── requirements.lock
+└── src
+    └── getting_started
+        └── __init__.py
+```
 
 ## Remove a dependency
 
