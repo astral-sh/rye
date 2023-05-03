@@ -61,33 +61,31 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
     let mut credentials = get_credentials()?;
     let repository = &cmd.repository;
-    let token = match cmd.token {
-        Some(it) => {
-            let encrypted_token = prompt_encrypt_with_passphrase(&it)?;
-            credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
-            write_credentials(&credentials)?;
 
-            Some(it)
-        }
-        None => credentials
+    let token = if let Some(token) = cmd.token {
+        let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
+        credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
+        write_credentials(&credentials)?;
+
+        token
+    } else {
+        match credentials
             .get(repository.as_str())
             .and_then(|table| table.get("token"))
-            .map(|token| token.to_string()),
-    };
+            .map(|token| token.to_string())
+        {
+            Some(token) => prompt_decrypt_with_passphrase(&token)?,
+            None => {
+                eprintln!(
+                    "No access token found, generate one at: https://pypi.org/manage/account/token/"
+                );
+                let token = prompt_for_token()?;
+                let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
+                credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
+                write_credentials(&credentials)?;
 
-    // If the token is found offer decrypt option, otherwise prompt for a token and offer encryption.
-    let token = match token {
-        Some(it) => prompt_decrypt_with_passphrase(&it)?,
-        None => {
-            eprintln!(
-                "No access token found, generate one at: https://pypi.org/manage/account/token/"
-            );
-            let token = prompt_for_token()?;
-            let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
-            credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
-            write_credentials(&credentials)?;
-
-            token
+                token
+            }
         }
     };
 
