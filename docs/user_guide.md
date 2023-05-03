@@ -79,7 +79,7 @@ $ tree -a .
 ├── README.md
 ├── pyproject.toml
 └── src
-    └── rye_init
+    └── getting_started
         └── __init__.py
 ```
 
@@ -105,7 +105,7 @@ $ tree -a .
 ├── README.md
 ├── pyproject.toml
 └── src
-    └── rye_init
+    └── getting_started
         └── __init__.py
 ```
 
@@ -146,7 +146,7 @@ $ tree -a .
 ├── requirements-dev.lock
 ├── requirements.lock
 └── src
-    └── rye_init
+    └── getting_started
         └── __init__.py
 ```
 
