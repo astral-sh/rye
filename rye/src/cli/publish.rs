@@ -4,7 +4,7 @@ use std::process::{Command, Stdio};
 
 use anyhow::{bail, Context, Error};
 use clap::Parser;
-use toml_edit::Item;
+use toml_edit::{Item, Table};
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::{get_credentials, write_credentials};
@@ -60,17 +60,20 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // a. Get token from arguments and offer encryption, then store in credentials file.
     // b. Get token from ~/.rye/credentials keyed by provided repository and provide decryption option.
     // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
-    let mut credentials = get_credentials()?;
     let repository = &cmd.repository;
+    let mut credentials = get_credentials()?;
+    credentials
+        .entry(repository)
+        .or_insert(Item::Table(Table::new()));
 
     let token = if let Some(token) = cmd.token {
         let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
-        credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
+        credentials[repository]["token"] = Item::Value(encrypted_token.into());
         write_credentials(&credentials)?;
 
         token
     } else if let Some(token) = credentials
-        .get(repository.as_str())
+        .get(repository)
         .and_then(|table| table.get("token"))
         .map(|token| token.to_string())
     {
@@ -79,7 +82,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
         let token = prompt_for_token()?;
         let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
-        credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
+        credentials[repository]["token"] = Item::Value(encrypted_token.into());
         write_credentials(&credentials)?;
 
         token
