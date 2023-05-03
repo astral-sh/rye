@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
@@ -27,6 +28,9 @@ pub struct Args {
     /// Which interpreter version should be used?
     #[arg(short, long)]
     py: Option<String>,
+    /// Do not create a readme.
+    #[arg(long)]
+    no_readme: bool,
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
@@ -45,7 +49,9 @@ authors = [
 ]
 {%- endif %}
 dependencies = []
+{%- if with_readme %}
 readme = "README.md"
+{%- endif %}
 requires-python = {{ requires_python }}
 license = { text = {{ license }} }
 
@@ -66,6 +72,7 @@ managed = true
 
 "#;
 
+/// The template for the readme file.
 const README_TEMPLATE: &str = r#"# {{ name }}
 
 Describe your project here.
@@ -74,6 +81,13 @@ Describe your project here.
 
 "#;
 
+/// Template for the __init__.py
+const INIT_PY_TEMPLATE: &str = r#"def hello():
+    return "Hello from {{ name }}!"
+
+"#;
+
+/// Template for fresh gitignore files
 const GITIGNORE_TEMPLATE: &str = r#"# python generated files
 __pycache__/
 *.py[oc]
@@ -92,7 +106,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
     let readme = dir.join("README.md");
-    let gitignore = dir.join(".gitignore");
 
     if toml.is_file() {
         bail!("pyproject.toml already exists");
@@ -114,22 +127,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let author = get_default_author();
     let license = "MIT";
 
-    let rv = env.render_named_str(
-        "pyproject.json",
-        TOML_TEMPLATE,
-        context! {
-            name,
-            version,
-            author,
-            requires_python,
-            license,
-            build_system => cmd.build_system,
-        },
-    )?;
-    fs::write(&toml, rv).context("failed to write pyproject.toml")?;
-
     // create a readme if one is missing
-    if !readme.is_file() {
+    let with_readme = if readme.is_file() {
+        true
+    } else if !cmd.no_readme {
         let rv = env.render_named_str(
             "README.txt",
             README_TEMPLATE,
@@ -139,12 +140,52 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             },
         )?;
         fs::write(&readme, rv)?;
+        true
+    } else {
+        false
+    };
+
+    let rv = env.render_named_str(
+        "pyproject.json",
+        TOML_TEMPLATE,
+        context! {
+            name,
+            version,
+            author,
+            requires_python,
+            license,
+            with_readme,
+            build_system => cmd.build_system,
+        },
+    )?;
+    fs::write(&toml, rv).context("failed to write pyproject.toml")?;
+
+    let src_dir = dir.join("src");
+    if !src_dir.is_dir() {
+        let project_dir = src_dir.join(name.replace('-', "_"));
+        fs::create_dir_all(&project_dir).ok();
+        let rv = env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
+        fs::write(project_dir.join("__init__.py"), rv).context("failed to write __init__.py")?;
     }
 
-    // create a .gitignore if one is missing
-    if !gitignore.is_file() {
-        let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
-        fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+    // if git init is successful prepare the local git repository
+    if !dir.join(".git").is_dir()
+        && Command::new("git")
+            .arg("init")
+            .current_dir(&dir)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false)
+    {
+        let gitignore = dir.join(".gitignore");
+
+        // create a .gitignore if one is missing
+        if !gitignore.is_file() {
+            let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
+            fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+        }
     }
 
     eprintln!(
@@ -152,6 +193,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         style("success:").green(),
         dir.display()
     );
+    eprintln!("  Run `rye sync` to get started");
 
     Ok(())
 }

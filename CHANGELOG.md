@@ -9,6 +9,9 @@ most recent changes however.
 - Rye's `self` command now includes a `completion` subcommand to generate
   a completion script for your shell.
 
+- Rye's `init` command now attempts to initialize projects with `git` and
+  will automatically create a `src/project_name/__init__.py` file.
+
 ## April
 
 - Rye now supports negative (exclusion) dependencies.  These can be used to
