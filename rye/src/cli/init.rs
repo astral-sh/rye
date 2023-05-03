@@ -1,4 +1,5 @@
 use std::path::PathBuf;
+use std::process::{Command, Stdio};
 use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
@@ -92,7 +93,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
     let readme = dir.join("README.md");
-    let gitignore = dir.join(".gitignore");
 
     if toml.is_file() {
         bail!("pyproject.toml already exists");
@@ -141,10 +141,23 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         fs::write(&readme, rv)?;
     }
 
-    // create a .gitignore if one is missing
-    if !gitignore.is_file() {
-        let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
-        fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+    // if git init is successful prepare the local git repository
+    if Command::new("git")
+        .arg("init")
+        .current_dir(&dir)
+        .stdout(Stdio::null())
+        .stderr(Stdio::null())
+        .status()
+        .map(|status| status.success())
+        .unwrap_or(false)
+    {
+        let gitignore = dir.join(".gitignore");
+
+        // create a .gitignore if one is missing
+        if !gitignore.is_file() {
+            let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
+            fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+        }
     }
 
     eprintln!(
