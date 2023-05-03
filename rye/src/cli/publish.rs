@@ -11,7 +11,7 @@ use crate::config::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
 use crate::utils::CommandOutput;
 
-/// Builds a package for distribution.
+/// Publish packages to a package repository.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The distribution files to upload to the repository (defaults to <workspace-root>/dist/*).
