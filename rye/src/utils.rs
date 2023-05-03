@@ -145,11 +145,11 @@ pub mod auth {
     pub fn encrypt(data: &[u8], passphrase: &str) -> Result<Vec<u8>, Error> {
         let key = aead::UnboundKey::new(&aead::AES_256_GCM, passphrase.as_bytes())
             .expect("unbound key for encryption");
-        let mut nonce = [0u8; 12];
+        let mut slice = [0u8; 12];
         SystemRandom::new()
-            .fill(&mut nonce)
+            .fill(&mut slice)
             .expect("nonce should fill");
-        let nonce = aead::Nonce::assume_unique_for_key(nonce);
+        let nonce = aead::Nonce::assume_unique_for_key(slice);
 
         let mut text = Vec::new();
         text.extend_from_slice(data);
