@@ -119,6 +119,65 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
     Ok(())
 }
 
+// TODO(cnpryer)
+pub mod auth {
+    use anyhow::Error;
+    use ring::{
+        aead::{self, BoundKey},
+        error::Unspecified,
+        rand::{SecureRandom, SystemRandom},
+    };
+
+    struct NonceSeq(Option<aead::Nonce>);
+
+    impl NonceSeq {
+        fn new(nonce: aead::Nonce) -> Self {
+            Self(Some(nonce))
+        }
+    }
+
+    impl aead::NonceSequence for NonceSeq {
+        fn advance(&mut self) -> Result<aead::Nonce, Unspecified> {
+            self.0.take().ok_or(Unspecified)
+        }
+    }
+
+    pub fn encrypt(data: &[u8], passphrase: &str) -> Result<Vec<u8>, Error> {
+        let key = aead::UnboundKey::new(&aead::AES_256_GCM, passphrase.as_bytes())
+            .expect("unbound key for encryption");
+        let mut nonce = [0u8; 12];
+        SystemRandom::new()
+            .fill(&mut nonce)
+            .expect("nonce should fill");
+        let nonce = aead::Nonce::assume_unique_for_key(nonce);
+
+        let mut text = Vec::new();
+        text.extend_from_slice(data);
+
+        let mut sealing_key = aead::SealingKey::new(key, NonceSeq::new(nonce));
+        sealing_key
+            .seal_in_place_append_tag(aead::Aad::empty(), &mut text)
+            .expect("sealing key should seal in place");
+
+        Ok(text)
+    }
+
+    pub fn decrypt(data: &[u8], passphrase: &str) -> Option<Vec<u8>> {
+        let key = aead::UnboundKey::new(&aead::AES_256_GCM, passphrase.as_bytes()).ok()?;
+        let mut slice: [u8; 12] = [0; 12];
+        slice.copy_from_slice(&data[..12]);
+        let nonce = aead::Nonce::assume_unique_for_key(slice);
+
+        let mut text = Vec::from(data);
+
+        let opening_key = aead::OpeningKey::new(key, NonceSeq::new(nonce))
+            .open_in_place(aead::Aad::empty(), &mut text)
+            .ok();
+
+        opening_key.map(|x| x.to_vec())
+    }
+}
+
 #[test]
 fn test_quiet_exit_display() {
     let quiet_exit = QuietExit(0);

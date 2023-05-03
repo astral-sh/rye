@@ -9,6 +9,7 @@ use toml_edit::Item;
 use crate::bootstrap::ensure_self_venv;
 use crate::config::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
+use crate::utils::auth::{decrypt, encrypt};
 use crate::utils::CommandOutput;
 
 /// Publish packages to a package repository.
@@ -68,25 +69,20 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         write_credentials(&credentials)?;
 
         token
+    } else if let Some(token) = credentials
+        .get(repository.as_str())
+        .and_then(|table| table.get("token"))
+        .map(|token| token.to_string())
+    {
+        prompt_decrypt_with_passphrase(&token)?
     } else {
-        match credentials
-            .get(repository.as_str())
-            .and_then(|table| table.get("token"))
-            .map(|token| token.to_string())
-        {
-            Some(token) => prompt_decrypt_with_passphrase(&token)?,
-            None => {
-                eprintln!(
-                    "No access token found, generate one at: https://pypi.org/manage/account/token/"
-                );
-                let token = prompt_for_token()?;
-                let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
-                credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
-                write_credentials(&credentials)?;
+        eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
+        let token = prompt_for_token()?;
+        let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
+        credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
+        write_credentials(&credentials)?;
 
-                token
-            }
-        }
+        token
     };
 
     let mut publish_cmd = Command::new(venv.join("bin/python"));
@@ -141,7 +137,8 @@ fn prompt_encrypt_with_passphrase(s: &str) -> Result<String, Error> {
     let token = if phrase.is_empty() {
         s.to_string()
     } else {
-        encrypt_with_passphrase(s, &phrase)?
+        let bytes = encrypt(s.as_bytes(), &phrase)?;
+        String::from_utf8(bytes).context("failed to parse utf-8 from bytes successfully")?
     };
 
     Ok(token)
@@ -153,8 +150,10 @@ fn prompt_decrypt_with_passphrase(s: &str) -> Result<String, Error> {
 
     let token = if phrase.is_empty() {
         s.to_string()
+    } else if let Some(bytes) = decrypt(s.as_bytes(), &phrase) {
+        String::from_utf8(bytes).context("failed to parse utf-8 from bytes successfully")?
     } else {
-        decrypt_with_passphrase(s, &phrase)?
+        bail!("failed to decrypt")
     };
 
     Ok(token)
@@ -166,12 +165,4 @@ fn get_trimmed_user_input() -> Result<String, Error> {
     std::io::stdin().read_line(&mut input)?;
 
     Ok(input.trim().to_string())
-}
-
-fn encrypt_with_passphrase(_s: &str, _phrase: &str) -> Result<String, Error> {
-    todo!()
-}
-
-fn decrypt_with_passphrase(_s: &str, _phrase: &str) -> Result<String, Error> {
-    todo!()
 }
