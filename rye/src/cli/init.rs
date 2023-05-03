@@ -142,14 +142,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     // if git init is successful prepare the local git repository
-    if Command::new("git")
-        .arg("init")
-        .current_dir(&dir)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map(|status| status.success())
-        .unwrap_or(false)
+    if !dir.join(".git").is_dir()
+        && Command::new("git")
+            .arg("init")
+            .current_dir(&dir)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false)
     {
         let gitignore = dir.join(".gitignore");
 
