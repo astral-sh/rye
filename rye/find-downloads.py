@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 import requests
 from urllib.parse import unquote
@@ -72,10 +74,10 @@ _suffix_re = re.compile(
 )
 
 
-def parse_filename(filename):
+def parse_filename(filename) -> tuple | None:
     match = _filename_re.match(filename)
     if match is None:
-        return
+        return None
     version, triple = match.groups()
     if triple.endswith("-full"):
         triple = triple[:-5]
@@ -87,24 +89,24 @@ def parse_filename(filename):
     return (version, triple, suffix)
 
 
-def normalize_triple(triple):
+def normalize_triple(triple: str) -> str | None:
     if "-musl" in triple or "-static" in triple:
-        return
+        return None
     triple = SPECIAL_TRIPLES.get(triple, triple)
     pieces = triple.split("-")
     try:
         arch = ARCH_MAPPING.get(pieces[0])
         if arch is None:
-            return
+            return None
         platform = PLATFORM_MAPPING.get(pieces[2])
         if platform is None:
-            return
+            return None
     except IndexError:
-        return
+        return None
     return "%s-%s" % (arch, platform)
 
 
-results = {}
+results: dict[str, list[tuple]] = {}
 sess = requests.Session()
 
 for page in range(1, 100):
@@ -130,7 +132,7 @@ for page in range(1, 100):
             results.setdefault(py_ver, []).append((triple, flavor, url))
 
 
-def _sort_key(info):
+def _sort_key(info) -> tuple[type, int]:
     triple, flavor, url = info
     try:
         pref = FLAVOR_PREFERENCES.index(flavor)
@@ -139,7 +141,7 @@ def _sort_key(info):
     return tuple, pref
 
 
-final_results = {}
+final_results: dict[tuple, dict[tuple, str]] = {}
 for py_ver, choices in results.items():
     choices.sort(key=_sort_key)
     urls = {}
@@ -153,9 +155,9 @@ for py_ver, choices in results.items():
 print("// generated code, do not edit")
 print("use std::borrow::Cow;")
 print("pub const CPYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str)] = &[")
-for py_ver, choices in sorted(
+for py_ver, choices_ in sorted(
     final_results.items(), key=lambda x: x[0], reverse=True
 ):
-    for (arch, platform), url in sorted(choices.items()):
+    for (arch, platform), url in sorted(choices_.items()):
         print('    (PythonVersion { kind: Cow::Borrowed("cpython"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s"),' % (py_ver + (arch, platform, url)))
 print("];")
