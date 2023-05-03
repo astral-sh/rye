@@ -37,9 +37,6 @@ pub struct Args {
     /// Path to alternate CA bundle.
     #[arg(long)]
     cert: Option<PathBuf>,
-    /// Path to the .pypirc config file to use.
-    #[arg(long)]
-    config_file: Option<PathBuf>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -107,9 +104,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
     if let Some(identity) = cmd.identity {
         publish_cmd.arg("--identity").arg(identity);
-    }
-    if let Some(config_path) = cmd.config_file {
-        publish_cmd.arg("--config-file").arg(config_path);
     }
     if let Some(cert) = cmd.cert {
         publish_cmd.arg("--cert").arg(cert);
