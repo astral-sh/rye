@@ -140,6 +140,7 @@ $ tree -a .
 ├── .git
 ├── .gitignore
 ├── .python-version
+├── .venv
 ├── README.md
 ├── pyproject.toml
 ├── requirements-dev.lock
