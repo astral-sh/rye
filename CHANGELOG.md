@@ -4,7 +4,7 @@ There is currently no actual release of Rye.  The latest main branch revision
 is the one you can install as mainline should always be stable.  Here are the
 most recent changes however.
 
-# May
+## May
 
 - Rye's `init` command now attempts to initialize projects with `git`.
 
