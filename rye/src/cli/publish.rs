@@ -138,7 +138,7 @@ fn prompt_encrypt_with_passphrase(s: &str) -> Result<String, Error> {
         s.to_string()
     } else {
         let bytes = encrypt(s.as_bytes(), &phrase)?;
-        String::from_utf8(bytes).context("failed to parse utf-8 from bytes successfully")?
+        String::from_utf8(bytes).context("failed to parse utf-8 from bytes")?
     };
 
     Ok(token)
@@ -151,7 +151,7 @@ fn prompt_decrypt_with_passphrase(s: &str) -> Result<String, Error> {
     let token = if phrase.is_empty() {
         s.to_string()
     } else if let Some(bytes) = decrypt(s.as_bytes(), &phrase) {
-        String::from_utf8(bytes).context("failed to parse utf-8 from bytes successfully")?
+        String::from_utf8(bytes).context("failed to parse utf-8 from bytes")?
     } else {
         bail!("failed to decrypt")
     };
