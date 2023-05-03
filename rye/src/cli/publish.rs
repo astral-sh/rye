@@ -1,10 +1,13 @@
+use std::io::Write;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use anyhow::{bail, Error};
+use anyhow::{bail, Context, Error};
 use clap::Parser;
+use toml_edit::Item;
 
 use crate::bootstrap::ensure_self_venv;
+use crate::config::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
 use crate::utils::CommandOutput;
 
@@ -13,9 +16,15 @@ use crate::utils::CommandOutput;
 pub struct Args {
     /// The distribution files to upload to the repository (defaults to <workspace-root>/dist/*).
     dist: Option<Vec<PathBuf>>,
-    /// The repository url to publish to (default is https://upload.pypi.org/legacy/).
+    /// The repository to publish to (defaults to 'pypi').
+    #[arg(short, long, default_value = "pypi")]
+    repository: String,
+    /// The repository url to publish to (defaults to https://upload.pypi.org/legacy/).
     #[arg(long, default_value = "https://upload.pypi.org/legacy/")]
     repository_url: String,
+    /// An access token used for the upload.
+    #[arg(long)]
+    token: Option<String>,
     /// Sign files to upload using GPG.
     #[arg(long)]
     sign: bool,
@@ -41,9 +50,45 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let venv = ensure_self_venv(output)?;
     let project = PyProject::discover()?;
 
+    // Get the files to publish.
     let files = match cmd.dist {
         Some(paths) => paths,
         None => vec![project.workspace_path().join("dist").join("*")],
+    };
+
+    // a. Get token from arguments and offer encryption, then store in credentials file.
+    // b. Get token from ~/.rye/credentials keyed by provided repository and provide decryption option.
+    // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
+    let mut credentials = get_credentials()?;
+    let repository = &cmd.repository;
+    let token = match cmd.token {
+        Some(it) => {
+            let encrypted_token = prompt_encrypt_with_passphrase(&it)?;
+            credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
+            write_credentials(&credentials)?;
+
+            Some(it)
+        }
+        None => credentials
+            .get(repository.as_str())
+            .and_then(|table| table.get("token"))
+            .map(|token| token.to_string()),
+    };
+
+    // If the token is found offer decrypt option, otherwise prompt for a token and offer encryption.
+    let token = match token {
+        Some(it) => prompt_decrypt_with_passphrase(&it)?,
+        None => {
+            eprintln!(
+                "No access token found, generate one at: https://pypi.org/manage/account/token/"
+            );
+            let token = prompt_for_token()?;
+            let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
+            credentials[repository.as_str()]["token"] = Item::Value(encrypted_token.into());
+            write_credentials(&credentials)?;
+
+            token
+        }
     };
 
     let mut publish_cmd = Command::new(venv.join("bin/python"));
@@ -52,6 +97,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .arg("--no-color")
         .arg("upload")
         .args(files)
+        .arg("--user")
+        .arg("__token__")
+        .arg("--password")
+        .arg(token)
         .arg("--repository-url")
         .arg(cmd.repository_url);
     if cmd.sign {
@@ -78,4 +127,53 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+fn prompt_for_token() -> Result<String, Error> {
+    eprint!("Access token: ");
+    let token = get_trimmed_user_input().context("failed to read provided token")?;
+
+    Ok(token)
+}
+
+fn prompt_encrypt_with_passphrase(s: &str) -> Result<String, Error> {
+    eprint!("Enter a passphrase (optional): ");
+    let phrase = get_trimmed_user_input().context("failed to read provided passphrase")?;
+
+    let token = if phrase.is_empty() {
+        s.to_string()
+    } else {
+        encrypt_with_passphrase(s, &phrase)?
+    };
+
+    Ok(token)
+}
+
+fn prompt_decrypt_with_passphrase(s: &str) -> Result<String, Error> {
+    eprint!("Enter a passphrase (optional): ");
+    let phrase = get_trimmed_user_input().context("failed to read provided passphrase")?;
+
+    let token = if phrase.is_empty() {
+        s.to_string()
+    } else {
+        decrypt_with_passphrase(s, &phrase)?
+    };
+
+    Ok(token)
+}
+
+fn get_trimmed_user_input() -> Result<String, Error> {
+    std::io::stderr().flush()?;
+    let mut input = String::new();
+    std::io::stdin().read_line(&mut input)?;
+
+    Ok(input.trim().to_string())
+}
+
+fn encrypt_with_passphrase(_s: &str, _phrase: &str) -> Result<String, Error> {
+    todo!()
+}
+
+fn decrypt_with_passphrase(_s: &str, _phrase: &str) -> Result<String, Error> {
+    todo!()
 }
