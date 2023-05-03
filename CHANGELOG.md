@@ -6,7 +6,8 @@ most recent changes however.
 
 ## May
 
-- Rye's `init` command now attempts to initialize projects with `git`.
+- Rye's `init` command now attempts to initialize projects with `git` and
+  will automatically create a `src/project_name/__init__.py` file.
 
 ## April
 
