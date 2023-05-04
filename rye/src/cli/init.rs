@@ -36,8 +36,8 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
-    #[arg(long, default_value = "MIT")]
-    license: String,
+    #[arg(long)]
+    license: Option<String>,
 }
 
 /// The pyproject.toml template
@@ -134,20 +134,24 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let version = "0.1.0";
     let requires_python = format!(">= {}", py);
     let author = get_default_author();
-    let license = cmd.license;
-
-    if !license_file.is_file() {
-        let license_obj: &'static dyn License = <&'static dyn License>::from_str(&license)
-            .expect("current license not an valid license id");
-        let license_text = license_obj.text();
-        let rv = env.render_named_str(
-            "LICENSE.txt",
-            LICENSE_TEMPLATE,
-            context! {
-                license_text,
-            },
-        )?;
-        fs::write(&license_file, rv)?;
+    let license = match cmd.license {
+        Some(license) => {
+            if !license_file.is_file() {
+                let license_obj: &'static dyn License = <&'static dyn License>::from_str(&license)
+                    .expect("current license not an valid license id");
+                let license_text = license_obj.text();
+                let rv = env.render_named_str(
+                    "LICENSE.txt",
+                    LICENSE_TEMPLATE,
+                    context! {
+                        license_text,
+                    },
+                )?;
+                fs::write(&license_file, rv)?;
+            };
+            license
+        }
+        None => "MIT".to_string(),
     };
 
     // create a readme if one is missing
