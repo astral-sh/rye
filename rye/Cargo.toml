@@ -15,6 +15,7 @@ decompress = { version = "0.6.0", default-features = false, features = ["tarzst"
 flate2 = "1.0.25"
 git-testament = "0.2.4"
 globset = "0.4.10"
+hex = "0.4.3"
 indicatif = "0.17.3"
 memchr = "2.5.0"
 minijinja = { version = "0.31.1", features = ["json"] }

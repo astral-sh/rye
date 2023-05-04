@@ -121,60 +121,62 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
 
 // TODO(cnpryer)
 pub mod auth {
+    use std::ops::Deref;
+
     use anyhow::Error;
-    use ring::{
-        aead::{self, BoundKey},
-        error::Unspecified,
-        rand::{SecureRandom, SystemRandom},
-    };
+    use ring::aead::*;
 
-    struct NonceSeq(Option<aead::Nonce>);
+    /// A `Secret` struct modeled after Cargo's `Secret` wrapper, including `ring`-backed
+    /// encryption and decryption methods.
+    ///
+    /// TODO(cnpryer): Could split into Secret and RegistryConfig or something.
+    pub struct Secret<T> {
+        inner: T,
+    }
 
-    impl NonceSeq {
-        fn new(nonce: aead::Nonce) -> Self {
-            Self(Some(nonce))
+    impl<T> Secret<T> {
+        pub fn encrypt_with_key(&self, key: &[u8], nonce: [u8; 12]) -> Result<Vec<u8>, Error>
+        where
+            T: ToString,
+        {
+            let mut data = self.inner.to_string().as_bytes().to_vec();
+            let key = UnboundKey::new(&CHACHA20_POLY1305, key).unwrap();
+            let owned_nonce = Nonce::assume_unique_for_key(nonce);
+            let key = LessSafeKey::new(key);
+            key.seal_in_place_append_tag(owned_nonce, Aad::empty(), &mut data)
+                .unwrap();
+
+            Ok(data.to_vec())
+        }
+
+        pub fn decrypt_with_key(&self, key: &[u8], nonce: [u8; 12]) -> Option<Vec<u8>>
+        where
+            T: ToString,
+        {
+            let mut data = self.inner.to_string().as_bytes().to_vec();
+            let key = UnboundKey::new(&CHACHA20_POLY1305, key).unwrap();
+            let owned_nonce = Nonce::assume_unique_for_key(nonce);
+            let key = LessSafeKey::new(key);
+            let data = key
+                .open_in_place(owned_nonce, Aad::empty(), &mut data)
+                .unwrap();
+
+            Some(data.to_vec())
         }
     }
 
-    impl aead::NonceSequence for NonceSeq {
-        fn advance(&mut self) -> Result<aead::Nonce, Unspecified> {
-            self.0.take().ok_or(Unspecified)
+    impl<T> From<T> for Secret<T> {
+        fn from(inner: T) -> Self {
+            Self { inner }
         }
     }
 
-    pub fn encrypt(data: &[u8], passphrase: &str) -> Result<Vec<u8>, Error> {
-        let key = aead::UnboundKey::new(&aead::AES_256_GCM, passphrase.as_bytes())
-            .expect("unbound key for encryption");
-        let mut slice = [0u8; 12];
-        SystemRandom::new()
-            .fill(&mut slice)
-            .expect("nonce should fill");
-        let nonce = aead::Nonce::assume_unique_for_key(slice);
+    impl<T> Deref for Secret<T> {
+        type Target = T;
 
-        let mut text = Vec::new();
-        text.extend_from_slice(data);
-
-        let mut sealing_key = aead::SealingKey::new(key, NonceSeq::new(nonce));
-        sealing_key
-            .seal_in_place_append_tag(aead::Aad::empty(), &mut text)
-            .expect("sealing key should seal in place");
-
-        Ok(text)
-    }
-
-    pub fn decrypt(data: &[u8], passphrase: &str) -> Option<Vec<u8>> {
-        let key = aead::UnboundKey::new(&aead::AES_256_GCM, passphrase.as_bytes()).ok()?;
-        let mut slice: [u8; 12] = [0; 12];
-        slice.copy_from_slice(&data[..12]);
-        let nonce = aead::Nonce::assume_unique_for_key(slice);
-
-        let mut text = Vec::from(data);
-
-        let opening_key = aead::OpeningKey::new(key, NonceSeq::new(nonce))
-            .open_in_place(aead::Aad::empty(), &mut text)
-            .ok();
-
-        opening_key.map(|x| x.to_vec())
+        fn deref(&self) -> &Self::Target {
+            &self.inner
+        }
     }
 }
 

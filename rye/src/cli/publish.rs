@@ -1,18 +1,19 @@
 use std::io::Write;
+use std::num::NonZeroU32;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
 use anyhow::{bail, Context, Error};
 use clap::Parser;
+use ring::pbkdf2;
+use ring::rand::{SecureRandom, SystemRandom};
 use toml_edit::{Item, Table};
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
-use crate::utils::{
-    auth::{decrypt, encrypt},
-    CommandOutput,
-};
+use crate::utils::auth::Secret;
+use crate::utils::CommandOutput;
 
 /// Publish packages to a package repository.
 #[derive(Parser, Debug)]
@@ -66,25 +67,28 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .or_insert(Item::Table(Table::new()));
 
     let token = if let Some(token) = cmd.token {
-        let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
+        let secret = Secret::from(token);
+        let encrypted_token = prompt_encrypt_with_passphrase(&secret)?;
         credentials[repository]["token"] = Item::Value(encrypted_token.into());
         write_credentials(&credentials)?;
 
-        token
+        secret.to_string()
     } else if let Some(token) = credentials
         .get(repository)
         .and_then(|table| table.get("token"))
         .map(|token| token.to_string())
     {
-        prompt_decrypt_with_passphrase(&token)?
+        let secret = Secret::from(token);
+        prompt_decrypt_with_passphrase(&secret)?
     } else {
         eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
         let token = prompt_for_token()?;
-        let encrypted_token = prompt_encrypt_with_passphrase(&token)?;
+        let secret = Secret::from(token);
+        let encrypted_token = prompt_encrypt_with_passphrase(&secret)?;
         credentials[repository]["token"] = Item::Value(encrypted_token.into());
         write_credentials(&credentials)?;
 
-        token
+        secret.to_string()
     };
 
     let mut publish_cmd = Command::new(venv.join("bin/python"));
@@ -129,33 +133,51 @@ fn prompt_for_token() -> Result<String, Error> {
     Ok(token)
 }
 
-fn prompt_encrypt_with_passphrase(s: &str) -> Result<String, Error> {
+fn prompt_encrypt_with_passphrase(secret: &Secret<String>) -> Result<String, Error> {
     eprint!("Enter a passphrase (optional): ");
     let phrase = get_trimmed_user_input().context("failed to read provided passphrase")?;
 
     let token = if phrase.is_empty() {
-        s.to_string()
+        secret.to_string()
     } else {
-        let bytes = encrypt(s.as_bytes(), &phrase)?;
-        String::from_utf8(bytes).context("failed to parse utf-8 from bytes")?
+        // Get a nonce and a key for encryption
+        let mut nonce_data = [0; 12];
+        SystemRandom::new().fill(&mut nonce_data).unwrap();
+        let key = derive_key(&phrase, &nonce_data);
+
+        // Encode the encrypted token
+        let bytes = secret.encrypt_with_key(&key, nonce_data)?;
+
+        hex::encode(bytes)
     };
 
     Ok(token)
 }
 
-fn prompt_decrypt_with_passphrase(s: &str) -> Result<String, Error> {
+fn prompt_decrypt_with_passphrase(secret: &Secret<String>) -> Result<String, Error> {
     eprint!("Enter a passphrase (optional): ");
     let phrase = get_trimmed_user_input().context("failed to read provided passphrase")?;
 
-    let token = if phrase.is_empty() {
-        s.to_string()
-    } else if let Some(bytes) = decrypt(s.as_bytes(), &phrase) {
-        String::from_utf8(bytes).context("failed to parse utf-8 from bytes")?
+    if phrase.is_empty() {
+        Ok(secret.to_string())
     } else {
-        bail!("failed to decrypt")
-    };
+        // Decode the encoded token
+        let bytes = hex::decode(secret.to_string())?;
+        let decoded = Secret::from(String::from_utf8(bytes)?);
 
-    Ok(token)
+        // Get a nonce and create a key for decryption
+        let mut nonce_data = [0; 12];
+        SystemRandom::new().fill(&mut nonce_data).unwrap();
+        let key = derive_key(&phrase, &nonce_data);
+
+        if let Some(bytes) = decoded.decrypt_with_key(&key, nonce_data) {
+            let token = String::from_utf8(bytes).context("failed to parse utf-8 from bytes")?;
+
+            Ok(token)
+        } else {
+            bail!("failed to decrypt");
+        }
+    }
 }
 
 fn get_trimmed_user_input() -> Result<String, Error> {
@@ -164,4 +186,19 @@ fn get_trimmed_user_input() -> Result<String, Error> {
     std::io::stdin().read_line(&mut input)?;
 
     Ok(input.trim().to_string())
+}
+
+fn derive_key(passphrase: &str, salt: &[u8]) -> [u8; 32] {
+    let mut key = [0u8; 32];
+    let iterations = 100_000;
+
+    pbkdf2::derive(
+        pbkdf2::PBKDF2_HMAC_SHA256,
+        NonZeroU32::new(iterations).unwrap(),
+        salt,
+        passphrase.as_bytes(),
+        &mut key,
+    );
+
+    key
 }
