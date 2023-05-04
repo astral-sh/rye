@@ -34,6 +34,9 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
+    /// Which license should be used?
+    #[arg(long, default_value = "MIT")]
+    license: String,
 }
 
 /// The pyproject.toml template
@@ -125,7 +128,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let version = "0.1.0";
     let requires_python = format!(">= {}", py);
     let author = get_default_author();
-    let license = "MIT";
 
     // create a readme if one is missing
     let with_readme = if readme.is_file() {
@@ -136,7 +138,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             README_TEMPLATE,
             context! {
                 name,
-                license,
+                license => cmd.license,
             },
         )?;
         fs::write(&readme, rv)?;
@@ -153,7 +155,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             version,
             author,
             requires_python,
-            license,
+            license => cmd.license,
             with_readme,
             build_system => cmd.build_system,
         },
