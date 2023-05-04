@@ -18,45 +18,6 @@ use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
 use crate::utils::CommandOutput;
 
-const FIND_SCRIPT_SCRIPT: &str = r#"
-import os
-import re
-import sys
-import json
-from importlib.metadata import distribution, PackageNotFoundError
-
-_package_re = re.compile('(?i)^([a-z0-9._-]+)')
-
-result = {}
-
-def dump_all(dist, root=False):
-    rv = []
-    for file in dist.files or ():
-        rv.append(os.path.normpath(dist.locate_file(file)))
-    result["" if root else dist.name] = rv
-    req = []
-    for r in dist.requires or ():
-        name = _package_re.match(r)
-        if name is not None:
-            req.append(name.group())
-    return req
-
-root = sys.argv[1]
-to_resolve = [root]
-seen = set()
-while to_resolve:
-    try:
-        d = to_resolve.pop()
-        dist = distribution(d)
-    except Exception:
-        continue
-    if dist.name in seen:
-        continue
-    seen.add(dist.name)
-    to_resolve.extend(dump_all(dist, root=d==root))
-
-print(json.dumps(result))
-"#;
 static SUCCESSFULLY_DOWNLOADED_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new("(?m)^Successfully downloaded (.*?)$").unwrap());
 
@@ -111,7 +72,7 @@ pub fn install(
 
     let out = Command::new(target_venv_bin_path.join("python"))
         .arg("-c")
-        .arg(FIND_SCRIPT_SCRIPT)
+        .arg(include_str!("scripts/find_script.py"))
         .arg(&requirement.name)
         .stdout(Stdio::piped())
         .output()

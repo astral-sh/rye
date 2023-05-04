@@ -14,15 +14,6 @@ use serde::Deserialize;
 use crate::config::{get_canonical_py_path, list_known_toolchains};
 use crate::sources::{iter_downloadable, PythonVersion};
 
-const INSPECT_SCRIPT: &str = r#"
-import json
-import platform
-print(json.dumps({
-    "python_implementation": platform.python_implementation(),
-    "python_version": platform.python_version(),
-}))
-"#;
-
 #[derive(Debug, Deserialize)]
 struct InspectInfo {
     python_implementation: String,
@@ -85,7 +76,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 fn register(cmd: RegisterCommand) -> Result<(), Error> {
     let output = Command::new(&cmd.path)
         .arg("-c")
-        .arg(INSPECT_SCRIPT)
+        .arg(include_str!("../scripts/inspect.py"))
         .output()
         .context("error executing interpreter to inspect version")?;
     if !output.status.success() {
