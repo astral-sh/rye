@@ -1,6 +1,5 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
-use std::str::FromStr;
 use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
@@ -57,7 +56,9 @@ dependencies = []
 readme = "README.md"
 {%- endif %}
 requires-python = {{ requires_python }}
+{%- if license %}
 license = { text = {{ license }} }
+{%- endif %}
 
 [build-system]
 {%- if build_system == "hatchling" %}
@@ -81,7 +82,9 @@ const README_TEMPLATE: &str = r#"# {{ name }}
 
 Describe your project here.
 
+{%- if license %}
 * License: {{ license }}
+{%- endif %}
 
 "#;
 
@@ -134,24 +137,24 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let version = "0.1.0";
     let requires_python = format!(">= {}", py);
     let author = get_default_author();
-    let license = match cmd.license {
-        Some(license) => {
-            if !license_file.is_file() {
-                let license_obj: &'static dyn License = <&'static dyn License>::from_str(&license)
-                    .expect("current license not an valid license id");
-                let license_text = license_obj.text();
-                let rv = env.render_named_str(
-                    "LICENSE.txt",
-                    LICENSE_TEMPLATE,
-                    context! {
-                        license_text,
-                    },
-                )?;
-                fs::write(&license_file, rv)?;
-            };
-            license
-        }
-        None => "MIT".to_string(),
+    let license = if let Some(license) = cmd.license {
+        if !license_file.is_file() {
+            let license_obj: &dyn License = license
+                .parse()
+                .expect("current license not an valid license id");
+            let license_text = license_obj.text();
+            let rv = env.render_named_str(
+                "LICENSE.txt",
+                LICENSE_TEMPLATE,
+                context! {
+                    license_text,
+                },
+            )?;
+            fs::write(&license_file, rv)?;
+        };
+        Some(license)
+    } else {
+        None
     };
 
     // create a readme if one is missing
