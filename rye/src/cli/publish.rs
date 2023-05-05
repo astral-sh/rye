@@ -88,6 +88,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     } else {
         eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
         let token = prompt_for_token()?;
+        if token.is_empty() {
+            bail!("an access token is required")
+        }
         let secret = Secret::new(token);
         let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
         credentials[repository]["token"] =
