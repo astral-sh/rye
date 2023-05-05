@@ -26,6 +26,7 @@ pathdiff = "0.2.1"
 pep440_rs = "0.3.5"
 pep508_rs = "0.1.5"
 regex = "1.8.1"
+rpassword = "7.2.0"
 same-file = "1.0.6"
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0.94"

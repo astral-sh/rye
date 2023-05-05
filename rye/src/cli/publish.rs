@@ -8,6 +8,7 @@ use age::{
 };
 use anyhow::{bail, Context, Error};
 use clap::Parser;
+use rpassword::read_password;
 use toml_edit::{Item, Table};
 
 use crate::bootstrap::ensure_self_venv;
@@ -136,8 +137,8 @@ fn prompt_for_token() -> Result<String, Error> {
 
 fn prompt_encrypt_with_passphrase(secret: &Secret<String>) -> Result<Vec<u8>, Error> {
     eprint!("Enter a passphrase (optional): ");
-    let phrase = get_trimmed_user_input().context("failed to read provided passphrase")?;
-    let phrase = Secret::new(phrase);
+    std::io::stdout().flush().unwrap();
+    let phrase = Secret::new(read_password()?);
 
     let token = if phrase.expose_secret().is_empty() {
         secret.expose_secret().as_bytes().to_vec()
@@ -157,8 +158,7 @@ fn prompt_encrypt_with_passphrase(secret: &Secret<String>) -> Result<Vec<u8>, Er
 
 fn prompt_decrypt_with_passphrase(secret: &Secret<String>) -> Result<String, Error> {
     eprint!("Enter a passphrase (optional): ");
-    let phrase = get_trimmed_user_input().context("failed to read provided passphrase")?;
-    let phrase = Secret::new(phrase);
+    let phrase = Secret::new(read_password()?);
 
     if phrase.expose_secret().is_empty() {
         return Ok(secret.expose_secret().clone());
