@@ -69,8 +69,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     let token = if let Some(token) = cmd.token {
         let secret = Secret::new(token);
-        let encrypted = prompt_encrypt_with_passphrase(&secret)?;
-        credentials[repository]["token"] = Item::Value(hex::encode(encrypted).into());
+        let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
+        credentials[repository]["token"] = Item::Value(hex::encode(maybe_encrypted).into());
         write_credentials(&credentials)?;
 
         secret
@@ -81,13 +81,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .map(hex::decode)
     {
         let secret = Secret::new(String::from_utf8(token?)?);
-        Secret::new(prompt_decrypt_with_passphrase(&secret)?)
+        let decrypted = prompt_maybe_decrypt(&secret)?;
+
+        Secret::new(decrypted)
     } else {
         eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
         let token = prompt_for_token()?;
         let secret = Secret::new(token);
-        let encrypted = prompt_encrypt_with_passphrase(&secret)?;
-        credentials[repository]["token"] = Item::Value(hex::encode(encrypted).into());
+        let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
+        credentials[repository]["token"] = Item::Value(hex::encode(maybe_encrypted).into());
         write_credentials(&credentials)?;
 
         secret
@@ -135,7 +137,7 @@ fn prompt_for_token() -> Result<String, Error> {
     Ok(token)
 }
 
-fn prompt_encrypt_with_passphrase(secret: &Secret<String>) -> Result<Vec<u8>, Error> {
+fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Vec<u8>, Error> {
     eprint!("Enter a passphrase (optional): ");
     std::io::stdout().flush().unwrap();
     let phrase = Secret::new(read_password()?);
@@ -156,7 +158,7 @@ fn prompt_encrypt_with_passphrase(secret: &Secret<String>) -> Result<Vec<u8>, Er
     Ok(token.to_vec())
 }
 
-fn prompt_decrypt_with_passphrase(secret: &Secret<String>) -> Result<String, Error> {
+fn prompt_maybe_decrypt(secret: &Secret<String>) -> Result<String, Error> {
     eprint!("Enter a passphrase (optional): ");
     let phrase = Secret::new(read_password()?);
 
