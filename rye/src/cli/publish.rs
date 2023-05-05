@@ -70,7 +70,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let token = if let Some(token) = cmd.token {
         let secret = Secret::new(token);
         let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
-        credentials[repository]["token"] = Item::Value(hex::encode(maybe_encrypted).into());
+        let encoded = hex::encode(maybe_encrypted.expose_secret());
+        credentials[repository]["token"] = Item::Value(encoded.into());
         write_credentials(&credentials)?;
 
         secret
@@ -78,10 +79,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .get(repository)
         .and_then(|table| table.get("token"))
         .map(|token| token.to_string())
-        .map(hex::decode)
+        .map(clean_hex)
     {
-        let secret = Secret::new(String::from_utf8(token?)?);
-        let decrypted = prompt_maybe_decrypt(&secret)?;
+        let decoded = hex::decode(token)?;
+        let decrypted = prompt_maybe_decrypt(&decoded)?;
 
         Secret::new(decrypted)
     } else {
@@ -89,7 +90,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let token = prompt_for_token()?;
         let secret = Secret::new(token);
         let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
-        credentials[repository]["token"] = Item::Value(hex::encode(maybe_encrypted).into());
+        credentials[repository]["token"] =
+            Item::Value(hex::encode(maybe_encrypted.expose_secret()).into());
         write_credentials(&credentials)?;
 
         secret
@@ -137,7 +139,7 @@ fn prompt_for_token() -> Result<String, Error> {
     Ok(token)
 }
 
-fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Vec<u8>, Error> {
+fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Secret<Vec<u8>>, Error> {
     eprint!("Enter a passphrase (optional): ");
     std::io::stdout().flush().unwrap();
     let phrase = Secret::new(read_password()?);
@@ -155,18 +157,16 @@ fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Vec<u8>, Error> {
         encrypted
     };
 
-    Ok(token.to_vec())
+    Ok(Secret::new(token.to_vec()))
 }
 
-fn prompt_maybe_decrypt(secret: &Secret<String>) -> Result<String, Error> {
+fn prompt_maybe_decrypt(bytes: &[u8]) -> Result<String, Error> {
     eprint!("Enter a passphrase (optional): ");
     let phrase = Secret::new(read_password()?);
 
     if phrase.expose_secret().is_empty() {
-        return Ok(secret.expose_secret().clone());
-    } else if let Decryptor::Passphrase(decryptor) =
-        Decryptor::new(secret.expose_secret().as_bytes())?
-    {
+        return Ok(String::from_utf8(bytes.to_vec())?);
+    } else if let Decryptor::Passphrase(decryptor) = Decryptor::new(bytes)? {
         // Do the decryption
         let mut decrypted = vec![];
         let mut reader = decryptor.decrypt(&phrase, None)?;
@@ -185,4 +185,13 @@ fn get_trimmed_user_input() -> Result<String, Error> {
     std::io::stdin().read_line(&mut input)?;
 
     Ok(input.trim().to_string())
+}
+
+fn clean_hex(s: String) -> String {
+    let h = s.trim().replace(['\\', '"'], "");
+    if h.len() % 2 == 1 {
+        format!("0{}", h)
+    } else {
+        h
+    }
 }
