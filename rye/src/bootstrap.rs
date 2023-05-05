@@ -180,30 +180,6 @@ pub fn get_pip_module(venv: &Path) -> PathBuf {
     rv
 }
 
-/// Links all of the pip-tools modules into a given folder.
-///
-/// This is a very ugly workaround to us not having pip tools in the virtualenv.
-pub fn link_pip_tools(venv: &Path, folder: &Path) -> Result<(), Error> {
-    let mut lib = venv.to_path_buf();
-    lib.push("lib");
-    lib.push(SELF_SITE_PACKAGES);
-    for module in [
-        "pip",
-        "setuptools",
-        "wheel",
-        "build",
-        "click",
-        "piptools",
-        "toml",
-        "tomli",
-        "pyproject_hooks",
-    ] {
-        symlink(lib.join(module), folder.join(module))
-            .with_context(|| format!("tried to link '{}'", module))?;
-    }
-    Ok(())
-}
-
 /// Fetches a version if missing.
 pub fn fetch(
     version: &PythonVersionRequest,

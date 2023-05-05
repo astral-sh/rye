@@ -7,6 +7,7 @@ mod cli;
 mod config;
 mod installer;
 mod lock;
+mod piptools;
 mod pyproject;
 mod sources;
 mod sync;

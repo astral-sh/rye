@@ -5,13 +5,13 @@ use std::{env, fs};
 use anyhow::{bail, Context, Error};
 use console::style;
 use serde::{Deserialize, Serialize};
-use tempfile::TempDir;
 
-use crate::bootstrap::{ensure_self_venv, fetch, link_pip_tools};
+use crate::bootstrap::{ensure_self_venv, fetch};
 use crate::config::{get_py_bin, load_python_version};
 use crate::lock::{
     update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
 };
+use crate::piptools::get_pip_sync;
 use crate::pyproject::PyProject;
 use crate::sources::PythonVersion;
 use crate::utils::CommandOutput;
@@ -125,7 +125,9 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             .context("failed creating virtualenv ahead of sync")?;
         fs::write(
             venv.join("rye-venv.json"),
-            serde_json::to_string_pretty(&VenvMarker { python: py_ver })?,
+            serde_json::to_string_pretty(&VenvMarker {
+                python: py_ver.clone(),
+            })?,
         )
         .context("failed writing venv marker file")?;
     }
@@ -135,8 +137,6 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     // into a folder all by itself and place a second file in there which we
     // can pass to pip-sync to install the local package.
     if recreate || cmd.mode != SyncMode::PythonOnly {
-        let dir = TempDir::new()?;
-
         if cmd.no_lock {
             let lockfile = if cmd.dev { &dev_lockfile } else { &lockfile };
             if !lockfile.is_file() {
@@ -148,6 +148,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         } else if let Some(workspace) = pyproject.workspace() {
             // make sure we have an up-to-date lockfile
             update_workspace_lockfile(
+                &py_ver,
                 workspace,
                 LockMode::Production,
                 &lockfile,
@@ -156,6 +157,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             )
             .context("could not write production lockfile for workspace")?;
             update_workspace_lockfile(
+                &py_ver,
                 workspace,
                 LockMode::Dev,
                 &dev_lockfile,
@@ -166,6 +168,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         } else {
             // make sure we have an up-to-date lockfile
             update_single_project_lockfile(
+                &py_ver,
                 &pyproject,
                 LockMode::Production,
                 &lockfile,
@@ -174,6 +177,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             )
             .context("could not write production lockfile for project")?;
             update_single_project_lockfile(
+                &py_ver,
                 &pyproject,
                 LockMode::Dev,
                 &dev_lockfile,
@@ -188,13 +192,10 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             if output != CommandOutput::Quiet {
                 eprintln!("Installing dependencies");
             }
-            link_pip_tools(&self_venv, dir.path()).context("failed to link pip-tools internals")?;
-            let mut pip_sync_cmd = Command::new(pyproject.venv_bin_path().join("python"));
+            //pyproject.venv_bin_path().join("python"));
+            let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
             let root = pyproject.workspace_path();
             pip_sync_cmd
-                .arg("-c")
-                .arg("from piptools.scripts.sync import cli; cli()")
-                .env("PYTHONPATH", dir.path())
                 // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
                 // so let's make sure it is url escaped.  This is pretty hacky but
                 // good enough for now.

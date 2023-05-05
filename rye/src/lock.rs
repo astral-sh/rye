@@ -12,8 +12,9 @@ use regex::Regex;
 use tempfile::NamedTempFile;
 use url::Url;
 
-use crate::bootstrap::{ensure_self_venv, link_pip_tools};
+use crate::piptools::get_pip_compile;
 use crate::pyproject::{normalize_package_name, DependencyKind, PyProject, Workspace};
+use crate::sources::PythonVersion;
 use crate::utils::CommandOutput;
 
 static FILE_EDITABLE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^-e (file://.*?)\s*$").unwrap());
@@ -54,6 +55,7 @@ pub struct LockOptions {
 
 /// Creates lockfiles for all projects in the workspace.
 pub fn update_workspace_lockfile(
+    py_ver: &PythonVersion,
     workspace: &Arc<Workspace>,
     lock_mode: LockMode,
     lockfile: &Path,
@@ -99,6 +101,7 @@ pub fn update_workspace_lockfile(
     let exclusions = find_exclusions(&projects)?;
     generate_lockfile(
         output,
+        py_ver,
         &workspace.path(),
         req_file.path(),
         lockfile,
@@ -108,6 +111,7 @@ pub fn update_workspace_lockfile(
     )?;
     generate_lockfile(
         output,
+        py_ver,
         &workspace.path(),
         local_req_file.path(),
         lockfile,
@@ -165,6 +169,7 @@ fn dump_dependencies(
 
 /// Updates the lockfile of the current project.
 pub fn update_single_project_lockfile(
+    py_ver: &PythonVersion,
     pyproject: &PyProject,
     lock_mode: LockMode,
     lockfile: &Path,
@@ -193,6 +198,7 @@ pub fn update_single_project_lockfile(
     let exclusions = find_exclusions(std::slice::from_ref(pyproject))?;
     generate_lockfile(
         output,
+        py_ver,
         &pyproject.workspace_path(),
         req_file.path(),
         lockfile,
@@ -204,8 +210,10 @@ pub fn update_single_project_lockfile(
     Ok(())
 }
 
+#[allow(clippy::too_many_arguments)]
 fn generate_lockfile(
     output: CommandOutput,
+    py_ver: &PythonVersion,
     workspace_path: &Path,
     requirements_file_in: &Path,
     lockfile: &Path,
@@ -213,7 +221,6 @@ fn generate_lockfile(
     exclusions: &HashSet<Requirement>,
     extra_args: &[&str],
 ) -> Result<(), Error> {
-    let self_venv = ensure_self_venv(output)?;
     let scratch = tempfile::tempdir()?;
     let requirements_file = scratch.path().join("requirements.txt");
     if lockfile.is_file() {
@@ -222,21 +229,22 @@ fn generate_lockfile(
         fs::write(&requirements_file, b"")?;
     }
 
-    link_pip_tools(&self_venv, scratch.path()).context("failed to link pip-tools internals")?;
-
-    let mut cmd = Command::new(workspace_path.join(".venv/bin/python"));
-    cmd.arg("-c")
-        .arg("from piptools.scripts.compile import cli; cli()")
-        .arg("--resolver=backtracking")
+    let pip_compile = get_pip_compile(py_ver, output)?;
+    let mut cmd = Command::new(pip_compile);
+    cmd.arg("--resolver=backtracking")
         .arg("--no-annotate")
         .arg("--strip-extras")
         .arg("--allow-unsafe")
         .arg("--no-header")
+        .arg("--pip-args")
+        .arg(format!(
+            "--python=\"{}\"",
+            workspace_path.join(".venv/bin/python").display()
+        ))
         .arg("-o")
         .arg(&requirements_file)
         .arg(requirements_file_in)
-        .env("PYTHONWARNINGS", "ignore")
-        .env("PYTHONPATH", scratch.path());
+        .env("PYTHONWARNINGS", "ignore");
     if output == CommandOutput::Verbose {
         cmd.arg("--verbose");
     } else {
