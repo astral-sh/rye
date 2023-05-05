@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, OS};
 use std::io::Write;
-use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{self, AtomicBool};
@@ -159,6 +158,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     }
     #[cfg(not(target_os = "linux"))]
     {
+        use std::os::unix::fs::symlink;
         symlink(&this, shims.join("python")).context("tried to symlink python shim")?;
         symlink(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
     }
