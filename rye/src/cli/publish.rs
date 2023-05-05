@@ -62,6 +62,17 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // b. Get token from ~/.rye/credentials keyed by provided repository and provide decryption option.
     // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
     let repository = &cmd.repository;
+
+    // If -r is pypi but the url isn't pypi then bail
+    if repository == "pypi"
+        && !matches!(
+            cmd.repository_url.trim_end_matches('/'),
+            "https://upload.pypi.org/legacy" | "https://upload.pypi.org"
+        )
+    {
+        bail!("invalid pypi url {} (use -h for help)", cmd.repository_url);
+    }
+
     let mut credentials = get_credentials()?;
     credentials
         .entry(repository)
@@ -144,7 +155,6 @@ fn prompt_for_token() -> Result<String, Error> {
 
 fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Secret<Vec<u8>>, Error> {
     eprint!("Enter a passphrase (optional): ");
-    std::io::stdout().flush().unwrap();
     let phrase = Secret::new(read_password()?);
 
     let token = if phrase.expose_secret().is_empty() {
