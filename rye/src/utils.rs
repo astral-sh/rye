@@ -119,67 +119,6 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
     Ok(())
 }
 
-// TODO(cnpryer)
-pub mod auth {
-    use std::ops::Deref;
-
-    use anyhow::Error;
-    use ring::aead::*;
-
-    /// A `Secret` struct modeled after Cargo's `Secret` wrapper, including `ring`-backed
-    /// encryption and decryption methods.
-    ///
-    /// TODO(cnpryer): Could split into Secret and RegistryConfig or something.
-    pub struct Secret<T> {
-        inner: T,
-    }
-
-    impl<T> Secret<T> {
-        pub fn encrypt_with_key(&self, key: &[u8], nonce: [u8; 12]) -> Result<Vec<u8>, Error>
-        where
-            T: ToString,
-        {
-            let mut data = self.inner.to_string().as_bytes().to_vec();
-            let key = UnboundKey::new(&CHACHA20_POLY1305, key).unwrap();
-            let owned_nonce = Nonce::assume_unique_for_key(nonce);
-            let key = LessSafeKey::new(key);
-            key.seal_in_place_append_tag(owned_nonce, Aad::empty(), &mut data)
-                .unwrap();
-
-            Ok(data.to_vec())
-        }
-
-        pub fn decrypt_with_key(&self, key: &[u8], nonce: [u8; 12]) -> Option<Vec<u8>>
-        where
-            T: ToString,
-        {
-            let mut data = self.inner.to_string().as_bytes().to_vec();
-            let key = UnboundKey::new(&CHACHA20_POLY1305, key).unwrap();
-            let owned_nonce = Nonce::assume_unique_for_key(nonce);
-            let key = LessSafeKey::new(key);
-            let data = key
-                .open_in_place(owned_nonce, Aad::empty(), &mut data)
-                .unwrap();
-
-            Some(data.to_vec())
-        }
-    }
-
-    impl<T> From<T> for Secret<T> {
-        fn from(inner: T) -> Self {
-            Self { inner }
-        }
-    }
-
-    impl<T> Deref for Secret<T> {
-        type Target = T;
-
-        fn deref(&self) -> &Self::Target {
-            &self.inner
-        }
-    }
-}
-
 #[test]
 fn test_quiet_exit_display() {
     let quiet_exit = QuietExit(0);
