@@ -355,6 +355,8 @@ impl PyProject {
 
     /// Returns the project's target python version
     pub fn target_python_version(&self) -> Option<PythonVersionRequest> {
+        // TODO: make this workspace aware
+
         // if there is a lower bound defined in requires-python, we go
         // with that.
         let lower_bound = self

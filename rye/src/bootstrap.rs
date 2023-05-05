@@ -1,7 +1,6 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, OS};
 use std::io::Write;
-use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{self, AtomicBool};
@@ -159,6 +158,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     }
     #[cfg(not(target_os = "linux"))]
     {
+        use std::os::unix::fs::symlink;
         symlink(&this, shims.join("python")).context("tried to symlink python shim")?;
         symlink(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
     }
@@ -178,30 +178,6 @@ pub fn get_pip_module(venv: &Path) -> PathBuf {
     rv.push(SELF_SITE_PACKAGES);
     rv.push("pip");
     rv
-}
-
-/// Links all of the pip-tools modules into a given folder.
-///
-/// This is a very ugly workaround to us not having pip tools in the virtualenv.
-pub fn link_pip_tools(venv: &Path, folder: &Path) -> Result<(), Error> {
-    let mut lib = venv.to_path_buf();
-    lib.push("lib");
-    lib.push(SELF_SITE_PACKAGES);
-    for module in [
-        "pip",
-        "setuptools",
-        "wheel",
-        "build",
-        "click",
-        "piptools",
-        "toml",
-        "tomli",
-        "pyproject_hooks",
-    ] {
-        symlink(lib.join(module), folder.join(module))
-            .with_context(|| format!("tried to link '{}'", module))?;
-    }
-    Ok(())
 }
 
 /// Fetches a version if missing.
