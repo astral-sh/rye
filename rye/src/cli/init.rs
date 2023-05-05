@@ -5,6 +5,7 @@ use std::{env, fs};
 use anyhow::{bail, Context, Error};
 use clap::{Parser, ValueEnum};
 use console::style;
+use license::License;
 use minijinja::{context, Environment};
 use serde::Serialize;
 
@@ -34,6 +35,8 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
+    #[arg(long)]
+    license: Option<String>,
 }
 
 /// The pyproject.toml template
@@ -53,7 +56,9 @@ dependencies = []
 readme = "README.md"
 {%- endif %}
 requires-python = {{ requires_python }}
+{%- if license %}
 license = { text = {{ license }} }
+{%- endif %}
 
 [build-system]
 {%- if build_system == "hatchling" %}
@@ -77,8 +82,14 @@ const README_TEMPLATE: &str = r#"# {{ name }}
 
 Describe your project here.
 
+{%- if license %}
 * License: {{ license }}
+{%- endif %}
 
+"#;
+
+const LICENSE_TEMPLATE: &str = r#"
+{{ license_text }}
 "#;
 
 /// Template for the __init__.py
@@ -106,6 +117,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
     let readme = dir.join("README.md");
+    let license_file = dir.join("LICENSE.txt");
 
     if toml.is_file() {
         bail!("pyproject.toml already exists");
@@ -125,7 +137,25 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let version = "0.1.0";
     let requires_python = format!(">= {}", py);
     let author = get_default_author();
-    let license = "MIT";
+    let license = if let Some(license) = cmd.license {
+        if !license_file.is_file() {
+            let license_obj: &dyn License = license
+                .parse()
+                .expect("current license not an valid license id");
+            let license_text = license_obj.text();
+            let rv = env.render_named_str(
+                "LICENSE.txt",
+                LICENSE_TEMPLATE,
+                context! {
+                    license_text,
+                },
+            )?;
+            fs::write(&license_file, rv)?;
+        };
+        Some(license)
+    } else {
+        None
+    };
 
     // create a readme if one is missing
     let with_readme = if readme.is_file() {

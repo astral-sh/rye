@@ -9,6 +9,8 @@ most recent changes however.
 - Rye's `init` command now attempts to initialize projects with `git` and
   will automatically create a `src/project_name/__init__.py` file.
 
+- Rye can now also generate a license text when initializing projects.
+
 ## April
 
 - Rye now supports negative (exclusion) dependencies.  These can be used to
