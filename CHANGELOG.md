@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- Rye will now look at the `RYE_HOME` to determine the location of the
+  `.rye` folder.  If it's not set, `$HOME/.rye` is used as before.
+
 - Rye now has a most consistent handling for virtualenv versions.  If
   `.python-version` is provided, that version is used.  Otherwise if
   `requires-python` is set in the `pyproject.toml`, that version is used

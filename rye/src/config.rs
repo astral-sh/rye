@@ -8,8 +8,13 @@ use once_cell::sync::Lazy;
 
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 
-static APP_DIR: Lazy<Option<PathBuf>> =
-    Lazy::new(|| simple_home_dir::home_dir().map(|x| x.join(".rye")));
+static APP_DIR: Lazy<Option<PathBuf>> = Lazy::new(|| {
+    if let Some(rye_home) = env::var_os("RYE_HOME") {
+        Some(PathBuf::from(rye_home))
+    } else {
+        simple_home_dir::home_dir().map(|x| x.join(".rye"))
+    }
+});
 
 /// Returns the application directory.
 pub fn get_app_dir() -> Result<&'static Path, Error> {
