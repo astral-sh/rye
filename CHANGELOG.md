@@ -6,6 +6,12 @@ most recent changes however.
 
 ## May
 
+- Rye now has a most consistent handling for virtualenv versions.  If
+  `.python-version` is provided, that version is used.  Otherwise if
+  `requires-python` is set in the `pyproject.toml`, that version is used
+  instead.  When a new project is created the `.python-version` file is
+  written and the current latest cpython version is picked.
+
 - It's now possible to explicitly set the `name` of the project when
   initializing a new one.
 

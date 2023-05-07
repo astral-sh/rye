@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::env::consts::{ARCH, OS};
 use std::fmt;
 use std::str::FromStr;
 
@@ -22,25 +21,6 @@ pub struct PythonVersion {
     pub minor: u8,
     pub patch: u8,
     pub suffix: Option<Cow<'static, str>>,
-}
-
-impl PythonVersion {
-    /// Returns the latest version for this OS.
-    pub fn latest_cpython() -> PythonVersion {
-        get_download_url(
-            &PythonVersionRequest {
-                kind: None,
-                major: 3,
-                minor: None,
-                patch: None,
-                suffix: None,
-            },
-            OS,
-            ARCH,
-        )
-        .expect("unsupported platform")
-        .0
-    }
 }
 
 impl Serialize for PythonVersion {

@@ -6,8 +6,7 @@ use clap::Parser;
 use console::style;
 
 use crate::bootstrap::ensure_self_venv;
-use crate::config::load_python_version;
-use crate::pyproject::PyProject;
+use crate::pyproject::{get_current_venv_python_version, PyProject};
 use crate::utils::CommandOutput;
 
 /// Prints the current state of the project.
@@ -32,10 +31,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     println!("path: {}", style(project.root_path().display()).cyan());
     println!("venv: {}", style(project.venv_path().display()).cyan());
     if let Some(ver) = project.target_python_version() {
-        println!("min python: {}", style(ver).cyan());
+        println!("target python: {}", style(ver).cyan());
     }
-    if let Some(ver) = load_python_version() {
-        println!("pinned python: {}", style(ver).cyan());
+    if let Ok(ver) = project.venv_python_version() {
+        println!("venv python: {}", style(&ver).cyan());
+        if let Some(actual) = get_current_venv_python_version(&project.venv_path()) {
+            if actual != ver {
+                println!("last synched venv python: {}", style(&actual).red());
+            }
+        }
     }
 
     if let Some(workspace) = project.workspace() {

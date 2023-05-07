@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{env, fs};
 
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, Context, Error};
 use once_cell::sync::Lazy;
 
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
@@ -122,7 +122,7 @@ pub fn get_default_author() -> Option<(String, String)> {
 }
 
 /// Reads the current `.python-version` file.
-pub fn load_python_version() -> Option<PythonVersion> {
+pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
     let mut here = env::current_dir().ok()?;
 
     loop {
@@ -138,4 +138,21 @@ pub fn load_python_version() -> Option<PythonVersion> {
     }
 
     None
+}
+
+/// Returns the most recent cpython release.
+pub fn get_latest_cpython() -> Result<PythonVersion, Error> {
+    get_download_url(
+        &PythonVersionRequest {
+            kind: None,
+            major: 3,
+            minor: None,
+            patch: None,
+            suffix: None,
+        },
+        OS,
+        ARCH,
+    )
+    .map(|x| x.0)
+    .context("unsupported platform")
 }
