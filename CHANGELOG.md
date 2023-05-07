@@ -12,6 +12,9 @@ most recent changes however.
   instead.  When a new project is created the `.python-version` file is
   written and the current latest cpython version is picked.
 
+- It's now possible to explicitly set the `name` of the project when
+  initializing a new one.
+
 - Rye's `init` command now attempts to initialize projects with `git` and
   will automatically create a `src/project_name/__init__.py` file.
 

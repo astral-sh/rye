@@ -40,8 +40,12 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
+    /// Which license should be used (SPDX identifier)?
     #[arg(long)]
     license: Option<String>,
+    /// The name of the package.
+    #[arg(long)]
+    name: Option<String>,
 }
 
 /// The pyproject.toml template
@@ -149,7 +153,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
 
-    let name = slug::slugify(dir.file_name().unwrap().to_string_lossy());
+    let name = slug::slugify(
+        cmd.name
+            .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().into_owned()),
+    );
     let version = "0.1.0";
     let requires_python = format!(">= {}", min_py);
     let author = get_default_author();
