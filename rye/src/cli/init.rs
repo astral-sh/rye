@@ -37,6 +37,9 @@ pub struct Args {
     build_system: BuildSystem,
     #[arg(long)]
     license: Option<String>,
+    /// The name of the package.
+    #[arg(long)]
+    name: Option<String>,
 }
 
 /// The pyproject.toml template
@@ -133,7 +136,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .map(|x| format!("{}.{}", x.major, x.minor))
             .unwrap_or_else(|| "3.8".into()),
     };
-    let name = slug::slugify(dir.file_name().unwrap().to_string_lossy());
+    let name = slug::slugify(
+        cmd.name
+            .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().into_owned()),
+    );
     let version = "0.1.0";
     let requires_python = format!(">= {}", py);
     let author = get_default_author();
