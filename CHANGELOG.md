@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- It's now possible to explicitly set the `name` of the project when
+  initializing a new one.
+
 - Rye's `init` command now attempts to initialize projects with `git` and
   will automatically create a `src/project_name/__init__.py` file.
 
