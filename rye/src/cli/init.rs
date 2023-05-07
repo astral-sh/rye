@@ -35,7 +35,7 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
-    /// Which license should be used(SPDX identifier)?
+    /// Which license should be used (SPDX identifier)?
     #[arg(long)]
     license: Option<String>,
 }
