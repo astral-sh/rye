@@ -9,8 +9,13 @@ use toml_edit::Document;
 
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 
-static APP_DIR: Lazy<Option<PathBuf>> =
-    Lazy::new(|| simple_home_dir::home_dir().map(|x| x.join(".rye")));
+static APP_DIR: Lazy<Option<PathBuf>> = Lazy::new(|| {
+    if let Some(rye_home) = env::var_os("RYE_HOME") {
+        Some(PathBuf::from(rye_home))
+    } else {
+        simple_home_dir::home_dir().map(|x| x.join(".rye"))
+    }
+});
 
 /// Returns the application directory.
 pub fn get_app_dir() -> Result<&'static Path, Error> {
@@ -123,7 +128,7 @@ pub fn get_default_author() -> Option<(String, String)> {
 }
 
 /// Reads the current `.python-version` file.
-pub fn load_python_version() -> Option<PythonVersion> {
+pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
     let mut here = env::current_dir().ok()?;
 
     loop {
@@ -170,4 +175,21 @@ pub fn get_credentials_filepath() -> Result<PathBuf, Error> {
 pub fn write_credentials(doc: &Document) -> Result<(), Error> {
     std::fs::write(get_credentials_filepath()?, doc.to_string())
         .context("unable to write to the credentials file")
+}
+
+/// Returns the most recent cpython release.
+pub fn get_latest_cpython() -> Result<PythonVersion, Error> {
+    get_download_url(
+        &PythonVersionRequest {
+            kind: None,
+            major: 3,
+            minor: None,
+            patch: None,
+            suffix: None,
+        },
+        OS,
+        ARCH,
+    )
+    .map(|x| x.0)
+    .context("unsupported platform")
 }

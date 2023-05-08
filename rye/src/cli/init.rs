@@ -5,10 +5,13 @@ use std::{env, fs};
 use anyhow::{bail, Context, Error};
 use clap::{Parser, ValueEnum};
 use console::style;
+use license::License;
 use minijinja::{context, Environment};
 use serde::Serialize;
 
-use crate::config::{get_default_author, load_python_version};
+use crate::config::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
+
+const DEFAULT_LOWER_BOUND_PYTHON: &str = "3.8";
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
 #[value(rename_all = "snake_case")]
@@ -25,7 +28,10 @@ pub struct Args {
     /// Where to place the project (defaults to current path)
     #[arg(default_value = ".")]
     path: PathBuf,
-    /// Which interpreter version should be used?
+    /// Minimal Python version supported by this project.
+    #[arg(long)]
+    min_py: Option<String>,
+    /// Python version to use for the virtualenv.
     #[arg(short, long)]
     py: Option<String>,
     /// Do not create a readme.
@@ -34,6 +40,12 @@ pub struct Args {
     /// Which build system should be used?
     #[arg(long, default_value = "hatchling")]
     build_system: BuildSystem,
+    /// Which license should be used (SPDX identifier)?
+    #[arg(long)]
+    license: Option<String>,
+    /// The name of the package.
+    #[arg(long)]
+    name: Option<String>,
 }
 
 /// The pyproject.toml template
@@ -53,7 +65,9 @@ dependencies = []
 readme = "README.md"
 {%- endif %}
 requires-python = {{ requires_python }}
+{%- if license %}
 license = { text = {{ license }} }
+{%- endif %}
 
 [build-system]
 {%- if build_system == "hatchling" %}
@@ -77,8 +91,14 @@ const README_TEMPLATE: &str = r#"# {{ name }}
 
 Describe your project here.
 
+{%- if license %}
 * License: {{ license }}
+{%- endif %}
 
+"#;
+
+const LICENSE_TEMPLATE: &str = r#"
+{{ license_text }}
 "#;
 
 /// Template for the __init__.py
@@ -106,6 +126,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
     let readme = dir.join("README.md");
+    let license_file = dir.join("LICENSE.txt");
+    let python_version_file = dir.join(".python-version");
 
     if toml.is_file() {
         bail!("pyproject.toml already exists");
@@ -115,17 +137,54 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     fs::create_dir_all(&dir).ok();
 
     // Write pyproject.toml
+    let min_py = match cmd.min_py {
+        Some(py) => py,
+        None => get_python_version_from_pyenv_pin()
+            .map(|x| format!("{}.{}", x.major, x.minor))
+            .unwrap_or_else(|| DEFAULT_LOWER_BOUND_PYTHON.into()),
+    };
     let py = match cmd.py {
         Some(py) => py,
-        None => load_python_version()
-            .map(|x| format!("{}.{}", x.major, x.minor))
-            .unwrap_or_else(|| "3.8".into()),
+        None => {
+            let version = get_python_version_from_pyenv_pin()
+                .map(Ok)
+                .unwrap_or_else(get_latest_cpython)?;
+            format!("{}.{}.{}", version.major, version.minor, version.patch)
+        }
     };
-    let name = slug::slugify(dir.file_name().unwrap().to_string_lossy());
+
+    let name = slug::slugify(
+        cmd.name
+            .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().into_owned()),
+    );
     let version = "0.1.0";
-    let requires_python = format!(">= {}", py);
+    let requires_python = format!(">= {}", min_py);
     let author = get_default_author();
-    let license = "MIT";
+    let license = if let Some(license) = cmd.license {
+        if !license_file.is_file() {
+            let license_obj: &dyn License = license
+                .parse()
+                .expect("current license not an valid license id");
+            let license_text = license_obj.text();
+            let rv = env.render_named_str(
+                "LICENSE.txt",
+                LICENSE_TEMPLATE,
+                context! {
+                    license_text,
+                },
+            )?;
+            fs::write(&license_file, rv)?;
+        };
+        Some(license)
+    } else {
+        None
+    };
+
+    // write .python-version
+    if !python_version_file.is_file() {
+        fs::write(python_version_file, format!("{}\n", py))
+            .context("could not write .python-version file")?;
+    }
 
     // create a readme if one is missing
     let with_readme = if readme.is_file() {

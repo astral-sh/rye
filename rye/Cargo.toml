@@ -11,7 +11,7 @@ age = "0.9.1"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
 clap = { version = "4.2.2", default-features = false, features = ["derive", "usage", "wrap_help", "std"] }
 console = "0.15.5"
-curl = { version = "0.4.44", features = ["ssl", "static-curl"] }
+curl = { version = "0.4.44", features = ["ssl", "static-curl", "static-ssl"] }
 decompress = { version = "0.6.0", default-features = false, features = ["tarzst", "targz"] }
 flate2 = "1.0.25"
 git-testament = "0.2.4"
@@ -19,6 +19,7 @@ globset = "0.4.10"
 hex = "0.4.3"
 indicatif = "0.17.3"
 memchr = "2.5.0"
+license = "3.1.1"
 minijinja = { version = "0.31.1", features = ["json"] }
 nix = { version = "0.26.2", default-features = false, features = ["process"] }
 once_cell = "1.17.1"
