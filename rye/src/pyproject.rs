@@ -212,7 +212,7 @@ impl Workspace {
         let normalized_name = normalize_package_name(p);
         for project in self.iter_projects() {
             let project = project?;
-            if project.normalized_name().as_deref() == Some(&normalized_name) {
+            if project.normalized_name()? == normalized_name {
                 return Ok(Some(project));
             }
         }
@@ -328,6 +328,14 @@ impl PyProject {
         self.workspace.as_ref()
     }
 
+    /// Is this the root project of the workspace?
+    pub fn is_workspace_root(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.path() == self.root_path(),
+            None => true,
+        }
+    }
+
     /// Returns the project root path
     pub fn root_path(&self) -> Cow<'_, Path> {
         Cow::Borrowed(&self.root)
@@ -403,8 +411,10 @@ impl PyProject {
     }
 
     /// Returns the normalized name.
-    pub fn normalized_name(&self) -> Option<String> {
-        self.name().map(normalize_package_name)
+    pub fn normalized_name(&self) -> Result<String, Error> {
+        self.name()
+            .map(normalize_package_name)
+            .ok_or_else(|| anyhow!("project from '{}' has no name", self.root_path().display()))
     }
 
     /// Looks up a script
@@ -467,6 +477,19 @@ impl PyProject {
             }
         }
         rv
+    }
+
+    /// Returns a set of all extras.
+    pub fn extras(&self) -> HashSet<&str> {
+        self.doc
+            .get("project")
+            .and_then(|x| x.get("optional-dependencies"))
+            .and_then(|x| x.as_table_like())
+            .map_or(None.into_iter(), |x| {
+                Some(x.iter().map(|x| x.0)).into_iter()
+            })
+            .flatten()
+            .collect()
     }
 
     /// Adds a dependency.

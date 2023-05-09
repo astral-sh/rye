@@ -6,6 +6,8 @@ most recent changes however.
 
 ## May
 
+- Added `--features` and `--all-features` for `lock` and `sync`.
+
 - Rye will now look at the `RYE_HOME` to determine the location of the
   `.rye` folder.  If it's not set, `$HOME/.rye` is used as before.
 

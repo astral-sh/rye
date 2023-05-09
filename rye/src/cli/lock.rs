@@ -23,6 +23,12 @@ pub struct Args {
     /// Update to pre-release versions
     #[arg(long)]
     pre: bool,
+    /// Extras/features to enable when locking the workspace.
+    #[arg(long)]
+    features: Vec<String>,
+    /// Enables all features.
+    #[arg(long)]
+    all_features: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -34,6 +40,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             update: cmd.update,
             update_all: cmd.update_all,
             pre: cmd.pre,
+            features: cmd.features,
+            all_features: cmd.all_features,
         },
         ..SyncOptions::default()
     })?;
