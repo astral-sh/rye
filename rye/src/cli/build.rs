@@ -71,7 +71,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     }
                 }
                 None => {
-                    if project.normalized_name() != Some(normalize_package_name(&package_name)) {
+                    if project.normalized_name()? != normalize_package_name(&package_name) {
                         bail!("unknown project '{}'", package_name);
                     }
                 }
@@ -81,15 +81,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     for project in projects {
         if output != CommandOutput::Quiet {
-            eprintln!(
-                "building {}",
-                style(
-                    project
-                        .normalized_name()
-                        .unwrap_or_else(|| "<unnamed>".into())
-                )
-                .cyan()
-            );
+            eprintln!("building {}", style(project.normalized_name()?).cyan());
         }
 
         let mut build_cmd = Command::new(venv.join("bin/python"));

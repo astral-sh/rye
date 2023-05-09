@@ -8,6 +8,9 @@ most recent changes however.
 
 - Rye now includes a `publish` command for publishing Python packages to a
   package repository.
+
+- Added `--features` and `--all-features` for `lock` and `sync`.
+
 - Rye will now look at the `RYE_HOME` to determine the location of the
   `.rye` folder.  If it's not set, `$HOME/.rye` is used as before.
 
