@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
 use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
-use crate::config::get_py_bin;
+use crate::config::get_toolchain_python_bin;
 use crate::consts::VENV_BIN;
 use crate::lock::{
     update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
@@ -16,7 +16,7 @@ use crate::lock::{
 use crate::piptools::get_pip_sync;
 use crate::pyproject::{get_current_venv_python_version, PyProject};
 use crate::sources::PythonVersion;
-use crate::utils::{symlink_dir, CommandOutput};
+use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -200,12 +200,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
             let root = pyproject.workspace_path();
 
-            #[allow(unused_mut)]
-            let mut py_path = venv.join(VENV_BIN).join("python");
-            #[cfg(windows)]
-            {
-                py_path.set_extension("exe");
-            }
+            let py_path = get_venv_python_bin(&venv);
 
             pip_sync_cmd
                 // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
@@ -257,7 +252,7 @@ pub fn create_virtualenv(
     py_ver: &PythonVersion,
     venv: &Path,
 ) -> Result<(), Error> {
-    let py_bin = get_py_bin(py_ver)?;
+    let py_bin = get_toolchain_python_bin(py_ver)?;
     let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
     if output == CommandOutput::Verbose {
         venv_cmd.arg("--verbose");

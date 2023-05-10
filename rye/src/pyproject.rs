@@ -421,7 +421,7 @@ impl PyProject {
     pub fn get_script_cmd(&self, key: &str) -> Option<Script> {
         let external = self.venv_bin_path().join(key);
 
-        if is_executable(&external) {
+        if is_executable(&external) && !is_unsafe_script(&external) {
             return Some(Script::External(external));
         }
 
@@ -466,15 +466,7 @@ impl PyProject {
             .flatten()
             .flatten()
         {
-            if is_executable(&entry.path()) {
-                #[cfg(windows)]
-                {
-                    if entry.path().file_stem() == Some(OsStr::new("activate"))
-                        || entry.path().file_stem() == Some(OsStr::new("deactivate"))
-                    {
-                        continue;
-                    }
-                }
+            if is_executable(&entry.path()) && !is_unsafe_script(&entry.path()) {
                 rv.insert(get_short_executable_name(&entry.path()));
             }
         }
@@ -730,4 +722,17 @@ pub fn find_project_root() -> Option<PathBuf> {
     }
 
     None
+}
+
+fn is_unsafe_script(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        let stem = path.file_stem();
+        stem == Some(OsStr::new("activate")) || stem == Some(OsStr::new("deactivate"))
+    }
+    #[cfg(unix)]
+    {
+        let _ = path;
+        false
+    }
 }

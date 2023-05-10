@@ -12,7 +12,7 @@ use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
 use tempfile::NamedTempFile;
 
-use crate::config::{get_app_dir, get_canonical_py_path, get_py_bin};
+use crate::config::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::consts::VENV_BIN;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{symlink_file, unpack_tarball, CommandOutput};
@@ -88,7 +88,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
             SELF_PYTHON_VERSION
         )
     })?;
-    let py_bin = get_py_bin(&version)?;
+    let py_bin = get_toolchain_python_bin(&version)?;
 
     // initialize the virtualenv
     let mut venv_cmd = Command::new(&py_bin);
@@ -197,7 +197,7 @@ pub fn fetch(
     output: CommandOutput,
 ) -> Result<PythonVersion, Error> {
     if let Ok(version) = PythonVersion::try_from(version.clone()) {
-        let py_bin = get_py_bin(&version)?;
+        let py_bin = get_toolchain_python_bin(&version)?;
         if py_bin.is_file() {
             if output == CommandOutput::Verbose {
                 eprintln!("Python version already downloaded. Skipping.");
@@ -212,7 +212,7 @@ pub fn fetch(
     };
 
     let target_dir = get_canonical_py_path(&version)?;
-    let target_py_bin = get_py_bin(&version)?;
+    let target_py_bin = get_toolchain_python_bin(&version)?;
     if output == CommandOutput::Verbose {
         eprintln!("target dir: {}", target_dir.display());
     }

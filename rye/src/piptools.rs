@@ -8,7 +8,7 @@ use crate::config::get_app_dir;
 use crate::consts::VENV_BIN;
 use crate::sources::PythonVersion;
 use crate::sync::create_virtualenv;
-use crate::utils::CommandOutput;
+use crate::utils::{get_venv_python_bin, CommandOutput};
 
 const PIP_TOOLS_VERSION: &str = "pip-tools==6.13.0";
 
@@ -17,12 +17,7 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
     let key = format!("py{}.{}", py_ver.major, py_ver.minor);
     let venv = get_app_dir()?.join("pip-tools").join(key);
 
-    #[allow(unused_mut)]
-    let mut py = venv.join(VENV_BIN).join("python");
-    #[cfg(windows)]
-    {
-        py.set_extension("exe");
-    }
+    let py = get_venv_python_bin(&venv);
 
     if venv.join(&py).is_file() {
         return Ok(venv);

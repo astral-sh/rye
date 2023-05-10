@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::convert::Infallible;
 use std::io::Cursor;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{fmt, fs};
 
@@ -16,6 +16,8 @@ static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").
 pub use std::os::unix::fs::{symlink as symlink_file, symlink as symlink_dir};
 #[cfg(windows)]
 pub use std::os::windows::fs::{symlink_dir, symlink_file};
+
+use crate::consts::VENV_BIN;
 
 #[derive(Debug)]
 pub struct QuietExit(pub i32);
@@ -53,6 +55,10 @@ impl CommandOutput {
     }
 }
 
+/// Given a path checks if that path is executable.
+///
+/// On windows this function is a bit magical because if `foo` is passed
+/// as path this will return true if `foo.exe` exists.
 pub fn is_executable(path: &Path) -> bool {
     #[cfg(unix)]
     {
@@ -61,10 +67,13 @@ pub fn is_executable(path: &Path) -> bool {
     }
     #[cfg(windows)]
     {
-        path.with_extension("exe").is_file() || path.with_extension("bat").is_file()
+        ["exe", "bat", "cmd"]
+            .iter()
+            .any(|x| path.with_extension(x).is_file())
     }
 }
 
+/// Given a path to a script, returns a human readable short name of the script
 pub fn get_short_executable_name(path: &Path) -> String {
     #[cfg(unix)]
     {
@@ -73,13 +82,12 @@ pub fn get_short_executable_name(path: &Path) -> String {
     #[cfg(windows)]
     {
         let short_name = path.file_name().unwrap().to_string_lossy().to_lowercase();
-        if let Some(script) = short_name.strip_suffix(".exe") {
-            script.into()
-        } else if let Some(script) = short_name.strip_suffix(".bat") {
-            script.into()
-        } else {
-            short_name
+        for ext in [".exe", ".bat", ".cmd"] {
+            if let Some(base_name) = short_name.strip_suffix(ext) {
+                return script.into();
+            }
         }
+        short_name
     }
 }
 
@@ -185,6 +193,17 @@ pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
         let status = cmd.status()?;
         std::process::exit(status.code().unwrap())
     }
+}
+
+/// Given a virtualenv returns the path to the python interpreter.
+pub fn get_venv_python_bin(venv_path: &Path) -> PathBuf {
+    let mut py = venv_path.join(VENV_BIN);
+    py.push("python");
+    #[cfg(windows)]
+    {
+        py.set_extension("exe");
+    }
+    py
 }
 
 #[test]
