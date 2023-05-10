@@ -9,9 +9,6 @@ use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
 
-#[cfg(unix)]
-use std::os::unix::prelude::MetadataExt;
-
 use anyhow::{anyhow, bail, Context, Error};
 use globset::Glob;
 use once_cell::sync::Lazy;

@@ -108,7 +108,9 @@ fn spawn_shim(args: Vec<OsString>) -> Result<Infallible, Error> {
 
     #[cfg(unix)]
     {
-        cmd.exec();
+        use std::os::unix::process::CommandExt;
+        let err = cmd.exec();
+        Err(err.into())
     }
 
     #[cfg(windows)]

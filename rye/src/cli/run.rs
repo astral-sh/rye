@@ -82,7 +82,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     #[cfg(unix)]
     {
-        cmd.exec();
+        use std::os::unix::process::CommandExt;
+        let err = cmd.exec();
+        Err(err.into())
     }
     #[cfg(windows)]
     {
