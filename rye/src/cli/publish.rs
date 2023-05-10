@@ -10,6 +10,7 @@ use anyhow::{bail, Context, Error};
 use clap::Parser;
 use rpassword::read_password;
 use toml_edit::{Item, Table};
+use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::{get_credentials, write_credentials};
@@ -26,7 +27,7 @@ pub struct Args {
     repository: String,
     /// The repository url to publish to (defaults to https://upload.pypi.org/legacy/).
     #[arg(long, default_value = "https://upload.pypi.org/legacy/")]
-    repository_url: String,
+    repository_url: Url,
     /// An access token used for the upload.
     #[arg(long)]
     token: Option<String>,
@@ -64,12 +65,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let repository = &cmd.repository;
 
     // If -r is pypi but the url isn't pypi then bail
-    if repository == "pypi"
-        && !matches!(
-            cmd.repository_url.trim_end_matches('/'),
-            "https://upload.pypi.org/legacy" | "https://upload.pypi.org"
-        )
-    {
+    if repository == "pypi" && cmd.repository_url.domain() != Some("pypi.org") {
         bail!("invalid pypi url {} (use -h for help)", cmd.repository_url);
     }
 
@@ -122,7 +118,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .arg("--password")
         .arg(token.expose_secret())
         .arg("--repository-url")
-        .arg(cmd.repository_url);
+        .arg(cmd.repository_url.to_string());
     if cmd.sign {
         publish_cmd.arg("--sign");
     }
