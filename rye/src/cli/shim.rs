@@ -4,14 +4,14 @@ use std::ffi::{OsStr, OsString};
 
 use anyhow::{bail, Context, Error};
 use same_file::is_same_file;
-use std::process::{Command, Stdio};
+use std::process::Command;
 use which::which_in_global;
 
 use crate::bootstrap::{ensure_self_venv, get_pip_runner};
 use crate::consts::VENV_BIN;
 use crate::pyproject::PyProject;
 use crate::sync::{sync, SyncOptions};
-use crate::utils::CommandOutput;
+use crate::utils::{exec_spawn, CommandOutput};
 
 fn detect_shim() -> Option<(String, Vec<OsString>)> {
     // Shims are detected if the executable is linked into
@@ -104,33 +104,7 @@ fn get_shim_target(target: &str, mut args: Vec<OsString>) -> Result<Option<Vec<O
 fn spawn_shim(args: Vec<OsString>) -> Result<Infallible, Error> {
     let mut cmd = Command::new(&args[0]);
     cmd.args(&args[1..]);
-    cmd.stdin(Stdio::inherit());
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::process::CommandExt;
-        let err = cmd.exec();
-        Err(err.into())
-    }
-
-    #[cfg(windows)]
-    {
-        use anyhow::anyhow;
-        use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
-        use winapi::um::consoleapi::SetConsoleCtrlHandler;
-
-        unsafe extern "system" fn ctrlc_handler(_: DWORD) -> BOOL {
-            // Do nothing. Let the child process handle it.
-            TRUE
-        }
-        unsafe {
-            if SetConsoleCtrlHandler(Some(ctrlc_handler), TRUE) == FALSE {
-                return Err(anyhow!("unable to set console handler"));
-            }
-        }
-        let status = cmd.status()?;
-        std::process::exit(status.code().unwrap())
-    }
+    match exec_spawn(&mut cmd)? {}
 }
 
 /// This replaces ourselves with the shim target for when the

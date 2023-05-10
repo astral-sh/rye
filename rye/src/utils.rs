@@ -1,6 +1,8 @@
 use std::borrow::Cow;
+use std::convert::Infallible;
 use std::io::Cursor;
 use std::path::Path;
+use std::process::Command;
 use std::{fmt, fs};
 
 use anyhow::Error;
@@ -152,6 +154,37 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
         }
     }
     Ok(())
+}
+
+/// Spawns a command exec style.
+pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        let err = cmd.exec();
+        Err(err.into())
+    }
+    #[cfg(windows)]
+    {
+        use anyhow::anyhow;
+        use std::process::Stdio;
+        use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
+        use winapi::um::consoleapi::SetConsoleCtrlHandler;
+
+        unsafe extern "system" fn ctrlc_handler(_: DWORD) -> BOOL {
+            // Do nothing. Let the child process handle it.
+            TRUE
+        }
+        unsafe {
+            if SetConsoleCtrlHandler(Some(ctrlc_handler), TRUE) == FALSE {
+                return Err(anyhow!("unable to set console handler"));
+            }
+        }
+
+        cmd.stdin(Stdio::inherit());
+        let status = cmd.status()?;
+        std::process::exit(status.code().unwrap())
+    }
 }
 
 #[test]

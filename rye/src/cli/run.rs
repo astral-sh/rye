@@ -8,6 +8,7 @@ use console::style;
 
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
+use crate::utils::exec_spawn;
 
 /// Runs a command installed into this package.
 #[derive(Parser, Debug)]
@@ -80,30 +81,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
     env::remove_var("PYTHONHOME");
 
-    #[cfg(unix)]
-    {
-        use std::os::unix::process::CommandExt;
-        let err = cmd.exec();
-        Err(err.into())
-    }
-    #[cfg(windows)]
-    {
-        use anyhow::anyhow;
-        use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
-        use winapi::um::consoleapi::SetConsoleCtrlHandler;
-
-        unsafe extern "system" fn ctrlc_handler(_: DWORD) -> BOOL {
-            // Do nothing. Let the child process handle it.
-            TRUE
-        }
-        unsafe {
-            if SetConsoleCtrlHandler(Some(ctrlc_handler), TRUE) == FALSE {
-                return Err(anyhow!("unable to set console handler"));
-            }
-        }
-        let status = cmd.status()?;
-        std::process::exit(status.code().unwrap())
-    }
+    match exec_spawn(&mut cmd)? {};
 }
 
 fn list_scripts(pyproject: &PyProject) -> Result<(), Error> {
