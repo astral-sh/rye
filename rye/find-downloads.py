@@ -122,7 +122,7 @@ for page in range(1, 100):
             if info is None:
                 continue
             py_ver, triple, flavor = info
-            if "-static" in triple:
+            if "-static" in triple or (flavor and 'noopt' in flavor):
                 continue
             triple = normalize_triple(triple)
             if triple is None:
