@@ -151,7 +151,7 @@ def _sort_key(info):
 
 final_results = {}
 for py_ver, choices in results.items():
-    choices.sort(key=_sort_key)
+    choices.sort(key=_sort_key, reverse=True)
     urls = {}
     for triple, flavor, url in choices:
         triple = tuple(triple.split('-'))
