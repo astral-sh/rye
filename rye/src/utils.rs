@@ -175,7 +175,6 @@ pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
     #[cfg(windows)]
     {
         use anyhow::anyhow;
-        use std::process::Stdio;
         use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
         use winapi::um::consoleapi::SetConsoleCtrlHandler;
 
