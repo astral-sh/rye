@@ -84,7 +84,7 @@ pub fn get_short_executable_name(path: &Path) -> String {
         let short_name = path.file_name().unwrap().to_string_lossy().to_lowercase();
         for ext in [".exe", ".bat", ".cmd"] {
             if let Some(base_name) = short_name.strip_suffix(ext) {
-                return script.into();
+                return base_name.into();
             }
         }
         short_name
