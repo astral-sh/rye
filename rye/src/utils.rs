@@ -1,6 +1,8 @@
 use std::borrow::Cow;
+use std::convert::Infallible;
 use std::io::Cursor;
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::{fmt, fs};
 
 use anyhow::Error;
@@ -9,6 +11,13 @@ use pep508_rs::{Requirement, VersionOrUrl};
 use regex::{Captures, Regex};
 
 static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").unwrap());
+
+#[cfg(unix)]
+pub use std::os::unix::fs::{symlink as symlink_file, symlink as symlink_dir};
+#[cfg(windows)]
+pub use std::os::windows::fs::{symlink_dir, symlink_file};
+
+use crate::consts::VENV_BIN;
 
 #[derive(Debug)]
 pub struct QuietExit(pub i32);
@@ -43,6 +52,42 @@ impl CommandOutput {
         } else {
             CommandOutput::Normal
         }
+    }
+}
+
+/// Given a path checks if that path is executable.
+///
+/// On windows this function is a bit magical because if `foo` is passed
+/// as path this will return true if `foo.exe` exists.
+pub fn is_executable(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::prelude::MetadataExt;
+        path.metadata().map_or(false, |x| x.mode() & 0o001 != 0)
+    }
+    #[cfg(windows)]
+    {
+        ["exe", "bat", "cmd"]
+            .iter()
+            .any(|x| path.with_extension(x).is_file())
+    }
+}
+
+/// Given a path to a script, returns a human readable short name of the script
+pub fn get_short_executable_name(path: &Path) -> String {
+    #[cfg(unix)]
+    {
+        path.file_name().unwrap().to_string_lossy().to_string()
+    }
+    #[cfg(windows)]
+    {
+        let short_name = path.file_name().unwrap().to_string_lossy().to_lowercase();
+        for ext in [".exe", ".bat", ".cmd"] {
+            if let Some(base_name) = short_name.strip_suffix(ext) {
+                return base_name.into();
+            }
+        }
+        short_name
     }
 }
 
@@ -117,6 +162,48 @@ pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> R
         }
     }
     Ok(())
+}
+
+/// Spawns a command exec style.
+pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::CommandExt;
+        let err = cmd.exec();
+        Err(err.into())
+    }
+    #[cfg(windows)]
+    {
+        use anyhow::anyhow;
+        use std::process::Stdio;
+        use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
+        use winapi::um::consoleapi::SetConsoleCtrlHandler;
+
+        unsafe extern "system" fn ctrlc_handler(_: DWORD) -> BOOL {
+            // Do nothing. Let the child process handle it.
+            TRUE
+        }
+        unsafe {
+            if SetConsoleCtrlHandler(Some(ctrlc_handler), TRUE) == FALSE {
+                return Err(anyhow!("unable to set console handler"));
+            }
+        }
+
+        cmd.stdin(Stdio::inherit());
+        let status = cmd.status()?;
+        std::process::exit(status.code().unwrap())
+    }
+}
+
+/// Given a virtualenv returns the path to the python interpreter.
+pub fn get_venv_python_bin(venv_path: &Path) -> PathBuf {
+    let mut py = venv_path.join(VENV_BIN);
+    py.push("python");
+    #[cfg(windows)]
+    {
+        py.set_extension("exe");
+    }
+    py
 }
 
 #[test]

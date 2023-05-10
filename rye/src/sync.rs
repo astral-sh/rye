@@ -1,4 +1,3 @@
-use std::os::unix::fs::symlink;
 use std::path::Path;
 use std::process::Command;
 use std::{env, fs};
@@ -9,14 +8,15 @@ use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
 use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
-use crate::config::get_py_bin;
+use crate::config::get_toolchain_python_bin;
+use crate::consts::VENV_BIN;
 use crate::lock::{
     update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
 };
 use crate::piptools::get_pip_sync;
 use crate::pyproject::{get_current_venv_python_version, PyProject};
 use crate::sources::PythonVersion;
-use crate::utils::CommandOutput;
+use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -195,10 +195,13 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 eprintln!("Installing dependencies");
             }
             let tempdir = tempdir()?;
-            symlink(get_pip_module(&self_venv), tempdir.path().join("pip"))
+            symlink_dir(get_pip_module(&self_venv), tempdir.path().join("pip"))
                 .context("failed linking pip module into for pip-sync")?;
             let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
             let root = pyproject.workspace_path();
+
+            let py_path = get_venv_python_bin(&venv);
+
             pip_sync_cmd
                 // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
                 // so let's make sure it is url escaped.  This is pretty hacky but
@@ -207,14 +210,11 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .env("PYTHONPATH", tempdir.path())
                 .current_dir(&root)
                 .arg("--python-executable")
-                .arg(venv.join("bin/python"))
+                .arg(&py_path)
                 .arg("--pip-args")
                 // note that the double quotes are necessary to properly handle
                 // spaces in paths
-                .arg(format!(
-                    "--python=\"{}\" --no-deps",
-                    venv.join("bin/python").display()
-                ));
+                .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);
@@ -252,8 +252,8 @@ pub fn create_virtualenv(
     py_ver: &PythonVersion,
     venv: &Path,
 ) -> Result<(), Error> {
-    let py_bin = get_py_bin(py_ver)?;
-    let mut venv_cmd = Command::new(self_venv.join("bin/virtualenv"));
+    let py_bin = get_toolchain_python_bin(py_ver)?;
+    let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
     if output == CommandOutput::Verbose {
         venv_cmd.arg("--verbose");
     } else {

@@ -5,9 +5,10 @@ use anyhow::{bail, Context, Error};
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::get_app_dir;
+use crate::consts::VENV_BIN;
 use crate::sources::PythonVersion;
 use crate::sync::create_virtualenv;
-use crate::utils::CommandOutput;
+use crate::utils::{get_venv_python_bin, CommandOutput};
 
 const PIP_TOOLS_VERSION: &str = "pip-tools==6.13.0";
 
@@ -15,7 +16,9 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
     let self_venv = ensure_self_venv(output)?;
     let key = format!("py{}.{}", py_ver.major, py_ver.minor);
     let venv = get_app_dir()?.join("pip-tools").join(key);
-    let py = venv.join("bin/python");
+
+    let py = get_venv_python_bin(&venv);
+
     if venv.join(&py).is_file() {
         return Ok(venv);
     }
@@ -25,7 +28,7 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
     }
     create_virtualenv(output, &self_venv, py_ver, &venv)?;
 
-    let mut cmd = Command::new(self_venv.join("bin/pip"));
+    let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
     cmd.arg("--python")
         .arg(&py)
         .arg("install")
@@ -45,9 +48,13 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
 }
 
 pub fn get_pip_sync(py_ver: &PythonVersion, output: CommandOutput) -> Result<PathBuf, Error> {
-    Ok(get_pip_tools_bin(py_ver, output)?.join("bin/pip-sync"))
+    Ok(get_pip_tools_bin(py_ver, output)?
+        .join(VENV_BIN)
+        .join("pip-sync"))
 }
 
 pub fn get_pip_compile(py_ver: &PythonVersion, output: CommandOutput) -> Result<PathBuf, Error> {
-    Ok(get_pip_tools_bin(py_ver, output)?.join("bin/pip-compile"))
+    Ok(get_pip_tools_bin(py_ver, output)?
+        .join(VENV_BIN)
+        .join("pip-compile"))
 }

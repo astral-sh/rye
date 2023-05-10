@@ -5,7 +5,6 @@ use std::env;
 use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
 use std::fs;
-use std::os::unix::prelude::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -19,9 +18,10 @@ use regex::Regex;
 use toml_edit::{Array, Document, Formatted, Item, Table, Value};
 
 use crate::config::get_python_version_from_pyenv_pin;
+use crate::consts::VENV_BIN;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
-use crate::utils::{expand_env_vars, format_requirement};
+use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
 
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
 
@@ -364,7 +364,7 @@ impl PyProject {
 
     /// Returns the virtualenv bin path of the virtualenv.
     pub fn venv_bin_path(&self) -> Cow<'_, Path> {
-        Cow::Owned(self.venv_path().join("bin"))
+        Cow::Owned(self.venv_path().join(VENV_BIN))
     }
 
     /// Returns the project's target python version
@@ -420,7 +420,8 @@ impl PyProject {
     /// Looks up a script
     pub fn get_script_cmd(&self, key: &str) -> Option<Script> {
         let external = self.venv_bin_path().join(key);
-        if external.metadata().map_or(false, |x| x.mode() & 0o001 != 0) {
+
+        if is_executable(&external) && !is_unsafe_script(&external) {
             return Some(Script::External(external));
         }
 
@@ -465,15 +466,8 @@ impl PyProject {
             .flatten()
             .flatten()
         {
-            if entry.metadata().map_or(false, |x| (x.mode() & 0o001) != 0) {
-                rv.insert(
-                    entry
-                        .path()
-                        .file_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .to_string(),
-                );
+            if is_executable(&entry.path()) && !is_unsafe_script(&entry.path()) {
+                rv.insert(get_short_executable_name(&entry.path()));
             }
         }
         rv
@@ -728,4 +722,17 @@ pub fn find_project_root() -> Option<PathBuf> {
     }
 
     None
+}
+
+fn is_unsafe_script(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        let stem = path.file_stem();
+        stem == Some(OsStr::new("activate")) || stem == Some(OsStr::new("deactivate"))
+    }
+    #[cfg(unix)]
+    {
+        let _ = path;
+        false
+    }
 }
