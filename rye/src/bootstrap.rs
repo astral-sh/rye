@@ -10,7 +10,7 @@ use anyhow::{bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
-use sha2::{Sha256, Digest};
+use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
 use crate::config::{get_app_dir, get_canonical_py_path, get_py_bin};
@@ -278,7 +278,8 @@ pub fn fetch(
     }
 
     if let Some(sha256) = sha256 {
-        check_hash(&archive_buffer, sha256).with_context(|| format!("hash check of {} failed", &url))?;
+        check_hash(&archive_buffer, sha256)
+            .with_context(|| format!("hash check of {} failed", &url))?;
     } else if output != CommandOutput::Quiet {
         eprintln!("hash check skipped (no hash available)");
     }
