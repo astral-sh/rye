@@ -16,7 +16,7 @@ use crate::consts::VENV_BIN;
 use crate::pyproject::normalize_package_name;
 use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
-use crate::utils::{symlink_file, CommandOutput};
+use crate::utils::{get_venv_python_bin, symlink_file, CommandOutput};
 
 const FIND_SCRIPT_SCRIPT: &str = r#"
 import os
@@ -80,6 +80,7 @@ pub fn install(
     if target_venv_path.is_dir() && !force {
         bail!("package already installed");
     }
+    let py = get_venv_python_bin(&target_venv_path);
     let target_venv_bin_path = target_venv_path.join(VENV_BIN);
 
     uninstall_helper(&target_venv_path, &shim_dir)?;
@@ -91,7 +92,7 @@ pub fn install(
 
     let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
     cmd.arg("--python")
-        .arg(&target_venv_bin_path.join("python"))
+        .arg(&py)
         .arg("install")
         .env("PYTHONWARNINGS", "ignore");
     if output == CommandOutput::Verbose {
@@ -109,7 +110,7 @@ pub fn install(
         bail!("tool installation failed");
     }
 
-    let out = Command::new(target_venv_bin_path.join("python"))
+    let out = Command::new(py)
         .arg("-c")
         .arg(FIND_SCRIPT_SCRIPT)
         .arg(&requirement.name)
