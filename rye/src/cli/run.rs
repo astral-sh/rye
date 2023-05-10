@@ -1,8 +1,8 @@
-use std::env;
-use std::ffi::{CString, OsString};
-use std::os::unix::prelude::OsStrExt;
+use std::env::{self, join_paths};
+use std::ffi::OsString;
+use std::process::Command;
 
-use anyhow::{bail, Context, Error};
+use anyhow::{Context, Error};
 use clap::Parser;
 use console::style;
 
@@ -18,11 +18,11 @@ pub struct Args {
     list: bool,
     /// The command to run
     #[command(subcommand)]
-    cmd: Option<Command>,
+    cmd: Option<Cmd>,
 }
 
 #[derive(Parser, Debug)]
-enum Command {
+enum Cmd {
     #[command(external_subcommand)]
     External(Vec<OsString>),
 }
@@ -38,11 +38,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         return list_scripts(&pyproject);
     }
     let mut args = match cmd.cmd {
-        Some(Command::External(args)) => args,
+        Some(Cmd::External(args)) => args,
         None => unreachable!(),
     };
-
-    let short_name = args[0].to_string_lossy().to_string();
 
     // do we have a custom script to invoke?
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
@@ -68,33 +66,42 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         _ => {}
     }
 
-    let args = args
-        .iter()
-        .filter_map(|x| CString::new(x.as_bytes()).ok())
-        .collect::<Vec<_>>();
-    let path = CString::new(args[0].as_bytes())?;
+    let mut cmd = Command::new(&args[0]);
+    cmd.args(&args[1..]);
 
     // when we spawn into a script, we implicitly activate the virtualenv to make
     // the life of tools easier that expect to be in one.
     env::set_var("VIRTUAL_ENV", &*pyproject.venv_path());
     if let Some(path) = env::var_os("PATH") {
-        let mut new_path = venv_bin.as_os_str().to_owned();
-        new_path.push(":");
-        new_path.push(path);
+        let new_path = join_paths([venv_bin.as_os_str(), &path])?;
         env::set_var("PATH", new_path);
     } else {
         env::set_var("PATH", &*venv_bin);
     }
     env::remove_var("PYTHONHOME");
 
-    if let Err(err) = nix::unistd::execv(&path, &args) {
-        if err == nix::Error::ENOENT {
-            bail!("No script with name '{}' found in virtualenv", short_name);
-        }
-        return Err(err.into());
+    #[cfg(unix)]
+    {
+        cmd.exec();
     }
+    #[cfg(windows)]
+    {
+        use anyhow::anyhow;
+        use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
+        use winapi::um::consoleapi::SetConsoleCtrlHandler;
 
-    Ok(())
+        unsafe extern "system" fn ctrlc_handler(_: DWORD) -> BOOL {
+            // Do nothing. Let the child process handle it.
+            TRUE
+        }
+        unsafe {
+            if SetConsoleCtrlHandler(Some(ctrlc_handler), TRUE) == FALSE {
+                return Err(anyhow!("unable to set console handler"));
+            }
+        }
+        let status = cmd.status()?;
+        std::process::exit(status.code().unwrap())
+    }
 }
 
 fn list_scripts(pyproject: &PyProject) -> Result<(), Error> {

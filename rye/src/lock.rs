@@ -332,7 +332,6 @@ fn generate_lockfile(
         cmd.arg("--pre");
     }
     cmd.args(extra_args);
-    dbg!(&cmd);
     let status = cmd.status().context("unable to run pip-compile")?;
     if !status.success() {
         bail!("failed to generate lockfile");

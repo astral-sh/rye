@@ -59,7 +59,25 @@ pub fn is_executable(path: &Path) -> bool {
     }
     #[cfg(windows)]
     {
-        path.with_extension(".exe").is_file()
+        path.with_extension("exe").is_file() || path.with_extension("bat").is_file()
+    }
+}
+
+pub fn get_short_executable_name(path: &Path) -> String {
+    #[cfg(unix)]
+    {
+        path.file_name().unwrap().to_string_lossy().to_string()
+    }
+    #[cfg(windows)]
+    {
+        let short_name = path.file_name().unwrap().to_string_lossy().to_lowercase();
+        if let Some(script) = short_name.strip_suffix(".exe") {
+            script.into()
+        } else if let Some(script) = short_name.strip_suffix(".bat") {
+            script.into()
+        } else {
+            short_name
+        }
     }
 }
 

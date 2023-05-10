@@ -10,7 +10,6 @@ mod lock;
 mod make_req;
 mod pin;
 mod remove;
-#[cfg(unix)]
 mod run;
 mod rye;
 mod shell;
@@ -47,14 +46,12 @@ enum Command {
     MakeReq(make_req::Args),
     Pin(pin::Args),
     Remove(remove::Args),
-    #[cfg(unix)]
     Run(run::Args),
     Shell(shell::Args),
     Show(show::Args),
     Sync(sync::Args),
     Toolchain(toolchain::Args),
     #[command(name = "self")]
-    #[cfg(unix)]
     Rye(rye::Args),
     Uninstall(uninstall::Args),
 }
@@ -82,13 +79,11 @@ pub fn execute() -> Result<(), Error> {
         Command::MakeReq(cmd) => make_req::execute(cmd),
         Command::Pin(cmd) => pin::execute(cmd),
         Command::Remove(cmd) => remove::execute(cmd),
-        #[cfg(unix)]
         Command::Run(cmd) => run::execute(cmd),
         Command::Shell(cmd) => shell::execute(cmd),
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
         Command::Toolchain(cmd) => toolchain::execute(cmd),
-        #[cfg(unix)]
         Command::Rye(cmd) => rye::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
     }

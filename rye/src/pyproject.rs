@@ -24,7 +24,7 @@ use crate::config::get_python_version_from_pyenv_pin;
 use crate::consts::VENV_BIN;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
-use crate::utils::{expand_env_vars, format_requirement, is_executable};
+use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
 
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
 
@@ -470,14 +470,15 @@ impl PyProject {
             .flatten()
         {
             if is_executable(&entry.path()) {
-                rv.insert(
-                    entry
-                        .path()
-                        .file_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .to_string(),
-                );
+                #[cfg(windows)]
+                {
+                    if entry.path().file_stem() == Some(OsStr::new("activate"))
+                        || entry.path().file_stem() == Some(OsStr::new("deactivate"))
+                    {
+                        continue;
+                    }
+                }
+                rv.insert(get_short_executable_name(&entry.path()));
             }
         }
         rv

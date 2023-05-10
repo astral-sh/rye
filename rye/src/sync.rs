@@ -199,6 +199,14 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .context("failed linking pip module into for pip-sync")?;
             let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
             let root = pyproject.workspace_path();
+
+            #[allow(unused_mut)]
+            let mut py_path = venv.join(VENV_BIN).join("python");
+            #[cfg(windows)]
+            {
+                py_path.set_extension("exe");
+            }
+
             pip_sync_cmd
                 // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
                 // so let's make sure it is url escaped.  This is pretty hacky but
@@ -207,14 +215,11 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .env("PYTHONPATH", tempdir.path())
                 .current_dir(&root)
                 .arg("--python-executable")
-                .arg(venv.join("bin/python"))
+                .arg(&py_path)
                 .arg("--pip-args")
                 // note that the double quotes are necessary to properly handle
                 // spaces in paths
-                .arg(format!(
-                    "--python=\"{}\" --no-deps",
-                    venv.join("bin/python").display()
-                ));
+                .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);
