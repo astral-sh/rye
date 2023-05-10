@@ -278,6 +278,9 @@ pub fn fetch(
     }
 
     if let Some(sha256) = sha256 {
+        if output != CommandOutput::Quiet {
+            eprintln!("{}", style("Checking hash").cyan());
+        }
         check_hash(&archive_buffer, sha256)
             .with_context(|| format!("hash check of {} failed", &url))?;
     } else if output != CommandOutput::Quiet {
