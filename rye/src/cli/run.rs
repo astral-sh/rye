@@ -1,4 +1,4 @@
-use std::env::{self, join_paths};
+use std::env::{self, join_paths, split_paths};
 use std::ffi::OsString;
 use std::process::Command;
 
@@ -74,7 +74,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // the life of tools easier that expect to be in one.
     env::set_var("VIRTUAL_ENV", &*pyproject.venv_path());
     if let Some(path) = env::var_os("PATH") {
-        let new_path = join_paths([venv_bin.as_os_str(), &path])?;
+        let mut paths = split_paths(&path).collect::<Vec<_>>();
+        paths.insert(0, venv_bin.into());
+        let new_path = join_paths(paths)?;
         env::set_var("PATH", new_path);
     } else {
         env::set_var("PATH", &*venv_bin);
