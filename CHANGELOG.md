@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- Rye now builds on windows.  This is even more experimental though
+  than support for Linux and macOS.
+
 - Added `--features` and `--all-features` for `lock` and `sync`.
 
 - Rye will now look at the `RYE_HOME` to determine the location of the
