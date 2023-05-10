@@ -12,9 +12,10 @@ use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
 use tempfile::NamedTempFile;
 
-use crate::config::{get_app_dir, get_canonical_py_path, get_py_bin};
+use crate::config::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
+use crate::consts::VENV_BIN;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::utils::{unpack_tarball, CommandOutput};
+use crate::utils::{symlink_file, unpack_tarball, CommandOutput};
 
 pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
@@ -24,7 +25,12 @@ pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     suffix: None,
 };
 const SELF_VERSION: u64 = 1;
+
+#[cfg(unix)]
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
+#[cfg(windows)]
+const SELF_SITE_PACKAGES: &str = "site-packages";
+
 const SELF_REQUIREMENTS: &str = r#"
 build==0.10.0
 certifi==2022.12.7
@@ -82,7 +88,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
             SELF_PYTHON_VERSION
         )
     })?;
-    let py_bin = get_py_bin(&version)?;
+    let py_bin = get_toolchain_python_bin(&version)?;
 
     // initialize the virtualenv
     let mut venv_cmd = Command::new(&py_bin);
@@ -109,7 +115,9 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     if output != CommandOutput::Quiet {
         eprintln!("Upgrading pip");
     }
-    let mut pip_install_cmd = Command::new(venv_dir.join("bin/pip"));
+    let venv_bin = venv_dir.join(VENV_BIN);
+
+    let mut pip_install_cmd = Command::new(venv_bin.join("pip"));
     pip_install_cmd.arg("install");
     pip_install_cmd.arg("--upgrade");
     pip_install_cmd.arg("pip");
@@ -127,7 +135,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     }
     let mut req_file = NamedTempFile::new()?;
     writeln!(req_file, "{}", SELF_REQUIREMENTS)?;
-    let mut pip_install_cmd = Command::new(venv_dir.join("bin/pip"));
+    let mut pip_install_cmd = Command::new(venv_bin.join("pip"));
     pip_install_cmd
         .arg("install")
         .arg("-r")
@@ -151,16 +159,19 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     fs::remove_dir_all(&shims).ok();
     fs::create_dir_all(&shims).context("tried to create shim folder")?;
     let this = env::current_exe()?;
-    #[cfg(target_os = "linux")]
+    #[cfg(unix)]
     {
-        fs::hard_link(&this, shims.join("python")).context("tried to hard-link python shim")?;
-        fs::hard_link(&this, shims.join("python3")).context("tried to hard-link python3 shim")?;
+        let use_softlinks = !cfg!(target_os = "linux");
+        if use_softlinks || fs::hard_link(&this, shims.join("python")).is_err() {
+            symlink_file(&this, shims.join("python")).context("tried to symlink python shim")?;
+        }
+        if use_softlinks || fs::hard_link(&this, shims.join("python3")).is_err() {
+            symlink_file(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
+        }
     }
-    #[cfg(not(target_os = "linux"))]
+    #[cfg(windows)]
     {
-        use std::os::unix::fs::symlink;
-        symlink(&this, shims.join("python")).context("tried to symlink python shim")?;
-        symlink(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
+        symlink_file(this, shims.join("python.exe")).context("tried to symlink python shim")?;
     }
 
     Ok(())
@@ -186,7 +197,7 @@ pub fn fetch(
     output: CommandOutput,
 ) -> Result<PythonVersion, Error> {
     if let Ok(version) = PythonVersion::try_from(version.clone()) {
-        let py_bin = get_py_bin(&version)?;
+        let py_bin = get_toolchain_python_bin(&version)?;
         if py_bin.is_file() {
             if output == CommandOutput::Verbose {
                 eprintln!("Python version already downloaded. Skipping.");
@@ -201,7 +212,7 @@ pub fn fetch(
     };
 
     let target_dir = get_canonical_py_path(&version)?;
-    let target_py_bin = get_py_bin(&version)?;
+    let target_py_bin = get_toolchain_python_bin(&version)?;
     if output == CommandOutput::Verbose {
         eprintln!("target dir: {}", target_dir.display());
     }

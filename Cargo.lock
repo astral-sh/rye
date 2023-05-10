@@ -829,6 +829,7 @@ dependencies = [
  "url",
  "walkdir",
  "which",
+ "winapi",
  "zstd",
 ]
 

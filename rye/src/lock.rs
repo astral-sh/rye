@@ -397,7 +397,12 @@ fn make_relative_url(path: &Path, base: &Path) -> Result<String, Error> {
         // to make this work for now.
         let mut buf = String::new();
         for chunk in url::form_urlencoded::byte_serialize(rv.to_string_lossy().as_bytes()) {
-            buf.push_str(&chunk.replace('+', "%20").replace("%2F", "/"));
+            buf.push_str(
+                &chunk
+                    .replace('+', "%20")
+                    .replace("%2F", "/")
+                    .replace("%5C", "/"),
+            );
         }
         Ok(format!("file:{}", buf))
     }

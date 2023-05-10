@@ -2,7 +2,6 @@ use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::env::consts::{ARCH, OS};
 use std::fs;
-use std::os::unix::fs::symlink;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -13,6 +12,7 @@ use serde::Deserialize;
 
 use crate::config::{get_canonical_py_path, list_known_toolchains};
 use crate::sources::{iter_downloadable, PythonVersion};
+use crate::utils::symlink_file;
 
 const INSPECT_SCRIPT: &str = r#"
 import json
@@ -117,7 +117,7 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
         fs::create_dir_all(parent).ok();
     }
 
-    symlink(&cmd.path, target).context("could not symlink interpreter")?;
+    symlink_file(&cmd.path, target).context("could not symlink interpreter")?;
     println!("Registered {} as {}", cmd.path.display(), target_version);
 
     Ok(())

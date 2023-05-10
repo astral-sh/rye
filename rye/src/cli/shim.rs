@@ -1,14 +1,17 @@
+use std::convert::Infallible;
 use std::env;
-use std::ffi::{CString, OsStr, OsString};
-use std::os::unix::prelude::OsStrExt;
+use std::ffi::{OsStr, OsString};
 
 use anyhow::{bail, Context, Error};
 use same_file::is_same_file;
+use std::process::Command;
+use which::which_in_global;
 
 use crate::bootstrap::{ensure_self_venv, get_pip_runner};
+use crate::consts::VENV_BIN;
 use crate::pyproject::PyProject;
 use crate::sync::{sync, SyncOptions};
-use crate::utils::CommandOutput;
+use crate::utils::{exec_spawn, CommandOutput};
 
 fn detect_shim() -> Option<(String, Vec<OsString>)> {
     // Shims are detected if the executable is linked into
@@ -84,10 +87,9 @@ fn get_shim_target(target: &str, mut args: Vec<OsString>) -> Result<Option<Vec<O
     // make sure we have the minimal virtualenv.
     sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
 
-    let path = pyproject.venv_path().join("bin").join(target);
-
-    if path.is_file() {
-        args[0] = path.into();
+    let folder = pyproject.venv_path().join(VENV_BIN);
+    if let Some(m) = which_in_global(target, Some(folder))?.next() {
+        args[0] = m.into();
         return Ok(Some(args));
     }
 
@@ -99,19 +101,18 @@ fn get_shim_target(target: &str, mut args: Vec<OsString>) -> Result<Option<Vec<O
     Ok(None)
 }
 
+fn spawn_shim(args: Vec<OsString>) -> Result<Infallible, Error> {
+    let mut cmd = Command::new(&args[0]);
+    cmd.args(&args[1..]);
+    match exec_spawn(&mut cmd)? {}
+}
+
 /// This replaces ourselves with the shim target for when the
 /// executable is invoked as a shim executable.
 pub fn execute_shim() -> Result<(), Error> {
     if let Some((shim_name, args)) = detect_shim() {
         if let Some(args) = get_shim_target(&shim_name, args)? {
-            let target = &args[0];
-            let args = args
-                .iter()
-                .filter_map(|x| CString::new(x.as_bytes()).ok())
-                .collect::<Vec<_>>();
-            let path = CString::new(args[0].as_bytes())?;
-            nix::unistd::execv(&path, &args)
-                .with_context(|| format!("unable to spawn shim {}", target.to_string_lossy()))?;
+            match spawn_shim(args)? {}
         } else {
             bail!("target shim binary not found");
         }
