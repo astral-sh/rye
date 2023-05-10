@@ -104,6 +104,13 @@ def normalize_triple(triple):
     return "%s-%s" % (arch, platform)
 
 
+def read_sha256(url):
+    resp = sess.get(url + ".sha256", headers=HEADERS)
+    if not resp.ok:
+        return None
+    return resp.text.strip()
+
+
 results = {}
 sess = requests.Session()
 
@@ -139,26 +146,29 @@ def _sort_key(info):
         pref = FLAVOR_PREFERENCES.index(flavor)
     except ValueError:
         pref = -1
-    return tuple, pref
+    return pref
 
 
 final_results = {}
 for py_ver, choices in results.items():
-    choices.sort(key=_sort_key)
+    choices.sort(key=_sort_key, reverse=True)
     urls = {}
     for triple, flavor, url in choices:
+        triple = tuple(triple.split('-'))
         if triple in urls:
             continue
-        urls[tuple(triple.split('-'))] = url
+        urls[triple] = url
     final_results[tuple(map(int, py_ver.split('.')))] = urls
 
 
 print("// generated code, do not edit")
 print("use std::borrow::Cow;")
-print("pub const CPYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str)] = &[")
+print("pub const CPYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str, Option<&str>)] = &[")
 for py_ver, choices in sorted(
     final_results.items(), key=lambda x: x[0], reverse=True
 ):
     for (arch, platform), url in sorted(choices.items()):
-        print('    (PythonVersion { kind: Cow::Borrowed("cpython"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s"),' % (py_ver + (arch, platform, url)))
+        sha256 = read_sha256(url)
+        sha256 = 'Some("%s")' % sha256 if sha256 else "None"
+        print('    (PythonVersion { kind: Cow::Borrowed("cpython"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s", %s),' % (py_ver + (arch, platform, url, sha256)))
 print("];")

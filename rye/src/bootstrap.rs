@@ -10,6 +10,7 @@ use anyhow::{bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
+use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
 use crate::config::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
@@ -191,6 +192,17 @@ pub fn get_pip_module(venv: &Path) -> PathBuf {
     rv
 }
 
+fn check_hash(content: &[u8], hash: &'static str) -> Result<(), Error> {
+    let mut hasher = Sha256::new();
+    hasher.update(content);
+    let digest = hasher.finalize();
+    let digest = hex::encode(digest);
+    if digest != hash {
+        bail!("hash mismatch: expected {} got {}", hash, digest);
+    }
+    Ok(())
+}
+
 /// Fetches a version if missing.
 pub fn fetch(
     version: &PythonVersionRequest,
@@ -206,7 +218,7 @@ pub fn fetch(
         }
     }
 
-    let (version, url) = match get_download_url(version, OS, ARCH) {
+    let (version, url, sha256) = match get_download_url(version, OS, ARCH) {
         Some(result) => result,
         None => bail!("unknown version {}", version),
     };
@@ -274,6 +286,16 @@ pub fn fetch(
         transfer
             .perform()
             .with_context(|| format!("download of {} failed", &url))?;
+    }
+
+    if let Some(sha256) = sha256 {
+        if output != CommandOutput::Quiet {
+            eprintln!("{}", style("Checking hash").cyan());
+        }
+        check_hash(&archive_buffer, sha256)
+            .with_context(|| format!("hash check of {} failed", &url))?;
+    } else if output != CommandOutput::Quiet {
+        eprintln!("hash check skipped (no hash available)");
     }
 
     unpack_tarball(&archive_buffer, &target_dir, 1)

@@ -665,7 +665,7 @@ fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion,
         return Ok(ver);
     }
 
-    if let Some((latest, _)) = get_download_url(&requested_version, OS, ARCH) {
+    if let Some((latest, _, _)) = get_download_url(&requested_version, OS, ARCH) {
         Ok(latest)
     } else {
         Err(anyhow!(

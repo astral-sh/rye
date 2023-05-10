@@ -72,7 +72,7 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
     }
 
     // otherwise, any version we can download is an acceptable version
-    if let Some((version, _)) = get_download_url(req, OS, ARCH) {
+    if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
         target_version = Some(version);
     }
 
