@@ -39,6 +39,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 }
 
 fn update(args: UpdateCommand) -> Result<(), Error> {
+    let mut helper = rename_helper::RenameHelper::new()?;
     let mut cmd = Command::new("cargo");
     cmd.arg("install")
         .arg("--git")
@@ -58,6 +59,58 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
     if !status.success() {
         bail!("failed to self-update via cargo-install");
     }
+    helper.disarm();
 
     Ok(())
+}
+
+#[cfg(windows)]
+mod rename_helper {
+    use super::*;
+    use std::{env, fs, path::PathBuf};
+
+    pub struct RenameHelper {
+        original_path: PathBuf,
+        path: PathBuf,
+        disarmed: bool,
+    }
+
+    impl RenameHelper {
+        pub fn new() -> Result<RenameHelper, Error> {
+            let original_path = env::current_exe()?;
+            let path = original_path.with_extension("tmp");
+            fs::rename(&original_path, &path)?;
+            Ok(RenameHelper {
+                original_path,
+                path,
+                disarmed: false,
+            })
+        }
+
+        pub fn disarm(&mut self) {
+            self.disarmed = true;
+        }
+    }
+
+    impl Drop for RenameHelper {
+        fn drop(&mut self) {
+            if !self.disarmed {
+                fs::rename(&self.path, &self.original_path).ok();
+            }
+        }
+    }
+}
+
+#[cfg(unix)]
+mod rename_helper {
+    use super::*;
+    pub struct RenameHelper;
+
+    impl RenameHelper {
+        pub fn new() -> Result<RenameHelper, Error> {
+            Ok(RenameHelper)
+        }
+
+        pub fn disarm(&mut self) {}
+    }
 }
