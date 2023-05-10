@@ -80,7 +80,7 @@ pub fn install(
     if target_venv_path.is_dir() && !force {
         bail!("package already installed");
     }
-    let target_venv_bin_path = target_venv_path.join("bin");
+    let target_venv_bin_path = target_venv_path.join(VENV_BIN);
 
     uninstall_helper(&target_venv_path, &shim_dir)?;
 
@@ -89,7 +89,7 @@ pub fn install(
 
     create_virtualenv(output, &self_venv, &py_ver, &target_venv_path)?;
 
-    let mut cmd = Command::new(self_venv.join("bin/pip"));
+    let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
     cmd.arg("--python")
         .arg(&target_venv_bin_path.join("python"))
         .arg("install")
