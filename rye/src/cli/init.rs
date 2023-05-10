@@ -10,6 +10,7 @@ use minijinja::{context, Environment};
 use serde::Serialize;
 
 use crate::config::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
+use crate::utils::is_inside_git_work_tree;
 
 const DEFAULT_LOWER_BOUND_PYTHON: &str = "3.8";
 
@@ -228,7 +229,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     // if git init is successful prepare the local git repository
-    if !dir.join(".git").is_dir()
+    if !is_inside_git_work_tree(&dir)
         && Command::new("git")
             .arg("init")
             .current_dir(&dir)
