@@ -161,15 +161,11 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     let this = env::current_exe()?;
     #[cfg(unix)]
     {
-        #[cfg(target_os = "linux")]
-        {
-            fs::hard_link(&this, shims.join("python")).context("tried to hard-link python shim")?;
-            fs::hard_link(&this, shims.join("python3"))
-                .context("tried to hard-link python3 shim")?;
-        }
-        #[cfg(not(target_os = "linux"))]
-        {
+        let use_softlinks = !cfg!(target_os = "linux");
+        if use_softlinks || fs::hard_link(&this, shims.join("python")).is_err() {
             symlink_file(&this, shims.join("python")).context("tried to symlink python shim")?;
+        }
+        if use_softlinks || fs::hard_link(&this, shims.join("python3")).is_err() {
             symlink_file(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
         }
     }
