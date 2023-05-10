@@ -77,8 +77,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let token = if let Some(token) = cmd.token {
         let secret = Secret::new(token);
         let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
-        let encoded = hex::encode(maybe_encrypted.expose_secret());
-        credentials[repository]["token"] = Item::Value(encoded.into());
+        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
+        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
         write_credentials(&credentials)?;
 
         secret
@@ -86,12 +86,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .get(repository)
         .and_then(|table| table.get("token"))
         .map(|token| token.to_string())
-        .map(clean_hex)
+        .map(escape_string)
     {
-        let decoded = hex::decode(token)?;
-        let decrypted = prompt_maybe_decrypt(&decoded)?;
+        let secret = Secret::new(token);
 
-        Secret::new(decrypted)
+        prompt_maybe_decrypt(&secret)?
     } else {
         eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
         let token = prompt_for_token()?;
@@ -100,8 +99,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
         let secret = Secret::new(token);
         let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
-        credentials[repository]["token"] =
-            Item::Value(hex::encode(maybe_encrypted.expose_secret()).into());
+        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
+        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
         write_credentials(&credentials)?;
 
         secret
@@ -169,22 +168,28 @@ fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Secret<Vec<u8>>, Erro
     Ok(Secret::new(token.to_vec()))
 }
 
-fn prompt_maybe_decrypt(bytes: &[u8]) -> Result<String, Error> {
+fn prompt_maybe_decrypt(secret: &Secret<String>) -> Result<Secret<String>, Error> {
     eprint!("Enter a passphrase (optional): ");
     let phrase = Secret::new(read_password()?);
 
     if phrase.expose_secret().is_empty() {
-        return Ok(String::from_utf8(bytes.to_vec())?);
-    } else if let Decryptor::Passphrase(decryptor) = Decryptor::new(bytes)? {
+        return Ok(secret.clone());
+    }
+
+    // If a passphrase is provided we assume the secret is encoded bytes from encryption.
+    let bytes = hex::decode(pad_hex(secret.expose_secret().clone()))?;
+    if let Decryptor::Passphrase(decryptor) = Decryptor::new(bytes.as_slice())? {
         // Do the decryption
         let mut decrypted = vec![];
         let mut reader = decryptor.decrypt(&phrase, None)?;
         reader.read_to_end(&mut decrypted)?;
 
         let token = String::from_utf8(decrypted).context("failed to parse utf-8")?;
+        let secret = Secret::new(token);
 
-        return Ok(token);
+        return Ok(secret);
     }
+
     bail!("failed to decrypt")
 }
 
@@ -196,11 +201,28 @@ fn get_trimmed_user_input() -> Result<String, Error> {
     Ok(input.trim().to_string())
 }
 
-fn clean_hex(s: String) -> String {
-    let h = s.trim().replace(['\\', '"'], "");
-    if h.len() % 2 == 1 {
-        format!("0{}", h)
-    } else {
-        h
+/// Helper function to manage potentially encoding secret data.
+///
+/// If the original secret data (bytes) are not the same as the new secret's
+/// then we encode, assuming the new data is encrypted data. Otherwise return
+/// a new secret with the same string.
+fn maybe_encode(original_secret: &Secret<String>, new_secret: &Secret<Vec<u8>>) -> Secret<String> {
+    if original_secret.expose_secret().as_bytes() != new_secret.expose_secret() {
+        let encoded = hex::encode(new_secret.expose_secret());
+        return Secret::new(encoded);
     }
+
+    original_secret.clone()
+}
+
+fn pad_hex(s: String) -> String {
+    if s.len() % 2 == 1 {
+        format!("0{}", s)
+    } else {
+        s
+    }
+}
+
+fn escape_string(s: String) -> String {
+    s.trim().replace(['\\', '"'], "")
 }
