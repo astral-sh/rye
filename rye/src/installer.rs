@@ -1,5 +1,4 @@
 use std::collections::BTreeMap;
-use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{env, fs};
@@ -16,7 +15,7 @@ use crate::config::get_app_dir;
 use crate::pyproject::normalize_package_name;
 use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
-use crate::utils::CommandOutput;
+use crate::utils::{symlink_file, CommandOutput};
 
 const FIND_SCRIPT_SCRIPT: &str = r#"
 import os
@@ -207,7 +206,7 @@ fn install_scripts(
     for file in files {
         if let Ok(rest) = file.strip_prefix(target_venv_bin_path) {
             let shim_target = shim_dir.join(rest);
-            symlink(file, shim_target)
+            symlink_file(file, shim_target)
                 .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
             rv.push(rest.to_string_lossy().to_string());
         }

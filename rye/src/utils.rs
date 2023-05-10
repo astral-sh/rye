@@ -10,6 +10,11 @@ use regex::{Captures, Regex};
 
 static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").unwrap());
 
+#[cfg(unix)]
+pub use std::os::unix::fs::{symlink as symlink_file, symlink as symlink_dir};
+#[cfg(windows)]
+pub use std::os::windows::fs::{symlink_dir, symlink_file};
+
 #[derive(Debug)]
 pub struct QuietExit(pub i32);
 
@@ -43,6 +48,18 @@ impl CommandOutput {
         } else {
             CommandOutput::Normal
         }
+    }
+}
+
+pub fn is_executable(path: &Path) -> bool {
+    #[cfg(unix)]
+    {
+        use std::os::unix::prelude::MetadataExt;
+        path.metadata().map_or(false, |x| x.mode() & 0o001 != 0)
+    }
+    #[cfg(windows)]
+    {
+        path.with_extension(".exe").is_file()
     }
 }
 

@@ -40,9 +40,18 @@ pub fn get_py_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
         return Ok(p);
     }
 
-    p.push("install");
-    p.push("bin");
-    p.push("python3");
+    #[cfg(unix)]
+    {
+        p.push("install");
+        p.push("bin");
+        p.push("python3");
+    }
+    #[cfg(windows)]
+    {
+        p.push("install");
+        p.push("python.exe");
+    }
+
     Ok(p)
 }
 
