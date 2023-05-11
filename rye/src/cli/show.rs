@@ -6,8 +6,9 @@ use clap::Parser;
 use console::style;
 
 use crate::bootstrap::ensure_self_venv;
+use crate::consts::VENV_BIN;
 use crate::pyproject::{get_current_venv_python_version, PyProject};
-use crate::utils::CommandOutput;
+use crate::utils::{get_venv_python_bin, CommandOutput};
 
 /// Prints the current state of the project.
 #[derive(Parser, Debug)]
@@ -69,13 +70,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 }
 
 fn print_installed_deps(project: &PyProject) -> Result<(), Error> {
-    let python = project.venv_bin_path().join("python");
+    let python = get_venv_python_bin(&project.venv_path());
     if !python.is_file() {
         return Ok(());
     }
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
-    let status = Command::new(self_venv.join("bin/pip"))
+    let status = Command::new(self_venv.join(VENV_BIN).join("pip"))
         .arg("--python")
         .arg(&python)
         .arg("freeze")
