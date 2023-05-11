@@ -171,7 +171,12 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     }
     #[cfg(windows)]
     {
-        symlink_file(this, shims.join("python.exe")).context("tried to symlink python shim")?;
+        // on windows we need privileges to symlink.  Not everyone might have that, so we
+        // fall back to hardlinks.
+        if symlink_file(&this, shims.join("python.exe")).is_err() {
+            fs::hard_link(&this, shims.join("python.exe"))
+                .context("tried to symlink python shim")?;
+        }
     }
 
     Ok(())

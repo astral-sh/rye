@@ -117,6 +117,9 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
         fs::create_dir_all(parent).ok();
     }
 
+    // XXX: this requires elevated privileges on windows but using a hardlink here would
+    // break the experience because then the interpreter does not know where it's from.
+    // maybe we want to place files there containing the path to the interpreter instead.
     symlink_file(&cmd.path, target).context("could not symlink interpreter")?;
     println!("Registered {} as {}", cmd.path.display(), target_version);
 
