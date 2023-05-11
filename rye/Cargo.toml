@@ -9,6 +9,7 @@ license = "MIT"
 [dependencies]
 anyhow = { version = "1.0.70", features = ["backtrace"] }
 clap = { version = "4.2.2", default-features = false, features = ["derive", "usage", "wrap_help", "std"] }
+clap_complete = "4.2.1"
 console = "0.15.5"
 curl = { version = "0.4.44", features = ["ssl", "static-curl", "static-ssl"] }
 decompress = { version = "0.6.0", default-features = false, features = ["tarzst", "targz"] }
