@@ -131,8 +131,8 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
     {
         if symlink_file(&cmd.path, &target).is_err() {
             fs::write(
-                &cmd.path,
-                target
+                &target,
+                cmd.path
                     .as_os_str()
                     .to_str()
                     .ok_or_else(|| anyhow::anyhow!("non unicode path to interpreter"))?,
