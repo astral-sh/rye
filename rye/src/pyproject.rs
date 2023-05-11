@@ -2,9 +2,9 @@ use core::fmt;
 use std::borrow::Cow;
 use std::collections::HashSet;
 use std::env;
+use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
 use std::fs;
-use std::os::unix::prelude::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::str::FromStr;
 use std::sync::Arc;
@@ -15,12 +15,13 @@ use once_cell::sync::Lazy;
 use pep440_rs::{Operator, VersionSpecifiers};
 use pep508_rs::Requirement;
 use regex::Regex;
-use toml_edit::{Array, Document, Formatted, Item, Table, TableLike, Value};
+use toml_edit::{Array, Document, Formatted, Item, Table, Value};
 
-use crate::config::load_python_version;
-use crate::sources::{PythonVersion, PythonVersionRequest};
+use crate::config::get_python_version_from_pyenv_pin;
+use crate::consts::VENV_BIN;
+use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
-use crate::utils::{expand_env_vars, format_requirement};
+use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
 
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
 
@@ -100,24 +101,30 @@ impl fmt::Display for Script {
 #[derive(Debug)]
 pub struct Workspace {
     root: PathBuf,
+    doc: Document,
     members: Vec<String>,
 }
 
 impl Workspace {
     /// Loads a workspace from a pyproject.toml and path
-    pub fn from_workspace_section_and_path(workspace: &dyn TableLike, path: &Path) -> Workspace {
-        Workspace {
-            root: path.to_path_buf(),
-            members: workspace
-                .get("members")
-                .and_then(|x| x.as_array())
-                .map(|x| {
-                    x.iter()
-                        .filter_map(|item| item.as_str().map(|x| x.to_string()))
-                        .collect::<Vec<_>>()
-                })
-                .unwrap_or_default(),
-        }
+    fn try_load_from_toml(doc: &Document, path: &Path) -> Option<Workspace> {
+        doc.get("tool")
+            .and_then(|x| x.get("rye"))
+            .and_then(|x| x.get("workspace"))
+            .and_then(|x| x.as_table_like())
+            .map(|workspace| Workspace {
+                root: path.to_path_buf(),
+                doc: doc.clone(),
+                members: workspace
+                    .get("members")
+                    .and_then(|x| x.as_array())
+                    .map(|x| {
+                        x.iter()
+                            .filter_map(|item| item.as_str().map(|x| x.to_string()))
+                            .collect::<Vec<_>>()
+                    })
+                    .unwrap_or_default(),
+            })
     }
 
     /// Discovers a pyproject toml
@@ -205,24 +212,31 @@ impl Workspace {
         let normalized_name = normalize_package_name(p);
         for project in self.iter_projects() {
             let project = project?;
-            if project.normalized_name().as_deref() == Some(&normalized_name) {
+            if project.normalized_name()? == normalized_name {
                 return Ok(Some(project));
             }
         }
         Ok(None)
     }
 
-    fn try_load_from_toml(doc: &Document, path: &Path) -> Option<Workspace> {
-        doc.get("tool")
-            .and_then(|x| x.get("rye"))
-            .and_then(|x| x.get("workspace"))
-            .and_then(|x| x.as_table_like())
-            .map(|workspace| Workspace::from_workspace_section_and_path(workspace, path))
-    }
-
     /// Returns the virtualenv path of the workspace.
     pub fn venv_path(&self) -> Cow<'_, Path> {
         Cow::Owned(self.root.join(".venv"))
+    }
+
+    /// Returns the project's target python version.
+    ///
+    /// That is the Python version that appears as lower bound in the
+    /// pyproject toml.
+    pub fn target_python_version(&self) -> Option<PythonVersionRequest> {
+        resolve_target_python_version(&self.doc, &self.venv_path())
+    }
+
+    /// Returns the project's intended venv python version.
+    ///
+    /// This is the python version that should be used for virtualenvs.
+    pub fn venv_python_version(&self) -> Result<PythonVersion, Error> {
+        resolve_intended_venv_python_version(&self.doc)
     }
 }
 
@@ -314,6 +328,14 @@ impl PyProject {
         self.workspace.as_ref()
     }
 
+    /// Is this the root project of the workspace?
+    pub fn is_workspace_root(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.path() == self.root_path(),
+            None => true,
+        }
+    }
+
     /// Returns the project root path
     pub fn root_path(&self) -> Cow<'_, Path> {
         Cow::Borrowed(&self.root)
@@ -342,69 +364,27 @@ impl PyProject {
 
     /// Returns the virtualenv bin path of the virtualenv.
     pub fn venv_bin_path(&self) -> Cow<'_, Path> {
-        Cow::Owned(self.venv_path().join("bin"))
-    }
-
-    /// Reads the venv python version marker.
-    pub fn venv_python_version(&self) -> Option<PythonVersion> {
-        let marker_file = self.venv_path().join("rye-venv.json");
-        let contents = fs::read(marker_file).ok()?;
-        let marker: VenvMarker = serde_json::from_slice(&contents).ok()?;
-        Some(marker.python)
+        Cow::Owned(self.venv_path().join(VENV_BIN))
     }
 
     /// Returns the project's target python version
     pub fn target_python_version(&self) -> Option<PythonVersionRequest> {
-        // if there is a lower bound defined in requires-python, we go
-        // with that.
-        let lower_bound = self
-            .doc
-            .get("project")
-            .and_then(|x| x.get("requires-python"))
-            .and_then(|x| x.as_str())
-            .and_then(|s| s.parse::<VersionSpecifiers>().ok())
-            .and_then(|versions| {
-                versions
-                    .iter()
-                    .filter(|x| {
-                        matches!(
-                            x.operator(),
-                            Operator::Equal
-                                | Operator::EqualStar
-                                | Operator::GreaterThanEqual
-                                | Operator::GreaterThan
-                        )
-                    })
-                    .map(|x| {
-                        let mut rv = PythonVersionRequest::from(x.version().clone());
-                        // this is pretty shitty, but probably good enough
-                        if matches!(x.operator(), Operator::GreaterThan) {
-                            if let Some(ref mut patch) = rv.patch {
-                                *patch += 1;
-                            } else if let Some(ref mut minor) = rv.minor {
-                                *minor += 1;
-                            }
-                        }
-                        rv
-                    })
-                    .min()
-            });
-
-        if let Some(lower_bound) = lower_bound {
-            return Some(lower_bound);
+        if let Some(workspace) = self.workspace() {
+            workspace.target_python_version()
+        } else {
+            resolve_target_python_version(&self.doc, &self.venv_path())
         }
+    }
 
-        // otherwise let's check if we have a version in the virtualenv
-        if let Some(marker_python) = self.venv_python_version() {
-            return Some(marker_python.into());
+    /// Returns the project's intended venv python version.
+    ///
+    /// This is the python version that should be used for virtualenvs.
+    pub fn venv_python_version(&self) -> Result<PythonVersion, Error> {
+        if let Some(workspace) = self.workspace() {
+            workspace.venv_python_version()
+        } else {
+            resolve_intended_venv_python_version(&self.doc)
         }
-
-        // if nothing else works, pick up the .python-version file
-        if let Some(pyenv_python) = load_python_version() {
-            return Some(pyenv_python.into());
-        }
-
-        None
     }
 
     /// Set the target Python version.
@@ -431,14 +411,17 @@ impl PyProject {
     }
 
     /// Returns the normalized name.
-    pub fn normalized_name(&self) -> Option<String> {
-        self.name().map(normalize_package_name)
+    pub fn normalized_name(&self) -> Result<String, Error> {
+        self.name()
+            .map(normalize_package_name)
+            .ok_or_else(|| anyhow!("project from '{}' has no name", self.root_path().display()))
     }
 
     /// Looks up a script
     pub fn get_script_cmd(&self, key: &str) -> Option<Script> {
         let external = self.venv_bin_path().join(key);
-        if external.metadata().map_or(false, |x| x.mode() & 0o001 != 0) {
+
+        if is_executable(&external) && !is_unsafe_script(&external) {
             return Some(Script::External(external));
         }
 
@@ -483,18 +466,24 @@ impl PyProject {
             .flatten()
             .flatten()
         {
-            if entry.metadata().map_or(false, |x| (x.mode() & 0o001) != 0) {
-                rv.insert(
-                    entry
-                        .path()
-                        .file_name()
-                        .unwrap()
-                        .to_string_lossy()
-                        .to_string(),
-                );
+            if is_executable(&entry.path()) && !is_unsafe_script(&entry.path()) {
+                rv.insert(get_short_executable_name(&entry.path()));
             }
         }
         rv
+    }
+
+    /// Returns a set of all extras.
+    pub fn extras(&self) -> HashSet<&str> {
+        self.doc
+            .get("project")
+            .and_then(|x| x.get("optional-dependencies"))
+            .and_then(|x| x.as_table_like())
+            .map_or(None.into_iter(), |x| {
+                Some(x.iter().map(|x| x.0)).into_iter()
+            })
+            .flatten()
+            .collect()
     }
 
     /// Adds a dependency.
@@ -648,6 +637,76 @@ fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement>
     }
 }
 
+pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion> {
+    let marker_file = venv_path.join("rye-venv.json");
+    let contents = fs::read(marker_file).ok()?;
+    let marker: VenvMarker = serde_json::from_slice(&contents).ok()?;
+    Some(marker.python)
+}
+
+fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {
+    resolve_lower_bound_python_version(doc)
+        .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
+        .or_else(|| get_python_version_from_pyenv_pin().map(Into::into))
+}
+
+fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
+    if let Some(ver) = get_python_version_from_pyenv_pin() {
+        return Ok(ver);
+    }
+    let requested_version = resolve_lower_bound_python_version(doc).ok_or_else(|| {
+        anyhow!(
+            "could not determine a target python version.  Define requires-python in \
+                 pyproject.toml or use a .python-version file"
+        )
+    })?;
+
+    if let Ok(ver) = PythonVersion::try_from(requested_version.clone()) {
+        return Ok(ver);
+    }
+
+    if let Some((latest, _, _)) = get_download_url(&requested_version, OS, ARCH) {
+        Ok(latest)
+    } else {
+        Err(anyhow!(
+            "Unable to determine target virtualenv python version"
+        ))
+    }
+}
+
+fn resolve_lower_bound_python_version(doc: &Document) -> Option<PythonVersionRequest> {
+    doc.get("project")
+        .and_then(|x| x.get("requires-python"))
+        .and_then(|x| x.as_str())
+        .and_then(|s| s.parse::<VersionSpecifiers>().ok())
+        .and_then(|versions| {
+            versions
+                .iter()
+                .filter(|x| {
+                    matches!(
+                        x.operator(),
+                        Operator::Equal
+                            | Operator::EqualStar
+                            | Operator::GreaterThanEqual
+                            | Operator::GreaterThan
+                    )
+                })
+                .map(|x| {
+                    let mut rv = PythonVersionRequest::from(x.version().clone());
+                    // this is pretty shitty, but probably good enough
+                    if matches!(x.operator(), Operator::GreaterThan) {
+                        if let Some(ref mut patch) = rv.patch {
+                            *patch += 1;
+                        } else if let Some(ref mut minor) = rv.minor {
+                            *minor += 1;
+                        }
+                    }
+                    rv
+                })
+                .min()
+        })
+}
+
 pub fn find_project_root() -> Option<PathBuf> {
     let mut here = env::current_dir().ok()?;
 
@@ -663,4 +722,17 @@ pub fn find_project_root() -> Option<PathBuf> {
     }
 
     None
+}
+
+fn is_unsafe_script(path: &Path) -> bool {
+    #[cfg(windows)]
+    {
+        let stem = path.file_stem();
+        stem == Some(OsStr::new("activate")) || stem == Some(OsStr::new("deactivate"))
+    }
+    #[cfg(unix)]
+    {
+        let _ = path;
+        false
+    }
 }

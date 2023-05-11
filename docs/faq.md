@@ -1,6 +1,7 @@
 # FAQ
 
-> ⚠️ Note: `rye` is in an experimental state.
+!!! note
+    `rye` is in an experimental state.
 
 ## Contents
 

@@ -1,4 +1,4 @@
-# Features
+# Commands
 
 ## CLI
 

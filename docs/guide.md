@@ -1,6 +1,7 @@
 # User Guide
 
-> ⚠️ Note: `rye` is in an experimental state.
+!!! note
+    `rye` is in an experimental state.
 
 ## Contents
 
@@ -17,7 +18,7 @@ You can find a demo of `rye` [here](https://youtu.be/CyI8TBuKPF0).
 * [Install a global tool](#install-a-global-tool)
 * [Manage Rye](#manage-rye)
 
-*See [features](./features.md) for more.*
+*See [commands](./commands.md) for more.*
 
 ## Getting started
 
@@ -26,7 +27,7 @@ You can find a demo of `rye` [here](https://youtu.be/CyI8TBuKPF0).
 Rye is built in Rust. There is no binary distribution yet, it only works on Linux and macOS as of today:
 
 ```
-$ cargo install --git https://github.com/mitsuhiko/rye rye
+cargo install --git https://github.com/mitsuhiko/rye rye
 ```
 
 ## Manage your Python toolchain
@@ -34,7 +35,9 @@ $ cargo install --git https://github.com/mitsuhiko/rye rye
 Use the `toolchain` command to use `rye` to manage your Python toolchain.
 
 ```zsh
-$ rye toolchain list --include-downloadable
+rye toolchain list --include-downloadable
+```
+```
 cpython@3.11.1
 cpython@3.10.9
 cpython@3.9.16
@@ -46,17 +49,20 @@ cpython@3.10.7 (downloadable)
 We'll download `cpython3.10.8` for a new project.
 
 ```zsh
-$ rye toolchain fetch 3.10.8
+rye toolchain fetch 3.10.8
+```
+```
 Downloading cpython@3.10.8
 success: Downloaded cpython@3.10.8
 ```
 
 `rye` uses [python-build-standalone](https://github.com/indygreg/python-build-standalone). This means `rye` manages your project's Python environment with a standalone toolchain by downloading the builds for your system.
 
-> 💡 Tip: You can register custom Python toolchains with `rye toolchain register`.
+!!! tip
+    You can register custom Python toolchains with `rye toolchain register`.
 
 ```zsh
-$ rye toolchain register ~/Downloads/pypy3.9-v7.3.11-macos_arm64/bin/python
+rye toolchain register ~/Downloads/pypy3.9-v7.3.11-macos_arm64/bin/python
 ```
 
 ## Start a project
@@ -64,19 +70,23 @@ $ rye toolchain register ~/Downloads/pypy3.9-v7.3.11-macos_arm64/bin/python
 Use the `init` command to initialize a project.
 
 ```zsh
-$ mkdir getting-started
-$ cd getting-started
-$ rye init
+mkdir getting-started
+cd getting-started
+rye init
 ```
 
 This command will bootstrap your directory as a Python project compatible with `rye`.
 
 ```zsh
-$ tree -a .
+tree -a .
 .
+├── .git
 ├── .gitignore
 ├── README.md
-└── pyproject.toml
+├── pyproject.toml
+└── src
+    └── getting_started
+        └── __init__.py
 ```
 
 A `pyproject.toml` is used to store metadata about your project as well as some `rye` configuration. Most of `rye`'s commands will require a `pyproject.toml` to work.
@@ -87,30 +97,38 @@ A `pyproject.toml` is used to store metadata about your project as well as some 
 The `pin` command is used to pin the current version of Python `rye` uses for the workspace. Use it to pin the newly downloaded `cpython@3.10.8` to the project.
 
 ```zsh
-$ rye pin 3.10.8
-$ tree -a .
-.
-├── .gitignore
-├── .python-version
-├── README.md
-└── pyproject.toml
+rye pin 3.10.8
 ```
 
 `rye` can be used to manage your project, its `pyproject.toml`, and its environment.
+
+```zsh
+tree -a .
+.
+├── .git
+├── .gitignore
+├── .python-version
+├── README.md
+├── pyproject.toml
+└── src
+    └── getting_started
+        └── __init__.py
+```
 
 ## Add a dependency
 
 Use the `add` command to add dependencies to your project.
 
 ```zsh
-$ rye add "flask>=2.0"
-$ rye add --dev black
+rye add "flask>=2.0"
+rye add --dev black
 ```
 
-> 💡 Tip: You can install dependencies from other sources as well.
+!!! tip
+    You can install dependencies from other sources as well.
 
 ```zsh
-$ rye add package-name --git=ssh://git@git.example.com/MyProject
+rye add package-name --git=ssh://git@git.example.com/MyProject
 ```
 
 ## Sync your Python environment
@@ -118,18 +136,34 @@ $ rye add package-name --git=ssh://git@git.example.com/MyProject
 `rye` will sync your environment with the `sync` command.
 
 ```zsh
-$ rye sync
+rye sync
 ```
 
 When `rye sync` is run in a workspace all packages are installed together. This also means that they can inter-depend as they will all be installed editable by default.
+
+```zsh
+tree -a .
+.
+├── .git
+├── .gitignore
+├── .python-version
+├── .venv
+├── README.md
+├── pyproject.toml
+├── requirements-dev.lock
+├── requirements.lock
+└── src
+    └── getting_started
+        └── __init__.py
+```
 
 ## Remove a dependency
 
 Use the `remove` command to remove a dependency from the project.
 
 ```zsh
-$ rye remove flask
-$ rye sync
+rye remove flask
+rye sync
 ```
 
 ## Run a script
@@ -146,9 +180,10 @@ serve = "python -m http.server 8000"
 If you want tools to be installed into isolated virtualenvs (like `pipsi` and `pipx`), you can use `rye` (requires `~/.rye/shims` to be on the path):
 
 ```zsh
-$ rye install pycowsay
-$ pycowsay Wow
-
+rye install pycowsay
+pycowsay Wow
+```
+```
   ---
 < Wow >
   ---
@@ -162,9 +197,9 @@ $ pycowsay Wow
 Alternatively, use `rye run <script>` to run a script (installed into `.venv/bin`) in the context of the virtual environment. This for instance can be used to run black:
 
 ```zsh
-$ rye add --dev black
-$ rye sync
-$ rye run black .
+rye add --dev black
+rye sync
+rye run black .
 ```
 
 To have multiple projects share the same virtualenv, it's possible to declare workspaces in the `pyproject.toml`:
@@ -179,7 +214,7 @@ members = ["foo-*"]
 Update `rye` using the `self` command.
 
 ```zsh
-$ rye self update
+rye self update
 ```
 
 ## Feedback

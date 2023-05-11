@@ -3,13 +3,18 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{env, fs};
 
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, Context, Error};
 use once_cell::sync::Lazy;
 
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 
-static APP_DIR: Lazy<Option<PathBuf>> =
-    Lazy::new(|| simple_home_dir::home_dir().map(|x| x.join(".rye")));
+static APP_DIR: Lazy<Option<PathBuf>> = Lazy::new(|| {
+    if let Some(rye_home) = env::var_os("RYE_HOME") {
+        Some(PathBuf::from(rye_home))
+    } else {
+        simple_home_dir::home_dir().map(|x| x.join(".rye"))
+    }
+});
 
 /// Returns the application directory.
 pub fn get_app_dir() -> Result<&'static Path, Error> {
@@ -27,7 +32,7 @@ pub fn get_canonical_py_path(version: &PythonVersion) -> Result<PathBuf, Error> 
 }
 
 /// Returns the path of the python binary for the given version.
-pub fn get_py_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
+pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
     let mut p = get_canonical_py_path(version)?;
 
     // It's permissible to link Python binaries directly
@@ -35,9 +40,18 @@ pub fn get_py_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
         return Ok(p);
     }
 
-    p.push("install");
-    p.push("bin");
-    p.push("python3");
+    #[cfg(unix)]
+    {
+        p.push("install");
+        p.push("bin");
+        p.push("python3");
+    }
+    #[cfg(windows)]
+    {
+        p.push("install");
+        p.push("python.exe");
+    }
+
     Ok(p)
 }
 
@@ -50,7 +64,7 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
     // If the version request points directly to a known version for which we
     // have a known binary, we can use that.
     if let Ok(ver) = PythonVersion::try_from(req.clone()) {
-        if let Ok(path) = get_py_bin(&ver) {
+        if let Ok(path) = get_toolchain_python_bin(&ver) {
             if path.is_file() {
                 target_version = Some(ver);
             }
@@ -58,7 +72,7 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
     }
 
     // otherwise, any version we can download is an acceptable version
-    if let Some((version, _)) = get_download_url(req, OS, ARCH) {
+    if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
         target_version = Some(version);
     }
 
@@ -122,7 +136,7 @@ pub fn get_default_author() -> Option<(String, String)> {
 }
 
 /// Reads the current `.python-version` file.
-pub fn load_python_version() -> Option<PythonVersion> {
+pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
     let mut here = env::current_dir().ok()?;
 
     loop {
@@ -138,4 +152,21 @@ pub fn load_python_version() -> Option<PythonVersion> {
     }
 
     None
+}
+
+/// Returns the most recent cpython release.
+pub fn get_latest_cpython() -> Result<PythonVersion, Error> {
+    get_download_url(
+        &PythonVersionRequest {
+            kind: None,
+            major: 3,
+            minor: None,
+            patch: None,
+            suffix: None,
+        },
+        OS,
+        ARCH,
+    )
+    .map(|x| x.0)
+    .context("unsupported platform")
 }

@@ -9,8 +9,30 @@ most recent changes however.
 - Rye's `self` command now includes a `completion` subcommand to generate
   a completion script for your shell.
 
+- The downloaded Python distributions are now validated against the
+  SHA-256 hashes.
+
+- Rye now builds on windows.  This is even more experimental though
+  than support for Linux and macOS.
+
+- Added `--features` and `--all-features` for `lock` and `sync`.
+
+- Rye will now look at the `RYE_HOME` to determine the location of the
+  `.rye` folder.  If it's not set, `$HOME/.rye` is used as before.
+
+- Rye now has a most consistent handling for virtualenv versions.  If
+  `.python-version` is provided, that version is used.  Otherwise if
+  `requires-python` is set in the `pyproject.toml`, that version is used
+  instead.  When a new project is created the `.python-version` file is
+  written and the current latest cpython version is picked.
+
+- It's now possible to explicitly set the `name` of the project when
+  initializing a new one.
+
 - Rye's `init` command now attempts to initialize projects with `git` and
   will automatically create a `src/project_name/__init__.py` file.
+
+- Rye can now also generate a license text when initializing projects.
 
 ## April
 

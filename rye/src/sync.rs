@@ -5,16 +5,18 @@ use std::{env, fs};
 use anyhow::{bail, Context, Error};
 use console::style;
 use serde::{Deserialize, Serialize};
-use tempfile::TempDir;
+use tempfile::tempdir;
 
-use crate::bootstrap::{ensure_self_venv, fetch, link_pip_tools};
-use crate::config::{get_py_bin, load_python_version};
+use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
+use crate::config::get_toolchain_python_bin;
+use crate::consts::VENV_BIN;
 use crate::lock::{
     update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
 };
-use crate::pyproject::PyProject;
+use crate::piptools::get_pip_sync;
+use crate::pyproject::{get_current_venv_python_version, PyProject};
 use crate::sources::PythonVersion;
-use crate::utils::CommandOutput;
+use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -69,7 +71,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     let lockfile = pyproject.workspace_path().join("requirements.lock");
     let dev_lockfile = pyproject.workspace_path().join("requirements-dev.lock");
     let venv = pyproject.venv_path();
-    let py_ver = load_python_version().unwrap_or_else(PythonVersion::latest_cpython);
+    let py_ver = pyproject.venv_python_version()?;
     let output = cmd.output;
 
     // ensure we are bootstrapped
@@ -77,7 +79,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
 
     let mut recreate = cmd.mode == SyncMode::Full;
     if venv.is_dir() {
-        if let Some(marker_python) = pyproject.venv_python_version() {
+        if let Some(marker_python) = get_current_venv_python_version(&venv) {
             if marker_python != py_ver {
                 if cmd.output != CommandOutput::Quiet {
                     eprintln!(
@@ -125,7 +127,9 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             .context("failed creating virtualenv ahead of sync")?;
         fs::write(
             venv.join("rye-venv.json"),
-            serde_json::to_string_pretty(&VenvMarker { python: py_ver })?,
+            serde_json::to_string_pretty(&VenvMarker {
+                python: py_ver.clone(),
+            })?,
         )
         .context("failed writing venv marker file")?;
     }
@@ -135,8 +139,6 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     // into a folder all by itself and place a second file in there which we
     // can pass to pip-sync to install the local package.
     if recreate || cmd.mode != SyncMode::PythonOnly {
-        let dir = TempDir::new()?;
-
         if cmd.no_lock {
             let lockfile = if cmd.dev { &dev_lockfile } else { &lockfile };
             if !lockfile.is_file() {
@@ -148,6 +150,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         } else if let Some(workspace) = pyproject.workspace() {
             // make sure we have an up-to-date lockfile
             update_workspace_lockfile(
+                &py_ver,
                 workspace,
                 LockMode::Production,
                 &lockfile,
@@ -156,6 +159,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             )
             .context("could not write production lockfile for workspace")?;
             update_workspace_lockfile(
+                &py_ver,
                 workspace,
                 LockMode::Dev,
                 &dev_lockfile,
@@ -166,6 +170,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         } else {
             // make sure we have an up-to-date lockfile
             update_single_project_lockfile(
+                &py_ver,
                 &pyproject,
                 LockMode::Production,
                 &lockfile,
@@ -174,6 +179,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             )
             .context("could not write production lockfile for project")?;
             update_single_project_lockfile(
+                &py_ver,
                 &pyproject,
                 LockMode::Dev,
                 &dev_lockfile,
@@ -188,25 +194,27 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             if output != CommandOutput::Quiet {
                 eprintln!("Installing dependencies");
             }
-            link_pip_tools(&self_venv, dir.path()).context("failed to link pip-tools internals")?;
-            let mut pip_sync_cmd = Command::new(pyproject.venv_bin_path().join("python"));
+            let tempdir = tempdir()?;
+            symlink_dir(get_pip_module(&self_venv), tempdir.path().join("pip"))
+                .context("failed linking pip module into for pip-sync")?;
+            let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
             let root = pyproject.workspace_path();
+
+            let py_path = get_venv_python_bin(&venv);
+
             pip_sync_cmd
-                .arg("-c")
-                .arg("from piptools.scripts.sync import cli; cli()")
-                .env("PYTHONPATH", dir.path())
                 // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
                 // so let's make sure it is url escaped.  This is pretty hacky but
                 // good enough for now.
                 .env("PROJECT_ROOT", root.to_string_lossy().replace(' ', "%2F"))
+                .env("PYTHONPATH", tempdir.path())
                 .current_dir(&root)
+                .arg("--python-executable")
+                .arg(&py_path)
                 .arg("--pip-args")
                 // note that the double quotes are necessary to properly handle
                 // spaces in paths
-                .arg(format!(
-                    "--python=\"{}\" --no-deps",
-                    venv.join("bin/python").display()
-                ));
+                .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);
@@ -244,8 +252,8 @@ pub fn create_virtualenv(
     py_ver: &PythonVersion,
     venv: &Path,
 ) -> Result<(), Error> {
-    let py_bin = get_py_bin(py_ver)?;
-    let mut venv_cmd = Command::new(self_venv.join("bin/virtualenv"));
+    let py_bin = get_toolchain_python_bin(py_ver)?;
+    let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
     if output == CommandOutput::Verbose {
         venv_cmd.arg("--verbose");
     } else {

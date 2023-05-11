@@ -1,4 +1,14 @@
 site_name: Rye
+site_description: An Experimental Package Management Solution for Python
+repo_name: mitsuhiko/rye
+repo_url: https://github.com/mitsuhiko/rye
+
+nav:
+  - Overview: index.md
+  - User Guide: guide.md
+  - Commands: commands.md
+  - FAQ: faq.md
+
 theme:
   name: material
   features:
@@ -23,3 +33,8 @@ theme:
       toggle:
         icon: material/weather-night
         name: Switch to light mode
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
