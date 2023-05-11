@@ -107,7 +107,9 @@ pub fn install(
         }
         cmd.env("PYTHONWARNINGS", "ignore");
     }
-    cmd.arg("--").arg("importlib-metadata==6.6.0; python_version==\"3.7\"").arg(&requirement.to_string());
+    cmd.arg("--")
+        .arg("importlib-metadata==6.6.0; python_version==\"3.7\"")
+        .arg(&requirement.to_string());
 
     let status = cmd.status()?;
     if !status.success() {
