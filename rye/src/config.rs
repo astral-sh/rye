@@ -33,7 +33,7 @@ pub fn get_canonical_py_path(version: &PythonVersion) -> Result<PathBuf, Error> 
 }
 
 /// Returns the path of the python binary for the given version.
-pub fn get_py_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
+pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
     let mut p = get_canonical_py_path(version)?;
 
     // It's permissible to link Python binaries directly
@@ -41,9 +41,18 @@ pub fn get_py_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
         return Ok(p);
     }
 
-    p.push("install");
-    p.push("bin");
-    p.push("python3");
+    #[cfg(unix)]
+    {
+        p.push("install");
+        p.push("bin");
+        p.push("python3");
+    }
+    #[cfg(windows)]
+    {
+        p.push("install");
+        p.push("python.exe");
+    }
+
     Ok(p)
 }
 
@@ -56,7 +65,7 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
     // If the version request points directly to a known version for which we
     // have a known binary, we can use that.
     if let Ok(ver) = PythonVersion::try_from(req.clone()) {
-        if let Ok(path) = get_py_bin(&ver) {
+        if let Ok(path) = get_toolchain_python_bin(&ver) {
             if path.is_file() {
                 target_version = Some(ver);
             }
@@ -64,7 +73,7 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
     }
 
     // otherwise, any version we can download is an acceptable version
-    if let Some((version, _)) = get_download_url(req, OS, ARCH) {
+    if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
         target_version = Some(version);
     }
 

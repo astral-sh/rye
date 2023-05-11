@@ -11,6 +11,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
+use crate::consts::VENV_BIN;
 use crate::pyproject::{DependencyKind, PyProject};
 use crate::utils::{format_requirement, CommandOutput};
 
@@ -178,7 +179,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let mut python_path = ensure_self_venv(output).context("error bootstrapping venv")?;
     let mut added = Vec::new();
-    python_path.push("bin");
+    python_path.push(VENV_BIN);
     python_path.push("python");
 
     let mut pyproject_toml = PyProject::discover()?;

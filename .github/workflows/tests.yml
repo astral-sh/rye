@@ -3,9 +3,37 @@ name: Tests
 on: [push, pull_request]
 
 jobs:
-  test-latest:
-    name: Test on Latest Stable
+  test-latest-linux:
+    name: Test (Linux)
     runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Check
+        run: make check
+      - name: Test
+        run: make test
+
+  test-latest-macos:
+    name: Test (macOS)
+    runs-on: macos-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: stable
+      - name: Check
+        run: make check
+      - name: Test
+        run: make test
+
+  test-latest-windows:
+    name: Test (Windows)
+    runs-on: windows-latest
 
     steps:
       - uses: actions/checkout@v3

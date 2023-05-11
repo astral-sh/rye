@@ -9,6 +9,12 @@ most recent changes however.
 - Rye now includes a `publish` command for publishing Python packages to a
   package repository.
 
+- The downloaded Python distributions are now validated against the
+  SHA-256 hashes.
+
+- Rye now builds on windows.  This is even more experimental though
+  than support for Linux and macOS.
+
 - Added `--features` and `--all-features` for `lock` and `sync`.
 
 - Rye will now look at the `RYE_HOME` to determine the location of the
