@@ -8,7 +8,6 @@ use age::{
 };
 use anyhow::{bail, Context, Error};
 use clap::Parser;
-use rpassword::read_password;
 use toml_edit::{Item, Table};
 use url::Url;
 
@@ -149,8 +148,12 @@ fn prompt_for_token() -> Result<String, Error> {
 }
 
 fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Secret<Vec<u8>>, Error> {
-    eprint!("Enter a passphrase (optional): ");
-    let phrase = Secret::new(read_password()?);
+    let phrase = dialoguer::Password::new()
+        .with_prompt("Enter a passphrase (optional)")
+        .allow_empty_password(true)
+        .report(false)
+        .interact()
+        .map(Secret::new)?;
 
     let token = if phrase.expose_secret().is_empty() {
         secret.expose_secret().as_bytes().to_vec()
@@ -169,8 +172,12 @@ fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Secret<Vec<u8>>, Erro
 }
 
 fn prompt_maybe_decrypt(secret: &Secret<String>) -> Result<Secret<String>, Error> {
-    eprint!("Enter a passphrase (optional): ");
-    let phrase = Secret::new(read_password()?);
+    let phrase = dialoguer::Password::new()
+        .with_prompt("Enter a passphrase (optional)")
+        .allow_empty_password(true)
+        .report(false)
+        .interact()
+        .map(Secret::new)?;
 
     if phrase.expose_secret().is_empty() {
         return Ok(secret.clone());

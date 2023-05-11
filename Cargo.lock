@@ -469,6 +469,18 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "850878694b7933ca4c9569d30a34b55031b9b139ee1fc7b94a527c4ef960d690"
 
 [[package]]
+name = "dialoguer"
+version = "0.10.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59c6f2989294b9a498d3ad5491a79c6deb604617378e1cdc4bfc1c1361fe2f87"
+dependencies = [
+ "console",
+ "shell-words",
+ "tempfile",
+ "zeroize",
+]
+
+[[package]]
 name = "digest"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1408,27 +1420,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "rpassword"
-version = "7.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6678cf63ab3491898c0d021b493c94c9b221d91295294a2a5746eacbe5928322"
-dependencies = [
- "libc",
- "rtoolbox",
- "winapi",
-]
-
-[[package]]
-name = "rtoolbox"
-version = "0.0.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "034e22c514f5c0cb8a10ff341b9b048b5ceb21591f31c8f44c43b960f9b3524a"
-dependencies = [
- "libc",
- "winapi",
-]
-
-[[package]]
 name = "rust-embed"
 version = "6.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1498,6 +1489,7 @@ dependencies = [
  "console",
  "curl",
  "decompress",
+ "dialoguer",
  "flate2",
  "git-testament",
  "globset",
@@ -1512,7 +1504,6 @@ dependencies = [
  "pep440_rs",
  "pep508_rs",
  "regex",
- "rpassword",
  "same-file",
  "serde",
  "serde_json",
@@ -1637,6 +1628,12 @@ dependencies = [
  "cpufeatures",
  "digest 0.10.6",
 ]
+
+[[package]]
+name = "shell-words"
+version = "1.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "24188a676b6ae68c3b2cb3a01be17fbf7240ce009799bb56d5b1409051e78fde"
 
 [[package]]
 name = "shlex"
