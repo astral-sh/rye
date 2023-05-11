@@ -23,7 +23,11 @@ import os
 import re
 import sys
 import json
-from importlib.metadata import distribution, PackageNotFoundError
+
+if sys.version_info >= (3, 8):
+    from importlib.metadata import distribution, PackageNotFoundError
+else:
+    from importlib_metadata import distribution, PackageNotFoundError
 
 _package_re = re.compile('(?i)^([a-z0-9._-]+)')
 
@@ -103,7 +107,9 @@ pub fn install(
         }
         cmd.env("PYTHONWARNINGS", "ignore");
     }
-    cmd.arg("--").arg(&requirement.to_string());
+    cmd.arg("--")
+        .arg(&requirement.to_string())
+        .arg("importlib-metadata==6.6.0; python_version==\"3.7\"");
 
     let status = cmd.status()?;
     if !status.success() {

@@ -6,6 +6,8 @@ most recent changes however.
 
 ## May
 
+- Rye now supports Python down to 3.7.
+
 - Rye's `self` command now includes a `completion` subcommand to generate
   a completion script for your shell.
 

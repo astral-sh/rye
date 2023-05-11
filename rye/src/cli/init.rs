@@ -12,6 +12,7 @@ use serde::Serialize;
 use crate::config::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
 use crate::utils::is_inside_git_work_tree;
 
+// TODO: make this configurable.
 const DEFAULT_LOWER_BOUND_PYTHON: &str = "3.8";
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
