@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::convert::Infallible;
-use std::io::{self, Cursor};
+use std::io::Cursor;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{fmt, fs};
@@ -20,7 +20,7 @@ pub use std::os::windows::fs::symlink_file;
 use crate::consts::VENV_BIN;
 
 #[cfg(windows)]
-pub fn symlink_dir<P, Q>(original: P, link: Q) -> Result<(), io::Error>
+pub fn symlink_dir<P, Q>(original: P, link: Q) -> Result<(), std::io::Error>
 where
     P: AsRef<Path>,
     Q: AsRef<Path>,
