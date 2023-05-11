@@ -9,12 +9,16 @@ mod consts;
 mod installer;
 mod lock;
 mod piptools;
+mod platform;
 mod pyproject;
 mod sources;
 mod sync;
 mod utils;
 
 pub fn main() -> Result<(), anyhow::Error> {
+    platform::init()?;
+    config::load()?;
+
     match cli::execute() {
         Ok(()) => Ok(()),
         Err(err) => {

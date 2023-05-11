@@ -10,7 +10,7 @@ use clap::Parser;
 use console::style;
 use serde::Deserialize;
 
-use crate::config::{get_canonical_py_path, list_known_toolchains};
+use crate::platform::{get_canonical_py_path, list_known_toolchains};
 use crate::sources::{iter_downloadable, PythonVersion};
 use crate::utils::symlink_file;
 

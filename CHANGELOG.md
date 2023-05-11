@@ -9,6 +9,11 @@ most recent changes however.
 - Rye now includes a `publish` command for publishing Python packages to a
   package repository.
 
+- Rye now supports Python down to 3.7.
+
+- Rye's `self` command now includes a `completion` subcommand to generate
+  a completion script for your shell.
+
 - The downloaded Python distributions are now validated against the
   SHA-256 hashes.
 

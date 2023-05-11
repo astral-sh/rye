@@ -12,7 +12,7 @@ use toml_edit::{Item, Table};
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
-use crate::config::{get_credentials, write_credentials};
+use crate::platform::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
 use crate::utils::CommandOutput;
 

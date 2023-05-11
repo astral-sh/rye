@@ -1,204 +1,90 @@
-use std::env::consts::{ARCH, OS};
-use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
-use std::{env, fs};
+use std::fs;
+use std::path::Path;
+use std::sync::{Arc, Mutex};
 
-use anyhow::{anyhow, Context, Error};
-use once_cell::sync::Lazy;
+use anyhow::{Context, Error};
 use toml_edit::Document;
 
-use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
+use crate::platform::{get_app_dir, get_latest_cpython};
+use crate::sources::PythonVersionRequest;
 
-static APP_DIR: Lazy<Option<PathBuf>> = Lazy::new(|| {
-    if let Some(rye_home) = env::var_os("RYE_HOME") {
-        Some(PathBuf::from(rye_home))
+static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);
+
+pub fn load() -> Result<(), Error> {
+    let cfg_path = get_app_dir().join("config.toml");
+    let cfg = if cfg_path.is_file() {
+        Config::from_path(&cfg_path)?
     } else {
-        simple_home_dir::home_dir().map(|x| x.join(".rye"))
-    }
-});
-
-/// Returns the application directory.
-pub fn get_app_dir() -> Result<&'static Path, Error> {
-    APP_DIR
-        .as_deref()
-        .ok_or_else(|| anyhow!("cannot determine app directory"))
+        Config::default()
+    };
+    *CONFIG.lock().unwrap() = Some(Arc::new(cfg));
+    Ok(())
 }
 
-/// Returns the cache directory for a particular python version that can be downloaded.
-pub fn get_canonical_py_path(version: &PythonVersion) -> Result<PathBuf, Error> {
-    let mut rv = get_app_dir()?.to_path_buf();
-    rv.push("py");
-    rv.push(version.to_string());
-    Ok(rv)
+pub struct Config {
+    doc: Document,
 }
 
-/// Returns the path of the python binary for the given version.
-pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
-    let mut p = get_canonical_py_path(version)?;
-
-    // It's permissible to link Python binaries directly
-    if p.is_file() {
-        return Ok(p);
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            doc: Document::new(),
+        }
     }
-
-    #[cfg(unix)]
-    {
-        p.push("install");
-        p.push("bin");
-        p.push("python3");
-    }
-    #[cfg(windows)]
-    {
-        p.push("install");
-        p.push("python.exe");
-    }
-
-    Ok(p)
 }
 
-/// Returns a pinnable version for this version request.
-///
-/// This is the version number that will be written into `.python-version`
-pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
-    let mut target_version = None;
+impl Config {
+    /// Returns the current config
+    pub fn current() -> Arc<Config> {
+        CONFIG
+            .lock()
+            .unwrap()
+            .as_ref()
+            .expect("config not initialized")
+            .clone()
+    }
 
-    // If the version request points directly to a known version for which we
-    // have a known binary, we can use that.
-    if let Ok(ver) = PythonVersion::try_from(req.clone()) {
-        if let Ok(path) = get_toolchain_python_bin(&ver) {
-            if path.is_file() {
-                target_version = Some(ver);
+    /// Loads a config from a path.
+    pub fn from_path(path: &Path) -> Result<Config, Error> {
+        let contents = fs::read_to_string(path)
+            .with_context(|| format!("failed to read config from '{}'", path.display()))?;
+        Ok(Config {
+            doc: contents
+                .parse::<Document>()
+                .with_context(|| format!("failed to parse config from '{}'", path.display()))?,
+        })
+    }
+
+    /// Returns the default lower bound Python.
+    pub fn default_requires_python(&self) -> String {
+        match self
+            .doc
+            .get("default")
+            .and_then(|x| x.get("requires-python"))
+            .and_then(|x| x.as_str())
+        {
+            Some(ver) => {
+                if ver.trim().parse::<pep440_rs::Version>().is_ok() {
+                    format!(">= {}", ver)
+                } else {
+                    ver.to_string()
+                }
             }
+            None => ">= 3.8".into(),
         }
     }
 
-    // otherwise, any version we can download is an acceptable version
-    if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
-        target_version = Some(version);
-    }
-
-    // we return the stringified version of the version, but if always remove the
-    // cpython@ prefix to make it reusable with other toolchains such as pyenv.
-    if let Some(version) = target_version {
-        let serialized_version = version.to_string();
-        Some(
-            if let Some(rest) = serialized_version.strip_prefix("cpython@") {
-                rest.to_string()
-            } else {
-                serialized_version
-            },
-        )
-    } else {
-        None
-    }
-}
-
-/// Returns a list of all registered toolchains.
-pub fn list_known_toolchains() -> Result<Vec<PythonVersion>, Error> {
-    let folder = get_app_dir()?.join("py");
-    let mut rv = Vec::new();
-    if let Ok(iter) = folder.read_dir() {
-        for entry in iter {
-            let entry = entry?;
-            if let Ok(ver) = entry.file_name().as_os_str().to_string_lossy().parse() {
-                rv.push(ver);
-            }
+    /// Returns the default python toolchain
+    pub fn default_toolchain(&self) -> Result<PythonVersionRequest, Error> {
+        match self
+            .doc
+            .get("default")
+            .and_then(|x| x.get("toolchain"))
+            .and_then(|x| x.as_str())
+        {
+            Some(ver) => ver.parse(),
+            None => get_latest_cpython().map(Into::into),
         }
+        .context("failed to get default toolchain")
     }
-    Ok(rv)
-}
-
-/// Returns the default author from git.
-pub fn get_default_author() -> Option<(String, String)> {
-    let rv = Command::new("git")
-        .arg("config")
-        .arg("--get-regexp")
-        .arg("^user.(name|email)$")
-        .stdout(Stdio::piped())
-        .output()
-        .ok()?;
-
-    let mut name = None;
-    let mut email = None;
-
-    for line in std::str::from_utf8(&rv.stdout).ok()?.lines() {
-        match line.split_once(' ') {
-            Some((key, value)) if key == "user.email" => {
-                email = Some(value.to_string());
-            }
-            Some((key, value)) if key == "user.name" => {
-                name = Some(value.to_string());
-            }
-            _ => {}
-        }
-    }
-
-    Some((name?, email.unwrap_or_else(|| "".into())))
-}
-
-/// Reads the current `.python-version` file.
-pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
-    let mut here = env::current_dir().ok()?;
-
-    loop {
-        let ver_file = here.join(".python-version");
-        if let Ok(contents) = fs::read_to_string(&ver_file) {
-            let ver = contents.trim().parse().ok()?;
-            return Some(ver);
-        }
-
-        if !here.pop() {
-            break;
-        }
-    }
-
-    None
-}
-
-/// Returns the credentials data from ~/.rye.
-///
-/// The credentials file contains toml tables for various credential data.
-/// ```toml
-/// [pypi]
-/// token = ""
-/// ```
-pub fn get_credentials() -> Result<Document, Error> {
-    let filepath = get_credentials_filepath()?;
-
-    // If a credentials file doesn't exist create an empty one. TODO: Move to bootstrapping?
-    if !filepath.exists() {
-        fs::write(&filepath, "")?;
-    }
-
-    let doc = fs::read_to_string(&filepath)?
-        .parse::<Document>()
-        .with_context(|| format!("failed to parse credentials from {}", filepath.display()))?;
-
-    Ok(doc)
-}
-
-pub fn get_credentials_filepath() -> Result<PathBuf, Error> {
-    Ok(get_app_dir()?.join("credentials"))
-}
-
-pub fn write_credentials(doc: &Document) -> Result<(), Error> {
-    std::fs::write(get_credentials_filepath()?, doc.to_string())
-        .context("unable to write to the credentials file")
-}
-
-/// Returns the most recent cpython release.
-pub fn get_latest_cpython() -> Result<PythonVersion, Error> {
-    get_download_url(
-        &PythonVersionRequest {
-            kind: None,
-            major: 3,
-            minor: None,
-            patch: None,
-            suffix: None,
-        },
-        OS,
-        ARCH,
-    )
-    .map(|x| x.0)
-    .context("unsupported platform")
 }

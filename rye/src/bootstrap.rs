@@ -13,8 +13,8 @@ use once_cell::sync::Lazy;
 use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
-use crate::config::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::consts::VENV_BIN;
+use crate::platform::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{symlink_file, unpack_tarball, CommandOutput};
 
@@ -55,18 +55,17 @@ virtualenv==20.22.0
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
 
 fn is_up_to_date() -> bool {
-    static UP_TO_UPDATE: Lazy<bool> = Lazy::new(|| match get_app_dir() {
-        Ok(dir) => fs::read_to_string(dir.join("self").join("tool-version.txt"))
+    static UP_TO_UPDATE: Lazy<bool> = Lazy::new(|| {
+        fs::read_to_string(get_app_dir().join("self").join("tool-version.txt"))
             .ok()
-            .map_or(false, |x| x.parse() == Ok(SELF_VERSION)),
-        Err(_) => false,
+            .map_or(false, |x| x.parse() == Ok(SELF_VERSION))
     });
     *UP_TO_UPDATE || FORCED_TO_UPDATE.load(atomic::Ordering::Relaxed)
 }
 
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
-    let app_dir = get_app_dir().context("could not get app dir")?;
+    let app_dir = get_app_dir();
     let venv_dir = app_dir.join("self");
 
     if venv_dir.is_dir() {

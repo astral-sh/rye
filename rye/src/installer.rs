@@ -11,18 +11,23 @@ use regex::Regex;
 use url::Url;
 
 use crate::bootstrap::{ensure_self_venv, fetch};
-use crate::config::get_app_dir;
+use crate::consts::VENV_BIN;
+use crate::platform::get_app_dir;
 use crate::pyproject::normalize_package_name;
 use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
-use crate::utils::{symlink_file, CommandOutput};
+use crate::utils::{get_venv_python_bin, symlink_file, CommandOutput};
 
 const FIND_SCRIPT_SCRIPT: &str = r#"
 import os
 import re
 import sys
 import json
-from importlib.metadata import distribution, PackageNotFoundError
+
+if sys.version_info >= (3, 8):
+    from importlib.metadata import distribution, PackageNotFoundError
+else:
+    from importlib_metadata import distribution, PackageNotFoundError
 
 _package_re = re.compile('(?i)^([a-z0-9._-]+)')
 
@@ -66,7 +71,7 @@ pub fn install(
     include_deps: &[String],
     output: CommandOutput,
 ) -> Result<(), Error> {
-    let app_dir = get_app_dir()?;
+    let app_dir = get_app_dir();
     let shim_dir = app_dir.join("shims");
     let self_venv = ensure_self_venv(output)?;
     let tool_dir = app_dir.join("tools");
@@ -79,7 +84,8 @@ pub fn install(
     if target_venv_path.is_dir() && !force {
         bail!("package already installed");
     }
-    let target_venv_bin_path = target_venv_path.join("bin");
+    let py = get_venv_python_bin(&target_venv_path);
+    let target_venv_bin_path = target_venv_path.join(VENV_BIN);
 
     uninstall_helper(&target_venv_path, &shim_dir)?;
 
@@ -88,9 +94,9 @@ pub fn install(
 
     create_virtualenv(output, &self_venv, &py_ver, &target_venv_path)?;
 
-    let mut cmd = Command::new(self_venv.join("bin/pip"));
+    let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
     cmd.arg("--python")
-        .arg(&target_venv_bin_path.join("python"))
+        .arg(&py)
         .arg("install")
         .env("PYTHONWARNINGS", "ignore");
     if output == CommandOutput::Verbose {
@@ -101,14 +107,16 @@ pub fn install(
         }
         cmd.env("PYTHONWARNINGS", "ignore");
     }
-    cmd.arg("--").arg(&requirement.to_string());
+    cmd.arg("--")
+        .arg(&requirement.to_string())
+        .arg("importlib-metadata==6.6.0; python_version==\"3.7\"");
 
     let status = cmd.status()?;
     if !status.success() {
         bail!("tool installation failed");
     }
 
-    let out = Command::new(target_venv_bin_path.join("python"))
+    let out = Command::new(py)
         .arg("-c")
         .arg(FIND_SCRIPT_SCRIPT)
         .arg(&requirement.name)
@@ -215,7 +223,7 @@ fn install_scripts(
 }
 
 pub fn uninstall(package: &str, output: CommandOutput) -> Result<(), Error> {
-    let app_dir = get_app_dir()?;
+    let app_dir = get_app_dir();
     let shim_dir = app_dir.join("shims");
     let tool_dir = app_dir.join("tools");
     let target_venv_path = tool_dir.join(normalize_package_name(package));
