@@ -255,10 +255,7 @@ pub fn create_virtualenv(
     py_ver: &PythonVersion,
     venv: &Path,
 ) -> Result<(), Error> {
-    #[cfg(unix)]
     let py_bin = get_toolchain_python_bin(py_ver)?;
-    #[cfg(windows)]
-    let py_bin = fs::canonicalize(get_toolchain_python_bin(py_ver)?)?;
     let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
     if output == CommandOutput::Verbose {
         venv_cmd.arg("--verbose");
