@@ -11,8 +11,8 @@ use regex::Regex;
 use url::Url;
 
 use crate::bootstrap::{ensure_self_venv, fetch};
-use crate::config::get_app_dir;
 use crate::consts::VENV_BIN;
+use crate::platform::get_app_dir;
 use crate::pyproject::normalize_package_name;
 use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;

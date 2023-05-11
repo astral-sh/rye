@@ -4,11 +4,11 @@ use crate::utils::QuietExit;
 
 mod bootstrap;
 mod cli;
-mod config;
 mod consts;
 mod installer;
 mod lock;
 mod piptools;
+mod platform;
 mod pyproject;
 mod sources;
 mod sync;

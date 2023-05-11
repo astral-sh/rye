@@ -13,8 +13,8 @@ use once_cell::sync::Lazy;
 use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
-use crate::config::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::consts::VENV_BIN;
+use crate::platform::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{symlink_file, unpack_tarball, CommandOutput};
 

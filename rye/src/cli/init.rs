@@ -9,7 +9,7 @@ use license::License;
 use minijinja::{context, Environment};
 use serde::Serialize;
 
-use crate::config::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
+use crate::platform::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
 use crate::utils::is_inside_git_work_tree;
 
 // TODO: make this configurable.

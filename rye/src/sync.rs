@@ -8,12 +8,12 @@ use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
 use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
-use crate::config::get_toolchain_python_bin;
 use crate::consts::VENV_BIN;
 use crate::lock::{
     update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
 };
 use crate::piptools::get_pip_sync;
+use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{get_current_venv_python_version, PyProject};
 use crate::sources::PythonVersion;
 use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};

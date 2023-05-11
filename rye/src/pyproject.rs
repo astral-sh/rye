@@ -17,8 +17,8 @@ use pep508_rs::Requirement;
 use regex::Regex;
 use toml_edit::{Array, Document, Formatted, Item, Table, Value};
 
-use crate::config::get_python_version_from_pyenv_pin;
 use crate::consts::VENV_BIN;
+use crate::platform::get_python_version_from_pyenv_pin;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
 use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
