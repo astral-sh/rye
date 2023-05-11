@@ -15,9 +15,26 @@ static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").
 #[cfg(unix)]
 pub use std::os::unix::fs::{symlink as symlink_file, symlink as symlink_dir};
 #[cfg(windows)]
-pub use std::os::windows::fs::{symlink_dir, symlink_file};
+pub use std::os::windows::fs::symlink_file;
 
 use crate::consts::VENV_BIN;
+
+#[cfg(windows)]
+pub fn symlink_dir<P, Q>(original: P, link: Q) -> Result<(), std::io::Error>
+where
+    P: AsRef<Path>,
+    Q: AsRef<Path>,
+{
+    if let Err(err) = std::os::windows::fs::symlink_dir(original.as_ref(), link.as_ref()) {
+        if err.raw_os_error() == Some(1314) {
+            junction::create(original.as_ref(), link.as_ref())
+        } else {
+            Err(err)
+        }
+    } else {
+        Ok(())
+    }
+}
 
 #[derive(Debug)]
 pub struct QuietExit(pub i32);

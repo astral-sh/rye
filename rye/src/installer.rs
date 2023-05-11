@@ -214,8 +214,23 @@ fn install_scripts(
     for file in files {
         if let Ok(rest) = file.strip_prefix(target_venv_bin_path) {
             let shim_target = shim_dir.join(rest);
-            symlink_file(file, shim_target)
-                .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
+
+            // on windows we want to fall back to hardlinks.  That might be problematic in
+            // some cases, but it should work for most cases where setuptools or other
+            // systems created exe files.  Caveat: uninstallation currently does not work
+            // when hardlinks are used.
+            #[cfg(windows)]
+            {
+                if symlink_file(file, &shim_target).is_err() {
+                    fs::hard_link(file, &shim_target)
+                        .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
+                }
+            }
+            #[cfg(unix)]
+            {
+                symlink_file(file, shim_target)
+                    .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
+            }
             rv.push(rest.to_string_lossy().to_string());
         }
     }
@@ -245,6 +260,7 @@ fn uninstall_helper(target_venv_path: &Path, shim_dir: &Path) -> Result<(), Erro
 
     for script in fs::read_dir(shim_dir)? {
         let script = script?;
+        // XXX: this does not handle hardlinks on windows :(
         if !script.path().is_symlink() {
             continue;
         }
