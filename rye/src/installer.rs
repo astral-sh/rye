@@ -71,7 +71,7 @@ pub fn install(
     include_deps: &[String],
     output: CommandOutput,
 ) -> Result<(), Error> {
-    let app_dir = get_app_dir()?;
+    let app_dir = get_app_dir();
     let shim_dir = app_dir.join("shims");
     let self_venv = ensure_self_venv(output)?;
     let tool_dir = app_dir.join("tools");
@@ -223,7 +223,7 @@ fn install_scripts(
 }
 
 pub fn uninstall(package: &str, output: CommandOutput) -> Result<(), Error> {
-    let app_dir = get_app_dir()?;
+    let app_dir = get_app_dir();
     let shim_dir = app_dir.join("shims");
     let tool_dir = app_dir.join("tools");
     let target_venv_path = tool_dir.join(normalize_package_name(package));
