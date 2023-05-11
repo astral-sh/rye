@@ -4,6 +4,7 @@ use crate::utils::QuietExit;
 
 mod bootstrap;
 mod cli;
+mod config;
 mod consts;
 mod installer;
 mod lock;
@@ -15,6 +16,9 @@ mod sync;
 mod utils;
 
 pub fn main() -> Result<(), anyhow::Error> {
+    platform::init()?;
+    config::load()?;
+
     match cli::execute() {
         Ok(()) => Ok(()),
         Err(err) => {

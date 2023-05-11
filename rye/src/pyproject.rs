@@ -17,6 +17,7 @@ use pep508_rs::Requirement;
 use regex::Regex;
 use toml_edit::{Array, Document, Formatted, Item, Table, Value};
 
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::get_python_version_from_pyenv_pin;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
@@ -648,18 +649,21 @@ fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<Pyt
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
         .or_else(|| get_python_version_from_pyenv_pin().map(Into::into))
+        .or_else(|| Config::current().default_toolchain().ok())
 }
 
 fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
     if let Some(ver) = get_python_version_from_pyenv_pin() {
         return Ok(ver);
     }
-    let requested_version = resolve_lower_bound_python_version(doc).ok_or_else(|| {
-        anyhow!(
-            "could not determine a target python version.  Define requires-python in \
+    let requested_version = resolve_lower_bound_python_version(doc)
+        .or_else(|| Config::current().default_toolchain().ok())
+        .ok_or_else(|| {
+            anyhow!(
+                "could not determine a target python version.  Define requires-python in \
                  pyproject.toml or use a .python-version file"
-        )
-    })?;
+            )
+        })?;
 
     if let Ok(ver) = PythonVersion::try_from(requested_version.clone()) {
         return Ok(ver);

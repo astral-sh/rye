@@ -9,11 +9,9 @@ use license::License;
 use minijinja::{context, Environment};
 use serde::Serialize;
 
+use crate::config::Config;
 use crate::platform::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
 use crate::utils::is_inside_git_work_tree;
-
-// TODO: make this configurable.
-const DEFAULT_LOWER_BOUND_PYTHON: &str = "3.8";
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
 #[value(rename_all = "snake_case")]
@@ -124,6 +122,7 @@ wheels/
 "#;
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
+    let cfg = Config::current();
     let env = Environment::new();
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
@@ -139,11 +138,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     fs::create_dir_all(&dir).ok();
 
     // Write pyproject.toml
-    let min_py = match cmd.min_py {
-        Some(py) => py,
+    let requires_python = match cmd.min_py {
+        Some(py) => format!(">= {}", py),
         None => get_python_version_from_pyenv_pin()
             .map(|x| format!("{}.{}", x.major, x.minor))
-            .unwrap_or_else(|| DEFAULT_LOWER_BOUND_PYTHON.into()),
+            .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
         Some(py) => py,
@@ -160,7 +159,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().into_owned()),
     );
     let version = "0.1.0";
-    let requires_python = format!(">= {}", min_py);
     let author = get_default_author();
     let license = if let Some(license) = cmd.license {
         if !license_file.is_file() {
