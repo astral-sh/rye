@@ -163,21 +163,25 @@ pub fn remove(cmd: RemoveCommand) -> Result<(), Error> {
 fn list(cmd: ListCommand) -> Result<(), Error> {
     let mut toolchains = list_known_toolchains()?
         .into_iter()
-        .map(|version| (version, true))
+        .map(|(version, path)| (version, Some(path)))
         .collect::<HashMap<_, _>>();
 
     if cmd.include_downloadable {
         for version in iter_downloadable(OS, ARCH) {
-            toolchains.entry(version).or_insert(false);
+            toolchains.entry(version).or_insert(None);
         }
     }
 
     let mut versions = toolchains.into_iter().collect::<Vec<_>>();
-    versions.sort_by_cached_key(|a| (!a.1, a.0.kind.to_string(), Reverse(a.clone())));
+    versions.sort_by_cached_key(|a| (a.1.is_none(), a.0.kind.to_string(), Reverse(a.clone())));
 
-    for (version, installed) in versions {
-        if installed {
-            println!("{}", style(&version).green());
+    for (version, path) in versions {
+        if let Some(path) = path {
+            println!(
+                "{} ({})",
+                style(&version).green(),
+                style(path.display()).dim()
+            );
         } else {
             println!("{} (downloadable)", style(version).dim());
         }

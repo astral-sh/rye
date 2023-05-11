@@ -45,7 +45,7 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
     // executable file on unix.
     if p.is_file() {
         if p.is_symlink() {
-            return Ok(p);
+            return Ok(p.canonicalize()?);
         }
         #[cfg(unix)]
         {
@@ -111,14 +111,20 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
 }
 
 /// Returns a list of all registered toolchains.
-pub fn list_known_toolchains() -> Result<Vec<PythonVersion>, Error> {
+pub fn list_known_toolchains() -> Result<Vec<(PythonVersion, PathBuf)>, Error> {
     let folder = get_app_dir().join("py");
     let mut rv = Vec::new();
     if let Ok(iter) = folder.read_dir() {
         for entry in iter {
             let entry = entry?;
-            if let Ok(ver) = entry.file_name().as_os_str().to_string_lossy().parse() {
-                rv.push(ver);
+            if let Ok(ver) = entry
+                .file_name()
+                .as_os_str()
+                .to_string_lossy()
+                .parse::<PythonVersion>()
+            {
+                let target = get_toolchain_python_bin(&ver)?;
+                rv.push((ver, target));
             }
         }
     }
