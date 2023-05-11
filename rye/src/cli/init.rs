@@ -12,7 +12,7 @@ use serde::Serialize;
 use crate::config::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
 use crate::utils::is_inside_git_work_tree;
 
-const DEFAULT_LOWER_BOUND_PYTHON: &str = "3.8";
+const DEFAULT_LOWER_BOUND_PYTHON: &str = "3.7";
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
 #[value(rename_all = "snake_case")]
