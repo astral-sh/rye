@@ -39,19 +39,23 @@ pub fn get_canonical_py_path(version: &PythonVersion) -> Result<PathBuf, Error> 
 pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Error> {
     let mut p = get_canonical_py_path(version)?;
 
-    // It's permissible to link Python binaries directly
+    // It's permissible to link Python binaries directly in two ways.  It can either be
+    // a symlink in which case it's used directly, it can be a non-executable text file
+    // in which case the contents are the location of the interpreter, or it can be an
+    // executable file on unix.
     if p.is_file() {
-        // on windows due to limitations with symlink handling we want to make sure
-        // that we always resolve the symlink if there is one.
-        // See https://github.com/mitsuhiko/rye/issues/136
-        #[cfg(windows)]
-        {
-            return Ok(fs::canonicalize(p)?);
-        }
-        #[cfg(not(windows))]
-        {
+        if p.is_symlink() {
             return Ok(p);
         }
+        #[cfg(unix)]
+        {
+            use std::os::unix::prelude::MetadataExt;
+            if p.metadata().map_or(false, |x| x.mode() & 0o001 != 0) {
+                return Ok(p);
+            }
+        }
+        let contents = fs::read_to_string(&p).context("could not read toolchain file")?;
+        return Ok(PathBuf::from(contents.trim_end()));
     }
 
     #[cfg(unix)]

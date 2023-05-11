@@ -117,10 +117,29 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
         fs::create_dir_all(parent).ok();
     }
 
-    // XXX: this requires elevated privileges on windows but using a hardlink here would
-    // break the experience because then the interpreter does not know where it's from.
-    // maybe we want to place files there containing the path to the interpreter instead.
-    symlink_file(&cmd.path, target).context("could not symlink interpreter")?;
+    // on unix we always create a symlink
+    #[cfg(unix)]
+    {
+        symlink_file(&cmd.path, target).context("could not symlink interpreter")?;
+    }
+
+    // on windows on the other hand we try a symlink first, but if that fails we fall back
+    // to writing the interpreter into the text file.  This is also supported by the
+    // interpreter lookup (see: get_toolchain_python_bin).  This is done because symlinks
+    // require higher privileges.
+    #[cfg(windows)]
+    {
+        if symlink_file(&cmd.path, &target).is_err() {
+            fs::write(
+                &cmd.path,
+                target
+                    .as_os_str()
+                    .to_str()
+                    .ok_or_else(|| anyhow::anyhow!("non unicode path to interpreter"))?,
+            )
+            .context("could not register interpreter")?;
+        }
+    }
     println!("Registered {} as {}", cmd.path.display(), target_version);
 
     Ok(())
