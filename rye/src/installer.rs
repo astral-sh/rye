@@ -22,7 +22,11 @@ import os
 import re
 import sys
 import json
-from importlib.metadata import distribution, PackageNotFoundError
+
+if sys.version_info >= (3, 8):
+    from importlib.metadata import distribution, PackageNotFoundError
+else:
+    from importlib_metadata import distribution, PackageNotFoundError
 
 _package_re = re.compile('(?i)^([a-z0-9._-]+)')
 
