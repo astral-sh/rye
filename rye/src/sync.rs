@@ -94,6 +94,9 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 eprintln!("Forcing re-creation of non rye managed virtualenv");
             }
             recreate = true;
+        } else if cmd.mode == SyncMode::PythonOnly {
+            // in python-only sync mode, don't complain about foreign venvs
+            return Ok(());
         } else {
             bail!("virtualenv is not managed by rye. Run `rye sync -f` to force.");
         }
