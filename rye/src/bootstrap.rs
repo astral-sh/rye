@@ -25,7 +25,7 @@ pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     patch: None,
     suffix: None,
 };
-const SELF_VERSION: u64 = 2;
+const SELF_VERSION: u64 = 3;
 
 #[cfg(unix)]
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
