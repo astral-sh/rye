@@ -1,14 +1,14 @@
 use std::env::{self, join_paths, split_paths};
 use std::ffi::OsString;
-use std::process::Command;
+use std::process::{Command, ExitStatus};
 
-use anyhow::{Context, Error};
+use anyhow::{bail, Context, Error};
 use clap::Parser;
 use console::style;
 
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
-use crate::utils::exec_spawn;
+use crate::utils::{exec_spawn, success_status};
 
 /// Runs a command installed into this package.
 #[derive(Parser, Debug)]
@@ -33,19 +33,33 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     // make sure we have the minimal virtualenv.
     sync(SyncOptions::python_only()).context("failed to sync ahead of run")?;
-    let venv_bin = pyproject.venv_bin_path();
 
     if cmd.list || cmd.cmd.is_none() {
         return list_scripts(&pyproject);
     }
-    let mut args = match cmd.cmd {
+    let args = match cmd.cmd {
         Some(Cmd::External(args)) => args,
         None => unreachable!(),
     };
 
-    // do we have a custom script to invoke?
+    invoke_script(&pyproject, args, true)?;
+    unreachable!();
+}
+
+fn invoke_script(
+    pyproject: &PyProject,
+    mut args: Vec<OsString>,
+    exec: bool,
+) -> Result<ExitStatus, Error> {
+    let venv_bin = pyproject.venv_bin_path();
+    let mut env_overrides = None;
+
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
-        Some(Script::Cmd(script_args)) if !script_args.is_empty() => {
+        Some(Script::Cmd(script_args, env_vars)) => {
+            if script_args.is_empty() {
+                bail!("script has no arguments");
+            }
+            env_overrides = Some(env_vars);
             let script_target = venv_bin.join(&script_args[0]);
             if script_target.is_file() {
                 args = Some(script_target.as_os_str().to_owned())
@@ -64,26 +78,52 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         Some(Script::External(_)) => {
             args[0] = venv_bin.join(&args[0]).into();
         }
-        _ => {}
+        Some(Script::Chain(commands)) => {
+            if args.len() != 1 {
+                bail!("extra arguments to chained commands are not allowed");
+            }
+            for args in commands {
+                let status =
+                    invoke_script(pyproject, args.into_iter().map(Into::into).collect(), false)?;
+                if !status.success() {
+                    if !exec {
+                        return Ok(status);
+                    } else {
+                        bail!("script failed with {}", status);
+                    }
+                }
+            }
+            if exec {
+                std::process::exit(0);
+            }
+            return Ok(success_status());
+        }
+        None => {
+            bail!("invalid or unknown script '{}'", args[0].to_string_lossy());
+        }
     }
 
     let mut cmd = Command::new(&args[0]);
     cmd.args(&args[1..]);
-
-    // when we spawn into a script, we implicitly activate the virtualenv to make
-    // the life of tools easier that expect to be in one.
-    env::set_var("VIRTUAL_ENV", &*pyproject.venv_path());
+    cmd.env("VIRTUAL_ENV", &*pyproject.venv_path());
     if let Some(path) = env::var_os("PATH") {
         let mut paths = split_paths(&path).collect::<Vec<_>>();
         paths.insert(0, venv_bin.into());
         let new_path = join_paths(paths)?;
-        env::set_var("PATH", new_path);
+        cmd.env("PATH", new_path);
     } else {
-        env::set_var("PATH", &*venv_bin);
+        cmd.env("PATH", &*venv_bin);
     }
-    env::remove_var("PYTHONHOME");
+    if let Some(env_overrides) = env_overrides {
+        cmd.envs(env_overrides.iter());
+    }
+    cmd.env_remove("PYTHONHOME");
 
-    match exec_spawn(&mut cmd)? {};
+    if exec {
+        match exec_spawn(&mut cmd)? {};
+    } else {
+        Ok(cmd.status()?)
+    }
 }
 
 fn list_scripts(pyproject: &PyProject) -> Result<(), Error> {

@@ -1,6 +1,6 @@
 use core::fmt;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
@@ -73,24 +73,108 @@ impl DependencyRef {
     }
 }
 
+type EnvVars = HashMap<String, String>;
+
 /// A reference to a script
 #[derive(Clone, Debug)]
 pub enum Script {
     /// A command alias
-    Cmd(Vec<String>),
+    Cmd(Vec<String>, EnvVars),
+    /// A multi-script execution
+    Chain(Vec<Vec<String>>),
     /// External script reference
     External(PathBuf),
+}
+
+fn toml_array_as_string_array(arr: &Array) -> Vec<String> {
+    arr.iter()
+        .map(|x| {
+            x.as_str()
+                .map(|x| x.to_string())
+                .unwrap_or_else(|| x.to_string())
+        })
+        .collect()
+}
+
+fn toml_value_as_command_args(value: &Value) -> Option<Vec<String>> {
+    if let Some(cmd) = value.as_str() {
+        shlex::split(cmd)
+    } else {
+        value.as_array().map(toml_array_as_string_array)
+    }
+}
+
+impl Script {
+    fn from_toml_item(item: &Item) -> Option<Script> {
+        if let Some(detailed) = item.as_table_like() {
+            if let Some(cmds) = detailed.get("chain").and_then(|x| x.as_array()) {
+                Some(Script::Chain(
+                    cmds.iter().flat_map(toml_value_as_command_args).collect(),
+                ))
+            } else if let Some(cmd) = detailed.get("cmd") {
+                let cmd = toml_value_as_command_args(cmd.as_value()?)?;
+                let env_vars = detailed
+                    .get("env")
+                    .and_then(|x| x.as_table_like())
+                    .map(|x| {
+                        x.iter()
+                            .map(|x| {
+                                (
+                                    x.0.to_string(),
+                                    x.1.as_str()
+                                        .map(|x| x.to_string())
+                                        .unwrap_or_else(|| x.1.to_string()),
+                                )
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                Some(Script::Cmd(cmd, env_vars))
+            } else {
+                None
+            }
+        } else {
+            toml_value_as_command_args(item.as_value()?)
+                .map(|cmd| Script::Cmd(cmd, EnvVars::default()))
+        }
+    }
 }
 
 impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Script::Cmd(args) => {
-                for (idx, arg) in args.iter().enumerate() {
-                    if idx > 0 {
+            Script::Cmd(args, env) => {
+                let mut need_space = false;
+                for (key, value) in env.iter() {
+                    if need_space {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                    need_space = true;
+                }
+                for arg in args.iter() {
+                    if need_space {
                         write!(f, " ")?;
                     }
                     write!(f, "{}", shlex::quote(arg))?;
+                    need_space = true;
+                }
+                Ok(())
+            }
+            Script::Chain(cmds) => {
+                write!(f, "chain:")?;
+                for (idx, cmd) in cmds.iter().enumerate() {
+                    if idx > 0 {
+                        write!(f, ",")?;
+                    }
+                    write!(f, " [")?;
+                    for (idx, arg) in cmd.iter().enumerate() {
+                        if idx > 0 {
+                            write!(f, " ")?;
+                        }
+                        write!(f, "{}", shlex::quote(arg))?;
+                    }
+                    write!(f, "]")?;
                 }
                 Ok(())
             }
@@ -421,31 +505,16 @@ impl PyProject {
     /// Looks up a script
     pub fn get_script_cmd(&self, key: &str) -> Option<Script> {
         let external = self.venv_bin_path().join(key);
-
         if is_executable(&external) && !is_unsafe_script(&external) {
-            return Some(Script::External(external));
-        }
-
-        let value = self
-            .doc
-            .get("tool")
-            .and_then(|x| x.get("rye"))
-            .and_then(|x| x.get("scripts"))
-            .and_then(|x| x.get(key))?;
-        if let Some(cmd) = value.as_str() {
-            shlex::split(cmd).map(Script::Cmd)
+            Some(Script::External(external))
         } else {
-            value.as_array().map(|cmd| {
-                Script::Cmd(
-                    cmd.iter()
-                        .map(|x| {
-                            x.as_str()
-                                .map(|x| x.to_string())
-                                .unwrap_or_else(|| x.to_string())
-                        })
-                        .collect(),
-                )
-            })
+            Script::from_toml_item(
+                self.doc
+                    .get("tool")
+                    .and_then(|x| x.get("rye"))
+                    .and_then(|x| x.get("scripts"))
+                    .and_then(|x| x.get(key))?,
+            )
         }
     }
 
