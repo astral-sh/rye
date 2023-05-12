@@ -9,6 +9,15 @@ most recent changes however.
 - Rye now includes a `publish` command for publishing Python packages to a
   package repository.
 
+- Added `tools install` and `tools uninstall` as aliases for `install` and
+  `uninstall` and added `tools list` to show all installed tools.
+
+- Rye is now capable of downloading a selected set of PyPy releases.  To do
+  so use `rye pin pypy@3.9.16` or any other supported PyPy release.
+
+- Custom cpython toolchains are now registered just as `cpython` rather
+  than `custom-cpython`.
+
 - Rye now supports Python down to 3.7.
 
 - Rye's `self` command now includes a `completion` subcommand to generate

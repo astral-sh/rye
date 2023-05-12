@@ -14,7 +14,7 @@ const PIP_TOOLS_VERSION: &str = "pip-tools==6.13.0";
 
 fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<PathBuf, Error> {
     let self_venv = ensure_self_venv(output)?;
-    let key = format!("py{}.{}", py_ver.major, py_ver.minor);
+    let key = format!("{}@{}.{}", py_ver.kind, py_ver.major, py_ver.minor);
     let venv = get_app_dir().join("pip-tools").join(key);
 
     let py = get_venv_python_bin(&venv);

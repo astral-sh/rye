@@ -16,7 +16,7 @@ use tempfile::NamedTempFile;
 use crate::consts::VENV_BIN;
 use crate::platform::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::utils::{symlink_file, unpack_tarball, CommandOutput};
+use crate::utils::{symlink_file, unpack_archive, CommandOutput};
 
 pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
@@ -25,7 +25,7 @@ pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     patch: None,
     suffix: None,
 };
-const SELF_VERSION: u64 = 1;
+const SELF_VERSION: u64 = 2;
 
 #[cfg(unix)]
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
@@ -67,6 +67,7 @@ fn is_up_to_date() -> bool {
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     let app_dir = get_app_dir();
     let venv_dir = app_dir.join("self");
+    let pip_tools_dir = app_dir.join("pip-tools");
 
     if venv_dir.is_dir() {
         if is_up_to_date() {
@@ -76,6 +77,10 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
                 eprintln!("detected outdated rye internals. Refreshing");
             }
             fs::remove_dir_all(&venv_dir).context("could not remove self-venv for update")?;
+            if pip_tools_dir.is_dir() {
+                fs::remove_dir_all(&pip_tools_dir)
+                    .context("could not remove pip-tools for update")?;
+            }
         }
     }
 
@@ -177,6 +182,10 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         if symlink_file(&this, shims.join("python.exe")).is_err() {
             fs::hard_link(&this, shims.join("python.exe"))
                 .context("tried to symlink python shim")?;
+        }
+        if symlink_file(&this, shims.join("pythonw.exe")).is_err() {
+            fs::hard_link(&this, shims.join("pythonw.exe"))
+                .context("tried to symlink pythonw shim")?;
         }
     }
 
@@ -303,7 +312,7 @@ pub fn fetch(
         eprintln!("hash check skipped (no hash available)");
     }
 
-    unpack_tarball(&archive_buffer, &target_dir, 1)
+    unpack_archive(&archive_buffer, &target_dir, 1)
         .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
 
     if output != CommandOutput::Quiet {

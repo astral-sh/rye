@@ -26,13 +26,25 @@ and macOS as of today:
 $ cargo install --git https://github.com/mitsuhiko/rye rye
 ```
 
-After installing `rye`, all you need to enjoy automatic management of everything
-is `rye sync` (and optionally `rye pin` to pick a specific Python version):
+To use rye for automatic management, you first need to create a new project using `rye init`:
 
 ```shell
-$ rye pin cpython@3.11
+$ rye init my_project && cd my_project
+```
+
+Once that's done, you can follow these steps to enjoy the benefits of automated management:
+
+```shell
 $ rye sync
 ```
+
+If you want to choose a specific version of Python, you can use the `rye pin` command to specify the version you need (optionally):
+
+``` shell
+$ rye pin cpython@3.11
+```
+
+That's it! You can now easily achieve automatic management and switch between different versions of Python as needed.
 
 The virtualenv that `rye` manages is placed in `.venv` next to your `pyproject.toml`.
 You can activate and work with it as normal with one notable exception: the Python

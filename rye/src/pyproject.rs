@@ -736,7 +736,7 @@ fn is_unsafe_script(path: &Path) -> bool {
     }
     #[cfg(unix)]
     {
-        let _ = path;
-        false
+        // this is done because on unix pypy throws a bunch of dylibs into the bin folder
+        path.extension() == Some(OsStr::new("dylib"))
     }
 }
