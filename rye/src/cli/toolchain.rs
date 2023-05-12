@@ -97,12 +97,11 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
     let target_version = match cmd.name {
         Some(ref name) => format!("{}@{}", name, info.python_version),
         None => {
-            let name = if info.python_implementation.eq_ignore_ascii_case("cpython") {
-                "custom-cpython"
-            } else {
-                &info.python_implementation
-            };
-            format!("{}@{}", name.to_ascii_lowercase(), info.python_version)
+            format!(
+                "{}@{}",
+                info.python_implementation.to_ascii_lowercase(),
+                info.python_version
+            )
         }
     };
     let target_version: PythonVersion = target_version.parse()?;

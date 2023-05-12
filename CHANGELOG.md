@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- Custom cpython toolchains are now registered just as `cpython` rather
+  than `custom-cpython`.
+
 - Rye now supports Python down to 3.7.
 
 - Rye's `self` command now includes a `completion` subcommand to generate
