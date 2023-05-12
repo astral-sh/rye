@@ -49,7 +49,7 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let venv: PathBuf = ensure_self_venv(output)?;
+    let venv = ensure_self_venv(output)?;
     let project = PyProject::discover()?;
 
     // Get the files to publish.
