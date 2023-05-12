@@ -2,7 +2,7 @@ use std::borrow::Cow;
 use std::convert::Infallible;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::{fmt, fs};
 
 use anyhow::{anyhow, Error};
@@ -304,6 +304,20 @@ pub fn is_inside_git_work_tree(dir: &PathBuf) -> bool {
         .status()
         .map(|status| status.success())
         .unwrap_or(false)
+}
+
+/// Returns a success exit status.
+pub fn success_status() -> ExitStatus {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::ExitStatusExt;
+        ExitStatus::from_raw(0)
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::ExitStatusExt;
+        ExitStatus::from_raw(0)
+    }
 }
 
 #[test]
