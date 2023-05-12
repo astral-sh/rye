@@ -64,7 +64,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let repository = &cmd.repository;
 
     // If -r is pypi but the url isn't pypi then bail
-    if repository == "pypi" && cmd.repository_url.domain() != Some("pypi.org") {
+    if repository == "pypi" && cmd.repository_url.domain() != Some("upload.pypi.org") {
         bail!("invalid pypi url {} (use -h for help)", cmd.repository_url);
     }
 
