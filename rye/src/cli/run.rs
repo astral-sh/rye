@@ -52,8 +52,14 @@ fn invoke_script(
     exec: bool,
 ) -> Result<ExitStatus, Error> {
     let venv_bin = pyproject.venv_bin_path();
+    let mut env_overrides = None;
+
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
-        Some(Script::Cmd(script_args)) if !script_args.is_empty() => {
+        Some(Script::Cmd(script_args, env_vars)) => {
+            if script_args.is_empty() {
+                bail!("script has no arguments");
+            }
+            env_overrides = Some(env_vars);
             let script_target = venv_bin.join(&script_args[0]);
             if script_target.is_file() {
                 args = Some(script_target.as_os_str().to_owned())
@@ -92,7 +98,7 @@ fn invoke_script(
             }
             return Ok(success_status());
         }
-        None | Some(Script::Cmd(_)) => {
+        None => {
             bail!("invalid or unknown script '{}'", args[0].to_string_lossy());
         }
     }
@@ -107,6 +113,9 @@ fn invoke_script(
         cmd.env("PATH", new_path);
     } else {
         cmd.env("PATH", &*venv_bin);
+    }
+    if let Some(env_overrides) = env_overrides {
+        cmd.envs(env_overrides.iter());
     }
     cmd.env_remove("PYTHONHOME");
 

@@ -1,6 +1,6 @@
 use core::fmt;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
@@ -73,11 +73,13 @@ impl DependencyRef {
     }
 }
 
+type EnvVars = HashMap<String, String>;
+
 /// A reference to a script
 #[derive(Clone, Debug)]
 pub enum Script {
     /// A command alias
-    Cmd(Vec<String>),
+    Cmd(Vec<String>, EnvVars),
     /// A multi-script execution
     Chain(Vec<Vec<String>>),
     /// External script reference
@@ -111,12 +113,29 @@ impl Script {
                 ))
             } else if let Some(cmd) = detailed.get("cmd") {
                 let cmd = toml_value_as_command_args(cmd.as_value()?)?;
-                Some(Script::Cmd(cmd))
+                let env_vars = detailed
+                    .get("env")
+                    .and_then(|x| x.as_table_like())
+                    .map(|x| {
+                        x.iter()
+                            .map(|x| {
+                                (
+                                    x.0.to_string(),
+                                    x.1.as_str()
+                                        .map(|x| x.to_string())
+                                        .unwrap_or_else(|| x.1.to_string()),
+                                )
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                Some(Script::Cmd(cmd, env_vars))
             } else {
                 None
             }
         } else {
-            toml_value_as_command_args(item.as_value()?).map(Script::Cmd)
+            toml_value_as_command_args(item.as_value()?)
+                .map(|cmd| Script::Cmd(cmd, EnvVars::default()))
         }
     }
 }
@@ -124,12 +143,21 @@ impl Script {
 impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Script::Cmd(args) => {
-                for (idx, arg) in args.iter().enumerate() {
-                    if idx > 0 {
+            Script::Cmd(args, env) => {
+                let mut need_space = false;
+                for (key, value) in env.iter() {
+                    if need_space {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                    need_space = true;
+                }
+                for arg in args.iter() {
+                    if need_space {
                         write!(f, " ")?;
                     }
                     write!(f, "{}", shlex::quote(arg))?;
+                    need_space = true;
                 }
                 Ok(())
             }
