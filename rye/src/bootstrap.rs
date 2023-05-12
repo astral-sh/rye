@@ -177,6 +177,10 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
             fs::hard_link(&this, shims.join("python.exe"))
                 .context("tried to symlink python shim")?;
         }
+        if symlink_file(&this, shims.join("pythonw.exe")).is_err() {
+            fs::hard_link(&this, shims.join("pythonw.exe"))
+                .context("tried to symlink pythonw shim")?;
+        }
     }
 
     Ok(())
