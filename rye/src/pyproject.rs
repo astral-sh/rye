@@ -78,8 +78,47 @@ impl DependencyRef {
 pub enum Script {
     /// A command alias
     Cmd(Vec<String>),
+    /// A multi-script execution
+    Chain(Vec<Vec<String>>),
     /// External script reference
     External(PathBuf),
+}
+
+fn toml_array_as_string_array(arr: &Array) -> Vec<String> {
+    arr.iter()
+        .map(|x| {
+            x.as_str()
+                .map(|x| x.to_string())
+                .unwrap_or_else(|| x.to_string())
+        })
+        .collect()
+}
+
+fn toml_value_as_command_args(value: &Value) -> Option<Vec<String>> {
+    if let Some(cmd) = value.as_str() {
+        shlex::split(cmd)
+    } else {
+        value.as_array().map(toml_array_as_string_array)
+    }
+}
+
+impl Script {
+    fn from_toml_item(item: &Item) -> Option<Script> {
+        if let Some(detailed) = item.as_table_like() {
+            if let Some(cmds) = detailed.get("chain").and_then(|x| x.as_array()) {
+                Some(Script::Chain(
+                    cmds.iter().flat_map(toml_value_as_command_args).collect(),
+                ))
+            } else if let Some(cmd) = detailed.get("cmd") {
+                let cmd = toml_value_as_command_args(cmd.as_value()?)?;
+                Some(Script::Cmd(cmd))
+            } else {
+                None
+            }
+        } else {
+            toml_value_as_command_args(item.as_value()?).map(Script::Cmd)
+        }
+    }
 }
 
 impl fmt::Display for Script {
@@ -91,6 +130,23 @@ impl fmt::Display for Script {
                         write!(f, " ")?;
                     }
                     write!(f, "{}", shlex::quote(arg))?;
+                }
+                Ok(())
+            }
+            Script::Chain(cmds) => {
+                write!(f, "chain:")?;
+                for (idx, cmd) in cmds.iter().enumerate() {
+                    if idx > 0 {
+                        write!(f, ",")?;
+                    }
+                    write!(f, " [")?;
+                    for (idx, arg) in cmd.iter().enumerate() {
+                        if idx > 0 {
+                            write!(f, " ")?;
+                        }
+                        write!(f, "{}", shlex::quote(arg))?;
+                    }
+                    write!(f, "]")?;
                 }
                 Ok(())
             }
@@ -421,31 +477,16 @@ impl PyProject {
     /// Looks up a script
     pub fn get_script_cmd(&self, key: &str) -> Option<Script> {
         let external = self.venv_bin_path().join(key);
-
         if is_executable(&external) && !is_unsafe_script(&external) {
-            return Some(Script::External(external));
-        }
-
-        let value = self
-            .doc
-            .get("tool")
-            .and_then(|x| x.get("rye"))
-            .and_then(|x| x.get("scripts"))
-            .and_then(|x| x.get(key))?;
-        if let Some(cmd) = value.as_str() {
-            shlex::split(cmd).map(Script::Cmd)
+            Some(Script::External(external))
         } else {
-            value.as_array().map(|cmd| {
-                Script::Cmd(
-                    cmd.iter()
-                        .map(|x| {
-                            x.as_str()
-                                .map(|x| x.to_string())
-                                .unwrap_or_else(|| x.to_string())
-                        })
-                        .collect(),
-                )
-            })
+            Script::from_toml_item(
+                self.doc
+                    .get("tool")
+                    .and_then(|x| x.get("rye"))
+                    .and_then(|x| x.get("scripts"))
+                    .and_then(|x| x.get(key))?,
+            )
         }
     }
 
