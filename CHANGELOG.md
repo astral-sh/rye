@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- Script declarations in `pyproject.toml` now permit chaining and custom
+  environment variables.  #153
+
 - Added `tools install` and `tools uninstall` as aliases for `install` and
   `uninstall` and added `tools list` to show all installed tools.
 
