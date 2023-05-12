@@ -58,15 +58,22 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
         return Ok(PathBuf::from(contents.trim_end()));
     }
 
+    // we support install/bin/python, install/python and bin/python
+    p.push("install");
+    if !p.is_dir() {
+        p.pop();
+    }
+    p.push("bin");
+    if !p.is_dir() {
+        p.pop();
+    }
+
     #[cfg(unix)]
     {
-        p.push("install");
-        p.push("bin");
         p.push("python3");
     }
     #[cfg(windows)]
     {
-        p.push("install");
         p.push("python.exe");
     }
 
