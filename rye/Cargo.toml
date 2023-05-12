@@ -7,6 +7,7 @@ license = "MIT"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+age = "0.9.1"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
 clap = { version = "4.2.2", default-features = false, features = ["derive", "usage", "wrap_help", "std"] }
 clap_complete = "4.2.1"
@@ -40,6 +41,7 @@ walkdir = "2.3.3"
 which = "4.4.0"
 zstd = "0.12.3"
 sha2 = "0.10.6"
+dialoguer = "0.10.4"
 hex = "0.4.3"
 junction = "1.0.0"
 bzip2 = "0.4.4"

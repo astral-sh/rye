@@ -25,7 +25,7 @@ pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     patch: None,
     suffix: None,
 };
-const SELF_VERSION: u64 = 2;
+const SELF_VERSION: u64 = 3;
 
 #[cfg(unix)]
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
@@ -46,6 +46,7 @@ platformdirs==3.4.0
 pyproject_hooks==1.0.0
 requests==2.29.0
 tomli==2.0.1
+twine==4.0.2
 unearth==0.9.0
 urllib3==1.26.15
 virtualenv==20.22.0

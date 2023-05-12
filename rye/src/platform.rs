@@ -201,3 +201,34 @@ pub fn get_latest_cpython() -> Result<PythonVersion, Error> {
     .map(|x| x.0)
     .context("unsupported platform")
 }
+
+/// Returns the credentials data from ~/.rye.
+///
+/// The credentials file contains toml tables for various credential data.
+/// ```toml
+/// [pypi]
+/// token = ""
+/// ```
+pub fn get_credentials() -> Result<toml_edit::Document, Error> {
+    let filepath = get_credentials_filepath()?;
+
+    // If a credentials file doesn't exist create an empty one. TODO: Move to bootstrapping?
+    if !filepath.exists() {
+        fs::write(&filepath, "")?;
+    }
+
+    let doc = fs::read_to_string(&filepath)?
+        .parse::<toml_edit::Document>()
+        .with_context(|| format!("failed to parse credentials from {}", filepath.display()))?;
+
+    Ok(doc)
+}
+
+pub fn write_credentials(doc: &toml_edit::Document) -> Result<(), Error> {
+    std::fs::write(get_credentials_filepath()?, doc.to_string())
+        .context("unable to write to the credentials file")
+}
+
+pub fn get_credentials_filepath() -> Result<PathBuf, Error> {
+    Ok(get_app_dir().join("credentials"))
+}

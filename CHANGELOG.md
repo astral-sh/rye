@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- Rye now includes a `publish` command for publishing Python packages to a
+  package repository.  #86
+
 - Script declarations in `pyproject.toml` now permit chaining and custom
   environment variables.  #153
 
