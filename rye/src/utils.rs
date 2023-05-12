@@ -80,7 +80,7 @@ pub fn is_executable(path: &Path) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::prelude::MetadataExt;
-        path.metadata().map_or(false, |x| x.mode() & 0o001 != 0)
+        path.metadata().map_or(false, |x| x.mode() & 0o111 != 0)
     }
     #[cfg(windows)]
     {
