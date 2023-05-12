@@ -1,4 +1,4 @@
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashMap};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::{env, fs};
@@ -17,7 +17,7 @@ use crate::platform::get_app_dir;
 use crate::pyproject::normalize_package_name;
 use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
-use crate::utils::{get_venv_python_bin, symlink_file, CommandOutput};
+use crate::utils::{get_short_executable_name, get_venv_python_bin, symlink_file, CommandOutput};
 
 const FIND_SCRIPT_SCRIPT: &str = r#"
 import os
@@ -236,7 +236,7 @@ fn install_scripts(
                 symlink_file(file, shim_target)
                     .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
             }
-            rv.push(rest.to_string_lossy().to_string());
+            rv.push(get_short_executable_name(file));
         }
     }
     Ok(rv)
@@ -258,6 +258,41 @@ pub fn uninstall(package: &str, output: CommandOutput) -> Result<(), Error> {
         eprintln!("Uninstalled {}", style(package).cyan());
     }
     Ok(())
+}
+
+pub fn list_installed_tools() -> Result<HashMap<String, Vec<String>>, Error> {
+    let app_dir = get_app_dir();
+    let shim_dir = app_dir.join("shims");
+    let tool_dir = app_dir.join("tools");
+    if !tool_dir.is_dir() {
+        return Ok(HashMap::new());
+    }
+
+    let mut rv = HashMap::new();
+    for folder in fs::read_dir(&tool_dir)? {
+        let folder = folder?;
+        if !folder.file_type()?.is_dir() {
+            continue;
+        }
+        let tool_name = folder.file_name().to_string_lossy().to_string();
+        let target_venv_bin_path = folder.path().join(VENV_BIN);
+        let mut scripts = Vec::new();
+
+        for script in fs::read_dir(target_venv_bin_path)? {
+            let script = script?;
+            let script_path = script.path();
+            if let Some(base_name) = script_path.file_name() {
+                let shim_path = shim_dir.join(base_name);
+                if let Ok(true) = is_same_file(&shim_path, &script_path) {
+                    scripts.push(get_short_executable_name(&script_path));
+                }
+            }
+        }
+
+        rv.insert(tool_name, scripts);
+    }
+
+    Ok(rv)
 }
 
 fn uninstall_helper(target_venv_path: &Path, shim_dir: &Path) -> Result<(), Error> {

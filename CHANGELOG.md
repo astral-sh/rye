@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- Added `tools install` and `tools uninstall` as aliases for `install` and
+  `uninstall` and added `tools list` to show all installed tools.
+
 - Rye is now capable of downloading a selected set of PyPy releases.  To do
   so use `rye pin pypy@3.9.16` or any other supported PyPy release.
 

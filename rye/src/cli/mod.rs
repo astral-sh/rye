@@ -17,6 +17,7 @@ mod shim;
 mod show;
 mod sync;
 mod toolchain;
+mod tools;
 mod uninstall;
 
 use git_testament::git_testament;
@@ -51,6 +52,7 @@ enum Command {
     Show(show::Args),
     Sync(sync::Args),
     Toolchain(toolchain::Args),
+    Tools(tools::Args),
     #[command(name = "self")]
     Rye(rye::Args),
     Uninstall(uninstall::Args),
@@ -84,6 +86,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
         Command::Toolchain(cmd) => toolchain::execute(cmd),
+        Command::Tools(cmd) => tools::execute(cmd),
         Command::Rye(cmd) => rye::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
     }
