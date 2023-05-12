@@ -14,7 +14,7 @@ use url::Url;
 use crate::bootstrap::ensure_self_venv;
 use crate::platform::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
-use crate::utils::CommandOutput;
+use crate::utils::{get_venv_python_bin, CommandOutput};
 
 /// Publish packages to a package repository.
 #[derive(Parser, Debug)]
@@ -49,7 +49,7 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let venv = ensure_self_venv(output)?;
+    let venv: PathBuf = ensure_self_venv(output)?;
     let project = PyProject::discover()?;
 
     // Get the files to publish.
@@ -105,7 +105,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         secret
     };
 
-    let mut publish_cmd = Command::new(venv.join("bin/python"));
+    let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
     publish_cmd
         .arg("-mtwine")
         .arg("--no-color")
