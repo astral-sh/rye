@@ -41,7 +41,17 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
 
     // It's permissible to link Python binaries directly
     if p.is_file() {
-        return Ok(p);
+        // on windows due to limitations with symlink handling we want to make sure
+        // that we always resolve the symlink if there is one.
+        // See https://github.com/mitsuhiko/rye/issues/136
+        #[cfg(windows)]
+        {
+            return Ok(fs::canonicalize(p)?);
+        }
+        #[cfg(not(windows))]
+        {
+            return Ok(p);
+        }
     }
 
     #[cfg(unix)]
