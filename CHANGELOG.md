@@ -6,6 +6,9 @@ most recent changes however.
 
 ## May
 
+- Rye is now capable of downloading a selected set of PyPy releases.  To do
+  so use `rye pin pypy@3.9.16` or any other supported PyPy release.
+
 - Custom cpython toolchains are now registered just as `cpython` rather
   than `custom-cpython`.
 
