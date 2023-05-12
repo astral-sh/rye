@@ -6,7 +6,7 @@ use anyhow::{anyhow, Error};
 use pep440_rs::Version;
 use serde::{de, Deserialize, Serialize};
 
-mod indygreg_python {
+mod downloads {
     use super::PythonVersion;
     include!("downloads.inc");
 }
@@ -214,7 +214,7 @@ pub fn get_download_url(
     platform: &str,
     arch: &str,
 ) -> Option<(PythonVersion, &'static str, Option<&'static str>)> {
-    for (it_version, it_arch, it_platform, it_url, it_sha256) in indygreg_python::CPYTHON_VERSIONS {
+    for (it_version, it_arch, it_platform, it_url, it_sha256) in downloads::PYTHON_VERSIONS {
         if platform == *it_platform
             && arch == *it_arch
             && matches_version(requested_version, it_version)
@@ -230,15 +230,15 @@ pub fn iter_downloadable<'s>(
     platform: &'s str,
     arch: &'s str,
 ) -> impl Iterator<Item = PythonVersion> + 's {
-    indygreg_python::CPYTHON_VERSIONS.iter().filter_map(
-        move |(version, it_arch, it_platform, _, _)| {
+    downloads::PYTHON_VERSIONS
+        .iter()
+        .filter_map(move |(version, it_arch, it_platform, _, _)| {
             if *it_arch == arch && *it_platform == platform {
                 Some(version.clone())
             } else {
                 None
             }
-        },
-    )
+        })
 }
 
 #[test]

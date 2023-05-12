@@ -1,5 +1,6 @@
 import re
 import requests
+from itertools import chain
 from urllib.parse import unquote
 
 
@@ -132,7 +133,7 @@ for page in range(1, 100):
             if info is None:
                 continue
             py_ver, triple, flavor = info
-            if "-static" in triple or (flavor and 'noopt' in flavor):
+            if "-static" in triple or (flavor and "noopt" in flavor):
                 continue
             triple = normalize_triple(triple)
             if triple is None:
@@ -154,21 +155,98 @@ for py_ver, choices in results.items():
     choices.sort(key=_sort_key, reverse=True)
     urls = {}
     for triple, flavor, url in choices:
-        triple = tuple(triple.split('-'))
+        triple = tuple(triple.split("-"))
         if triple in urls:
             continue
         urls[triple] = url
-    final_results[tuple(map(int, py_ver.split('.')))] = urls
+    final_results[tuple(map(int, py_ver.split(".")))] = urls
+
+
+# These are manually maintained for now
+PYPY_DOWNLOADS = {
+    (3, 9, 16): {
+        (
+            "x86_64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-linux64.tar.bz2",
+        (
+            "aarch64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-aarch64.tar.bz2",
+        (
+            "x86_64",
+            "macos",
+        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_x86_64.tar.bz2",
+        (
+            "aarch64",
+            "macos",
+        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_arm64.tar.bz2",
+        (
+            "x86_64",
+            "windows",
+        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-win64.zip",
+    },
+    (3, 8, 16): {
+        (
+            "x86_64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-linux64.tar.bz2",
+        (
+            "aarch64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-aarch64.tar.bz2",
+        (
+            "x86_64",
+            "macos",
+        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_x86_64.tar.bz2",
+        (
+            "aarch64",
+            "macos",
+        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_arm64.tar.bz2",
+        (
+            "x86_64",
+            "windows",
+        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-win64.zip",
+    },
+    (3, 7, 13): {
+        (
+            "x86_64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-linux64.tar.bz2",
+        (
+            "aarch64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-aarch64.tar.bz2",
+        (
+            "x86_64",
+            "macos",
+        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-osx64.tar.bz2",
+        (
+            "x86_64",
+            "windows",
+        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-win64.zip",
+    },
+}
 
 
 print("// generated code, do not edit")
 print("use std::borrow::Cow;")
-print("pub const CPYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str, Option<&str>)] = &[")
-for py_ver, choices in sorted(
-    final_results.items(), key=lambda x: x[0], reverse=True
+print(
+    "pub const PYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str, Option<&str>)] = &["
+)
+for interpreter, py_ver, choices in sorted(
+    chain(
+        (("cpython",) + x for x in final_results.items()),
+        (("pypy",) + x for x in PYPY_DOWNLOADS.items()),
+    ),
+    key=lambda x: x[:2],
+    reverse=True,
 ):
     for (arch, platform), url in sorted(choices.items()):
         sha256 = read_sha256(url)
         sha256 = 'Some("%s")' % sha256 if sha256 else "None"
-        print('    (PythonVersion { kind: Cow::Borrowed("cpython"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s", %s),' % (py_ver + (arch, platform, url, sha256)))
+        print(
+            '    (PythonVersion { kind: Cow::Borrowed("%s"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s", %s),'
+            % ((interpreter,) + py_ver + (arch, platform, url, sha256))
+        )
 print("];")

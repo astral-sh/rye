@@ -1,6 +1,20 @@
 // generated code, do not edit
 use std::borrow::Cow;
-pub const CPYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str, Option<&str>)] = &[
+pub const PYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str, Option<&str>)] = &[
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "aarch64", "linux", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-aarch64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "aarch64", "macos", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_arm64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "x86_64", "linux", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-linux64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "x86_64", "macos", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_x86_64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "x86_64", "windows", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-win64.zip", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 8, patch: 16, suffix: None }, "aarch64", "linux", "https://downloads.python.org/pypy/pypy3.8-v7.3.11-aarch64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 8, patch: 16, suffix: None }, "aarch64", "macos", "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_arm64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 8, patch: 16, suffix: None }, "x86_64", "linux", "https://downloads.python.org/pypy/pypy3.8-v7.3.11-linux64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 8, patch: 16, suffix: None }, "x86_64", "macos", "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_x86_64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 8, patch: 16, suffix: None }, "x86_64", "windows", "https://downloads.python.org/pypy/pypy3.8-v7.3.11-win64.zip", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 7, patch: 13, suffix: None }, "aarch64", "linux", "https://downloads.python.org/pypy/pypy3.7-v7.3.9-aarch64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 7, patch: 13, suffix: None }, "x86_64", "linux", "https://downloads.python.org/pypy/pypy3.7-v7.3.9-linux64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 7, patch: 13, suffix: None }, "x86_64", "macos", "https://downloads.python.org/pypy/pypy3.7-v7.3.9-osx64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 7, patch: 13, suffix: None }, "x86_64", "windows", "https://downloads.python.org/pypy/pypy3.7-v7.3.9-win64.zip", None),
     (PythonVersion { kind: Cow::Borrowed("cpython"), major: 3, minor: 11, patch: 1, suffix: None }, "aarch64", "linux", "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-aarch64-unknown-linux-gnu-lto-full.tar.zst", Some("cd3b910dce032f0ec9b414156b391878010940368b5ea27c33b998016e9c1cb8")),
     (PythonVersion { kind: Cow::Borrowed("cpython"), major: 3, minor: 11, patch: 1, suffix: None }, "aarch64", "macos", "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-aarch64-apple-darwin-pgo-full.tar.zst", Some("5b254177b74a5e97671c20de4980ddf22217eb6f88640bc45d2daab5f1c3dfbc")),
     (PythonVersion { kind: Cow::Borrowed("cpython"), major: 3, minor: 11, patch: 1, suffix: None }, "x86", "linux", "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-i686-unknown-linux-gnu-pgo-full.tar.zst", Some("07b34a6ccef1600e2413594daafa5bf6cac9c578baae90092cc6ee038e90a6ba")),

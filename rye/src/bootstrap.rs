@@ -16,7 +16,7 @@ use tempfile::NamedTempFile;
 use crate::consts::VENV_BIN;
 use crate::platform::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::utils::{symlink_file, unpack_tarball, CommandOutput};
+use crate::utils::{symlink_file, unpack_archive, CommandOutput};
 
 pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
@@ -306,7 +306,7 @@ pub fn fetch(
         eprintln!("hash check skipped (no hash available)");
     }
 
-    unpack_tarball(&archive_buffer, &target_dir, 1)
+    unpack_archive(&archive_buffer, &target_dir, 1)
         .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
 
     if output != CommandOutput::Quiet {
