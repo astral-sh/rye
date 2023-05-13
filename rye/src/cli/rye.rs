@@ -1,4 +1,4 @@
-use anyhow::{bail, Context, Error};
+use anyhow::{bail, Context, Error, Ok};
 use clap::{CommandFactory, Parser};
 use clap_complete::Shell;
 use std::collections::HashMap;
@@ -21,6 +21,9 @@ pub struct CompletionCommand {
     /// The shell to generate a completion script for (defaults to 'bash').
     #[arg(short, long)]
     shell: Option<Shell>,
+    /// Install completion script to shell.
+    #[arg(long)]
+    install: bool,
 }
 
 /// Performs an update of rye.
@@ -55,7 +58,46 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
 fn completion(args: CompletionCommand) -> Result<(), Error> {
     let shell = args.shell.unwrap_or(Shell::Bash);
+    if !args.install {
+        clap_complete::generate(
+            shell,
+            &mut super::Args::command(),
+            "rye",
+            &mut std::io::stdout(),
+        );
+        return Ok(());
+    }
+    install_completion(shell)?;
+    Ok(())
+}
 
+fn update(args: UpdateCommand) -> Result<(), Error> {
+    let mut helper = rename_helper::RenameHelper::new()?;
+    let mut cmd = Command::new("cargo");
+    cmd.arg("install")
+        .arg("--git")
+        .arg("https://github.com/mitsuhiko/rye");
+    if let Some(ref rev) = args.rev {
+        cmd.arg("--rev");
+        cmd.arg(rev);
+    } else if let Some(ref tag) = args.tag {
+        cmd.arg("--tag");
+        cmd.arg(tag);
+    }
+    if args.force {
+        cmd.arg("--force");
+    }
+    cmd.arg("rye");
+    let status = cmd.status().context("unable to update via cargo-install")?;
+    if !status.success() {
+        bail!("failed to self-update via cargo-install");
+    }
+    helper.disarm();
+
+    Ok(())
+}
+
+fn install_completion(shell: Shell) -> Result<(), Error> {
     let completion_dir = get_app_dir().join("completion");
     fs::create_dir_all(&completion_dir)?;
 
@@ -66,7 +108,7 @@ fn completion(args: CompletionCommand) -> Result<(), Error> {
     ]);
 
     if !shell_map.contains_key(&shell) {
-        bail!("unsupported shell");
+        bail!("Unsupported install completion for this shell");
     }
     let shell_completion_file = completion_dir.join(shell_map[&shell].0);
     // generate completion script
@@ -117,39 +159,13 @@ fn completion(args: CompletionCommand) -> Result<(), Error> {
     if !shell_config.contains(&enable_cmd) {
         shell_config_fs
             .write(enable_cmd.as_bytes())
-            .context("failed to write completion script to shell config")?;
+            .context("failed to install shell completion")?;
     }
 
     eprintln!(
         "enabled completion to {}, if not work, add this to your shell config:\n {}",
         shell, enable_cmd
     );
-
-    Ok(())
-}
-
-fn update(args: UpdateCommand) -> Result<(), Error> {
-    let mut helper = rename_helper::RenameHelper::new()?;
-    let mut cmd = Command::new("cargo");
-    cmd.arg("install")
-        .arg("--git")
-        .arg("https://github.com/mitsuhiko/rye");
-    if let Some(ref rev) = args.rev {
-        cmd.arg("--rev");
-        cmd.arg(rev);
-    } else if let Some(ref tag) = args.tag {
-        cmd.arg("--tag");
-        cmd.arg(tag);
-    }
-    if args.force {
-        cmd.arg("--force");
-    }
-    cmd.arg("rye");
-    let status = cmd.status().context("unable to update via cargo-install")?;
-    if !status.success() {
-        bail!("failed to self-update via cargo-install");
-    }
-    helper.disarm();
 
     Ok(())
 }
