@@ -2,12 +2,20 @@ site_name: Rye
 site_description: An Experimental Package Management Solution for Python
 repo_name: mitsuhiko/rye
 repo_url: https://github.com/mitsuhiko/rye
+copyright: Copyright &copy; 2023 Armin Ronacher
 
 nav:
-  - Overview: index.md
-  - User Guide: guide.md
-  - Commands: commands.md
-  - FAQ: faq.md
+  - Welcome: index.md
+  - User Guide:
+    - guide/index.md
+    - Installation: guide/installation.md
+    - Basics: guide/basics.md
+    - Configuration: guide/config.md
+    - pyproject.toml: guide/pyproject.md
+    - Toolchains: guide/toolchains.md
+    - Tools: guide/tools.md
+  - Philosophy: philosophy.md
+  - Changelog: changelog.md
 
 theme:
   name: material
@@ -19,22 +27,37 @@ theme:
     - toc.follow
     - navigation.path
     - navigation.top
+    - navigation.tabs
+    - navigation.footer
     - content.code.copy
+  font:
+    text: Inter
+    monospace: Fira Mono
+  icon:
+    repo: fontawesome/brands/github
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
-      primary: blue
+      primary: custom
       toggle:
-        icon: material/weather-sunny
+        icon: material/toggle-switch
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
-      primary: blue
+      primary: custom
       toggle:
-        icon: material/weather-night
+        icon: material/toggle-switch-off-outline
         name: Switch to light mode
 
 markdown_extensions:
   - admonition
   - pymdownx.details
+  - pymdownx.keys
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - markdown_include.include:
+      base_path: docs
+
+extra_css:
+  - static/extra.css

@@ -1,4 +1,4 @@
-# Rye Changes
+# Changelog
 
 There is currently no actual release of Rye.  The latest main branch revision
 is the one you can install as mainline should always be stable.  Here are the

@@ -1,23 +1,22 @@
 # Rye: An Experimental Package Management Solution for Python
 
 Rye is [Armin's](https://github.com/mitsuhiko) personal one-stop-shop for all
-his Python needs. It installs and manages Python installations, manages
-pyproject.toml files, installs and uninstalls dependencies, manages virtualenvs
-behind the scenes. It supports monorepos and global tool installations.
+his Python needs.  It installs and manages Python installations, helps working with
+`pyproject.toml` files, installs and uninstalls dependencies, creates and updates
+virtualenvs behind the scenes.  It supports monorepos and global tool installations.
 
-!!! note
-    `rye` is in an experimental state.
+Rye is an experimental endeavour to build a new type of packaging experience to
+Python inspired by `rustup` and `cargo` from Rust.  It's **not yet production ready**
+but feedback and suggestions are greatly appreciated.
 
-## Screencast
+* [Getting Started](./guide/index.md) is a helpful guide for installation and basics.
+* [Tools](./guide/tools.md) shows how to use Rye as `pix` replacement.
+* [Philosophy](./philosophy.md) tells you more about why this project exists and the ideas behind it.
+* [The Changelog](./changelog.md) lists all recent changes to Rye.
+* [A 9 Minute Introduction Screencast](https://youtu.be/CyI8TBuKPF0), for when you want to watch rather than read.
 
-<a href="https://youtu.be/CyI8TBuKPF0">
-  <img src="https://img.youtube.com/vi/CyI8TBuKPF0/sddefault.jpg" alt="Watch the instruction" width="50%">
-</a>
-<p><em>Click on the thumbnail to watch a 9 minute introduction video</em></p>
+**Ways to provide feedback:**
 
-## Contents
-
-* [FAQ](./faq.md)
-* [Commands](./commands.md)
-* [User Guide](./guide.md)
+* [Issue Tracker](https://github.com/mitsuhiko/rye/issues) if you run into bugs
+* [Discussions](https://github.com/mitsuhiko/rye/discussions) if you have ideas or want to discuss the project
 

@@ -1,9 +1,75 @@
-# A Vision of Rye
+# Philosophy and Vision
 
-This document describes of what I envision Python packaging and project management
-could look like.
+Rye was built to solve [my](https://github.com/mitsuhiko) problems.  Here is what was
+on my mind when I built it:
 
-## The Rust Experience
+- **Virtualenvs:** while I personally do not like virtualenvs that much, they are
+  so widespread and have reasonable tooling support, so I chose this over
+  `__pypackages__`.
+
+- **No Default Dependencies:** the virtualenvs when they come up are completely void
+  of dependencies. Not even `pip` or `setuptools` are installed into it. Rye
+  manages the virtualenv from outside the virtualenv.
+
+- **No Core Non Standard Stuff:** Rye (with the exception of it's own `tool` section
+  in the `pyproject.toml`) uses standardized keys. That means it uses regular
+  requirements as you would expect. It also does not use a custom lock file
+  format and uses [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
+
+- **No Pip:** Rye uses pip, but it does not expose it. It manage dependencies in
+  `pyproject.toml` only.
+
+- **No System Python:** I can't deal with any more linux distribution weird Python
+  installations or whatever mess there is on macOS. I used to build my own Pythons
+  that are the same everywhere, now I use [indygreg's Python builds](https://github.com/indygreg/python-build-standalone).
+  Rye will automatically download and manage Python builds from there. No compiling,
+  no divergence.
+
+- **Project Local Shims:** Rye maintains a `python` shim that auto discovers the
+  current `pyproject.toml` and automatically operates below it. Just add the
+  shims to your shell and you can run `python` and it will automatically always
+  operate in the right project.
+
+## What Could Be?
+
+There are a few shortcomings in the Python packaging world, largely as a result of
+lack of standardization. Here is what this project ran into over the years:
+
+- **No Python Binary Distributions:** CPython builds from python.org are completely
+  inadequate. On some platforms you only get an .msi installer, on some you
+  literally only get tarballs. The various Python distributions that became popular
+  over the years are diverging greatly and cause all kinds of nonsense downstream.
+  This is why this Project uses the indygreg standalone builds. I hope that with
+  time someone will start distributing well maintained and reliable Python builds
+  to replace the mess we are dealing with today.
+
+- **No Dev Dependencies:** Rye currently needs a custom section in the `pyproject.toml`
+  to represent dev dependencies. There is no standard in the ecosystem for this. It
+  really should be added.
+
+- **No Local Dependency Overlays:** There is no standard for how to represent local
+  dependencies. Rust for this purpose has something like `{ path = "../foo" }`
+  which allows both remote and local references to co-exist and it rewrites them
+  on publish.
+
+- **No Exposed Pip:** pip is intentionally not exposed. If you were to install something
+  into the virtualenv, it disappears next time you sync. If you symlink `rye` to
+  `~/.rye/shims/pip` you can get access to pip without installing it into the
+  virtualenv. There be dragons.
+
+- **No Workspace Spec:** for monorepos and things of that nature, the Python ecosystem
+  would need a definition of workspaces. Today that does not exist which forces every
+  tool to come up with it's own solutions to this problem.
+
+- **No Basic Script Section:** There should be a standard in `pyproject.toml` to
+  represent scripts like `rye` does in `rye.tools.scripts`.
+
+## The Vision
+
+This describes of what I envision Python packaging and project management could
+look like in an ideal world:
+
+### The Rust Experience
 
 Coming from a Rust environment there are two tools which work together: `rustup` and
 `cargo`.  The first one of those is used to ensure that you have the correct Rust
@@ -36,7 +102,7 @@ Most importantly though the Rust ecosystem has embraced `rustup` and `cargo` tha
 vast majority of people are using these tools on a daily basis.  Even developers who
 pick other tools like buck, are still using `cargo` regularly.
 
-## Going Python
+### Going Python
 
 Rye wants to explore if such an experience is possible with Python.  I believe it can!
 There is quite a lot of the ecosystem that can be leveraged for this purpose but there
@@ -52,7 +118,7 @@ tools have been created over the years, and unfortunately it hasn't been able to
 rally the majority of the Python community behind any tool.  I do however believe it is
 possible.
 
-### Bootstrapping Python
+#### Bootstrapping Python
 
 I believe the right approach is that >95% of users get a Python distribution via `rye`
 and not to have `rye` pick up a system installed Python distribution.  There are good
@@ -73,7 +139,7 @@ allows much easier cross-python version testing via tox or CI.
   retrievable from the internet. [PEP 711](https://peps.python.org/pep-0711/) is a step
   in that direction.
 
-### A Stronger Resolver
+#### A Stronger Resolver
 
 Today there are a ton of different resolvers in the Python ecosystem.  Pip has two, poetry
 has one, pdm has one, different independent Python and Rust resolvers exist on top of that.
@@ -111,7 +177,7 @@ the existing ones.  Here is what I believe a resolver needs to be able to accomp
 * Add a policy layer into the resolver that can be used to filter down the dependencies
   before use.
 
-### Metadata Caches
+#### Metadata Caches
 
 Because of the rather simplistic nature of Python packages and package indexes a resolver
 will always be restricted by the metadata that it can reliably pull.  This is particularly
@@ -129,7 +195,7 @@ This might go a long way in improving the quality of the developer experience.
 * Local metadata caches are added for the resolver to use
 * PyPI gains the ability to serve dependency meta data
 
-### Lockfiles
+#### Lockfiles
 
 It's unclear if a standard can emerge for lock files given the different requirements, but a
 Python packaging solution needs to have support for these.  There are a lot of different
@@ -163,7 +229,7 @@ version per package.
   today, that strikes a good balance.
 * Provide lockfile support as part of the resolver library.
 
-### Upper Bounds & Multi Versioning
+#### Upper Bounds & Multi Versioning
 
 Resolving Python dependencies is particularly challenging because a single solution must be
 found per package.  A reason this works at all in the Python ecosystem is that most libraries
@@ -195,7 +261,7 @@ the right version.
 * Provide an import hook that provides multi-version imports as part of Rye
 * Relax the resolver to permit multiple solutions for multi-version dependencies
 
-### Workspaces and Local / Multi Path References
+#### Workspaces and Local / Multi Path References
 
 With growing development teams one of the most frustrating experiences is the inability to
 break up a monolithic Python module into smaller modules without having to constantly publish
@@ -215,7 +281,7 @@ invalid dependency references.  If no valid reference remains, the package will 
 * requirement declarations need to be expanded to support defining the name of the index where
   they can be found, and optional local path references.
 
-### Every Project in a Virtualenv
+#### Every Project in a Virtualenv
 
 While virtualenv is not by favorite tool, it's the closest we have to a standard.  I proposed
 that there is always one path for a virtualenv `.venv` and when Rye manages it, users should
@@ -230,7 +296,7 @@ out.
 
 * Agree on a name for where managed virtualenvs are placed (eg: `.venv` in the workspace root)
 
-### Dev and Tool Dependencies
+#### Dev and Tool Dependencies
 
 Another topic that is currently unresolved across tools in the ecosystem is how to work with
 dependencies that are not used in production.  For instance it's quite common that a certain
@@ -242,7 +308,7 @@ is no agreement across tools on it.
 
 There needs to be an agreed upon standard for all tools.  [See this discussion](https://discuss.python.org/t/development-dependencies-in-pyproject-toml/26149/7)
 
-### Opinionated Defaults
+#### Opinionated Defaults
 
 Python against PEP-8's wishes just has too many ways in which things can be laid out.  There
 should be a much stronger push towards encouraging common standards:
@@ -254,7 +320,7 @@ should be a much stronger push towards encouraging common standards:
 * Rye shall always create a preferred folder structure for new projects
 * Rye shall loudly warn if `package-foo` does not provide a `package_foo` module
 
-## Existing Tools
+### Existing Tools
 
 Some of the existing tools in the ecosystem are close, and there is a good chance that some
 of these might be able to combine forces to create that one-true tool.  I hope that there
