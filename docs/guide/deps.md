@@ -19,7 +19,7 @@ requirement:
 rye add "Flask>=2.0"
 ```
 
-For extra/feature depedencies you can either use PEP 508 syntax or use `--features`:
+For extra/feature dependencies you can either use PEP 508 syntax or use `--features`:
 
 ```
 rye add "Flask[dotenv]"
