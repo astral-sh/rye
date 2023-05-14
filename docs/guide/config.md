@@ -54,4 +54,4 @@ toolchain = "cpython@3.11.1"
 
 ## Per Project Config
 
-For the project specific `pyproject.toml` config see [pyproject.toml](pyproject).
+For the project specific `pyproject.toml` config see [pyproject.toml](pyproject.md).

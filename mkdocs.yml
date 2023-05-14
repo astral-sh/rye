@@ -11,7 +11,9 @@ nav:
     - Installation: guide/installation.md
     - Basics: guide/basics.md
     - Configuration: guide/config.md
-    - pyproject.toml: guide/pyproject.md
+    - Python Project: guide/pyproject.md
+    - Synching and Locking: guide/sync.md
+    - Dependencies: guide/deps.md
     - Toolchains: guide/toolchains.md
     - Tools: guide/tools.md
   - Philosophy: philosophy.md
