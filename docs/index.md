@@ -10,7 +10,7 @@ Python inspired by `rustup` and `cargo` from Rust.  It's **not yet production re
 but feedback and suggestions are greatly appreciated.
 
 * [Getting Started](./guide/index.md) is a helpful guide for installation and basics.
-* [Tools](./guide/tools.md) shows how to use Rye as `pix` replacement.
+* [Tools](./guide/tools.md) shows how to use Rye as `pipx` replacement.
 * [Philosophy](./philosophy.md) tells you more about why this project exists and the ideas behind it.
 * [The Changelog](./changelog.md) lists all recent changes to Rye.
 * [A 9 Minute Introduction Screencast](https://youtu.be/CyI8TBuKPF0), for when you want to watch rather than read.
