@@ -141,7 +141,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let requires_python = match cmd.min_py {
         Some(py) => format!(">= {}", py),
         None => get_python_version_from_pyenv_pin()
-            .map(|x| format!("{}.{}", x.major, x.minor))
+            .map(|x| format!(">= {}.{}", x.major, x.minor))
             .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
