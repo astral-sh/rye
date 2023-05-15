@@ -246,7 +246,7 @@ fn test_get_download_url() {
     let url = get_download_url(&"3.8.14".parse().unwrap(), "macos", "aarch64");
     assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 8, patch: 14, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20221002/cpython-3.8.14%2B20221002-aarch64-apple-darwin-pgo-full.tar.zst", Some("f2178529346022a6f4b7ee3b113934791e3c0c54055fbd664391651928bf9648"))));
     let url = get_download_url(&"3.8".parse().unwrap(), "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 8, patch: 16, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.8.16%2B20230116-aarch64-apple-darwin-pgo-full.tar.zst", Some("a656ec589300093423f35de415831f472f677eba7775e15843d1b29b7f69f3bc"))));
+    assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 8, patch: 16, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.8.16%2B20230507-aarch64-apple-darwin-pgo-full.tar.zst", Some("d0f4fb81c1ee0ba95f40e0a1dabbd84aa94d8e7f90a1a755f5f811250a497038"))));
     let url = get_download_url(&"3".parse().unwrap(), "macos", "aarch64");
-    assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 11, patch: 1, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20230116/cpython-3.11.1%2B20230116-aarch64-apple-darwin-pgo-full.tar.zst", Some("5b254177b74a5e97671c20de4980ddf22217eb6f88640bc45d2daab5f1c3dfbc"))));
+    assert_eq!(url, Some((PythonVersion { kind: "cpython".into(), major: 3, minor: 11, patch: 3, suffix: None }, "https://github.com/indygreg/python-build-standalone/releases/download/20230507/cpython-3.11.3%2B20230507-aarch64-apple-darwin-pgo-full.tar.zst", Some("f6f92125e123e32ba1a529f858ddc75d43bf47e14ef474a17f0f49988f556960"))));
 }
