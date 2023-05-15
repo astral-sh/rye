@@ -1,4 +1,4 @@
-# Synching and Locking
+# Syncing and Locking
 
 Rye currently uses [pip-tools](https://github.com/jazzband/pip-tools) to download and install
 dependencies.  For this purpose it creates two "lockfiles" (called `requirements.lock` and
@@ -57,7 +57,7 @@ rye lock Flask --pre
 
 ## Sync
 
-Synching takes the same parameters as `lock` and then some.  Sync will usually first do what
+Syncing takes the same parameters as `lock` and then some.  Sync will usually first do what
 `lock` does and then use the lockfiles to update the virtualenv.
 
 ### `--no-lock`
