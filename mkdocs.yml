@@ -12,7 +12,7 @@ nav:
     - Basics: guide/basics.md
     - Configuration: guide/config.md
     - Python Project: guide/pyproject.md
-    - Synching and Locking: guide/sync.md
+    - Syncing and Locking: guide/sync.md
     - Dependencies: guide/deps.md
     - Toolchains: guide/toolchains.md
     - Tools: guide/tools.md
