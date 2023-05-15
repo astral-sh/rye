@@ -124,9 +124,6 @@ for page in range(1, 100):
         for asset in row["assets"]:
             url = asset["browser_download_url"]
             base_name = unquote(url.rsplit("/")[-1])
-            # These are currently broken: https://github.com/indygreg/python-build-standalone/issues/172
-            if "20230507" in base_name:
-                continue
             if base_name.endswith(".sha256"):
                 continue
             info = parse_filename(base_name)
