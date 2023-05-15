@@ -25,8 +25,8 @@ Learn more:
 
 ## Installation
 
-Rye is built in Rust. There is no binary distribution yet, it only works on Linux
-and macOS as of today:
+Rye is built in Rust. There is no binary distribution yet, it works on Linux, macOS
+and Windows as of today:
 
 ```
 $ cargo install --git https://github.com/mitsuhiko/rye rye
