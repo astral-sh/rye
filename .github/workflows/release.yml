@@ -139,7 +139,7 @@ jobs:
         docker run --rm -v \
           "$PWD/target:/target:Z" \
           rustembedded/cross:aarch64-unknown-linux-musl \
-          aarch64-unknown-linux-musl \
+          aarch64-unknown-linux-strip \
           /target/aarch64-unknown-linux-musl/release/rye
 
     - name: Build archive
