@@ -146,7 +146,7 @@ jobs:
       shell: bash
       run: |
         outdir="$(scripts/cargo-out-dir "${{ env.TARGET_DIR }}")"
-        bin="rye-${{ needs.create-release.outputs.rye_version }}-${{ matrix.name }}"
+        bin="rye-${{ matrix.name }}"
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
           cp "target/${{ matrix.target }}/release/rye.exe" "$bin"
