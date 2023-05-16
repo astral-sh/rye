@@ -75,26 +75,32 @@ jobs:
           os: ubuntu-22.04
           rust: nightly
           target: x86_64-unknown-linux-musl
+          name: x86_64-linux
         - build: linux-arm
           os: ubuntu-22.04
           rust: nightly
-          target: arm-unknown-linux-gnueabihf
+          target: aarch64-unknown-linux-musl
+          name: aarch64-linux
         - build: macos
           os: macos-12
           rust: nightly
           target: x86_64-apple-darwin
+          name: x86_64-macos
         - build: macos-arm
           os: macos-12
           rust: nightly
           target: aarch64-apple-darwin
+          name: aarch64-macos
         - build: win-msvc
           os: windows-2022
           rust: nightly
           target: x86_64-pc-windows-msvc
+          name: x86_64-windows
         - build: win32-msvc
           os: windows-2022
           rust: nightly
           target: i686-pc-windows-msvc
+          name: x86-windows
 
     steps:
     - name: Checkout repository
@@ -132,27 +138,22 @@ jobs:
       run: |
         docker run --rm -v \
           "$PWD/target:/target:Z" \
-          rustembedded/cross:arm-unknown-linux-gnueabihf \
-          arm-linux-gnueabihf-strip \
-          /target/arm-unknown-linux-gnueabihf/release/rye
+          rustembedded/cross:aarch64-unknown-linux-musl \
+          aarch64-unknown-linux-musl \
+          /target/aarch64-unknown-linux-musl/release/rye
 
     - name: Build archive
       shell: bash
       run: |
         outdir="$(scripts/cargo-out-dir "${{ env.TARGET_DIR }}")"
-        staging="rye-${{ needs.create-release.outputs.rye_version }}-${{ matrix.target }}"
-        mkdir -p "$staging"
-
-        cp {README.md,LICENSE} "$staging/"
+        bin="rye-${{ needs.create-release.outputs.rye_version }}-${{ matrix.name }}"
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          cp "target/${{ matrix.target }}/release/rye.exe" "$staging/"
-          7z a "$staging.zip" "$staging"
-          echo "ASSET=$staging.zip" >> $GITHUB_ENV
+          cp "target/${{ matrix.target }}/release/rye.exe" "$bin"
+          echo "ASSET=$bin" >> $GITHUB_ENV
         else
-          cp "target/${{ matrix.target }}/release/rye" "$staging/"
-          tar czf "$staging.tar.gz" "$staging"
-          echo "ASSET=$staging.tar.gz" >> $GITHUB_ENV
+          cp "target/${{ matrix.target }}/release/rye" "$bin"
+          echo "ASSET=$bin" >> $GITHUB_ENV
         fi
 
     - name: Upload release archive

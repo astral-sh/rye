@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::env::consts::EXE_EXTENSION;
+use std::env::consts::{ARCH, EXE_EXTENSION, OS};
 use std::process::Command;
 use std::{env, fs};
 
@@ -141,7 +141,7 @@ fn install(_args: InstallCommand) -> Result<(), Error> {
     eprintln!();
     eprintln!("{}", style("Details:").bold());
     eprintln!("  Rye Version: {}", style(env!("CARGO_PKG_VERSION")).cyan());
-    eprintln!("  Target: {}", style(env!("RYE_TARGET")).cyan());
+    eprintln!("  Platform: {} ({})", style(OS).cyan(), style(ARCH).cyan());
 
     eprintln!();
     if !dialoguer::Confirm::new()
