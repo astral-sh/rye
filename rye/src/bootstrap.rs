@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::env::consts::{ARCH, OS};
+use std::env::consts::{ARCH, EXE_EXTENSION, OS};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -162,15 +162,25 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         bail!("failed to initialize virtualenv (install dependencies)");
     }
     let shims = app_dir.join("shims");
-    fs::remove_dir_all(&shims).ok();
-    fs::create_dir_all(&shims).context("tried to create shim folder")?;
-    let this = env::current_exe()?;
+    if !shims.is_dir() {
+        fs::create_dir_all(&shims).context("tried to create shim folder")?;
+    }
+
+    // if rye is itself installed into the shims folder, we want to
+    // use that.  Otherwise we fall back to the current executable
+    let mut this = shims.join(format!("rye{EXE_EXTENSION}"));
+    if !this.is_file() {
+        this = env::current_exe()?;
+    }
+
     #[cfg(unix)]
     {
         let use_softlinks = !cfg!(target_os = "linux");
+        fs::remove_file(shims.join("python")).ok();
         if use_softlinks || fs::hard_link(&this, shims.join("python")).is_err() {
             symlink_file(&this, shims.join("python")).context("tried to symlink python shim")?;
         }
+        fs::remove_file(shims.join("python3")).ok();
         if use_softlinks || fs::hard_link(&this, shims.join("python3")).is_err() {
             symlink_file(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
         }
@@ -179,10 +189,12 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     {
         // on windows we need privileges to symlink.  Not everyone might have that, so we
         // fall back to hardlinks.
+        fs::remove_file(shims.join("python.exe")).ok();
         if symlink_file(&this, shims.join("python.exe")).is_err() {
             fs::hard_link(&this, shims.join("python.exe"))
                 .context("tried to symlink python shim")?;
         }
+        fs::remove_file(shims.join("pythonw.exe")).ok();
         if symlink_file(&this, shims.join("pythonw.exe")).is_err() {
             fs::hard_link(&this, shims.join("pythonw.exe"))
                 .context("tried to symlink pythonw shim")?;

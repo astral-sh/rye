@@ -103,6 +103,7 @@ fn print_version() -> Result<(), Error> {
         std::env::consts::OS,
         std::env::consts::ARCH
     );
+    eprintln!("target: {}", env!("RYE_TARGET"));
     eprintln!("self-python: {}", SELF_PYTHON_VERSION);
     Ok(())
 }

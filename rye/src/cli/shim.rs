@@ -15,7 +15,7 @@ use crate::utils::{exec_spawn, CommandOutput};
 
 fn detect_shim() -> Option<(String, Vec<OsString>)> {
     // Shims are detected if the executable is linked into
-    // a folder called .shims and in that case the shimmed
+    // a folder called shims and in that case the shimmed
     // binaries is the base name.
     let args = env::args_os().collect::<Vec<_>>();
     if args.is_empty() {
@@ -24,6 +24,13 @@ fn detect_shim() -> Option<(String, Vec<OsString>)> {
 
     let path = env::current_exe().ok()?;
     let shim_name = path.file_name()?;
+
+    // rye is itself placed in the shims folder, so it must not
+    // detect itself.
+    if shim_name == "rye" || shim_name == "rye.exe" {
+        return None;
+    }
+
     if path.parent()?.file_name() != Some(OsStr::new("shims")) {
         return None;
     }
