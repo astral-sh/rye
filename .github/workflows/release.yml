@@ -69,18 +69,18 @@ jobs:
       RUST_BACKTRACE: 1
     strategy:
       matrix:
-        build: [linux, linux-arm, macos, macos-arm, win-msvc, win32-msvc]
+        build: [linux, macos, macos-arm, win-msvc, win32-msvc]
         include:
         - build: linux
           os: ubuntu-22.04
           rust: nightly
           target: x86_64-unknown-linux-musl
           name: x86_64-linux
-        - build: linux-arm
-          os: ubuntu-22.04
-          rust: nightly
-          target: aarch64-unknown-linux-musl
-          name: aarch64-linux
+        #- build: linux-arm
+        #  os: ubuntu-22.04
+        #  rust: nightly
+        #  target: aarch64-unknown-linux-musl
+        #  name: aarch64-linux
         - build: macos
           os: macos-12
           rust: nightly
