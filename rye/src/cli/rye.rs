@@ -127,18 +127,29 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         let version = args.version.as_deref().unwrap_or("latest");
         eprintln!("Updating to {version}");
         let binary = format!("rye-{ARCH}-{OS}");
+        let ext = if cfg!(unix) { ".gz" } else { ".exe" };
         let url = if version == "latest" {
-            format!("{GITHUB_REPO}/releases/latest/download/{binary}.gz")
+            format!("{GITHUB_REPO}/releases/latest/download/{binary}{ext}")
         } else {
-            format!("{GITHUB_REPO}/releases/download/{version}/{binary}.gz")
+            format!("{GITHUB_REPO}/releases/download/{version}/{binary}{ext}")
         };
         let bytes = download_url(&url, CommandOutput::Normal)
             .with_context(|| format!("could not download {version} release for this platform"))?;
-        let mut decoder = flate2::bufread::GzDecoder::new(&bytes[..]);
-        let mut rv = Vec::new();
-        decoder.read_to_end(&mut rv)?;
         let tmp = tempfile::NamedTempFile::new()?;
-        fs::write(tmp.path(), rv)?;
+
+        // unix currently comes compressed, windows comes uncompressed
+        #[cfg(unix)]
+        {
+            let mut decoder = flate2::bufread::GzDecoder::new(&bytes[..]);
+            let mut rv = Vec::new();
+            decoder.read_to_end(&mut rv)?;
+            fs::write(tmp.path(), rv)?;
+        }
+        #[cfg(windows)]
+        {
+            fs::write(tmp.path(), &bytes)?;
+        }
+
         self_replace::self_replace(tmp.path())?;
         eprintln!("Updated:");
         Command::new(env::current_exe()?)
