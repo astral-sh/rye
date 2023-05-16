@@ -27,7 +27,7 @@ jobs:
   create-release:
     name: create-release
     runs-on: ubuntu-22.04
-     env:
+    env:
       # Set to force version number, e.g., when no tag exists.
       RYE_VERSION: TEST-0.0.0
     outputs:
