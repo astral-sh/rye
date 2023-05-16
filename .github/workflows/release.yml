@@ -27,9 +27,11 @@ jobs:
   create-release:
     name: create-release
     runs-on: ubuntu-22.04
-    env:
-      # Set to force version number, e.g., when no tag exists.
-      RYE_VERSION: 0.0.0
+
+    ## Set to force version number, e.g., when no tag exists for testing
+    #env:
+    #  RYE_VERSION: 0.0.0
+
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       rye_version: ${{ env.RYE_VERSION }}

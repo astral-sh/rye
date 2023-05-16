@@ -12,9 +12,6 @@ if [[ $PLATFORM == "Darwin" ]]; then
   PLATFORM="macos"
 elif [[ $PLATFORM == "Linux" ]]; then
   PLATFORM="linux"
-else
-  echo "error: Unsupported platform $PLATFORM";
-  exit 1
 fi
 
 if [[ $ARCH == armv8* ]] || [[ $ARCH == arm64* ]] || [[ $ARCH == aarch64* ]]; then
@@ -58,10 +55,11 @@ cleanup() {
 trap cleanup EXIT
 HTTP_CODE=$(curl -SL --progress-bar "$DOWNLOAD_URL" --output "$TEMP_FILE_GZ" --write-out "%{http_code}")
 if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
-  echo "error: your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
+  echo "error: platform ${PLATFORM} (${ARCH}) is unsupported."
   exit 1
 fi
 
-gunzip "$TEMP_FILE_GZ"
+rm -f "$TEMP_FILE"
+gunzip "$TEMP_FILE_GZ" 
 chmod +x "$TEMP_FILE"
 "$TEMP_FILE" self install
