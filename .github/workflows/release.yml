@@ -140,7 +140,7 @@ jobs:
     - name: Build archive
       shell: bash
       run: |
-        outdir="$(ci/cargo-out-dir "${{ env.TARGET_DIR }}")"
+        outdir="$(scripts/cargo-out-dir "${{ env.TARGET_DIR }}")"
         staging="rye-${{ needs.create-release.outputs.rye_version }}-${{ matrix.target }}"
         mkdir -p "$staging"
 
