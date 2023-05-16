@@ -153,7 +153,8 @@ jobs:
           echo "ASSET=$bin.exe" >> $GITHUB_ENV
         else
           cp "target/${{ matrix.target }}/release/rye" "$bin"
-          echo "ASSET=$bin" >> $GITHUB_ENV
+          gzip "$bin"
+          echo "ASSET=$bin.gz" >> $GITHUB_ENV
         fi
 
     - name: Upload release archive
