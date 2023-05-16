@@ -149,8 +149,8 @@ jobs:
         bin="rye-${{ matrix.name }}"
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
-          cp "target/${{ matrix.target }}/release/rye.exe" "$bin"
-          echo "ASSET=$bin" >> $GITHUB_ENV
+          cp "target/${{ matrix.target }}/release/rye.exe" "$bin.exe"
+          echo "ASSET=$bin.exe" >> $GITHUB_ENV
         else
           cp "target/${{ matrix.target }}/release/rye" "$bin"
           echo "ASSET=$bin" >> $GITHUB_ENV
