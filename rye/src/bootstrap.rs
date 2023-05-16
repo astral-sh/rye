@@ -264,20 +264,40 @@ pub fn fetch(
     fs::create_dir_all(&target_dir)
         .with_context(|| format!("failed to create target folder {}", target_dir.display()))?;
 
-    let mut archive_buffer = Vec::new();
-
     if output == CommandOutput::Verbose {
         eprintln!("download url: {}", url);
     }
     if output != CommandOutput::Quiet {
         eprintln!("{} {}", style("Downloading").cyan(), version);
     }
+    let archive_buffer = download_url(url, output)?;
 
+    if let Some(sha256) = sha256 {
+        if output != CommandOutput::Quiet {
+            eprintln!("{}", style("Checking hash").cyan());
+        }
+        check_hash(&archive_buffer, sha256)
+            .with_context(|| format!("hash check of {} failed", &url))?;
+    } else if output != CommandOutput::Quiet {
+        eprintln!("hash check skipped (no hash available)");
+    }
+
+    unpack_archive(&archive_buffer, &target_dir, 1)
+        .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
+
+    if output != CommandOutput::Quiet {
+        eprintln!("{} Downloaded {}", style("success:").green(), version);
+    }
+
+    Ok(version)
+}
+
+pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> {
+    let mut archive_buffer = Vec::new();
     let mut handle = curl::easy::Easy::new();
     handle.url(url)?;
     handle.progress(true)?;
     handle.follow_location(true)?;
-
     let write_archive = &mut archive_buffer;
     {
         let mut transfer = handle.transfer();
@@ -313,23 +333,10 @@ pub fn fetch(
             .perform()
             .with_context(|| format!("download of {} failed", &url))?;
     }
-
-    if let Some(sha256) = sha256 {
-        if output != CommandOutput::Quiet {
-            eprintln!("{}", style("Checking hash").cyan());
-        }
-        check_hash(&archive_buffer, sha256)
-            .with_context(|| format!("hash check of {} failed", &url))?;
-    } else if output != CommandOutput::Quiet {
-        eprintln!("hash check skipped (no hash available)");
+    let code = handle.response_code()?;
+    if !(200..300).contains(&code) {
+        bail!("Failed to download: {}", code)
+    } else {
+        Ok(archive_buffer)
     }
-
-    unpack_archive(&archive_buffer, &target_dir, 1)
-        .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
-
-    if output != CommandOutput::Quiet {
-        eprintln!("{} Downloaded {}", style("success:").green(), version);
-    }
-
-    Ok(version)
 }

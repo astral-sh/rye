@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, EXE_EXTENSION, OS};
+use std::io::Read;
 use std::process::Command;
 use std::{env, fs};
 
@@ -10,10 +11,11 @@ use console::style;
 use minijinja::render;
 use same_file::is_same_file;
 
-use crate::bootstrap::ensure_self_venv;
+use crate::bootstrap::{download_url, ensure_self_venv};
 use crate::platform::get_app_dir;
 use crate::utils::{CommandOutput, QuietExit};
 
+const GITHUB_REPO: &str = "https://github.com/mitsuhiko/rye";
 const UNIX_ENV_FILE: &str = r#"
 # rye shell setup
 {%- if custom_home %}
@@ -50,6 +52,9 @@ pub struct CompletionCommand {
 /// right arguments.
 #[derive(Parser, Debug)]
 pub struct UpdateCommand {
+    /// Update to a specific version.
+    #[arg(long)]
+    version: Option<String>,
     /// Update to a specific tag.
     #[arg(long)]
     tag: Option<String>,
@@ -97,27 +102,49 @@ fn completion(args: CompletionCommand) -> Result<(), Error> {
 }
 
 fn update(args: UpdateCommand) -> Result<(), Error> {
-    let mut helper = rename_helper::RenameHelper::new()?;
-    let mut cmd = Command::new("cargo");
-    cmd.arg("install")
-        .arg("--git")
-        .arg("https://github.com/mitsuhiko/rye");
-    if let Some(ref rev) = args.rev {
-        cmd.arg("--rev");
-        cmd.arg(rev);
-    } else if let Some(ref tag) = args.tag {
-        cmd.arg("--tag");
-        cmd.arg(tag);
+    // git based installation with cargo
+    if args.rev.is_some() || args.tag.is_some() {
+        let mut cmd = Command::new("cargo");
+        cmd.arg("install")
+            .arg("--git")
+            .arg("https://github.com/mitsuhiko/rye");
+        if let Some(ref rev) = args.rev {
+            cmd.arg("--rev");
+            cmd.arg(rev);
+        } else if let Some(ref tag) = args.tag {
+            cmd.arg("--tag");
+            cmd.arg(tag);
+        }
+        if args.force {
+            cmd.arg("--force");
+        }
+        cmd.arg("rye");
+        let status = cmd.status().context("unable to update via cargo-install")?;
+        if !status.success() {
+            bail!("failed to self-update via cargo-install");
+        }
+    } else {
+        let version = args.version.as_deref().unwrap_or("latest");
+        eprintln!("Updating to {version}");
+        let binary = format!("rye-{ARCH}-{OS}");
+        let url = if version == "latest" {
+            format!("{GITHUB_REPO}/releases/latest/download/{binary}.gz")
+        } else {
+            format!("{GITHUB_REPO}/releases/download/{version}/{binary}.gz")
+        };
+        let bytes = download_url(&url, CommandOutput::Normal)
+            .with_context(|| format!("could not download {version} release for this platform"))?;
+        let mut decoder = flate2::bufread::GzDecoder::new(&bytes[..]);
+        let mut rv = Vec::new();
+        decoder.read_to_end(&mut rv)?;
+        let tmp = tempfile::NamedTempFile::new()?;
+        fs::write(tmp.path(), rv)?;
+        self_replace::self_replace(tmp.path())?;
+        eprintln!("Updated:");
+        Command::new(env::current_exe()?)
+            .arg("--version")
+            .status()?;
     }
-    if args.force {
-        cmd.arg("--force");
-    }
-    cmd.arg("rye");
-    let status = cmd.status().context("unable to update via cargo-install")?;
-    if !status.success() {
-        bail!("failed to self-update via cargo-install");
-    }
-    helper.disarm();
 
     Ok(())
 }
@@ -198,55 +225,4 @@ fn install(_args: InstallCommand) -> Result<(), Error> {
     eprintln!("{}", style("All done!").green());
 
     Ok(())
-}
-
-#[cfg(windows)]
-mod rename_helper {
-    use super::*;
-    use std::{env, fs, path::PathBuf};
-
-    pub struct RenameHelper {
-        original_path: PathBuf,
-        path: PathBuf,
-        disarmed: bool,
-    }
-
-    impl RenameHelper {
-        pub fn new() -> Result<RenameHelper, Error> {
-            let original_path = env::current_exe()?;
-            let path = original_path.with_extension("tmp");
-            fs::rename(&original_path, &path)?;
-            Ok(RenameHelper {
-                original_path,
-                path,
-                disarmed: false,
-            })
-        }
-
-        pub fn disarm(&mut self) {
-            self.disarmed = true;
-        }
-    }
-
-    impl Drop for RenameHelper {
-        fn drop(&mut self) {
-            if !self.disarmed {
-                fs::rename(&self.path, &self.original_path).ok();
-            }
-        }
-    }
-}
-
-#[cfg(unix)]
-mod rename_helper {
-    use super::*;
-    pub struct RenameHelper;
-
-    impl RenameHelper {
-        pub fn new() -> Result<RenameHelper, Error> {
-            Ok(RenameHelper)
-        }
-
-        pub fn disarm(&mut self) {}
-    }
 }

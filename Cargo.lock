@@ -1557,6 +1557,7 @@ dependencies = [
  "pep508_rs",
  "regex",
  "same-file",
+ "self-replace",
  "serde",
  "serde_json",
  "sha2",
@@ -1632,6 +1633,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9bd1c54ea06cfd2f6b63219704de0b9b4f72dcc2b8fdef820be6cd799780e91e"
 dependencies = [
  "zeroize",
+]
+
+[[package]]
+name = "self-replace"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "66083111de8877b8c588e3a37255f59e20a870eeb9b586473e3bd70b925a9397"
+dependencies = [
+ "tempfile",
+ "windows-sys 0.48.0",
 ]
 
 [[package]]
