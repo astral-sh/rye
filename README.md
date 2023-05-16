@@ -20,8 +20,8 @@ an exploration, and it's far from perfect. Thus also the question:
 Learn more:
 
 * [Documentation](https://mitsuhiko.github.io/rye)
-* [Issue Tracker](https://github.com/mitsuhiko/issues)
-* [Discussions](https://github.com/mitsuhiko/discussions)
+* [Issue Tracker](https://github.com/mitsuhiko/rye/issues)
+* [Discussions](https://github.com/mitsuhiko/rye/discussions)
 
 ## Installation
 
