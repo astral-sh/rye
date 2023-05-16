@@ -27,9 +27,11 @@ jobs:
   create-release:
     name: create-release
     runs-on: ubuntu-22.04
-    env:
-      # Set to force version number, e.g., when no tag exists.
-      RYE_VERSION: 0.0.0
+
+    ## Set to force version number, e.g., when no tag exists for testing
+    #env:
+    #  RYE_VERSION: 0.0.0
+
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       rye_version: ${{ env.RYE_VERSION }}
@@ -153,7 +155,8 @@ jobs:
           echo "ASSET=$bin.exe" >> $GITHUB_ENV
         else
           cp "target/${{ matrix.target }}/release/rye" "$bin"
-          echo "ASSET=$bin" >> $GITHUB_ENV
+          gzip "$bin"
+          echo "ASSET=$bin.gz" >> $GITHUB_ENV
         fi
 
     - name: Upload release archive

@@ -12,9 +12,6 @@ if [[ $PLATFORM == "Darwin" ]]; then
   PLATFORM="macos"
 elif [[ $PLATFORM == "Linux" ]]; then
   PLATFORM="linux"
-else
-  echo "error: Unsupported platform $PLATFORM";
-  exit 1
 fi
 
 if [[ $ARCH == armv8* ]] || [[ $ARCH == arm64* ]] || [[ $ARCH == aarch64* ]]; then
@@ -27,9 +24,9 @@ BINARY="rye-${ARCH}-${PLATFORM}"
 
 # Oddly enough GitHub has different URLs for latest vs specific version
 if [[ $VERSION == "latest" ]]; then
-  DOWNLOAD_URL=https://github.com/${REPO}/releases/latest/download/${BINARY}
+  DOWNLOAD_URL=https://github.com/${REPO}/releases/latest/download/${BINARY}.gz
 else
-  DOWNLOAD_URL=https://github.com/${REPO}/releases/download/${VERSION}/${BINARY}
+  DOWNLOAD_URL=https://github.com/${REPO}/releases/download/${VERSION}/${BINARY}.gz
 fi
 
 echo "This script will automatically download and install rye (${VERSION}) for you."
@@ -42,18 +39,27 @@ if ! hash curl 2> /dev/null; then
   exit 1
 fi
 
-TEMP_FILE=`mktemp "${TMPDIR:-/tmp}/.ryeinstall.XXXXXXXX"`
-
-cleanup() {
-  rm -f "$TEMP_FILE"
-}
-
-trap cleanup EXIT
-HTTP_CODE=$(curl -SL --progress-bar "$DOWNLOAD_URL" --output "$TEMP_FILE" --write-out "%{http_code}")
-if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
-  echo "error: your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
+if ! hash gunzip 2> /dev/null; then
+  echo "error: you do not have 'gunzip' installed which is required for this script."
   exit 1
 fi
 
+TEMP_FILE=`mktemp "${TMPDIR:-/tmp}/.ryeinstall.XXXXXXXX"`
+TEMP_FILE_GZ="${TEMP_FILE}.gz"
+
+cleanup() {
+  rm -f "$TEMP_FILE"
+  rm -f "$TEMP_FILE_GZ"
+}
+
+trap cleanup EXIT
+HTTP_CODE=$(curl -SL --progress-bar "$DOWNLOAD_URL" --output "$TEMP_FILE_GZ" --write-out "%{http_code}")
+if [[ ${HTTP_CODE} -lt 200 || ${HTTP_CODE} -gt 299 ]]; then
+  echo "error: platform ${PLATFORM} (${ARCH}) is unsupported."
+  exit 1
+fi
+
+rm -f "$TEMP_FILE"
+gunzip "$TEMP_FILE_GZ" 
 chmod +x "$TEMP_FILE"
 "$TEMP_FILE" self install
