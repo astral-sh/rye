@@ -61,8 +61,8 @@ markdown_extensions:
   - markdown_include.include:
       base_path: docs
   - mdx_gh_links:
-    user: mitsuhiko
-    repo: rye
+      user: mitsuhiko
+      repo: rye
 
 extra_css:
   - static/extra.css
