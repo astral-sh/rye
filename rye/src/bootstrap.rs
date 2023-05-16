@@ -168,7 +168,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
 
     // if rye is itself installed into the shims folder, we want to
     // use that.  Otherwise we fall back to the current executable
-    let mut this = shims.join(format!("rye{EXE_EXTENSION}"));
+    let mut this = shims.join("rye").with_extension(EXE_EXTENSION);
     if !this.is_file() {
         this = env::current_exe()?;
     }
