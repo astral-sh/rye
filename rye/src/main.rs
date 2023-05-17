@@ -16,9 +16,6 @@ mod sync;
 mod utils;
 
 pub fn main() -> Result<(), anyhow::Error> {
-    platform::init()?;
-    config::load()?;
-
     match cli::execute() {
         Ok(()) => Ok(()),
         Err(err) => {

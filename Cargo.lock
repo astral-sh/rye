@@ -1637,10 +1637,11 @@ dependencies = [
 
 [[package]]
 name = "self-replace"
-version = "1.2.0"
+version = "1.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "66083111de8877b8c588e3a37255f59e20a870eeb9b586473e3bd70b925a9397"
+checksum = "9999d0a7996e68655846c491ca693bc7af8a117f17a8ce42182653855df3cbec"
 dependencies = [
+ "fastrand",
  "tempfile",
  "windows-sys 0.48.0",
 ]
