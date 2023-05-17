@@ -266,7 +266,7 @@ the right version.
 With growing development teams one of the most frustrating experiences is the inability to
 break up a monolithic Python module into smaller modules without having to constantly publish
 minor versions to a package index.  The way the Rust ecosystem deals with this issue is two-fold:
-one the one hand Rust supports workspaces natively.  Workspaces share dependencies and the
+on the one hand Rust supports workspaces natively.  Workspaces share dependencies and the
 resolver results.  The equivalent in Python would be that a workspace shares a virtualenv
 across all of the projects within in.  The second way in which Rust solves this problem is
 to permit a dependency to both support declaration of the package name, index but also local
