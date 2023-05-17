@@ -58,6 +58,12 @@ a folder in your home directory and mange itself there.
     * [rye-x86_64-windows.exe](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86_64-windows.exe) for 64bit Intel Windows
     * [rye-x86-windows.exe](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86-windows.exe) for 32bit Intel Windows
 
+    !!!Note
+    
+        Rye does not yet use signed binaries which means that you will need to allow
+        the execution of the downloaded executable.  If there is no obvious way to do so, click
+        on "More info" on the error message that shows up and then on "Run anyway".
+
 === "Compile Yourself"
 
     You need to have Rust and Cargo installed.  If you don't have, you can use
@@ -140,3 +146,28 @@ Additionally you should delete the remaining `.rye` folder from your home direct
 remove `.rye/shims` from the `PATH` again.  Rye itself does not place any data
 in other locations.  Note though that virtual environments created by rye will
 no longer function after Rye was uninstalled.
+
+## Preventing Auto Installation
+
+Rye when launched will normally perform an auto installation.  This can be annoying
+in certain development situations.  This can be prevented by exporting the
+`RYE_NO_AUTO_INSTALL` environment variable.  It needs to be set to `1` to disable
+the feature.
+
+=== "Linux"
+
+    ```bash
+    export RYE_NO_AUTO_INSTALL=1
+    ```
+
+=== "macOS"
+
+    ```bash
+    export RYE_NO_AUTO_INSTALL=1
+    ```
+
+=== "Windows"
+
+    ```bash
+    set RYE_NO_AUTO_INSTALL=1
+    ```

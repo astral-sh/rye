@@ -25,13 +25,14 @@ theme:
     - navigation.instant
     - navigation.tracking
     - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
     - toc.integrate
     - toc.follow
     - navigation.path
     - navigation.top
     - navigation.tabs
     - navigation.footer
-    - content.code.copy
   font:
     text: Inter
     monospace: Fira Mono
