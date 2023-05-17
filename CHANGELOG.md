@@ -7,7 +7,7 @@ most recent changes however.
 ## 0.2.0 (Unreleased)
 
 - The installer on windows will now ask for a key to be pressed so it does
-  not close the window without information.
+  not close the window without information.  #183
 
 ## 0.1.0
 
