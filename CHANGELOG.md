@@ -4,7 +4,12 @@ There is currently no actual release of Rye.  The latest main branch revision
 is the one you can install as mainline should always be stable.  Here are the
 most recent changes however.
 
-## May
+## 0.1.0
+
+- Rye now comes with binary releases for some platforms.
+
+- A new `self uninstall` command was added to uninstall rye and the new
+  `self update` command updates to the latest release version.
 
 - Rye now includes a `publish` command for publishing Python packages to a
   package repository.  #86
@@ -50,8 +55,6 @@ most recent changes however.
   will automatically create a `src/project_name/__init__.py` file.
 
 - Rye can now also generate a license text when initializing projects.
-
-## April
 
 - Rye now supports negative (exclusion) dependencies.  These can be used to
   prevent a dependency from installing, even if something else in the graph
