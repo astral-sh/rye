@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, EXE_EXTENSION, OS};
+use std::path::Path;
 use std::process::Command;
 use std::{env, fs};
 
@@ -9,6 +10,7 @@ use clap_complete::Shell;
 use console::style;
 use minijinja::render;
 use same_file::is_same_file;
+use self_replace::self_delete_outside_path;
 
 use crate::bootstrap::{download_url, ensure_self_venv};
 use crate::platform::get_app_dir;
@@ -76,7 +78,26 @@ pub struct UpdateCommand {
 /// to the intended target location and to add Rye to the environment
 /// variables.
 #[derive(Parser, Debug)]
-pub struct InstallCommand {}
+pub struct InstallCommand {
+    /// Skip prompts.
+    #[arg(short, long)]
+    yes: bool,
+}
+
+#[derive(Debug, Copy, Clone)]
+enum InstallMode {
+    Default,
+    NoPrompts,
+    AutoInstall,
+}
+
+/// Uninstalls rye again.
+#[derive(Parser, Debug)]
+pub struct UninstallCommand {
+    /// Skip safety check.
+    #[arg(short, long)]
+    yes: bool,
+}
 
 #[derive(Parser, Debug)]
 enum SubCommand {
@@ -84,6 +105,7 @@ enum SubCommand {
     Update(UpdateCommand),
     #[command(hide = true)]
     Install(InstallCommand),
+    Uninstall(UninstallCommand),
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -91,6 +113,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         SubCommand::Completion(args) => completion(args),
         SubCommand::Update(args) => update(args),
         SubCommand::Install(args) => install(args),
+        SubCommand::Uninstall(args) => uninstall(args),
     }
 }
 
@@ -166,13 +189,98 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
     Ok(())
 }
 
-fn install(_args: InstallCommand) -> Result<(), Error> {
+fn install(args: InstallCommand) -> Result<(), Error> {
+    perform_install(if args.yes {
+        InstallMode::NoPrompts
+    } else {
+        InstallMode::Default
+    })
+}
+
+fn remove_dir_all_if_exists(path: &Path) -> Result<(), Error> {
+    if path.is_dir() {
+        fs::remove_dir_all(path)?;
+    }
+    Ok(())
+}
+
+fn uninstall(args: UninstallCommand) -> Result<(), Error> {
+    if !args.yes
+        && !dialoguer::Confirm::new()
+            .with_prompt("Do you want to uninstall rye?")
+            .interact()?
+    {
+        return Ok(());
+    }
+
+    let app_dir = get_app_dir();
+    if app_dir.is_dir() {
+        let real_exe = env::current_exe()?.canonicalize()?;
+        let real_app_dir = app_dir.canonicalize()?;
+
+        // try to delete all shims that can be found.  Ignore if deletes don't work
+        let shim_dir = app_dir.join("shims");
+        if let Ok(dir) = shim_dir.read_dir() {
+            for entry in dir.flatten() {
+                fs::remove_file(&entry.path()).ok();
+            }
+        }
+
+        remove_dir_all_if_exists(&app_dir.join("self"))?;
+        remove_dir_all_if_exists(&app_dir.join("py"))?;
+        remove_dir_all_if_exists(&app_dir.join("pip-tools"))?;
+
+        // special deleting logic if we are placed in the app dir
+        if real_exe.strip_prefix(real_app_dir).is_ok() {
+            self_delete_outside_path(app_dir)?;
+        }
+
+        // at this point the remaining shim folder should be deletable
+        remove_dir_all_if_exists(&app_dir.join("shims"))?;
+
+        // leave this empty behind in case someone sourced it.  The config also stays around.
+        let env_file = app_dir.join("env");
+        if env_file.is_file() {
+            fs::write(env_file, "")?;
+        }
+    }
+
+    eprintln!("Done!");
+    eprintln!();
+
+    let rye_home = env::var("RYE_HOME")
+        .map(Cow::Owned)
+        .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
+    if cfg!(unix) {
+        eprintln!(
+            "Don't forget to remove the sourcing of {} from your shell config.",
+            Path::new(&rye_home as &str).join("env").display()
+        );
+    } else {
+        eprintln!(
+            "Don't forget to remove {} from your PATH",
+            Path::new(&rye_home as &str).join("shims").display()
+        )
+    }
+
+    Ok(())
+}
+
+fn perform_install(mode: InstallMode) -> Result<(), Error> {
     let exe = env::current_exe()?;
     let app_dir = get_app_dir();
     let shims = app_dir.join("shims");
     let target = shims.join("rye").with_extension(EXE_EXTENSION);
 
     eprintln!("{}", style("Welcome to Rye!").bold());
+
+    if matches!(mode, InstallMode::AutoInstall) {
+        eprintln!();
+        eprintln!("Rye has detected that it's not installed on this computer yet and");
+        eprintln!("automatically started the installer for you.  For more information");
+        eprintln!("read https://mitsuhiko.github.io/rye/guide/installation");
+    }
+
     eprintln!();
     eprintln!(
         "This installer will install rye to {}",
@@ -188,9 +296,10 @@ fn install(_args: InstallCommand) -> Result<(), Error> {
     eprintln!("  Platform: {} ({})", style(OS).cyan(), style(ARCH).cyan());
 
     eprintln!();
-    if !dialoguer::Confirm::new()
-        .with_prompt("Continue?")
-        .interact()?
+    if !matches!(mode, InstallMode::NoPrompts)
+        && !dialoguer::Confirm::new()
+            .with_prompt("Continue?")
+            .interact()?
     {
         eprintln!("Installation cancelled!");
         return Err(QuietExit(1).into());
@@ -248,8 +357,31 @@ fn install(_args: InstallCommand) -> Result<(), Error> {
         eprintln!("Note: You need to manually add {DEFAULT_HOME} to your PATH.");
     }
 
+    eprintln!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
+
     eprintln!();
     eprintln!("{}", style("All done!").green());
 
     Ok(())
+}
+
+pub fn auto_self_install() -> Result<bool, Error> {
+    // disables self installation
+    if env::var("RYE_NO_AUTO_INSTALL").ok().as_deref() == Some("1") {
+        return Ok(false);
+    }
+
+    let app_dir = get_app_dir();
+    let rye_exe = app_dir
+        .join("shims")
+        .join("rye")
+        .with_extension(EXE_EXTENSION);
+
+    // it's already installed, don't install
+    if app_dir.is_dir() && rye_exe.is_file() {
+        Ok(false)
+    } else {
+        perform_install(InstallMode::AutoInstall)?;
+        Ok(true)
+    }
 }

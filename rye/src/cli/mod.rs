@@ -1,3 +1,5 @@
+use std::env;
+
 use anyhow::Error;
 use clap::Parser;
 
@@ -61,8 +63,19 @@ enum Command {
 }
 
 pub fn execute() -> Result<(), Error> {
+    // common initialization
+    crate::platform::init()?;
+    crate::config::load()?;
+
+    let args = env::args_os().collect::<Vec<_>>();
+
     // if we're shimmed, execute the shim.  This won't return.
-    shim::execute_shim()?;
+    shim::execute_shim(&args)?;
+
+    // special case for self installation
+    if args.len() == 1 && rye::auto_self_install()? {
+        return Ok(());
+    }
 
     let args = Args::parse();
     let cmd = if args.version {
