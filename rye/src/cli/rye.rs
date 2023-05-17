@@ -381,6 +381,13 @@ pub fn auto_self_install() -> Result<bool, Error> {
     if app_dir.is_dir() && rye_exe.is_file() {
         Ok(false)
     } else {
+        // in auto installation we want to show a continue prompt before we shut down
+        // so that the cmd.exe does not close.
+        #[cfg(windows)]
+        {
+            crate::request_continue_prompt();
+        }
+
         perform_install(InstallMode::AutoInstall)?;
         Ok(true)
     }
