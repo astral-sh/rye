@@ -1,3 +1,9 @@
+---
+hide:
+  - navigation
+  - toc
+---
+
 # Rye: An Experimental Package Management Solution for Python
 
 Rye is [Armin's](https://github.com/mitsuhiko) personal one-stop-shop for all
@@ -9,7 +15,15 @@ Rye is an experimental endeavour to build a new type of packaging experience to
 Python inspired by `rustup` and `cargo` from Rust.  It's **not yet production ready**
 but feedback and suggestions are greatly appreciated.
 
-* [Getting Started](./guide/index.md) is a helpful guide for installation and basics.
+{!.includes/quick-install.md!}
+
+For the next steps, head over to the detailed [installation](./guide/installation.md) guide.
+
+-----
+
+**Other Information:**
+
+* [User Guide](./guide/index.md) the user guide.
 * [Tools](./guide/tools.md) shows how to use Rye as `pipx` replacement.
 * [Philosophy](./philosophy.md) tells you more about why this project exists and the ideas behind it.
 * [The Changelog](./changelog.md) lists all recent changes to Rye.
