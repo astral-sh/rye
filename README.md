@@ -23,14 +23,9 @@ Learn more:
 * [Issue Tracker](https://github.com/mitsuhiko/rye/issues)
 * [Discussions](https://github.com/mitsuhiko/rye/discussions)
 
-## Installation
+## Usage
 
-Rye is built in Rust. There is no binary distribution yet, it works on Linux, macOS
-and Windows as of today:
-
-```
-$ cargo install --git https://github.com/mitsuhiko/rye rye
-```
+For installation instructions please refer to the [installation documentation](https://mitsuhiko.github.io/rye/guide/installation/).
 
 To use rye for automatic management, you first need to create a new project using `rye init`:
 
@@ -56,11 +51,10 @@ The virtualenv that `rye` manages is placed in `.venv` next to your `pyproject.t
 You can activate and work with it as normal with one notable exception: the Python
 installation in it does not contain `pip`.
 
-Note that `python` will by default just be your regular Python. To have it automatically
-pick up the right Python without manually activating the virtualenv, you can add
-`~/.rye/shims` to your `PATH` at higher preference than normal. If you operate outside
-of a rye managed project, the regular Python is picked up automatically. For the global
-tool installation you need to add the shims to the path.
+Correctly installed, `rye` will automatically pick up the right Python without
+manually activating the virtualenv.  That is enabled by having `~/.rye/shims` at
+higher priority in your `PATH`.  If you operate outside of a rye managed
+project, the regular Python is picked up automatically.
 
 ## Some of the things it does
 
