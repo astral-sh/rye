@@ -81,6 +81,9 @@ extra:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/@mitsuhiko
       name: Follow @mitsuhiko on Twitter
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/drbkcdtSbg
+      name: Discuss Rye on Discord
 
 extra_css:
   - static/extra.css

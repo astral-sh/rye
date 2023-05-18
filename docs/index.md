@@ -40,4 +40,5 @@ For the next steps, head over to the detailed [installation](./guide/installatio
 
 * [Issue Tracker](https://github.com/mitsuhiko/rye/issues) if you run into bugs
 * [Discussions](https://github.com/mitsuhiko/rye/discussions) if you have ideas or want to discuss the project
+* [Discord](https://discord.gg/drbkcdtSbg) if you want to chat in real time
 
