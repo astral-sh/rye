@@ -36,8 +36,8 @@ theme:
   font:
     text: Inter
     monospace: Fira Mono
-  icon:
-    repo: fontawesome/brands/github
+  favicon: static/favicon.svg
+  logo: static/logo.svg
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
