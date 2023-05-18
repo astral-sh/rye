@@ -21,6 +21,13 @@ format:
 format-check:
 	@cargo fmt --all -- --check
 
+.PHONE: serve-docs
+serve-docs: .venv
+	@rye run serve-docs
+
 .PHONY: lint
 lint:
 	@cargo clippy --all -- -D clippy::dbg-macro -D warnings
+
+.venv:
+	@rye sync
