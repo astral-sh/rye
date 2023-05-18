@@ -27,6 +27,7 @@ Learn more:
 * [Documentation](https://mitsuhiko.github.io/rye)
 * [Issue Tracker](https://github.com/mitsuhiko/rye/issues)
 * [Discussions](https://github.com/mitsuhiko/rye/discussions)
+* [Discord](https://discord.gg/drbkcdtSbg)
 
 ## Usage
 
