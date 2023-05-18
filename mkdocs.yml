@@ -65,5 +65,11 @@ markdown_extensions:
       user: mitsuhiko
       repo: rye
 
+plugins:
+  - search
+  - mkdocs-simple-hooks:
+      hooks:
+        on_post_build: "docs.hooks:copy_get"
+
 extra_css:
   - static/extra.css
