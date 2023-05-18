@@ -4,7 +4,7 @@
     operating system and CPU architecture and install it:
 
     ```bash
-    curl https://raw.githubusercontent.com/mitsuhiko/rye/main/scripts/install.sh | bash
+    curl https://rye-up.com/get | bash
     ```
 
     Alternatively if you don't trust this approach, you can download the latest release
@@ -24,7 +24,7 @@
     operating system and CPU architecture and install it:
 
     ```bash
-    curl https://raw.githubusercontent.com/mitsuhiko/rye/main/scripts/install.sh | bash
+    curl https://rye-up.com/get | bash
     ```
 
     Alternatively if you don't trust this approach, you can download the latest release
