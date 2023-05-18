@@ -17,8 +17,9 @@ nav:
     - Dependencies: guide/deps.md
     - Toolchains: guide/toolchains.md
     - Tools: guide/tools.md
-  - Philosophy: philosophy.md
+  - Community: community.md
   - Changelog: changelog.md
+  - Philosophy: philosophy.md
 
 theme:
   name: material
@@ -81,6 +82,9 @@ extra:
     - icon: fontawesome/brands/twitter
       link: https://twitter.com/@mitsuhiko
       name: Follow @mitsuhiko on Twitter
+    - icon: material/alpha-b-box
+      link: https://bsky.app/profile/mitsuhiko.at
+      name: Follow @mitsuhiko.at on Bluesky
     - icon: fontawesome/brands/discord
       link: https://discord.gg/drbkcdtSbg
       name: Discuss Rye on Discord

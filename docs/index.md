@@ -1,7 +1,6 @@
 ---
 hide:
   - navigation
-  - toc
 ---
 
 # Rye: An Experimental Package Management Solution for Python
@@ -16,7 +15,7 @@ Python inspired by `rustup` and `cargo` from Rust.  It's **not yet production re
 but feedback and suggestions are greatly appreciated.
 
 <script async defer src="https://buttons.github.io/buttons.js"></script>
-<p>
+<p align="center">
   <a class="github-button" href="https://github.com/mitsuhiko/rye" data-size="large" data-show-count="true" data-color-scheme="light" aria-label="Star mitsuhiko/insta on GitHub">Star</a>
 <a class="github-button" href="https://github.com/mitsuhiko/rye/discussions" data-icon="octicon-comment-discussion" data-size="large" aria-label="Discuss mitsuhiko/rye on GitHub">Discuss</a>
   <a class="github-button" href="https://github.com/sponsors/mitsuhiko" data-size="large" data-icon="octicon-heart" data-color-scheme="light" aria-label="Sponsor @mitsuhiko on GitHub">Sponsor</a>
@@ -25,20 +24,3 @@ but feedback and suggestions are greatly appreciated.
 {!.includes/quick-install.md!}
 
 For the next steps, head over to the detailed [installation](./guide/installation.md) guide.
-
------
-
-**Other Information:**
-
-* [User Guide](./guide/index.md) the user guide.
-* [Tools](./guide/tools.md) shows how to use Rye as `pipx` replacement.
-* [Philosophy](./philosophy.md) tells you more about why this project exists and the ideas behind it.
-* [The Changelog](./changelog.md) lists all recent changes to Rye.
-* [A 9 Minute Introduction Screencast](https://youtu.be/CyI8TBuKPF0), for when you want to watch rather than read.
-
-**Ways to provide feedback:**
-
-* [Issue Tracker](https://github.com/mitsuhiko/rye/issues) if you run into bugs
-* [Discussions](https://github.com/mitsuhiko/rye/discussions) if you have ideas or want to discuss the project
-* [Discord](https://discord.gg/drbkcdtSbg) if you want to chat in real time
-
