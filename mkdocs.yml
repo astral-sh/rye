@@ -2,6 +2,7 @@ site_name: Rye
 site_description: An Experimental Package Management Solution for Python
 repo_name: mitsuhiko/rye
 repo_url: https://github.com/mitsuhiko/rye
+edit_uri: edit/main/docs/
 copyright: Copyright &copy; 2023 Armin Ronacher
 
 nav:
@@ -27,6 +28,7 @@ theme:
     - content.code.annotate
     - content.code.copy
     - content.tabs.link
+    - content.action.edit
     - toc.integrate
     - toc.follow
     - navigation.path
@@ -70,6 +72,15 @@ plugins:
   - mkdocs-simple-hooks:
       hooks:
         on_post_build: "docs.hooks:copy_get"
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mitsuhiko
+      name: Follow @mitsuhiko on GitHub
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/@mitsuhiko
+      name: Follow @mitsuhiko on Twitter
 
 extra_css:
   - static/extra.css
