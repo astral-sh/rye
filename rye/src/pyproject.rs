@@ -512,7 +512,7 @@ impl PyProject {
         match backend {
             Some("hatchling.build") => Some("hatchling"),
             Some("setuptools.build_meta") => Some("setuptools"),
-            Some("filt_core.buildapi") => Some("filt"),
+            Some("flit_core.buildapi") => Some("flit"),
             _ => None,
         }
     }

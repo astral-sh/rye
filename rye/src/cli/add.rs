@@ -118,7 +118,11 @@ impl ReqExtras {
                 )),
             };
         } else if let Some(ref path) = self.path {
-            let file_url = if self.absolute {
+            // For hatchling build backend, it use {root:uri} for file relative path,
+            // but this not supported by pip-tools,
+            // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
+            let is_hatchling = PyProject::discover()?.build_backend().unwrap() == "hatchling";
+            let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
             } else {
