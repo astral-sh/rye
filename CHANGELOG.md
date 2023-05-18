@@ -6,6 +6,8 @@ most recent changes however.
 
 ## 0.1.1
 
+- Support direct references when add package.  #158
+
 - The installer on windows will now ask for a key to be pressed so it does
   not close the window without information.  #183
 
