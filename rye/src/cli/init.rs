@@ -73,12 +73,14 @@ license = { text = {{ license }} }
 {%- if build_system == "hatchling" %}
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+[tool.hatch.metadata]
+allow-direct-references = true
 {%- elif build_system == "setuptools" %}
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 {%- elif build_system == "filt" %}
 requires = ["flit_core>=3.4"]
-build-backend = "filt_core.buildapi"
+build-backend = "flit_core.buildapi"
 {%- endif %}
 
 [tool.rye]
