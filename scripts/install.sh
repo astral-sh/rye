@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Wrap everything in a function so that a truncated script
+# does not have the chance to cause issues.
+__wrap__() {
+
 # allow overriding the version
 VERSION=${RYE_VERSION:-latest}
 
@@ -63,3 +67,5 @@ rm -f "$TEMP_FILE"
 gunzip "$TEMP_FILE_GZ" 
 chmod +x "$TEMP_FILE"
 "$TEMP_FILE" self install
+
+}; __wrap__
