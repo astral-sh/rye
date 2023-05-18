@@ -4,10 +4,13 @@ There is currently no actual release of Rye.  The latest main branch revision
 is the one you can install as mainline should always be stable.  Here are the
 most recent changes however.
 
-## 0.2.0 (Unreleased)
+## 0.1.1 (Unreleased)
 
 - The installer on windows will now ask for a key to be pressed so it does
   not close the window without information.  #183
+
+- Fixed an issue on macOS where the installer would die with "os error 24"
+  when directly piped to bash.  #184
 
 ## 0.1.0
 
