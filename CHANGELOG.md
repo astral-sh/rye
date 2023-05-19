@@ -4,9 +4,13 @@ There is currently no actual release of Rye.  The latest main branch revision
 is the one you can install as mainline should always be stable.  Here are the
 most recent changes however.
 
-## 0.1.1
+## Unreleaser
+
+- `init` no longer creates invalid flit config.  #195
 
 - Support direct references when add package.  #158
+
+## 0.1.1
 
 - The installer on windows will now ask for a key to be pressed so it does
   not close the window without information.  #183
