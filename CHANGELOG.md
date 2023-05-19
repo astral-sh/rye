@@ -8,7 +8,7 @@ most recent changes however.
 
 - `init` no longer creates invalid flit config.  #195
 
-- Support direct references when add package.  #158
+- Support direct references when adding a package.  #158
 
 ## 0.1.1
 
