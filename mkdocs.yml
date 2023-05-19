@@ -46,13 +46,13 @@ theme:
       scheme: default
       primary: custom
       toggle:
-        icon: material/toggle-switch
+        icon: octicons/sun-24
         name: Switch to dark mode
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
       toggle:
-        icon: material/toggle-switch-off-outline
+        icon: octicons/moon-24
         name: Switch to light mode
 
 markdown_extensions:
