@@ -502,6 +502,20 @@ impl PyProject {
             .ok_or_else(|| anyhow!("project from '{}' has no name", self.root_path().display()))
     }
 
+    /// Returns the build backend.
+    pub fn build_backend(&self) -> Option<&str> {
+        let backend = self
+            .doc
+            .get("build-system")
+            .and_then(|x| x.get("build-backend"))
+            .and_then(|x| x.as_str());
+        match backend {
+            Some("hatchling.build") => Some("hatchling"),
+            Some("setuptools.build_meta") => Some("setuptools"),
+            Some("flit_core.buildapi") => Some("flit"),
+            _ => None,
+        }
+    }
     /// Looks up a script
     pub fn get_script_cmd(&self, key: &str) -> Option<Script> {
         let external = self.venv_bin_path().join(key);

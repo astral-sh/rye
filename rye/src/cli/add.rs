@@ -32,7 +32,7 @@ if py_ver:
     finder.target_python.py_ver = tuple(map(int, py_ver.split('.')))
 choices = iter(finder.find_matches(package))
 if not pre:
-    choices = (m for m in choices if not Version(m.version).is_prerelease)
+    choices = (m for m in choices if not(m.version and Version(m.version).is_prerelease))
 
 print(json.dumps([x.as_json() for x in choices]))
 "#;
@@ -40,7 +40,7 @@ print(json.dumps([x.as_json() for x in choices]))
 #[derive(Deserialize, Debug)]
 struct Match {
     name: String,
-    version: String,
+    version: Option<String>,
     link: Option<Link>,
 }
 
@@ -118,7 +118,11 @@ impl ReqExtras {
                 )),
             };
         } else if let Some(ref path) = self.path {
-            let file_url = if self.absolute {
+            // For hatchling build backend, it use {root:uri} for file relative path,
+            // but this not supported by pip-tools,
+            // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
+            let is_hatchling = PyProject::discover()?.build_backend().unwrap() == "hatchling";
+            let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
             } else {
@@ -220,7 +224,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                             eprintln!(
                                 "  {} ({}) requires Python {}",
                                 pkg.name,
-                                pkg.version,
+                                pkg.version.unwrap_or_default(),
                                 pkg.link
                                     .as_ref()
                                     .and_then(|x| x.requires_python.as_ref())
@@ -237,9 +241,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             }
 
             let m = matches.into_iter().next().unwrap();
-            if requirement.version_or_url.is_none() {
+            if m.version.is_some() && requirement.version_or_url.is_none() {
                 requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
-                    VersionSpecifiers::from_str(&format!("~={}", m.version))?,
+                    VersionSpecifiers::from_str(&format!("~={}", m.version.unwrap()))?,
                 ));
             }
             requirement.name = m.name;
