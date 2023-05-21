@@ -218,10 +218,10 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
         let real_exe = env::current_exe()?.canonicalize()?;
         let real_app_dir = app_dir.canonicalize()?;
 
-        // try to delete all shims that can be found.  Ignore if deletes don't work
+        // try to delete all shims that can be found.  Ignore if deletes don't work and rye itself.
         let shim_dir = app_dir.join("shims");
         if let Ok(dir) = shim_dir.read_dir() {
-            for entry in dir.flatten() {
+            for entry in dir.flatten().filter(|p| p.path() != real_exe) {
                 fs::remove_file(&entry.path()).ok();
             }
         }
