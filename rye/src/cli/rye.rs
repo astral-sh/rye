@@ -218,7 +218,8 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
         let real_exe = env::current_exe()?.canonicalize()?;
         let real_app_dir = app_dir.canonicalize()?;
 
-        // try to delete all shims that can be found.  Ignore if deletes don't work
+        // try to delete all shims that can be found.  Ignore if deletes don't work.
+        // The delete of the current executable for instance will fail on windows.
         let shim_dir = app_dir.join("shims");
         if let Ok(dir) = shim_dir.read_dir() {
             for entry in dir.flatten() {
@@ -230,9 +231,11 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
         remove_dir_all_if_exists(&app_dir.join("py"))?;
         remove_dir_all_if_exists(&app_dir.join("pip-tools"))?;
 
-        // special deleting logic if we are placed in the app dir
-        if real_exe.strip_prefix(real_app_dir).is_ok() {
-            self_delete_outside_path(app_dir)?;
+        // special deleting logic if we are placed in the app dir and the shim deletion
+        // did not succeed.  This is likely the case on windows where we then use the
+        // `self_delete` crate.
+        if real_exe.strip_prefix(&real_app_dir).is_ok() && real_exe.is_file() {
+            self_delete_outside_path(&real_app_dir)?;
         }
 
         // at this point the remaining shim folder should be deletable
