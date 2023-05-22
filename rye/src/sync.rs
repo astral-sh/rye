@@ -14,7 +14,7 @@ use crate::lock::{
 };
 use crate::piptools::get_pip_sync;
 use crate::platform::get_toolchain_python_bin;
-use crate::pyproject::{get_current_venv_python_version, PyProject};
+use crate::pyproject::{get_current_venv_python_version, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
 use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};
 
@@ -218,6 +218,18 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 // note that the double quotes are necessary to properly handle
                 // spaces in paths
                 .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
+
+            let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
+            sources.add_as_pip_args(&mut pip_sync_cmd);
+
+            for (idx, url) in sources.index_urls.iter().enumerate() {
+                if idx == 0 {
+                    pip_sync_cmd.arg("--index-url");
+                } else {
+                    pip_sync_cmd.arg("--extra-index-url");
+                }
+                pip_sync_cmd.arg(&url.to_string());
+            }
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);

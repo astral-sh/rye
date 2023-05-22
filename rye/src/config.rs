@@ -6,6 +6,7 @@ use anyhow::{Context, Error};
 use toml_edit::Document;
 
 use crate::platform::{get_app_dir, get_latest_cpython};
+use crate::pyproject::{SourceRef, SourceRefType};
 use crate::sources::PythonVersionRequest;
 
 static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);
@@ -86,5 +87,30 @@ impl Config {
             None => get_latest_cpython().map(Into::into),
         }
         .context("failed to get default toolchain")
+    }
+
+    /// Returns the list of default sources.
+    pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
+        let mut rv = Vec::new();
+        let mut need_default = true;
+        if let Some(sources) = self.doc.get("sources").and_then(|x| x.as_array_of_tables()) {
+            for source in sources {
+                let source_ref = SourceRef::from_toml_table(source)?;
+                if source_ref.name == "default" {
+                    need_default = false;
+                }
+                rv.push(source_ref);
+            }
+        }
+
+        if need_default {
+            rv.push(SourceRef::from_url(
+                "default".to_string(),
+                "https://pypi.org/simple/".into(),
+                SourceRefType::Index,
+            ));
+        }
+
+        Ok(rv)
     }
 }

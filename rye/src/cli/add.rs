@@ -12,21 +12,25 @@ use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
-use crate::pyproject::{DependencyKind, PyProject};
+use crate::pyproject::{DependencyKind, ExpandedSources, PyProject};
 use crate::utils::{format_requirement, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
 import sys
 import json
 from unearth.finder import PackageFinder
+from unearth.session import PyPISession
 from packaging.version import Version
 
 py_ver = sys.argv[1]
 package = sys.argv[2]
-pre = len(sys.argv) > 3 and sys.argv[3] == "--pre"
+sources = json.loads(sys.argv[3])
+pre = len(sys.argv) > 4 and sys.argv[4] == "--pre"
 
 finder = PackageFinder(
-    index_urls=["https://pypi.org/simple/"],
+    index_urls=sources["index_urls"],
+    find_links=sources["find_links"],
+    trusted_hosts=sources["trusted_hosts"],
 )
 if py_ver:
     finder.target_python.py_ver = tuple(map(int, py_ver.split('.')))
@@ -208,10 +212,17 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         // if we are excluding, we do not want a specific dependency version
         // stored, so we just skip the unearth step
         if !cmd.excluded {
-            let matches = find_best_matches(&python_path, Some(&py_ver), &requirement, cmd.pre)?;
+            let matches = find_best_matches(
+                &pyproject_toml,
+                &python_path,
+                Some(&py_ver),
+                &requirement,
+                cmd.pre,
+            )?;
             if matches.is_empty() {
-                let all_matches = find_best_matches(&python_path, None, &requirement, cmd.pre)
-                    .unwrap_or_default();
+                let all_matches =
+                    find_best_matches(&pyproject_toml, &python_path, None, &requirement, cmd.pre)
+                        .unwrap_or_default();
                 if all_matches.is_empty() {
                     bail!(
                         "did not find package '{}'",
@@ -269,17 +280,21 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 }
 
 fn find_best_matches(
+    pyproject: &PyProject,
     python_path: &PathBuf,
     py_ver: Option<&str>,
     requirement: &Requirement,
     pre: bool,
 ) -> Result<Vec<Match>, Error> {
     let mut unearth = Command::new(python_path);
+    let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
+
     unearth
         .arg("-c")
         .arg(PACKAGE_FINDER_SCRIPT)
         .arg(py_ver.unwrap_or(""))
-        .arg(&format_requirement(requirement).to_string());
+        .arg(&format_requirement(requirement).to_string())
+        .arg(serde_json::to_string(&sources)?);
     if pre {
         unearth.arg("--pre");
     }
