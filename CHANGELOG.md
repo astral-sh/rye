@@ -4,7 +4,9 @@ There is currently no actual release of Rye.  The latest main branch revision
 is the one you can install as mainline should always be stable.  Here are the
 most recent changes however.
 
-## 0.2.0 (Unreleased)
+## 0.2.0
+
+_Unreleased_
 
 - Added support for custom indexes.  #199
 

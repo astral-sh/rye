@@ -5,7 +5,7 @@ description = "Workspace for rye development"
 authors = [
     { name = "Armin Ronacher", email = "armin.ronacher@active-4.com" }
 ]
-dependencies = ["mkdocs~=1.4.3", "mkdocs-material~=9.1.12", "pymdown-extensions~=9.11", "markdown-include~=0.8.1", "mdx-gh-links~=0.3", "mkdocs-simple-hooks~=0.1.5"]
+dependencies = ["mkdocs~=1.4.3", "mkdocs-material~=9.1.12", "pymdown-extensions~=9.11", "markdown-include~=0.8.1", "mdx-gh-links~=0.3", "mkdocs-simple-hooks~=0.1.5", "mkdocs-version-annotations~=1.0.0"]
 readme = "README.md"
 requires-python = ">= 3.8"
 

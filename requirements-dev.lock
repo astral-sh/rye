@@ -23,6 +23,7 @@ mkdocs==1.4.3
 mkdocs-material==9.1.12
 mkdocs-material-extensions==1.1.1
 mkdocs-simple-hooks==0.1.5
+mkdocs-version-annotations==1.0.0
 packaging==23.1
 pygments==2.15.1
 pymdown-extensions==9.11

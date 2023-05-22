@@ -1,5 +1,7 @@
 # Dependency Sources
 
++++ 0.2.0
+
 Normally Rye loads packages from PyPI only.  However it is possible to instruct it to
 load packages from other indexes as well.
 
