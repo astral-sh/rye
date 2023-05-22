@@ -1,7 +1,15 @@
 # Toolchain Management
 
 Rye is unique in that it does not use system Python installations.  Instead if downloads
-and manages Python installations itself (called toolchains).
+and manages Python installations itself (called toolchains).  Today there are
+three types of toolchains supported by Rye and they require some understanding:
+
+* [**Portable CPython**](cpython.md): Rye will itself download portable builds of CPython
+  for most of its needs.  These are fetched from
+  [indygreg/python-build-standalone](https://github.com/indygreg/python-build-standalone)
+* [**Official PyPy Builds**](pypy.md): PyPy is supported from the official release builds.
+* [**Custom Local Toolchains**](#registering-toolchains): locally installed Python interpreters can be
+  registered with Rye.  Afterwards they can be used with any Rye managed project.
 
 ## Pinning Toolchains
 

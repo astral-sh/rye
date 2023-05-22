@@ -15,7 +15,10 @@ nav:
     - Python Project: guide/pyproject.md
     - Syncing and Locking: guide/sync.md
     - Dependencies: guide/deps.md
-    - Toolchains: guide/toolchains.md
+    - Toolchains:
+      - guide/toolchains/index.md
+      - Portable CPython: guide/toolchains/cpython.md
+      - PyPy: guide/toolchains/pypy.md
     - Tools: guide/tools.md
   - Community: community.md
   - Changelog: changelog.md
@@ -56,6 +59,7 @@ theme:
         name: Switch to light mode
 
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.details
   - pymdownx.keys
@@ -67,6 +71,9 @@ markdown_extensions:
   - mdx_gh_links:
       user: mitsuhiko
       repo: rye
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
 
 plugins:
   - search

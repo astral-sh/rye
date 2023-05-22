@@ -6,6 +6,8 @@ most recent changes however.
 
 ## 0.1.2
 
+Released on 2023-05-22
+
 - Fixed dev-dependencies not being installed when using workspace.  #170
 
 - `init` no longer creates invalid flit config.  #195
@@ -16,6 +18,8 @@ most recent changes however.
 
 ## 0.1.1
 
+Released on 2023-05-18
+
 - The installer on windows will now ask for a key to be pressed so it does
   not close the window without information.  #183
 
@@ -23,6 +27,8 @@ most recent changes however.
   when directly piped to bash.  #184
 
 ## 0.1.0
+
+Released on 2023-05-17
 
 - Rye now comes with binary releases for some platforms.
 

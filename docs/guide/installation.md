@@ -11,6 +11,9 @@ a folder in your home directory and mange itself there.
 
 {!.includes/quick-install.md!}
 
+Rye will automatically download suitable Python toolchains as needed.  For more
+information about this [read about toolchains](toolchains/index.md).
+
 ## Add Shims to Path
 
 Once `rye` is installed you need to add the `shims` folder into your `PATH`.

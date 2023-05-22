@@ -13,7 +13,7 @@ to isolate it.
 ## Home Folder Structure
 
 The `.rye` home folder contains both user configuration as well as Rye managed state such
-as [installed toolchains](toolchains.md).  The following files and folders are placed within the
+as [installed toolchains](toolchains/index.md).  The following files and folders are placed within the
 `.rye` folder.  Note that not all are there always.
 
 ### `config.toml`
@@ -28,7 +28,7 @@ an internal virtualenv stored in this location.
 
 ### `py`
 
-In this folder Rye stores the different [toolchains](toolchains.md).  Normally those are folders
+In this folder Rye stores the different [toolchains](toolchains/index.md).  Normally those are folders
 containing downloaded Python distributions, but they can also be symlinks or special reference
 files.
 
