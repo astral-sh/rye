@@ -16,7 +16,7 @@ Python builds from PyOxidizer.
 Unlike many other Python versions you can install on your computer are
 non-portable which means that if you move them to a new location on your
 machine, or you copy it onto another computer (even with the same operating
-system) they will no longer run.  This is undesireable for what Rye wants to do.
+system) they will no longer run.  This is undesirable for what Rye wants to do.
 For one we want the same experience for any of the Python developers, no matter
 which operating system they used.  Secondly we want to enable self-contained
 Python builds later, which requires that the Python installation is portable.
@@ -36,7 +36,7 @@ The following changes to a regular Python versions you should be aware of:
   standard library provides alternatives.
 
 Additionally due to how these builds are created, there are some other quirks
-you might run into related ot terminal support or TKinter.  The PyOxizier
+you might run into related to terminal support or TKinter.  The PyOxizier
 project maintains documentation for this:
 
 * [Behavior Quirks](https://python-build-standalone.readthedocs.io/en/latest/quirks.html)
