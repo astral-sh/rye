@@ -51,6 +51,20 @@ user experience.
 managed = true
 ```
 
+## `tool.rye.sources`
+
+This is an array of tables with sources that should be used for locating dependencies.
+This lets you use indexes other than PyPI.  These sources can also be configured in the
+main `config.toml` config file with the same syntax.
+
+```toml
+[[sources]]
+name = "default"
+url = "http://pypi.org/simple/"
+```
+
+For more information about configuring sources see [Dependency Sources](sources.md).
+
 ## `tool.rye.scripts`
 
 This key can be used to register custom scripts that are exposed via `rye run`.  Each key is

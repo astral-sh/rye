@@ -50,6 +50,11 @@ requires-python = ">= 3.8"
 
 # This is the default toolchain that is used
 toolchain = "cpython@3.11.1"
+
+# a array of tables with optional sources.  Same format as in pyproject.toml
+[[sources]]
+name = "default"
+url = "http://pypi.org/simple/"
 ```
 
 ## Per Project Config

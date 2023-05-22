@@ -16,7 +16,9 @@ use tempfile::NamedTempFile;
 use url::Url;
 
 use crate::piptools::get_pip_compile;
-use crate::pyproject::{normalize_package_name, DependencyKind, PyProject, Workspace};
+use crate::pyproject::{
+    normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
+};
 use crate::sources::PythonVersion;
 use crate::utils::{get_venv_python_bin, CommandOutput};
 
@@ -72,6 +74,7 @@ pub fn update_workspace_lockfile(
     lock_mode: LockMode,
     lockfile: &Path,
     output: CommandOutput,
+    sources: &ExpandedSources,
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
@@ -123,6 +126,7 @@ pub fn update_workspace_lockfile(
         &workspace.path(),
         req_file.path(),
         lockfile,
+        sources,
         lock_options,
         &exclusions,
         &[],
@@ -133,6 +137,7 @@ pub fn update_workspace_lockfile(
         &workspace.path(),
         local_req_file.path(),
         lockfile,
+        sources,
         lock_options,
         &exclusions,
         &["--pip-args=--no-deps"],
@@ -248,6 +253,7 @@ pub fn update_single_project_lockfile(
     lock_mode: LockMode,
     lockfile: &Path,
     output: CommandOutput,
+    sources: &ExpandedSources,
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
@@ -279,6 +285,7 @@ pub fn update_single_project_lockfile(
         &pyproject.workspace_path(),
         req_file.path(),
         lockfile,
+        sources,
         lock_options,
         &exclusions,
         &[],
@@ -294,6 +301,7 @@ fn generate_lockfile(
     workspace_path: &Path,
     requirements_file_in: &Path,
     lockfile: &Path,
+    sources: &ExpandedSources,
     lock_options: &LockOptions,
     exclusions: &HashSet<Requirement>,
     extra_args: &[&str],
@@ -337,6 +345,7 @@ fn generate_lockfile(
     if lock_options.pre {
         cmd.arg("--pre");
     }
+    sources.add_as_pip_args(&mut cmd);
     cmd.args(extra_args);
     let status = cmd.status().context("unable to run pip-compile")?;
     if !status.success() {
@@ -364,6 +373,17 @@ fn finalize_lockfile(
     let mut rv = BufWriter::new(fs::File::create(out)?);
     writeln!(rv, "{}", render!(REQUIREMENTS_HEADER, lock_options))?;
     for line in fs::read_to_string(generated)?.lines() {
+        // we do not want to persist these pieces of information as we always
+        // provide it explicitly on the command line.  This is particularly
+        // important as we might include auth info here.
+        if line.trim().is_empty()
+            || line.starts_with("--index-url ")
+            || line.starts_with("--extra-index-url ")
+            || line.starts_with("--find-links ")
+        {
+            continue;
+        }
+
         if let Some(m) = FILE_EDITABLE_RE.captures(line) {
             let url = Url::parse(&m[1]).context("invalid editable URL generated")?;
             if url.scheme() == "file" {

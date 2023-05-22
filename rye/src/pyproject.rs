@@ -6,6 +6,7 @@ use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -15,7 +16,9 @@ use once_cell::sync::Lazy;
 use pep440_rs::{Operator, VersionSpecifiers};
 use pep508_rs::Requirement;
 use regex::Regex;
+use serde::Serialize;
 use toml_edit::{Array, Document, Formatted, Item, Table, Value};
+use url::Url;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
@@ -70,6 +73,102 @@ impl DependencyRef {
         F: for<'a> FnMut(&'a str) -> Option<String>,
     {
         Ok(expand_env_vars(&self.raw, f).parse()?)
+    }
+}
+
+/// Defines the type of the source reference.
+#[derive(Copy, Clone, Debug)]
+pub enum SourceRefType {
+    Index,
+    FindLinks,
+}
+
+impl FromStr for SourceRefType {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "index" => Ok(SourceRefType::Index),
+            "find-links" => Ok(SourceRefType::FindLinks),
+            _ => Err(anyhow!("unknown source reference '{}'", s)),
+        }
+    }
+}
+
+/// Represents a source.
+pub struct SourceRef {
+    pub name: String,
+    pub url: String,
+    pub verify_ssl: bool,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub ty: SourceRefType,
+}
+
+impl SourceRef {
+    pub fn from_url(name: String, url: String, ty: SourceRefType) -> SourceRef {
+        SourceRef {
+            name,
+            url,
+            verify_ssl: true,
+            username: None,
+            password: None,
+            ty,
+        }
+    }
+
+    pub fn from_toml_table(source: &Table) -> Result<SourceRef, Error> {
+        let name = source
+            .get("name")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string())
+            .ok_or_else(|| anyhow!("expected name"))?;
+        let url = source
+            .get("url")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string())
+            .ok_or_else(|| anyhow!("expected url"))?;
+        let verify_ssl = source
+            .get("verify_ssl")
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true);
+        let username = source
+            .get("username")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string());
+        let password = source
+            .get("password")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string());
+        let ty = source
+            .get("type")
+            .and_then(|x| x.as_str())
+            .map_or(Ok(SourceRefType::Index), |x| x.parse::<SourceRefType>())
+            .context("invalid value for type")?;
+        Ok(SourceRef {
+            name,
+            url,
+            verify_ssl,
+            username,
+            password,
+            ty,
+        })
+    }
+
+    /// Returns the URL with authentication expanded.
+    ///
+    /// This also fills in environment variables if there are any.
+    pub fn expand_url(&self) -> Result<Url, Error> {
+        let mut url =
+            Url::parse(&expand_env_vars(&self.url, |name: &str| std::env::var(name).ok()) as &str)
+                .context("invalid source url")?;
+        if let Some(ref username) = self.username {
+            url.set_username(username).ok();
+        }
+        if let Some(ref password) = self.password {
+            url.set_password(Some(password)).ok();
+        }
+        Ok(url)
     }
 }
 
@@ -322,6 +421,11 @@ impl Workspace {
     /// This is the python version that should be used for virtualenvs.
     pub fn venv_python_version(&self) -> Result<PythonVersion, Error> {
         resolve_intended_venv_python_version(&self.doc)
+    }
+
+    /// Returns a list of index URLs that should be considered.
+    pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
+        get_sources(&self.doc)
     }
 }
 
@@ -657,6 +761,14 @@ impl PyProject {
             .map(DependencyRef::new)
     }
 
+    /// Returns a list of sources that should be considered.
+    pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
+        match self.workspace {
+            Some(ref workspace) => workspace.sources(),
+            None => get_sources(&self.doc),
+        }
+    }
+
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
         fs::write(self.toml_path(), self.doc.to_string()).with_context(|| {
@@ -821,5 +933,89 @@ fn is_unsafe_script(path: &Path) -> bool {
     {
         // this is done because on unix pypy throws a bunch of dylibs into the bin folder
         path.extension() == Some(OsStr::new("dylib"))
+    }
+}
+
+fn get_sources(doc: &Document) -> Result<Vec<SourceRef>, Error> {
+    let cfg = Config::current();
+    let mut rv = Vec::new();
+
+    if let Some(sources) = doc
+        .get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("sources"))
+        .and_then(|x| x.as_array_of_tables())
+    {
+        for source in sources {
+            let source_ref = SourceRef::from_toml_table(source)?;
+            rv.push(source_ref);
+        }
+    }
+
+    let mut seen = HashSet::<String>::from_iter(rv.iter().map(|x| x.name.clone()));
+
+    for source in cfg.sources()? {
+        if !seen.contains(&source.name) {
+            seen.insert(source.name.clone());
+            rv.push(source);
+        }
+    }
+
+    Ok(rv)
+}
+
+/// Represents expanded sources.
+#[derive(Debug, Clone, Serialize)]
+pub struct ExpandedSources {
+    pub index_urls: Vec<Url>,
+    pub find_links: Vec<Url>,
+    pub trusted_hosts: HashSet<String>,
+}
+
+impl ExpandedSources {
+    /// Takes some sources and expands them.
+    pub fn from_sources(sources: &[SourceRef]) -> Result<ExpandedSources, Error> {
+        let mut index_urls = Vec::new();
+        let mut find_links = Vec::new();
+        let mut trusted_hosts = HashSet::new();
+
+        for source in sources {
+            let url = source.expand_url()?;
+            if !source.verify_ssl {
+                if let Some(host) = url.host_str() {
+                    trusted_hosts.insert(host.to_string());
+                }
+            }
+            match source.ty {
+                SourceRefType::Index => index_urls.push(url),
+                SourceRefType::FindLinks => find_links.push(url),
+            }
+        }
+
+        Ok(ExpandedSources {
+            index_urls,
+            find_links,
+            trusted_hosts,
+        })
+    }
+
+    /// Attach common pip args to a command.
+    pub fn add_as_pip_args(&self, cmd: &mut Command) {
+        for (idx, url) in self.index_urls.iter().enumerate() {
+            if idx == 0 {
+                cmd.arg("--index-url");
+            } else {
+                cmd.arg("--extra-index-url");
+            }
+            cmd.arg(&url.to_string());
+        }
+        for link in &self.find_links {
+            cmd.arg("--find-links");
+            cmd.arg(&link.to_string());
+        }
+        for host in &self.trusted_hosts {
+            cmd.arg("--trusted-host");
+            cmd.arg(host);
+        }
     }
 }

@@ -14,7 +14,7 @@ use crate::lock::{
 };
 use crate::piptools::get_pip_sync;
 use crate::platform::get_toolchain_python_bin;
-use crate::pyproject::{get_current_venv_python_version, PyProject};
+use crate::pyproject::{get_current_venv_python_version, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
 use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};
 
@@ -142,6 +142,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     // into a folder all by itself and place a second file in there which we
     // can pass to pip-sync to install the local package.
     if recreate || cmd.mode != SyncMode::PythonOnly {
+        let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
         if cmd.no_lock {
             let lockfile = if cmd.dev { &dev_lockfile } else { &lockfile };
             if !lockfile.is_file() {
@@ -158,6 +159,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Production,
                 &lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write production lockfile for workspace")?;
@@ -167,6 +169,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write dev lockfile for workspace")?;
@@ -178,6 +181,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Production,
                 &lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write production lockfile for project")?;
@@ -187,6 +191,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write dev lockfile for project")?;
@@ -218,6 +223,17 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 // note that the double quotes are necessary to properly handle
                 // spaces in paths
                 .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
+
+            sources.add_as_pip_args(&mut pip_sync_cmd);
+
+            for (idx, url) in sources.index_urls.iter().enumerate() {
+                if idx == 0 {
+                    pip_sync_cmd.arg("--index-url");
+                } else {
+                    pip_sync_cmd.arg("--extra-index-url");
+                }
+                pip_sync_cmd.arg(&url.to_string());
+            }
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);
