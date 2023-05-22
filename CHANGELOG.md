@@ -10,6 +10,8 @@ most recent changes however.
 
 - Support direct references when adding a package.  #158
 
+- Fixed a bug with uninstall on Unix platforms.
+
 ## 0.1.1
 
 - The installer on windows will now ask for a key to be pressed so it does
