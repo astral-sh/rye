@@ -6,6 +6,8 @@ most recent changes however.
 
 ## Unreleased
 
+- Fixed dev-dependencies not being installed when using workspace.  #170
+
 - `init` no longer creates invalid flit config.  #195
 
 - Support direct references when adding a package.  #158
