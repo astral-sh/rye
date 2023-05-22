@@ -376,7 +376,8 @@ fn finalize_lockfile(
         // we do not want to persist these pieces of information as we always
         // provide it explicitly on the command line.  This is particularly
         // important as we might include auth info here.
-        if line.starts_with("--index-url ")
+        if line.trim().is_empty()
+            || line.starts_with("--index-url ")
             || line.starts_with("--extra-index-url ")
             || line.starts_with("--find-links ")
         {
