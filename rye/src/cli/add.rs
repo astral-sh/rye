@@ -5,7 +5,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
-use pep440_rs::VersionSpecifiers;
+use pep440_rs::{Operator, Version, VersionSpecifier, VersionSpecifiers};
 use pep508_rs::{Requirement, VersionOrUrl};
 use serde::Deserialize;
 use url::Url;
@@ -253,8 +253,22 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
             let m = matches.into_iter().next().unwrap();
             if m.version.is_some() && requirement.version_or_url.is_none() {
+                let version = Version::from_str(m.version.as_ref().unwrap())
+                    .map_err(|msg| anyhow!("invalid version: {}", msg))?;
                 requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
-                    VersionSpecifiers::from_str(&format!("~={}", m.version.unwrap()))?,
+                    VersionSpecifiers::from_iter(Some(
+                        VersionSpecifier::new(
+                            if version.is_local() {
+                                Operator::Equal
+                            } else {
+                                Operator::TildeEqual
+                            },
+                            Version::from_str(m.version.as_ref().unwrap())
+                                .map_err(|msg| anyhow!("invalid version: {}", msg))?,
+                            false,
+                        )
+                        .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
+                    )),
                 ));
             }
             requirement.name = m.name;

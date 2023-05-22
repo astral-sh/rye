@@ -1228,9 +1228,9 @@ dependencies = [
 
 [[package]]
 name = "pep508_rs"
-version = "0.1.5"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "969679a29dfdc8278a449f75b3dd45edf57e649bd59f7502429c2840751c46d8"
+checksum = "c0713d7bb861ca2b7d4c50a38e1f31a4b63a2e2df35ef1e5855cc29e108453e2"
 dependencies = [
  "once_cell",
  "pep440_rs",

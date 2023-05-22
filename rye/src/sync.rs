@@ -142,6 +142,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     // into a folder all by itself and place a second file in there which we
     // can pass to pip-sync to install the local package.
     if recreate || cmd.mode != SyncMode::PythonOnly {
+        let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
         if cmd.no_lock {
             let lockfile = if cmd.dev { &dev_lockfile } else { &lockfile };
             if !lockfile.is_file() {
@@ -158,6 +159,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Production,
                 &lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write production lockfile for workspace")?;
@@ -167,6 +169,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write dev lockfile for workspace")?;
@@ -178,6 +181,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Production,
                 &lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write production lockfile for project")?;
@@ -187,6 +191,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 LockMode::Dev,
                 &dev_lockfile,
                 cmd.output,
+                &sources,
                 &cmd.lock_options,
             )
             .context("could not write dev lockfile for project")?;
@@ -219,7 +224,6 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 // spaces in paths
                 .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
 
-            let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
             sources.add_as_pip_args(&mut pip_sync_cmd);
 
             for (idx, url) in sources.index_urls.iter().enumerate() {

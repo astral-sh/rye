@@ -14,7 +14,7 @@ and out of the box points to PyPI.
 
 === "Global Source"
 
-    Add thos to `~/.rye/config.toml`:
+    Add this to `~/.rye/config.toml`:
 
     ```toml
     [[sources]]
@@ -76,7 +76,7 @@ infrastructure:
 ### `index`
 
 This is a [PEP 503](https://www.python.org/dev/peps/pep-0503/) type index as provided
-by tools such as PyPI or [devpi](https://github.com/devpi/devpi).  It correponds to
+by tools such as PyPI or [devpi](https://github.com/devpi/devpi).  It corresponds to
 the arguments `--index-url` or `--extra-index-url` in pip.
 
 ### `find-links`
