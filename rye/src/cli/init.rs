@@ -1,5 +1,6 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::str::FromStr;
 use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
@@ -7,6 +8,7 @@ use clap::{Parser, ValueEnum};
 use console::style;
 use license::License;
 use minijinja::{context, Environment};
+use pep440_rs::{Version, VersionSpecifier};
 use serde::Serialize;
 
 use crate::config::Config;
@@ -147,7 +149,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     fs::create_dir_all(&dir).ok();
 
     // Write pyproject.toml
-    let requires_python = match cmd.min_py {
+    let mut requires_python = match cmd.min_py {
         Some(py) => format!(">= {}", py),
         None => get_python_version_from_pyenv_pin()
             .map(|x| format!(">= {}.{}", x.major, x.minor))
@@ -162,6 +164,16 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             format!("{}.{}.{}", version.major, version.minor, version.patch)
         }
     };
+    if !VersionSpecifier::from_str(&requires_python)
+        .unwrap()
+        .contains(&Version::from_str(&py).unwrap())
+    {
+        eprintln!(
+            "{} conflicted python version with project's requires-python, will auto fix it.",
+            style("warning:").red()
+        );
+        requires_python = format!(">= {}", py.split('.').take(2).collect::<Vec<_>>().join("."));
+    }
 
     let name = slug::slugify(
         cmd.name
