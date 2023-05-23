@@ -42,7 +42,9 @@
 === "Windows"
 
     To install Rye on windows download the latest release and run the binary.  Upon
-    first run it will install itself.
+    first run it will install itself.  Please note that it's strongly recommended
+    to have "Developer Mode" activated when using Rye and before starting the
+    installation.  [Read more](../guide/faq.md)
 
     * [rye-x86_64-windows.exe](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86_64-windows.exe) for 64bit Intel Windows
     * [rye-x86-windows.exe](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86-windows.exe) for 32bit Intel Windows

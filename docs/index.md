@@ -21,6 +21,8 @@ but feedback and suggestions are greatly appreciated.
   <a class="github-button" href="https://github.com/sponsors/mitsuhiko" data-size="large" data-icon="octicon-heart" data-color-scheme="light" aria-label="Sponsor @mitsuhiko on GitHub">Sponsor</a>
 </p>
 
-{!.includes/quick-install.md!}
+??? note "Installation Instructions"
 
-For the next steps, head over to the detailed [installation](./guide/installation.md) guide.
+    {% include-markdown ".includes/quick-install.md" %}
+
+    For the next steps, head over to the detailed [installation](./guide/installation.md) guide.

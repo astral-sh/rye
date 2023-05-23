@@ -21,6 +21,7 @@ nav:
       - Portable CPython: guide/toolchains/cpython.md
       - PyPy: guide/toolchains/pypy.md
     - Tools: guide/tools.md
+    - FAQ: guide/faq.md
   - Community: community.md
   - Changelog: changelog.md
   - Philosophy: philosophy.md
@@ -67,8 +68,6 @@ markdown_extensions:
   - pymdownx.superfences
   - pymdownx.tabbed:
       alternate_style: true 
-  - markdown_include.include:
-      base_path: docs
   - mdx_gh_links:
       user: mitsuhiko
       repo: rye
@@ -85,6 +84,8 @@ plugins:
       version_added_title: 'new in **\1**'
       version_changed_title: 'changed in **\1**'
       version_removed_title: 'removed in **\1**'
+  - include-markdown:
+      preserve_includer_indent: true
 
 extra:
   social:

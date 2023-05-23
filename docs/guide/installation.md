@@ -9,7 +9,7 @@ Windows.
 Rye is installed per-user and self manages itself.  It will install itself into
 a folder in your home directory and mange itself there.
 
-{!.includes/quick-install.md!}
+{% include-markdown "../.includes/quick-install.md" %}
 
 Rye will automatically download suitable Python toolchains as needed.  For more
 information about this [read about toolchains](toolchains/index.md).
