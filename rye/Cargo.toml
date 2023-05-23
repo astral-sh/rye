@@ -41,7 +41,7 @@ walkdir = "2.3.3"
 which = "4.4.0"
 zstd = "0.12.3"
 sha2 = "0.10.6"
-dialoguer = "0.10.4"
+dialoguer = { git = "https://github.com/console-rs/dialoguer", rev = "47a9d4df729db7ffc1492bd0845be786e6f20153" }
 hex = "0.4.3"
 junction = "1.0.0"
 bzip2 = "0.4.4"

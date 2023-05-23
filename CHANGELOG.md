@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- The installer on Windows now warns if symlinks are not enabled and directs
+  the user to enable developer mode.  The `--version` output now also
+  shows if symlinks are available.  #205
+
 - Support auto fix requires-python when there is a conflict. #160
 
 - Added support for custom indexes.  #199
