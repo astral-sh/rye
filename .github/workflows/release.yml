@@ -29,8 +29,8 @@ jobs:
     runs-on: ubuntu-22.04
 
     ## Set to force version number, e.g., when no tag exists for testing
-    env:
-      RYE_VERSION: 0.0.0
+    ##env:
+    ##  RYE_VERSION: 0.0.0
 
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
