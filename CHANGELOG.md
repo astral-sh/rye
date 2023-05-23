@@ -11,7 +11,7 @@ _Unreleased_
   the user to enable developer mode.  The `--version` output now also
   shows if symlinks are available.  #205
 
-- Support auto fix requires-python when conflict. #160
+- Support auto fix requires-python when there is a conflict. #160
 
 - Added support for custom indexes.  #199
 
