@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Support auto fix requires-python when conflict. #160
+
 - Added support for custom indexes.  #199
 
 - `rye add` no longer complains when a local version information is
