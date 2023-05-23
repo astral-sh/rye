@@ -11,6 +11,18 @@
     --md-accent-fg-color: #90c820;
 }
 
+.md-header {
+    background: url(/static/banner.png) repeat-x;
+    background-color: var(--md-primary-fg-color);
+    background-size: 605px 75px;
+}
+
+nav.md-tabs {
+    background: url(/static/banner-dark.png) repeat-x;
+    background-color: transparent;
+    background-size: 605px 75px;
+}
+
 /* version changed */
 :root {
     /* Icon for "version-added" admonition: Material Design Icons "plus-box-outline" */
