@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.2.0
 
-_Unreleased_
+Released on 2023-05-23
 
 - Resolved a bug where on Windows hitting the shift key (or some other keys)
   in confirm prompts would cause an error.
@@ -20,8 +22,6 @@ _Unreleased_
 
 - `rye add` no longer complains when a local version information is
   in the version.  #199
-
-<!-- released start -->
 
 ## 0.1.2
 
