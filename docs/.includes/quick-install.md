@@ -11,6 +11,7 @@
     binary.  On first run it will install itself.
 
     * [rye-x86_64-linux.gz](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86_64-linux.gz) for 64bit Intel computers
+    * [rye-aarch64-linux.gz](https://github.com/mitsuhiko/rye/releases/latest/download/rye-aarch64-linux.gz) for 64bit ARM computers
 
     ```bash
     gunzip rye-x86_64-linux.gz
