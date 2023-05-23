@@ -131,19 +131,6 @@ jobs:
     - name: Build release binary
       run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
 
-    - name: Strip release binary (linux and macos)
-      if: matrix.build == 'linux' || matrix.build == 'macos'
-      run: strip "target/${{ matrix.target }}/release/rye"
-
-    #- name: Strip release binary (arm)
-    #  if: matrix.build == 'linux-arm'
-    #  run: |
-    #    docker run --rm -v \
-    #      "$PWD/target:/target:Z" \
-    #      rustembedded/cross:aarch64-unknown-linux-musl \
-    #      aarch64-unknown-linux-strip \
-    #      /target/aarch64-unknown-linux-musl/release/rye
-
     - name: Build archive
       shell: bash
       run: |
