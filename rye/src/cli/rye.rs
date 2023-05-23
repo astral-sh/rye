@@ -13,7 +13,7 @@ use same_file::is_same_file;
 use self_replace::self_delete_outside_path;
 
 use crate::bootstrap::{download_url, ensure_self_venv};
-use crate::platform::get_app_dir;
+use crate::platform::{get_app_dir, symlinks_supported};
 use crate::utils::{CommandOutput, QuietExit};
 
 #[cfg(windows)]
@@ -281,7 +281,10 @@ fn perform_install(mode: InstallMode) -> Result<(), Error> {
         eprintln!();
         eprintln!("Rye has detected that it's not installed on this computer yet and");
         eprintln!("automatically started the installer for you.  For more information");
-        eprintln!("read https://mitsuhiko.github.io/rye/guide/installation");
+        eprintln!(
+            "read {}",
+            style("https://rye-up.com/guide/installation/").yellow()
+        );
     }
 
     eprintln!();
@@ -297,6 +300,21 @@ fn perform_install(mode: InstallMode) -> Result<(), Error> {
     eprintln!("{}", style("Details:").bold());
     eprintln!("  Rye Version: {}", style(env!("CARGO_PKG_VERSION")).cyan());
     eprintln!("  Platform: {} ({})", style(OS).cyan(), style(ARCH).cyan());
+
+    if cfg!(windows) && !symlinks_supported() {
+        eprintln!();
+        eprintln!(
+            "{}: your Windows configuration does not support symlinks.",
+            style("Warning").red()
+        );
+        eprintln!();
+        eprintln!("It's strongly recommended that you enable developer mode in Windows to");
+        eprintln!("enable symlinks.  You need to enable this before continuing the setup.");
+        eprintln!(
+            "Learn more at {}",
+            style("https://rye-up.com/guide/faq/#windows-developer-mode").yellow()
+        );
+    }
 
     eprintln!();
     if !matches!(mode, InstallMode::NoPrompts)

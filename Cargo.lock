@@ -510,12 +510,12 @@ checksum = "850878694b7933ca4c9569d30a34b55031b9b139ee1fc7b94a527c4ef960d690"
 [[package]]
 name = "dialoguer"
 version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "59c6f2989294b9a498d3ad5491a79c6deb604617378e1cdc4bfc1c1361fe2f87"
+source = "git+https://github.com/console-rs/dialoguer?rev=47a9d4df729db7ffc1492bd0845be786e6f20153#47a9d4df729db7ffc1492bd0845be786e6f20153"
 dependencies = [
  "console",
  "shell-words",
  "tempfile",
+ "thiserror",
  "zeroize",
 ]
 

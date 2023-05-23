@@ -27,6 +27,29 @@ pub fn get_app_dir() -> &'static Path {
     APP_DIR.lock().unwrap().expect("platform not initialized")
 }
 
+/// Runs a check if symlinks are supported.
+pub fn symlinks_supported() -> bool {
+    #[cfg(unix)]
+    {
+        true
+    }
+    #[cfg(windows)]
+    {
+        use once_cell::sync::Lazy;
+
+        fn probe() -> Result<(), std::io::Error> {
+            let dir = tempfile::tempdir()?;
+            let a_path = dir.path().join("a");
+            fs::write(&a_path, "")?;
+            std::os::windows::fs::symlink_file(&a_path, dir.path().join("b"))?;
+            Ok(())
+        }
+
+        static SUPPORTED: Lazy<bool> = Lazy::new(|| probe().is_ok());
+        *SUPPORTED
+    }
+}
+
 /// Returns the cache directory for a particular python version that can be downloaded.
 pub fn get_canonical_py_path(version: &PythonVersion) -> Result<PathBuf, Error> {
     let mut rv = get_app_dir().to_path_buf();

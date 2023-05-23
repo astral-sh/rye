@@ -26,6 +26,7 @@ mod uninstall;
 use git_testament::git_testament;
 
 use crate::bootstrap::SELF_PYTHON_VERSION;
+use crate::platform::symlinks_supported;
 
 git_testament!(TESTAMENT);
 
@@ -117,5 +118,6 @@ fn print_version() -> Result<(), Error> {
         std::env::consts::ARCH
     );
     eprintln!("self-python: {}", SELF_PYTHON_VERSION);
+    eprintln!("symlink support: {}", symlinks_supported());
     Ok(())
 }
