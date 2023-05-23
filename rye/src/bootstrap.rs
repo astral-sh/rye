@@ -14,7 +14,9 @@ use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
 use crate::consts::VENV_BIN;
-use crate::platform::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
+use crate::platform::{
+    get_app_dir, get_canonical_py_path, get_toolchain_python_bin, symlinks_supported,
+};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{symlink_file, unpack_archive, CommandOutput};
 
@@ -100,6 +102,14 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     let mut venv_cmd = Command::new(&py_bin);
     venv_cmd.arg("-mvenv");
     venv_cmd.arg("--upgrade-deps");
+
+    // unlike virtualenv which we use after bootstrapping, the stdlib python
+    // venv does not detect symlink support itself and needs to be coerced into
+    // when available.
+    if cfg!(windows) && symlinks_supported() {
+        venv_cmd.arg("--symlinks");
+    }
+
     venv_cmd.arg(&venv_dir);
 
     let status = venv_cmd
