@@ -3,7 +3,7 @@ use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::{env, fs};
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::{Parser, ValueEnum};
 use console::style;
 use license::License;
@@ -165,8 +165,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
     if !VersionSpecifier::from_str(&requires_python)
-        .unwrap()
-        .contains(&Version::from_str(&py).unwrap())
+        .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
+        .contains(&Version::from_str(&py).map_err(|msg| anyhow!("invalid version: {}", msg))?)
     {
         eprintln!(
             "{} conflicted python version with project's requires-python, will auto fix it.",
