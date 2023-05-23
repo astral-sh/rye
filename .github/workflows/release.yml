@@ -29,8 +29,8 @@ jobs:
     runs-on: ubuntu-22.04
 
     ## Set to force version number, e.g., when no tag exists for testing
-    #env:
-    #  RYE_VERSION: 0.0.0
+    env:
+      RYE_VERSION: 0.0.0
 
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
@@ -75,32 +75,32 @@ jobs:
         include:
         - build: linux
           os: ubuntu-22.04
-          rust: nightly
+          rust: stable
           target: x86_64-unknown-linux-musl
           name: x86_64-linux
-        #- build: linux-arm
-        #  os: ubuntu-22.04
-        #  rust: nightly
-        #  target: aarch64-unknown-linux-musl
-        #  name: aarch64-linux
+        - build: linux-arm
+          os: ubuntu-22.04
+          rust: stable
+          target: aarch64-unknown-linux-musl
+          name: aarch64-linux
         - build: macos
           os: macos-12
-          rust: nightly
+          rust: stable
           target: x86_64-apple-darwin
           name: x86_64-macos
         - build: macos-arm
           os: macos-12
-          rust: nightly
+          rust: stable
           target: aarch64-apple-darwin
           name: aarch64-macos
         - build: win-msvc
           os: windows-2022
-          rust: nightly
+          rust: stable
           target: x86_64-pc-windows-msvc
           name: x86_64-windows
         - build: win32-msvc
           os: windows-2022
-          rust: nightly
+          rust: stable
           target: i686-pc-windows-msvc
           name: x86-windows
 
@@ -135,14 +135,14 @@ jobs:
       if: matrix.build == 'linux' || matrix.build == 'macos'
       run: strip "target/${{ matrix.target }}/release/rye"
 
-    - name: Strip release binary (arm)
-      if: matrix.build == 'linux-arm'
-      run: |
-        docker run --rm -v \
-          "$PWD/target:/target:Z" \
-          rustembedded/cross:aarch64-unknown-linux-musl \
-          aarch64-unknown-linux-strip \
-          /target/aarch64-unknown-linux-musl/release/rye
+    #- name: Strip release binary (arm)
+    #  if: matrix.build == 'linux-arm'
+    #  run: |
+    #    docker run --rm -v \
+    #      "$PWD/target:/target:Z" \
+    #      rustembedded/cross:aarch64-unknown-linux-musl \
+    #      aarch64-unknown-linux-strip \
+    #      /target/aarch64-unknown-linux-musl/release/rye
 
     - name: Build archive
       shell: bash
