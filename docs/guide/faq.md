@@ -44,3 +44,13 @@ because the _terminfo_ database cannot be found.
 
 For solutions to this issue, read the [behavior quirks guide](https://python-build-standalone.readthedocs.io/en/latest/quirks.html) in the
 Standalone Python Builds documentation for solutions.
+
+## Can I use Rye Alongside Other Python Installations?
+
+Rye given it's experimental nature does not want to disrupt already existing Python
+workflows.  As such using it alongside other Python installations is intentionally
+supported.  Even if the Rye shims come first on the `PATH`, Rye will automatically
+resolve to a different Python installation on the search path when invoked in a
+folder that contains a non Rye managed project.
+
+As such the answer is a clear **yes!**
