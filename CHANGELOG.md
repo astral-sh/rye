@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Resolved a bug where on Windows hitting the shift key (or some other keys)
+  in confirm prompts would cause an error.
+
 - The installer on Windows now warns if symlinks are not enabled and directs
   the user to enable developer mode.  The `--version` output now also
   shows if symlinks are available.  #205
