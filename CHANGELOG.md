@@ -7,7 +7,7 @@ that were not yet released.
 
 _Unreleased_
 
-- Support auto fix requires-python when conflict. #160
+- Support auto fix requires-python when there is a conflict. #160
 
 - Added support for custom indexes.  #199
 
