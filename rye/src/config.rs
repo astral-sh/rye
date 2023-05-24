@@ -89,6 +89,15 @@ impl Config {
         .context("failed to get default toolchain")
     }
 
+    /// Pretend that all projects are rye managed.
+    pub fn force_rye_managed(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("force_rye_managed"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(false)
+    }
+
     /// Returns the list of default sources.
     pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
         let mut rv = Vec::new();

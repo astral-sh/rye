@@ -11,7 +11,7 @@ use crate::bootstrap::{ensure_self_venv, get_pip_runner};
 use crate::consts::VENV_BIN;
 use crate::pyproject::PyProject;
 use crate::sync::{sync, SyncOptions};
-use crate::utils::{exec_spawn, CommandOutput};
+use crate::utils::{exec_spawn, get_venv_python_bin, CommandOutput};
 
 fn detect_shim(args: &[OsString]) -> Option<String> {
     // Shims are detected if the executable is linked into
@@ -49,7 +49,7 @@ fn get_pip_shim(
 ) -> Result<Vec<OsString>, Error> {
     let venv = ensure_self_venv(output)?;
     let runner = get_pip_runner(&venv);
-    let python = pyproject.venv_path().join("bin/python");
+    let python = get_venv_python_bin(&pyproject.venv_path());
 
     // pip likes to emit deprecation warnings
     env::set_var("PYTHONWARNINGS", "ignore");
@@ -83,27 +83,29 @@ fn find_shadowed_target(target: &str, args: &[OsString]) -> Result<Option<Vec<Os
 
 /// Figures out where a shim should point to.
 fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsString>>, Error> {
-    let pyproject = match PyProject::discover() {
-        Ok(project) => project,
-        Err(_) => return find_shadowed_target(target, args),
-    };
+    // if we can find a project, we always look for a local virtualenv first for shims.
+    if let Ok(pyproject) = PyProject::discover() {
+        // However we only allow automatic synching, if we are rye managed.
+        if pyproject.rye_managed() {
+            sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
+        }
 
-    // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
+        let mut args = args.to_vec();
+        let folder = pyproject.venv_path().join(VENV_BIN);
+        if let Some(m) = which_in_global(target, Some(folder))?.next() {
+            args[0] = m.into();
+            return Ok(Some(args));
+        }
 
-    let mut args = args.to_vec();
-    let folder = pyproject.venv_path().join(VENV_BIN);
-    if let Some(m) = which_in_global(target, Some(folder))?.next() {
-        args[0] = m.into();
-        return Ok(Some(args));
+        // secret pip shims
+        if target == "pip" || target == "pip3" {
+            return Ok(Some(get_pip_shim(&pyproject, args, CommandOutput::Normal)?));
+        }
     }
 
-    // secret pip shims
-    if target == "pip" || target == "pip3" {
-        return Ok(Some(get_pip_shim(&pyproject, args, CommandOutput::Normal)?));
-    }
-
-    Ok(None)
+    // if we make it this far, we did not find a shim in the project, look for
+    // a global one instead.
+    find_shadowed_target(target, args)
 }
 
 fn spawn_shim(args: Vec<OsString>) -> Result<Infallible, Error> {

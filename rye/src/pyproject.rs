@@ -427,6 +427,11 @@ impl Workspace {
     pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
         get_sources(&self.doc)
     }
+
+    /// Is this workspace rye managed?
+    pub fn rye_managed(&self) -> bool {
+        is_rye_managed(&self.doc)
+    }
 }
 
 /// Helps working with pyproject.toml files
@@ -769,6 +774,14 @@ impl PyProject {
         }
     }
 
+    /// Is this project rye managed?
+    pub fn rye_managed(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.rye_managed(),
+            None => is_rye_managed(&self.doc),
+        }
+    }
+
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
         fs::write(self.toml_path(), self.doc.to_string()).with_context(|| {
@@ -962,6 +975,17 @@ fn get_sources(doc: &Document) -> Result<Vec<SourceRef>, Error> {
     }
 
     Ok(rv)
+}
+
+fn is_rye_managed(doc: &Document) -> bool {
+    if Config::current().force_rye_managed() {
+        return true;
+    }
+    doc.get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("managed"))
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false)
 }
 
 /// Represents expanded sources.
