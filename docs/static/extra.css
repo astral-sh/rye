@@ -23,6 +23,10 @@ nav.md-tabs {
     background-size: 605px 75px;
 }
 
+[data-md-component="palette"] {
+    display: none;
+}
+
 /* version changed */
 :root {
     /* Icon for "version-added" admonition: Material Design Icons "plus-box-outline" */

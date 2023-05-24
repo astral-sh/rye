@@ -1,0 +1,27 @@
+<script>
+  (function() {
+    var tabs = __md_get("__tabs") || [];
+  
+    if (/(mac|iphone|ipad)/i.test(browserPlatform)) {
+      if (tabs.indexOf("Unix") < 0) {
+        tabs.unshift("Unix");
+      }
+      if (tabs.indexOf("macOS") < 0) {
+        tabs.unshift("macOS");
+      }
+    } else if (/linux/i.test(browserPlatform)) {
+      if (tabs.indexOf("Unix") < 0) {
+        tabs.unshift("Unix");
+      }
+      if (tabs.indexOf("Linux") < 0) {
+        tabs.unshift("Linux");
+      }
+    } else if (/win/i.test(browserPlatform)) {
+      if (tabs.indexOf("Windows") < 0) {
+        tabs.unshift("Windows");
+      }
+    }
+  
+    __md_set("__tabs", tabs);
+  })();
+</script>

@@ -28,6 +28,7 @@ nav:
 
 theme:
   name: material
+  custom_dir: docs/.overrides
   features:
     - navigation.instant
     - navigation.tracking
@@ -46,19 +47,21 @@ theme:
     monospace: Fira Mono
   favicon: static/favicon.svg
   logo: static/logo.svg
+
+  # This is a bit of a hack.  We don't actually want this toggle at all,
+  # it's all based on media queries.  But to abuse the mkdocs theme it
+  # still uses the toggles to trigger all the default logic.  We will
+  # then hide this selector though with CSS.  The auto updating then
+  # happens in palette.html with JavaScript.
   palette:
     - media: "(prefers-color-scheme: light)"
       scheme: default
       primary: custom
-      toggle:
-        icon: octicons/sun-24
-        name: Switch to dark mode
+      accent: custom
     - media: "(prefers-color-scheme: dark)"
       scheme: slate
       primary: custom
-      toggle:
-        icon: octicons/moon-24
-        name: Switch to light mode
+      accent: custom
 
 markdown_extensions:
   - attr_list
