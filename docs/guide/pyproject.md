@@ -42,9 +42,12 @@ excluded-dependencies = ["cffi"]
 
 ## `tool.rye.managed`
 
-This is a purely informational key that tells rye that this project is supposed to be managed
-by Rye.  This key is not changing any behavior in Rye, but it's a hint to better aid the
-user experience.
++++ 0.3.0
+
+This key tells rye that this project is supposed to be managed by Rye.  This key
+primarily affects some automatic creation of virtualenvs.  For instance Rye
+will not try to initialize a virtualenv when using shims without this flag.  It
+can be forced enabled in the global config.
 
 ```toml
 [tool.rye]
