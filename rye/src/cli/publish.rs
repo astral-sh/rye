@@ -21,10 +21,10 @@ use crate::utils::{get_venv_python_bin, CommandOutput};
 pub struct Args {
     /// The distribution files to upload to the repository (defaults to <workspace-root>/dist/*).
     dist: Option<Vec<PathBuf>>,
-    /// The repository to publish to (defaults to 'pypi').
+    /// The repository to publish to.
     #[arg(short, long, default_value = "pypi")]
     repository: String,
-    /// The repository url to publish to (defaults to https://upload.pypi.org/legacy/).
+    /// The repository url to publish to.
     #[arg(long, default_value = "https://upload.pypi.org/legacy/")]
     repository_url: Url,
     /// An access token used for the upload.
