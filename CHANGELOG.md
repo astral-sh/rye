@@ -13,6 +13,8 @@ _Unreleased_
 
 Released on 2023-05-23
 
+- Add username args for rye publish.
+
 - Resolved a bug where on Windows hitting the shift key (or some other keys)
   in confirm prompts would cause an error.
 

@@ -27,6 +27,9 @@ pub struct Args {
     /// The repository url to publish to (defaults to https://upload.pypi.org/legacy/).
     #[arg(long, default_value = "https://upload.pypi.org/legacy/")]
     repository_url: Url,
+    /// The username to authenticate to the repository with.
+    #[arg(short, long)]
+    username: Option<String>,
     /// An access token used for the upload.
     #[arg(long)]
     token: Option<String>,
@@ -67,6 +70,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     if repository == "pypi" && cmd.repository_url.domain() != Some("upload.pypi.org") {
         bail!("invalid pypi url {} (use -h for help)", cmd.repository_url);
     }
+
+    let username = match cmd.username {
+        Some(username) => username,
+        None => "__token__".to_string(),
+    };
 
     let mut credentials = get_credentials()?;
     credentials
@@ -111,8 +119,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .arg("--no-color")
         .arg("upload")
         .args(files)
-        .arg("--user")
-        .arg("__token__")
+        .arg("--username")
+        .arg(username)
         .arg("--password")
         .arg(token.expose_secret())
         .arg("--repository-url")
