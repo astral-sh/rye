@@ -54,14 +54,9 @@ theme:
   # then hide this selector though with CSS.  The auto updating then
   # happens in palette.html with JavaScript.
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: custom
-      accent: custom
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: custom
-      accent: custom
+    scheme: default
+    primary: custom
+    accent: custom
 
 markdown_extensions:
   - attr_list

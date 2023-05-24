@@ -1,5 +1,20 @@
 {% extends "base.html" %}
 
+{% block hero %}
+<script>
+  (function() {
+    function changeColorScheme(light) {
+      document.body.setAttribute("data-md-color-scheme", light ? "default" : "slate");
+    }
+    const media = matchMedia("(prefers-color-scheme: light)");
+    changeColorScheme(media.matches);
+    media.addEventListener("change", function (e) {
+      changeColorScheme(e.matches);
+    });
+  })();
+</script>
+{% endblock %}
+
 {% block extrahead %}
   {{ super() }}
   <script>
