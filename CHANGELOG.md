@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Add username args for rye publish.  #211
+
 - The shims are now more resilient.  Previously a `pyproject.toml` file
   caused in all cases a virtualenv to be created.  Now this will only
   happen when the `rye.tool.managed` flag is set to `true`.  The old
@@ -17,8 +19,6 @@ _Unreleased_
 ## 0.2.0
 
 Released on 2023-05-23
-
-- Add username args for rye publish.
 
 - Resolved a bug where on Windows hitting the shift key (or some other keys)
   in confirm prompts would cause an error.
