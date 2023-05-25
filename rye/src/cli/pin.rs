@@ -5,7 +5,7 @@ use anyhow::Context;
 use anyhow::{anyhow, Error};
 use clap::Parser;
 
-use crate::config::get_pinnable_version;
+use crate::platform::get_pinnable_version;
 use crate::pyproject::PyProject;
 use crate::sources::PythonVersionRequest;
 

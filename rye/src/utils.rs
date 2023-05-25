@@ -1,11 +1,11 @@
 use std::borrow::Cow;
 use std::convert::Infallible;
-use std::io::Cursor;
+use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
+use std::process::{Command, ExitStatus, Stdio};
 use std::{fmt, fs};
 
-use anyhow::Error;
+use anyhow::{anyhow, Error};
 use once_cell::sync::Lazy;
 use pep508_rs::{Requirement, VersionOrUrl};
 use regex::{Captures, Regex};
@@ -15,9 +15,26 @@ static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").
 #[cfg(unix)]
 pub use std::os::unix::fs::{symlink as symlink_file, symlink as symlink_dir};
 #[cfg(windows)]
-pub use std::os::windows::fs::{symlink_dir, symlink_file};
+pub use std::os::windows::fs::symlink_file;
 
 use crate::consts::VENV_BIN;
+
+#[cfg(windows)]
+pub fn symlink_dir<P, Q>(original: P, link: Q) -> Result<(), std::io::Error>
+where
+    P: AsRef<Path>,
+    Q: AsRef<Path>,
+{
+    if let Err(err) = std::os::windows::fs::symlink_dir(original.as_ref(), link.as_ref()) {
+        if err.raw_os_error() == Some(1314) {
+            junction::create(original.as_ref(), link.as_ref())
+        } else {
+            Err(err)
+        }
+    } else {
+        Ok(())
+    }
+}
 
 #[derive(Debug)]
 pub struct QuietExit(pub i32);
@@ -63,7 +80,7 @@ pub fn is_executable(path: &Path) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::prelude::MetadataExt;
-        path.metadata().map_or(false, |x| x.mode() & 0o001 != 0)
+        path.metadata().map_or(false, |x| x.mode() & 0o111 != 0)
     }
     #[cfg(windows)]
     {
@@ -136,31 +153,104 @@ where
     ENV_VAR_RE.replace_all(string, |m: &Captures| f(&m[1]).unwrap_or_default())
 }
 
-/// Unpacks a tarball.
+#[derive(Copy, Clone, Debug)]
+enum ArchiveFormat {
+    TarGz,
+    TarBz2,
+    TarZstd,
+    Zip,
+}
+
+impl ArchiveFormat {
+    pub fn peek(bytes: &[u8]) -> Option<ArchiveFormat> {
+        let mut buf = [0u8; 1];
+        if zstd::stream::read::Decoder::with_buffer(bytes)
+            .map_or(false, |x| x.single_frame().read(&mut buf).is_ok())
+        {
+            Some(ArchiveFormat::TarZstd)
+        } else if flate2::bufread::GzDecoder::new(bytes).header().is_some() {
+            Some(ArchiveFormat::TarGz)
+        } else if bzip2::bufread::BzDecoder::new(bytes).read(&mut buf).is_ok() {
+            Some(ArchiveFormat::TarBz2)
+        } else if zip::read::ZipArchive::new(Cursor::new(bytes)).is_ok() {
+            Some(ArchiveFormat::Zip)
+        } else {
+            None
+        }
+    }
+
+    pub fn make_decoder<'a>(self, bytes: &'a [u8]) -> Result<Box<dyn Read + 'a>, Error> {
+        Ok(match self {
+            ArchiveFormat::TarGz => Box::new(flate2::bufread::GzDecoder::new(bytes)) as Box<_>,
+            ArchiveFormat::TarBz2 => Box::new(bzip2::bufread::BzDecoder::new(bytes)) as Box<_>,
+            ArchiveFormat::TarZstd => {
+                Box::new(zstd::stream::read::Decoder::with_buffer(bytes)?) as Box<_>
+            }
+            ArchiveFormat::Zip => return Err(anyhow!("zip cannot be decoded with read")),
+        })
+    }
+}
+
+/// Unpacks a tarball or zip archive.
 ///
 /// Today this assumes that the tarball is zstd compressed which happens
 /// to be what the indygreg python builds use.
-pub fn unpack_tarball(contents: &[u8], dst: &Path, strip_components: usize) -> Result<(), Error> {
-    let reader = Cursor::new(contents);
-    let decoder = zstd::stream::read::Decoder::with_buffer(reader)?;
-    let mut archive = tar::Archive::new(decoder);
-    for entry in archive.entries()? {
-        let mut entry = entry?;
-        let name = entry.path()?;
-        let mut components = name.components();
-        for _ in 0..strip_components {
-            components.next();
-        }
-        let path = dst.join(components.as_path());
+pub fn unpack_archive(contents: &[u8], dst: &Path, strip_components: usize) -> Result<(), Error> {
+    let format = ArchiveFormat::peek(contents).ok_or_else(|| anyhow!("unknown archive"))?;
 
-        // only unpack if it's save to do so
-        if path != Path::new("") && path.strip_prefix(dst).is_ok() {
-            if let Some(dir) = path.parent() {
-                fs::create_dir_all(dir).ok();
+    if matches!(format, ArchiveFormat::Zip) {
+        let mut archive = zip::read::ZipArchive::new(Cursor::new(contents))?;
+        for i in 0..archive.len() {
+            let mut file = archive.by_index(i)?;
+            let name = file
+                .enclosed_name()
+                .ok_or_else(|| anyhow!("Invalid file path in zip"))?;
+            let mut components = name.components();
+            for _ in 0..strip_components {
+                components.next();
             }
-            entry.unpack(&path)?;
+            let path = dst.join(components.as_path());
+            if path != Path::new("") && path.strip_prefix(dst).is_ok() {
+                if file.name().ends_with('/') {
+                    fs::create_dir_all(&path)?;
+                } else {
+                    if let Some(p) = path.parent() {
+                        if !p.exists() {
+                            fs::create_dir_all(p)?;
+                        }
+                    }
+                    std::io::copy(&mut file, &mut fs::File::create(&path)?)?;
+                }
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    if let Some(mode) = file.unix_mode() {
+                        fs::set_permissions(&path, fs::Permissions::from_mode(mode))?;
+                    }
+                }
+            }
+        }
+    } else {
+        let mut archive = tar::Archive::new(format.make_decoder(contents)?);
+        for entry in archive.entries()? {
+            let mut entry = entry?;
+            let name = entry.path()?;
+            let mut components = name.components();
+            for _ in 0..strip_components {
+                components.next();
+            }
+            let path = dst.join(components.as_path());
+
+            // only unpack if it's save to do so
+            if path != Path::new("") && path.strip_prefix(dst).is_ok() {
+                if let Some(dir) = path.parent() {
+                    fs::create_dir_all(dir).ok();
+                }
+                entry.unpack(&path)?;
+            }
         }
     }
+
     Ok(())
 }
 
@@ -174,8 +264,6 @@ pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
     }
     #[cfg(windows)]
     {
-        use anyhow::anyhow;
-        use std::process::Stdio;
         use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
         use winapi::um::consoleapi::SetConsoleCtrlHandler;
 
@@ -216,6 +304,20 @@ pub fn is_inside_git_work_tree(dir: &PathBuf) -> bool {
         .status()
         .map(|status| status.success())
         .unwrap_or(false)
+}
+
+/// Returns a success exit status.
+pub fn success_status() -> ExitStatus {
+    #[cfg(windows)]
+    {
+        use std::os::windows::process::ExitStatusExt;
+        ExitStatus::from_raw(0)
+    }
+    #[cfg(unix)]
+    {
+        use std::os::unix::process::ExitStatusExt;
+        ExitStatus::from_raw(0)
+    }
 }
 
 #[test]

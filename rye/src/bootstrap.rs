@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::env::consts::{ARCH, OS};
+use std::env::consts::{ARCH, EXE_EXTENSION, OS};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -13,10 +13,12 @@ use once_cell::sync::Lazy;
 use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
-use crate::config::{get_app_dir, get_canonical_py_path, get_toolchain_python_bin};
 use crate::consts::VENV_BIN;
+use crate::platform::{
+    get_app_dir, get_canonical_py_path, get_toolchain_python_bin, symlinks_supported,
+};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::utils::{symlink_file, unpack_tarball, CommandOutput};
+use crate::utils::{symlink_file, unpack_archive, CommandOutput};
 
 pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
@@ -25,7 +27,7 @@ pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     patch: None,
     suffix: None,
 };
-const SELF_VERSION: u64 = 1;
+const SELF_VERSION: u64 = 3;
 
 #[cfg(unix)]
 const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
@@ -46,6 +48,7 @@ platformdirs==3.4.0
 pyproject_hooks==1.0.0
 requests==2.29.0
 tomli==2.0.1
+twine==4.0.2
 unearth==0.9.0
 urllib3==1.26.15
 virtualenv==20.22.0
@@ -54,19 +57,19 @@ virtualenv==20.22.0
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
 
 fn is_up_to_date() -> bool {
-    static UP_TO_UPDATE: Lazy<bool> = Lazy::new(|| match get_app_dir() {
-        Ok(dir) => fs::read_to_string(dir.join("self").join("tool-version.txt"))
+    static UP_TO_UPDATE: Lazy<bool> = Lazy::new(|| {
+        fs::read_to_string(get_app_dir().join("self").join("tool-version.txt"))
             .ok()
-            .map_or(false, |x| x.parse() == Ok(SELF_VERSION)),
-        Err(_) => false,
+            .map_or(false, |x| x.parse() == Ok(SELF_VERSION))
     });
     *UP_TO_UPDATE || FORCED_TO_UPDATE.load(atomic::Ordering::Relaxed)
 }
 
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
-    let app_dir = get_app_dir().context("could not get app dir")?;
+    let app_dir = get_app_dir();
     let venv_dir = app_dir.join("self");
+    let pip_tools_dir = app_dir.join("pip-tools");
 
     if venv_dir.is_dir() {
         if is_up_to_date() {
@@ -76,6 +79,10 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
                 eprintln!("detected outdated rye internals. Refreshing");
             }
             fs::remove_dir_all(&venv_dir).context("could not remove self-venv for update")?;
+            if pip_tools_dir.is_dir() {
+                fs::remove_dir_all(&pip_tools_dir)
+                    .context("could not remove pip-tools for update")?;
+            }
         }
     }
 
@@ -95,6 +102,14 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     let mut venv_cmd = Command::new(&py_bin);
     venv_cmd.arg("-mvenv");
     venv_cmd.arg("--upgrade-deps");
+
+    // unlike virtualenv which we use after bootstrapping, the stdlib python
+    // venv does not detect symlink support itself and needs to be coerced into
+    // when available.
+    if cfg!(windows) && symlinks_supported() {
+        venv_cmd.arg("--symlinks");
+    }
+
     venv_cmd.arg(&venv_dir);
 
     let status = venv_cmd
@@ -157,22 +172,43 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         bail!("failed to initialize virtualenv (install dependencies)");
     }
     let shims = app_dir.join("shims");
-    fs::remove_dir_all(&shims).ok();
-    fs::create_dir_all(&shims).context("tried to create shim folder")?;
-    let this = env::current_exe()?;
+    if !shims.is_dir() {
+        fs::create_dir_all(&shims).context("tried to create shim folder")?;
+    }
+
+    // if rye is itself installed into the shims folder, we want to
+    // use that.  Otherwise we fall back to the current executable
+    let mut this = shims.join("rye").with_extension(EXE_EXTENSION);
+    if !this.is_file() {
+        this = env::current_exe()?;
+    }
+
     #[cfg(unix)]
     {
         let use_softlinks = !cfg!(target_os = "linux");
+        fs::remove_file(shims.join("python")).ok();
         if use_softlinks || fs::hard_link(&this, shims.join("python")).is_err() {
             symlink_file(&this, shims.join("python")).context("tried to symlink python shim")?;
         }
+        fs::remove_file(shims.join("python3")).ok();
         if use_softlinks || fs::hard_link(&this, shims.join("python3")).is_err() {
             symlink_file(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
         }
     }
     #[cfg(windows)]
     {
-        symlink_file(this, shims.join("python.exe")).context("tried to symlink python shim")?;
+        // on windows we need privileges to symlink.  Not everyone might have that, so we
+        // fall back to hardlinks.
+        fs::remove_file(shims.join("python.exe")).ok();
+        if symlink_file(&this, shims.join("python.exe")).is_err() {
+            fs::hard_link(&this, shims.join("python.exe"))
+                .context("tried to symlink python shim")?;
+        }
+        fs::remove_file(shims.join("pythonw.exe")).ok();
+        if symlink_file(&this, shims.join("pythonw.exe")).is_err() {
+            fs::hard_link(&this, shims.join("pythonw.exe"))
+                .context("tried to symlink pythonw shim")?;
+        }
     }
 
     Ok(())
@@ -238,20 +274,40 @@ pub fn fetch(
     fs::create_dir_all(&target_dir)
         .with_context(|| format!("failed to create target folder {}", target_dir.display()))?;
 
-    let mut archive_buffer = Vec::new();
-
     if output == CommandOutput::Verbose {
         eprintln!("download url: {}", url);
     }
     if output != CommandOutput::Quiet {
         eprintln!("{} {}", style("Downloading").cyan(), version);
     }
+    let archive_buffer = download_url(url, output)?;
 
+    if let Some(sha256) = sha256 {
+        if output != CommandOutput::Quiet {
+            eprintln!("{}", style("Checking hash").cyan());
+        }
+        check_hash(&archive_buffer, sha256)
+            .with_context(|| format!("hash check of {} failed", &url))?;
+    } else if output != CommandOutput::Quiet {
+        eprintln!("hash check skipped (no hash available)");
+    }
+
+    unpack_archive(&archive_buffer, &target_dir, 1)
+        .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
+
+    if output != CommandOutput::Quiet {
+        eprintln!("{} Downloaded {}", style("success:").green(), version);
+    }
+
+    Ok(version)
+}
+
+pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> {
+    let mut archive_buffer = Vec::new();
     let mut handle = curl::easy::Easy::new();
     handle.url(url)?;
     handle.progress(true)?;
     handle.follow_location(true)?;
-
     let write_archive = &mut archive_buffer;
     {
         let mut transfer = handle.transfer();
@@ -287,23 +343,10 @@ pub fn fetch(
             .perform()
             .with_context(|| format!("download of {} failed", &url))?;
     }
-
-    if let Some(sha256) = sha256 {
-        if output != CommandOutput::Quiet {
-            eprintln!("{}", style("Checking hash").cyan());
-        }
-        check_hash(&archive_buffer, sha256)
-            .with_context(|| format!("hash check of {} failed", &url))?;
-    } else if output != CommandOutput::Quiet {
-        eprintln!("hash check skipped (no hash available)");
+    let code = handle.response_code()?;
+    if !(200..300).contains(&code) {
+        bail!("Failed to download: {}", code)
+    } else {
+        Ok(archive_buffer)
     }
-
-    unpack_tarball(&archive_buffer, &target_dir, 1)
-        .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
-
-    if output != CommandOutput::Quiet {
-        eprintln!("{} Downloaded {}", style("success:").green(), version);
-    }
-
-    Ok(version)
 }

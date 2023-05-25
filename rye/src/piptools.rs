@@ -4,8 +4,8 @@ use std::process::Command;
 use anyhow::{bail, Context, Error};
 
 use crate::bootstrap::ensure_self_venv;
-use crate::config::get_app_dir;
 use crate::consts::VENV_BIN;
+use crate::platform::get_app_dir;
 use crate::sources::PythonVersion;
 use crate::sync::create_virtualenv;
 use crate::utils::{get_venv_python_bin, CommandOutput};
@@ -14,8 +14,8 @@ const PIP_TOOLS_VERSION: &str = "pip-tools==6.13.0";
 
 fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<PathBuf, Error> {
     let self_venv = ensure_self_venv(output)?;
-    let key = format!("py{}.{}", py_ver.major, py_ver.minor);
-    let venv = get_app_dir()?.join("pip-tools").join(key);
+    let key = format!("{}@{}.{}", py_ver.kind, py_ver.major, py_ver.minor);
+    let venv = get_app_dir().join("pip-tools").join(key);
 
     let py = get_venv_python_bin(&venv);
 

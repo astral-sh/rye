@@ -1,10 +1,89 @@
-# Rye Changes
+# Changelog
 
-There is currently no actual release of Rye.  The latest main branch revision
-is the one you can install as mainline should always be stable.  Here are the
-most recent changes however.
+This file contains tracks the changes landing in Rye.  It includes changes
+that were not yet released.
 
-## May
+## 0.3.0
+
+_Unreleased_
+
+- Add username args for rye publish.  #211
+
+- The shims are now more resilient.  Previously a `pyproject.toml` file
+  caused in all cases a virtualenv to be created.  Now this will only
+  happen when the `rye.tool.managed` flag is set to `true`.  The old
+  behavior can be forced via the global config.  #212
+
+<!-- released start -->
+
+## 0.2.0
+
+Released on 2023-05-23
+
+- Resolved a bug where on Windows hitting the shift key (or some other keys)
+  in confirm prompts would cause an error.
+
+- The installer on Windows now warns if symlinks are not enabled and directs
+  the user to enable developer mode.  The `--version` output now also
+  shows if symlinks are available.  #205
+
+- Support auto fix requires-python when there is a conflict. #160
+
+- Added support for custom indexes.  #199
+
+- `rye add` no longer complains when a local version information is
+  in the version.  #199
+
+## 0.1.2
+
+Released on 2023-05-22
+
+- Fixed dev-dependencies not being installed when using workspace.  #170
+
+- `init` no longer creates invalid flit config.  #195
+
+- Support direct references when adding a package.  #158
+
+- Fixed a bug with uninstall on Unix platforms.  #197
+
+## 0.1.1
+
+Released on 2023-05-18
+
+- The installer on windows will now ask for a key to be pressed so it does
+  not close the window without information.  #183
+
+- Fixed an issue on macOS where the installer would die with "os error 24"
+  when directly piped to bash.  #184
+
+## 0.1.0
+
+Released on 2023-05-17
+
+- Rye now comes with binary releases for some platforms.
+
+- A new `self uninstall` command was added to uninstall rye and the new
+  `self update` command updates to the latest release version.
+
+- Rye now includes a `publish` command for publishing Python packages to a
+  package repository.  #86
+
+- Script declarations in `pyproject.toml` now permit chaining and custom
+  environment variables.  #153
+
+- Added `tools install` and `tools uninstall` as aliases for `install` and
+  `uninstall` and added `tools list` to show all installed tools.
+
+- Rye is now capable of downloading a selected set of PyPy releases.  To do
+  so use `rye pin pypy@3.9.16` or any other supported PyPy release.
+
+- Custom cpython toolchains are now registered just as `cpython` rather
+  than `custom-cpython`.
+
+- Rye now supports Python down to 3.7.
+
+- Rye's `self` command now includes a `completion` subcommand to generate
+  a completion script for your shell.
 
 - The downloaded Python distributions are now validated against the
   SHA-256 hashes.
@@ -30,8 +109,6 @@ most recent changes however.
   will automatically create a `src/project_name/__init__.py` file.
 
 - Rye can now also generate a license text when initializing projects.
-
-## April
 
 - Rye now supports negative (exclusion) dependencies.  These can be used to
   prevent a dependency from installing, even if something else in the graph

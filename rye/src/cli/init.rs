@@ -1,18 +1,19 @@
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
+use std::str::FromStr;
 use std::{env, fs};
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::{Parser, ValueEnum};
 use console::style;
 use license::License;
 use minijinja::{context, Environment};
+use pep440_rs::{Version, VersionSpecifier};
 use serde::Serialize;
 
-use crate::config::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
+use crate::config::Config;
+use crate::platform::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
 use crate::utils::is_inside_git_work_tree;
-
-const DEFAULT_LOWER_BOUND_PYTHON: &str = "3.8";
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
 #[value(rename_all = "snake_case")]
@@ -21,6 +22,7 @@ pub enum BuildSystem {
     Hatchling,
     Setuptools,
     Filt,
+    Pdm,
 }
 
 /// Creates a new python project.
@@ -77,13 +79,21 @@ build-backend = "hatchling.build"
 {%- elif build_system == "setuptools" %}
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
-{%- elif build_system == "filt" %}
+{%- elif build_system == "flit" %}
 requires = ["flit_core>=3.4"]
-build-backend = "filt_core.buildapi"
+build-backend = "flit_core.buildapi"
+{%- elif build_system == "pdm" %}
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
 {%- endif %}
 
 [tool.rye]
 managed = true
+
+{%- if build_system == "hatchling" %}
+[tool.hatch.metadata]
+allow-direct-references = true
+{%- endif %}
 
 "#;
 
@@ -123,6 +133,7 @@ wheels/
 "#;
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
+    let cfg = Config::current();
     let env = Environment::new();
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
@@ -138,11 +149,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     fs::create_dir_all(&dir).ok();
 
     // Write pyproject.toml
-    let min_py = match cmd.min_py {
-        Some(py) => py,
+    let mut requires_python = match cmd.min_py {
+        Some(py) => format!(">= {}", py),
         None => get_python_version_from_pyenv_pin()
-            .map(|x| format!("{}.{}", x.major, x.minor))
-            .unwrap_or_else(|| DEFAULT_LOWER_BOUND_PYTHON.into()),
+            .map(|x| format!(">= {}.{}", x.major, x.minor))
+            .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
         Some(py) => py,
@@ -153,13 +164,22 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             format!("{}.{}.{}", version.major, version.minor, version.patch)
         }
     };
+    if !VersionSpecifier::from_str(&requires_python)
+        .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
+        .contains(&Version::from_str(&py).map_err(|msg| anyhow!("invalid version: {}", msg))?)
+    {
+        eprintln!(
+            "{} conflicted python version with project's requires-python, will auto fix it.",
+            style("warning:").red()
+        );
+        requires_python = format!(">= {}", py.split('.').take(2).collect::<Vec<_>>().join("."));
+    }
 
     let name = slug::slugify(
         cmd.name
             .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().into_owned()),
     );
     let version = "0.1.0";
-    let requires_python = format!(">= {}", min_py);
     let author = get_default_author();
     let license = if let Some(license) = cmd.license {
         if !license_file.is_file() {

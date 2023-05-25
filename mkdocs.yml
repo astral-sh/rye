@@ -2,39 +2,103 @@ site_name: Rye
 site_description: An Experimental Package Management Solution for Python
 repo_name: mitsuhiko/rye
 repo_url: https://github.com/mitsuhiko/rye
+edit_uri: edit/main/docs/
+copyright: Copyright &copy; 2023 Armin Ronacher
 
 nav:
-  - Overview: index.md
-  - User Guide: guide.md
-  - Commands: commands.md
-  - FAQ: faq.md
+  - Welcome: index.md
+  - User Guide:
+    - guide/index.md
+    - Installation: guide/installation.md
+    - Basics: guide/basics.md
+    - Configuration: guide/config.md
+    - Python Project: guide/pyproject.md
+    - Syncing and Locking: guide/sync.md
+    - Dependency Sources: guide/sources.md
+    - Dependencies: guide/deps.md
+    - Toolchains:
+      - guide/toolchains/index.md
+      - Portable CPython: guide/toolchains/cpython.md
+      - PyPy: guide/toolchains/pypy.md
+    - Tools: guide/tools.md
+    - FAQ: guide/faq.md
+  - Community: community.md
+  - Changelog: changelog.md
+  - Philosophy: philosophy.md
 
 theme:
   name: material
+  custom_dir: docs/.overrides
   features:
     - navigation.instant
     - navigation.tracking
     - content.code.annotate
+    - content.code.copy
+    - content.tabs.link
+    - content.action.edit
     - toc.integrate
     - toc.follow
     - navigation.path
     - navigation.top
-    - content.code.copy
+    - navigation.tabs
+    - navigation.footer
+  font:
+    text: Inter
+    monospace: Fira Mono
+  favicon: static/favicon.svg
+  logo: static/logo.svg
+
+  # This is a bit of a hack.  We don't actually want this toggle at all,
+  # it's all based on media queries.  But to abuse the mkdocs theme it
+  # still uses the toggles to trigger all the default logic.  We will
+  # then hide this selector though with CSS.  The auto updating then
+  # happens in palette.html with JavaScript.
   palette:
-    - media: "(prefers-color-scheme: light)"
-      scheme: default
-      primary: blue
-      toggle:
-        icon: material/weather-sunny
-        name: Switch to dark mode
-    - media: "(prefers-color-scheme: dark)"
-      scheme: slate
-      primary: blue
-      toggle:
-        icon: material/weather-night
-        name: Switch to light mode
+    scheme: default
+    primary: custom
+    accent: custom
 
 markdown_extensions:
+  - attr_list
   - admonition
   - pymdownx.details
+  - pymdownx.keys
   - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true 
+  - mdx_gh_links:
+      user: mitsuhiko
+      repo: rye
+  - pymdownx.emoji:
+      emoji_index: !!python/name:materialx.emoji.twemoji
+      emoji_generator: !!python/name:materialx.emoji.to_svg
+
+plugins:
+  - search
+  - mkdocs-simple-hooks:
+      hooks:
+        on_post_build: "docs.hooks:copy_get"
+  - mkdocs-version-annotations:
+      version_added_title: 'new in **\1**'
+      version_changed_title: 'changed in **\1**'
+      version_removed_title: 'removed in **\1**'
+  - include-markdown:
+      preserve_includer_indent: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/mitsuhiko
+      name: Follow @mitsuhiko on GitHub
+    - icon: fontawesome/brands/twitter
+      link: https://twitter.com/@mitsuhiko
+      name: Follow @mitsuhiko on Twitter
+    - icon: material/alpha-b-box
+      link: https://bsky.app/profile/mitsuhiko.at
+      name: Follow @mitsuhiko.at on Bluesky
+    - icon: fontawesome/brands/discord
+      link: https://discord.gg/drbkcdtSbg
+      name: Discuss Rye on Discord
+
+extra_css:
+  - static/extra.css

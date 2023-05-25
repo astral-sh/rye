@@ -1,11 +1,12 @@
 use core::fmt;
 use std::borrow::Cow;
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::env;
 use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
 use std::fs;
 use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::str::FromStr;
 use std::sync::Arc;
 
@@ -15,10 +16,13 @@ use once_cell::sync::Lazy;
 use pep440_rs::{Operator, VersionSpecifiers};
 use pep508_rs::Requirement;
 use regex::Regex;
+use serde::Serialize;
 use toml_edit::{Array, Document, Formatted, Item, Table, Value};
+use url::Url;
 
-use crate::config::get_python_version_from_pyenv_pin;
+use crate::config::Config;
 use crate::consts::VENV_BIN;
+use crate::platform::get_python_version_from_pyenv_pin;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
 use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
@@ -72,24 +76,204 @@ impl DependencyRef {
     }
 }
 
+/// Defines the type of the source reference.
+#[derive(Copy, Clone, Debug)]
+pub enum SourceRefType {
+    Index,
+    FindLinks,
+}
+
+impl FromStr for SourceRefType {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "index" => Ok(SourceRefType::Index),
+            "find-links" => Ok(SourceRefType::FindLinks),
+            _ => Err(anyhow!("unknown source reference '{}'", s)),
+        }
+    }
+}
+
+/// Represents a source.
+pub struct SourceRef {
+    pub name: String,
+    pub url: String,
+    pub verify_ssl: bool,
+    pub username: Option<String>,
+    pub password: Option<String>,
+    pub ty: SourceRefType,
+}
+
+impl SourceRef {
+    pub fn from_url(name: String, url: String, ty: SourceRefType) -> SourceRef {
+        SourceRef {
+            name,
+            url,
+            verify_ssl: true,
+            username: None,
+            password: None,
+            ty,
+        }
+    }
+
+    pub fn from_toml_table(source: &Table) -> Result<SourceRef, Error> {
+        let name = source
+            .get("name")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string())
+            .ok_or_else(|| anyhow!("expected name"))?;
+        let url = source
+            .get("url")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string())
+            .ok_or_else(|| anyhow!("expected url"))?;
+        let verify_ssl = source
+            .get("verify_ssl")
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true);
+        let username = source
+            .get("username")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string());
+        let password = source
+            .get("password")
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string());
+        let ty = source
+            .get("type")
+            .and_then(|x| x.as_str())
+            .map_or(Ok(SourceRefType::Index), |x| x.parse::<SourceRefType>())
+            .context("invalid value for type")?;
+        Ok(SourceRef {
+            name,
+            url,
+            verify_ssl,
+            username,
+            password,
+            ty,
+        })
+    }
+
+    /// Returns the URL with authentication expanded.
+    ///
+    /// This also fills in environment variables if there are any.
+    pub fn expand_url(&self) -> Result<Url, Error> {
+        let mut url =
+            Url::parse(&expand_env_vars(&self.url, |name: &str| std::env::var(name).ok()) as &str)
+                .context("invalid source url")?;
+        if let Some(ref username) = self.username {
+            url.set_username(username).ok();
+        }
+        if let Some(ref password) = self.password {
+            url.set_password(Some(password)).ok();
+        }
+        Ok(url)
+    }
+}
+
+type EnvVars = HashMap<String, String>;
+
 /// A reference to a script
 #[derive(Clone, Debug)]
 pub enum Script {
     /// A command alias
-    Cmd(Vec<String>),
+    Cmd(Vec<String>, EnvVars),
+    /// A multi-script execution
+    Chain(Vec<Vec<String>>),
     /// External script reference
     External(PathBuf),
+}
+
+fn toml_array_as_string_array(arr: &Array) -> Vec<String> {
+    arr.iter()
+        .map(|x| {
+            x.as_str()
+                .map(|x| x.to_string())
+                .unwrap_or_else(|| x.to_string())
+        })
+        .collect()
+}
+
+fn toml_value_as_command_args(value: &Value) -> Option<Vec<String>> {
+    if let Some(cmd) = value.as_str() {
+        shlex::split(cmd)
+    } else {
+        value.as_array().map(toml_array_as_string_array)
+    }
+}
+
+impl Script {
+    fn from_toml_item(item: &Item) -> Option<Script> {
+        if let Some(detailed) = item.as_table_like() {
+            if let Some(cmds) = detailed.get("chain").and_then(|x| x.as_array()) {
+                Some(Script::Chain(
+                    cmds.iter().flat_map(toml_value_as_command_args).collect(),
+                ))
+            } else if let Some(cmd) = detailed.get("cmd") {
+                let cmd = toml_value_as_command_args(cmd.as_value()?)?;
+                let env_vars = detailed
+                    .get("env")
+                    .and_then(|x| x.as_table_like())
+                    .map(|x| {
+                        x.iter()
+                            .map(|x| {
+                                (
+                                    x.0.to_string(),
+                                    x.1.as_str()
+                                        .map(|x| x.to_string())
+                                        .unwrap_or_else(|| x.1.to_string()),
+                                )
+                            })
+                            .collect()
+                    })
+                    .unwrap_or_default();
+                Some(Script::Cmd(cmd, env_vars))
+            } else {
+                None
+            }
+        } else {
+            toml_value_as_command_args(item.as_value()?)
+                .map(|cmd| Script::Cmd(cmd, EnvVars::default()))
+        }
+    }
 }
 
 impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Script::Cmd(args) => {
-                for (idx, arg) in args.iter().enumerate() {
-                    if idx > 0 {
+            Script::Cmd(args, env) => {
+                let mut need_space = false;
+                for (key, value) in env.iter() {
+                    if need_space {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                    need_space = true;
+                }
+                for arg in args.iter() {
+                    if need_space {
                         write!(f, " ")?;
                     }
                     write!(f, "{}", shlex::quote(arg))?;
+                    need_space = true;
+                }
+                Ok(())
+            }
+            Script::Chain(cmds) => {
+                write!(f, "chain:")?;
+                for (idx, cmd) in cmds.iter().enumerate() {
+                    if idx > 0 {
+                        write!(f, ",")?;
+                    }
+                    write!(f, " [")?;
+                    for (idx, arg) in cmd.iter().enumerate() {
+                        if idx > 0 {
+                            write!(f, " ")?;
+                        }
+                        write!(f, "{}", shlex::quote(arg))?;
+                    }
+                    write!(f, "]")?;
                 }
                 Ok(())
             }
@@ -237,6 +421,16 @@ impl Workspace {
     /// This is the python version that should be used for virtualenvs.
     pub fn venv_python_version(&self) -> Result<PythonVersion, Error> {
         resolve_intended_venv_python_version(&self.doc)
+    }
+
+    /// Returns a list of index URLs that should be considered.
+    pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
+        get_sources(&self.doc)
+    }
+
+    /// Is this workspace rye managed?
+    pub fn rye_managed(&self) -> bool {
+        is_rye_managed(&self.doc)
     }
 }
 
@@ -417,34 +611,33 @@ impl PyProject {
             .ok_or_else(|| anyhow!("project from '{}' has no name", self.root_path().display()))
     }
 
+    /// Returns the build backend.
+    pub fn build_backend(&self) -> Option<&str> {
+        let backend = self
+            .doc
+            .get("build-system")
+            .and_then(|x| x.get("build-backend"))
+            .and_then(|x| x.as_str());
+        match backend {
+            Some("hatchling.build") => Some("hatchling"),
+            Some("setuptools.build_meta") => Some("setuptools"),
+            Some("flit_core.buildapi") => Some("flit"),
+            _ => None,
+        }
+    }
     /// Looks up a script
     pub fn get_script_cmd(&self, key: &str) -> Option<Script> {
         let external = self.venv_bin_path().join(key);
-
         if is_executable(&external) && !is_unsafe_script(&external) {
-            return Some(Script::External(external));
-        }
-
-        let value = self
-            .doc
-            .get("tool")
-            .and_then(|x| x.get("rye"))
-            .and_then(|x| x.get("scripts"))
-            .and_then(|x| x.get(key))?;
-        if let Some(cmd) = value.as_str() {
-            shlex::split(cmd).map(Script::Cmd)
+            Some(Script::External(external))
         } else {
-            value.as_array().map(|cmd| {
-                Script::Cmd(
-                    cmd.iter()
-                        .map(|x| {
-                            x.as_str()
-                                .map(|x| x.to_string())
-                                .unwrap_or_else(|| x.to_string())
-                        })
-                        .collect(),
-                )
-            })
+            Script::from_toml_item(
+                self.doc
+                    .get("tool")
+                    .and_then(|x| x.get("rye"))
+                    .and_then(|x| x.get("scripts"))
+                    .and_then(|x| x.get(key))?,
+            )
         }
     }
 
@@ -573,6 +766,22 @@ impl PyProject {
             .map(DependencyRef::new)
     }
 
+    /// Returns a list of sources that should be considered.
+    pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
+        match self.workspace {
+            Some(ref workspace) => workspace.sources(),
+            None => get_sources(&self.doc),
+        }
+    }
+
+    /// Is this project rye managed?
+    pub fn rye_managed(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.rye_managed(),
+            None => is_rye_managed(&self.doc),
+        }
+    }
+
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
         fs::write(self.toml_path(), self.doc.to_string()).with_context(|| {
@@ -648,18 +857,21 @@ fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<Pyt
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
         .or_else(|| get_python_version_from_pyenv_pin().map(Into::into))
+        .or_else(|| Config::current().default_toolchain().ok())
 }
 
 fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
     if let Some(ver) = get_python_version_from_pyenv_pin() {
         return Ok(ver);
     }
-    let requested_version = resolve_lower_bound_python_version(doc).ok_or_else(|| {
-        anyhow!(
-            "could not determine a target python version.  Define requires-python in \
+    let requested_version = resolve_lower_bound_python_version(doc)
+        .or_else(|| Config::current().default_toolchain().ok())
+        .ok_or_else(|| {
+            anyhow!(
+                "could not determine a target python version.  Define requires-python in \
                  pyproject.toml or use a .python-version file"
-        )
-    })?;
+            )
+        })?;
 
     if let Ok(ver) = PythonVersion::try_from(requested_version.clone()) {
         return Ok(ver);
@@ -732,7 +944,102 @@ fn is_unsafe_script(path: &Path) -> bool {
     }
     #[cfg(unix)]
     {
-        let _ = path;
-        false
+        // this is done because on unix pypy throws a bunch of dylibs into the bin folder
+        path.extension() == Some(OsStr::new("dylib"))
+    }
+}
+
+fn get_sources(doc: &Document) -> Result<Vec<SourceRef>, Error> {
+    let cfg = Config::current();
+    let mut rv = Vec::new();
+
+    if let Some(sources) = doc
+        .get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("sources"))
+        .and_then(|x| x.as_array_of_tables())
+    {
+        for source in sources {
+            let source_ref = SourceRef::from_toml_table(source)?;
+            rv.push(source_ref);
+        }
+    }
+
+    let mut seen = HashSet::<String>::from_iter(rv.iter().map(|x| x.name.clone()));
+
+    for source in cfg.sources()? {
+        if !seen.contains(&source.name) {
+            seen.insert(source.name.clone());
+            rv.push(source);
+        }
+    }
+
+    Ok(rv)
+}
+
+fn is_rye_managed(doc: &Document) -> bool {
+    if Config::current().force_rye_managed() {
+        return true;
+    }
+    doc.get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("managed"))
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false)
+}
+
+/// Represents expanded sources.
+#[derive(Debug, Clone, Serialize)]
+pub struct ExpandedSources {
+    pub index_urls: Vec<Url>,
+    pub find_links: Vec<Url>,
+    pub trusted_hosts: HashSet<String>,
+}
+
+impl ExpandedSources {
+    /// Takes some sources and expands them.
+    pub fn from_sources(sources: &[SourceRef]) -> Result<ExpandedSources, Error> {
+        let mut index_urls = Vec::new();
+        let mut find_links = Vec::new();
+        let mut trusted_hosts = HashSet::new();
+
+        for source in sources {
+            let url = source.expand_url()?;
+            if !source.verify_ssl {
+                if let Some(host) = url.host_str() {
+                    trusted_hosts.insert(host.to_string());
+                }
+            }
+            match source.ty {
+                SourceRefType::Index => index_urls.push(url),
+                SourceRefType::FindLinks => find_links.push(url),
+            }
+        }
+
+        Ok(ExpandedSources {
+            index_urls,
+            find_links,
+            trusted_hosts,
+        })
+    }
+
+    /// Attach common pip args to a command.
+    pub fn add_as_pip_args(&self, cmd: &mut Command) {
+        for (idx, url) in self.index_urls.iter().enumerate() {
+            if idx == 0 {
+                cmd.arg("--index-url");
+            } else {
+                cmd.arg("--extra-index-url");
+            }
+            cmd.arg(&url.to_string());
+        }
+        for link in &self.find_links {
+            cmd.arg("--find-links");
+            cmd.arg(&link.to_string());
+        }
+        for host in &self.trusted_hosts {
+            cmd.arg("--trusted-host");
+            cmd.arg(host);
+        }
     }
 }

@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block hero %}
+<script>
+  (function() {
+    function changeColorScheme(light) {
+      document.body.setAttribute("data-md-color-scheme", light ? "default" : "slate");
+    }
+    const media = matchMedia("(prefers-color-scheme: light)");
+    changeColorScheme(media.matches);
+    media.addEventListener("change", function (e) {
+      changeColorScheme(e.matches);
+    });
+  })();
+</script>
+{% endblock %}
+
+{% block extrahead %}
+  {{ super() }}
+  <script>
+    function __primePlatformTabs() {
+      const browserPlatform = navigator.platform || "";
+      const tabs = __md_get("__tabs") || [];
+      let changed = false;
+
+      function unshiftTab(name) {
+        if (tabs.indexOf(name) < 0) {
+          tabs.unshift(name);
+          changed = true;
+        }
+      }
+
+      if (/(mac|iphone|ipad)/i.test(browserPlatform)) {
+        unshiftTab("Unix");
+        unshiftTab("macOS");
+      } else if (/linux/i.test(browserPlatform)) {
+        unshiftTab("Unix");
+        unshiftTab("Linux");
+      } else if (/win/i.test(browserPlatform)) {
+        unshiftTab("Windows");
+      }
+
+      if (changed) {
+        __md_set("__tabs", tabs);
+      }
+    }
+
+    __primePlatformTabs();
+  </script>
+{% endblock %}

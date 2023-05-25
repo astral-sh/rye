@@ -11,24 +11,30 @@ use crate::bootstrap::{ensure_self_venv, get_pip_runner};
 use crate::consts::VENV_BIN;
 use crate::pyproject::PyProject;
 use crate::sync::{sync, SyncOptions};
-use crate::utils::{exec_spawn, CommandOutput};
+use crate::utils::{exec_spawn, get_venv_python_bin, CommandOutput};
 
-fn detect_shim() -> Option<(String, Vec<OsString>)> {
+fn detect_shim(args: &[OsString]) -> Option<String> {
     // Shims are detected if the executable is linked into
-    // a folder called .shims and in that case the shimmed
+    // a folder called shims and in that case the shimmed
     // binaries is the base name.
-    let args = env::args_os().collect::<Vec<_>>();
     if args.is_empty() {
         return None;
     }
 
     let path = env::current_exe().ok()?;
     let shim_name = path.file_name()?;
+
+    // rye is itself placed in the shims folder, so it must not
+    // detect itself.
+    if shim_name == "rye" || shim_name == "rye.exe" {
+        return None;
+    }
+
     if path.parent()?.file_name() != Some(OsStr::new("shims")) {
         return None;
     }
 
-    Some((shim_name.to_str()?.to_owned(), args))
+    Some(shim_name.to_str()?.to_owned())
 }
 
 /// Returns the pip shim.
@@ -43,7 +49,7 @@ fn get_pip_shim(
 ) -> Result<Vec<OsString>, Error> {
     let venv = ensure_self_venv(output)?;
     let runner = get_pip_runner(&venv);
-    let python = pyproject.venv_path().join("bin/python");
+    let python = get_venv_python_bin(&pyproject.venv_path());
 
     // pip likes to emit deprecation warnings
     env::set_var("PYTHONWARNINGS", "ignore");
@@ -62,15 +68,13 @@ fn get_pip_shim(
 ///
 /// This tries to find where a shim should point to when the shim is not
 /// placed in the virtualenv.
-fn find_shadowed_target(
-    target: &str,
-    mut args: Vec<OsString>,
-) -> Result<Option<Vec<OsString>>, Error> {
+fn find_shadowed_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsString>>, Error> {
     let exe = env::current_exe()?;
     for bin in which::which_all(target)? {
         if is_same_file(&bin, &exe).unwrap_or(false) {
             continue;
         }
+        let mut args = args.to_vec();
         args[0] = bin.into();
         return Ok(Some(args));
     }
@@ -78,27 +82,30 @@ fn find_shadowed_target(
 }
 
 /// Figures out where a shim should point to.
-fn get_shim_target(target: &str, mut args: Vec<OsString>) -> Result<Option<Vec<OsString>>, Error> {
-    let pyproject = match PyProject::discover() {
-        Ok(project) => project,
-        Err(_) => return find_shadowed_target(target, args),
-    };
+fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsString>>, Error> {
+    // if we can find a project, we always look for a local virtualenv first for shims.
+    if let Ok(pyproject) = PyProject::discover() {
+        // However we only allow automatic synching, if we are rye managed.
+        if pyproject.rye_managed() {
+            sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
+        }
 
-    // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
+        let mut args = args.to_vec();
+        let folder = pyproject.venv_path().join(VENV_BIN);
+        if let Some(m) = which_in_global(target, Some(folder))?.next() {
+            args[0] = m.into();
+            return Ok(Some(args));
+        }
 
-    let folder = pyproject.venv_path().join(VENV_BIN);
-    if let Some(m) = which_in_global(target, Some(folder))?.next() {
-        args[0] = m.into();
-        return Ok(Some(args));
+        // secret pip shims
+        if target == "pip" || target == "pip3" {
+            return Ok(Some(get_pip_shim(&pyproject, args, CommandOutput::Normal)?));
+        }
     }
 
-    // secret pip shims
-    if target == "pip" || target == "pip3" {
-        return Ok(Some(get_pip_shim(&pyproject, args, CommandOutput::Normal)?));
-    }
-
-    Ok(None)
+    // if we make it this far, we did not find a shim in the project, look for
+    // a global one instead.
+    find_shadowed_target(target, args)
 }
 
 fn spawn_shim(args: Vec<OsString>) -> Result<Infallible, Error> {
@@ -109,8 +116,8 @@ fn spawn_shim(args: Vec<OsString>) -> Result<Infallible, Error> {
 
 /// This replaces ourselves with the shim target for when the
 /// executable is invoked as a shim executable.
-pub fn execute_shim() -> Result<(), Error> {
-    if let Some((shim_name, args)) = detect_shim() {
+pub fn execute_shim(args: &[OsString]) -> Result<(), Error> {
+    if let Some(shim_name) = detect_shim(args) {
         if let Some(args) = get_shim_target(&shim_name, args)? {
             match spawn_shim(args)? {}
         } else {

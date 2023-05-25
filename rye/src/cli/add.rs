@@ -5,34 +5,38 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
-use pep440_rs::VersionSpecifiers;
+use pep440_rs::{Operator, Version, VersionSpecifier, VersionSpecifiers};
 use pep508_rs::{Requirement, VersionOrUrl};
 use serde::Deserialize;
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
-use crate::pyproject::{DependencyKind, PyProject};
+use crate::pyproject::{DependencyKind, ExpandedSources, PyProject};
 use crate::utils::{format_requirement, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
 import sys
 import json
 from unearth.finder import PackageFinder
+from unearth.session import PyPISession
 from packaging.version import Version
 
 py_ver = sys.argv[1]
 package = sys.argv[2]
-pre = len(sys.argv) > 3 and sys.argv[3] == "--pre"
+sources = json.loads(sys.argv[3])
+pre = len(sys.argv) > 4 and sys.argv[4] == "--pre"
 
 finder = PackageFinder(
-    index_urls=["https://pypi.org/simple/"],
+    index_urls=sources["index_urls"],
+    find_links=sources["find_links"],
+    trusted_hosts=sources["trusted_hosts"],
 )
 if py_ver:
     finder.target_python.py_ver = tuple(map(int, py_ver.split('.')))
 choices = iter(finder.find_matches(package))
 if not pre:
-    choices = (m for m in choices if not Version(m.version).is_prerelease)
+    choices = (m for m in choices if not(m.version and Version(m.version).is_prerelease))
 
 print(json.dumps([x.as_json() for x in choices]))
 "#;
@@ -40,7 +44,7 @@ print(json.dumps([x.as_json() for x in choices]))
 #[derive(Deserialize, Debug)]
 struct Match {
     name: String,
-    version: String,
+    version: Option<String>,
     link: Option<Link>,
 }
 
@@ -118,7 +122,11 @@ impl ReqExtras {
                 )),
             };
         } else if let Some(ref path) = self.path {
-            let file_url = if self.absolute {
+            // For hatchling build backend, it use {root:uri} for file relative path,
+            // but this not supported by pip-tools,
+            // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
+            let is_hatchling = PyProject::discover()?.build_backend().unwrap() == "hatchling";
+            let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
             } else {
@@ -204,10 +212,17 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         // if we are excluding, we do not want a specific dependency version
         // stored, so we just skip the unearth step
         if !cmd.excluded {
-            let matches = find_best_matches(&python_path, Some(&py_ver), &requirement, cmd.pre)?;
+            let matches = find_best_matches(
+                &pyproject_toml,
+                &python_path,
+                Some(&py_ver),
+                &requirement,
+                cmd.pre,
+            )?;
             if matches.is_empty() {
-                let all_matches = find_best_matches(&python_path, None, &requirement, cmd.pre)
-                    .unwrap_or_default();
+                let all_matches =
+                    find_best_matches(&pyproject_toml, &python_path, None, &requirement, cmd.pre)
+                        .unwrap_or_default();
                 if all_matches.is_empty() {
                     bail!(
                         "did not find package '{}'",
@@ -220,7 +235,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                             eprintln!(
                                 "  {} ({}) requires Python {}",
                                 pkg.name,
-                                pkg.version,
+                                pkg.version.unwrap_or_default(),
                                 pkg.link
                                     .as_ref()
                                     .and_then(|x| x.requires_python.as_ref())
@@ -237,9 +252,23 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             }
 
             let m = matches.into_iter().next().unwrap();
-            if requirement.version_or_url.is_none() {
+            if m.version.is_some() && requirement.version_or_url.is_none() {
+                let version = Version::from_str(m.version.as_ref().unwrap())
+                    .map_err(|msg| anyhow!("invalid version: {}", msg))?;
                 requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
-                    VersionSpecifiers::from_str(&format!("~={}", m.version))?,
+                    VersionSpecifiers::from_iter(Some(
+                        VersionSpecifier::new(
+                            if version.is_local() {
+                                Operator::Equal
+                            } else {
+                                Operator::TildeEqual
+                            },
+                            Version::from_str(m.version.as_ref().unwrap())
+                                .map_err(|msg| anyhow!("invalid version: {}", msg))?,
+                            false,
+                        )
+                        .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
+                    )),
                 ));
             }
             requirement.name = m.name;
@@ -265,17 +294,21 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 }
 
 fn find_best_matches(
+    pyproject: &PyProject,
     python_path: &PathBuf,
     py_ver: Option<&str>,
     requirement: &Requirement,
     pre: bool,
 ) -> Result<Vec<Match>, Error> {
     let mut unearth = Command::new(python_path);
+    let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
+
     unearth
         .arg("-c")
         .arg(PACKAGE_FINDER_SCRIPT)
         .arg(py_ver.unwrap_or(""))
-        .arg(&format_requirement(requirement).to_string());
+        .arg(&format_requirement(requirement).to_string())
+        .arg(serde_json::to_string(&sources)?);
     if pre {
         unearth.arg("--pre");
     }
