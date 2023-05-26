@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- It's now possible to configure http and https proxies.  #215
+
 - If a package is not found because it only has matching pre-releases,
   a warning is now printed to tell the user to pass `--pre`.  #218
 

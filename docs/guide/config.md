@@ -51,6 +51,12 @@ requires-python = ">= 3.8"
 # This is the default toolchain that is used
 toolchain = "cpython@3.11.1"
 
+[proxy]
+# the proxy to use for HTTP (overridden by the http_proxy environment variable)
+http = "http://127.0.0.1:4000"
+# the proxy to use for HTTPS (overridden by the https_proxy environment variable)
+https = "http://127.0.0.1:4000"
+
 [behavior]
 # When set to true the `managed` flag is always assumed to be true.
 force_rye_managed = false
