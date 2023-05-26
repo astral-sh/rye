@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Support retrieving username and repository-url from credentials if not provided. #217
+
 - Add username args for rye publish.  #211
 
 - The shims are now more resilient.  Previously a `pyproject.toml` file
