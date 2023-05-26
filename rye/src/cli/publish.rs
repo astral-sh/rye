@@ -81,7 +81,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     Ok(url) => url,
                     Err(_) => default_repository_url.clone(),
                 })
-                .unwrap_or(default_repository_url.clone())
+                .unwrap_or(default_repository_url)
         }
     };
 
