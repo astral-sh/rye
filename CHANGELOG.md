@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- If a package is not found because it only has matching pre-releases,
+  a warning is now printed to tell the user to pass `--pre`.  #218
+
 - Add username args for rye publish.  #211
 
 - The shims are now more resilient.  Previously a `pyproject.toml` file
