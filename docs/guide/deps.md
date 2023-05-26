@@ -28,6 +28,16 @@ rye add Flask --features=dotenv
 
 These dependencies are stored in [`project.dependencies`](pyproject.md#projectdependencies).
 
+!!! tip "Note about pre-releases"
+
+    By default `add` will not consider pre-releases.  This means if you add a dependency
+    that has `.dev` or similar in the version number you will not find a match.  To
+    consider them, add them with `--pre`:
+
+    ```
+    rye add "Flask==2.0.0rc2" --pre
+    ```
+
 ## Development Dependencies
 
 For dependencies that should only be installed during development pass `--dev`

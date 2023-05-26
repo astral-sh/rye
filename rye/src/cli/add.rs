@@ -5,6 +5,7 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
+use console::style;
 use pep440_rs::{Operator, Version, VersionSpecifier, VersionSpecifiers};
 use pep508_rs::{Requirement, VersionOrUrl};
 use serde::Deserialize;
@@ -224,10 +225,35 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     find_best_matches(&pyproject_toml, &python_path, None, &requirement, cmd.pre)
                         .unwrap_or_default();
                 if all_matches.is_empty() {
-                    bail!(
-                        "did not find package '{}'",
-                        format_requirement(&requirement)
-                    );
+                    // if we did not consider pre-releases, maybe we could find it by doing so.  In
+                    // that case give the user a helpful warning before erroring.
+                    if !cmd.pre {
+                        let all_pre_matches = find_best_matches(
+                            &pyproject_toml,
+                            &python_path,
+                            None,
+                            &requirement,
+                            true,
+                        )
+                        .unwrap_or_default();
+                        if let Some(pre) = all_pre_matches.into_iter().next() {
+                            eprintln!(
+                                "{}: {} ({}) was found considering pre-releases.  Pass --pre to allow use.",
+                                style("warning").red(),
+                                pre.name,
+                                pre.version.unwrap_or_default()
+                            );
+                        }
+                        bail!(
+                            "did not find package '{}' without using pre-releases.",
+                            format_requirement(&requirement)
+                        );
+                    } else {
+                        bail!(
+                            "did not find package '{}'",
+                            format_requirement(&requirement)
+                        );
+                    }
                 } else {
                     if output != CommandOutput::Quiet {
                         eprintln!("Available package versions:");
