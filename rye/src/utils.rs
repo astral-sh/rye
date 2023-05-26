@@ -17,6 +17,7 @@ pub use std::os::unix::fs::{symlink as symlink_file, symlink as symlink_dir};
 #[cfg(windows)]
 pub use std::os::windows::fs::symlink_file;
 
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 
 #[cfg(windows)]
@@ -280,6 +281,17 @@ pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
         cmd.stdin(Stdio::inherit());
         let status = cmd.status()?;
         std::process::exit(status.code().unwrap())
+    }
+}
+
+/// Attaches standard proxy environment variables to a process.
+pub fn set_proxy_variables(cmd: &mut Command) {
+    let config = Config::current();
+    if let Some(proxy) = config.https_proxy_url() {
+        cmd.env("https_proxy", proxy);
+    }
+    if let Some(proxy) = config.http_proxy_url() {
+        cmd.env("http_proxy", proxy);
     }
 }
 

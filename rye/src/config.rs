@@ -98,6 +98,31 @@ impl Config {
             .unwrap_or(false)
     }
 
+    /// Returns the HTTP proxy that should be used.
+    pub fn http_proxy_url(&self) -> Option<String> {
+        std::env::var("http_proxy").ok().or_else(|| {
+            self.doc
+                .get("proxy")
+                .and_then(|x| x.get("http"))
+                .and_then(|x| x.as_str())
+                .map(|x| x.to_string())
+        })
+    }
+
+    /// Returns the HTTPS proxy that should be used.
+    pub fn https_proxy_url(&self) -> Option<String> {
+        std::env::var("HTTPS_PROXY")
+            .ok()
+            .or_else(|| std::env::var("https_proxy").ok())
+            .or_else(|| {
+                self.doc
+                    .get("proxy")
+                    .and_then(|x| x.get("https"))
+                    .and_then(|x| x.as_str())
+                    .map(|x| x.to_string())
+            })
+    }
+
     /// Returns the list of default sources.
     pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
         let mut rv = Vec::new();
