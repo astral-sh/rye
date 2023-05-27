@@ -45,7 +45,8 @@ jobs:
         run: |
           echo "RYE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           echo "RYE_DRY_RUN=${{ github.event.inputs.dry-run }}" >> $GITHUB_ENV
-          echo "Dry run enabled!"
+          echo "RYE_VERSION: ${{ github.event.inputs.version }}"
+          echo "RYE_DRY_RUN: ${{ github.event.inputs.dry-run }}"
 
       - name: Get the release version from the tag
         shell: bash
@@ -58,7 +59,7 @@ jobs:
           echo "version is: ${{ env.RYE_VERSION }}"
       - name: Create GitHub release
         id: release
-        if: env.RYE_DRY_RUN == 'yes'
+        if: env.RYE_DRY_RUN != 'yes'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create --draft "${{ env.RYE_VERSION }}"
