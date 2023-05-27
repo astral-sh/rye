@@ -98,6 +98,12 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     })?;
     let py_bin = get_toolchain_python_bin(&version)?;
 
+    // linux specific detection of shared libraries.
+    #[cfg(target_os = "linux")]
+    {
+        validate_shared_libraries(&py_bin)?;
+    }
+
     // initialize the virtualenv
     let mut venv_cmd = Command::new(&py_bin);
     venv_cmd.arg("-mvenv");
@@ -349,4 +355,40 @@ pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> 
     } else {
         Ok(archive_buffer)
     }
+}
+
+#[cfg(target_os = "linux")]
+fn validate_shared_libraries(py: &Path) -> Result<(), Error> {
+    let out = Command::new("ldd")
+        .arg(py)
+        .output()
+        .context("unable to invoke ldd on downloaded python binary")?;
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let mut missing = Vec::new();
+    for line in stdout.lines() {
+        let line = line.trim();
+        if let Some((before, after)) = line.split_once(" => ") {
+            if after == "not found" && !missing.contains(&before) {
+                missing.push(before);
+            }
+        }
+    }
+
+    if missing.is_empty() {
+        return Ok(());
+    }
+
+    missing.sort();
+    eprintln!(
+        "{}: detected missing Python librar{}:",
+        style("error").red(),
+        if missing.len() == 1 { "y" } else { "ies" }
+    );
+    for lib in missing {
+        eprintln!("  - {}", style(lib).yellow());
+    }
+    bail!(
+        "Python installation is unable to run on this machine due to missing libraries.\n\
+        Visit https://rye-up.com/guide/faq/#missing-shared-libraries-on-linux for next steps."
+    );
 }
