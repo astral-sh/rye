@@ -118,6 +118,7 @@ pub fn install(
 
     let status = cmd.status()?;
     if !status.success() {
+        uninstall_helper(&target_venv_path, &shim_dir)?;
         bail!("tool installation failed");
     }
 
