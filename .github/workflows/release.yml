@@ -24,6 +24,7 @@ jobs:
 
     outputs:
       rye_version: ${{ env.RYE_VERSION }}
+      rye_dry_run: ${{ env.RYE_DRY_RUN }}
 
     steps:
       - name: Dry run when from workflow dispatch
@@ -149,14 +150,14 @@ jobs:
         fi
 
     - name: Upload release archive
-      if: env.RYE_DRY_RUN == ''
+      if: ${{ needs.create-release.outputs.rye_dry_run }} == ''
       env:
         GH_TOKEN: ${{ github.token }}
       run: gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
 
     - name: Upload dry run asset
       uses: actions/upload-artifact@v3
-      if: env.RYE_DRY_RUN == '1'
+      if: ${{ needs.create-release.outputs.rye_dry_run }} == '1'
       with:
         name: ${{ env.ASSET }}
         path: ${{ env.ASSET }}
