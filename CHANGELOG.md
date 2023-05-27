@@ -9,6 +9,9 @@ _Unreleased_
 
 - Failed tool installations now properly clean up.  #225
 
+- Correctly swap the rye executable on windows when performing an update
+  to a git version via `self update`.
+
 <!-- released start -->
 
 ## 0.3.0
