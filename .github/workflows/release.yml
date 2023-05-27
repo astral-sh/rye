@@ -152,15 +152,13 @@ jobs:
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
           cp "target/${{ matrix.target }}/release/rye.exe" "$bin.exe"
-          sha256=($(python scripts/sha256sum.py $bin.exe))
-          echo $sha256 > "$bin.exe.sha256"
+          python scripts/sha256.py $bin.exe > "$bin.exe.sha256"
           echo "ASSET=$bin.exe" >> $GITHUB_ENV
           echo "SHA256_FILE=$bin.exe.sha256" >> $GITHUB_ENV
         else
           cp "target/${{ matrix.target }}/release/rye" "$bin"
           gzip "$bin"
-          sha256=($(python scripts/sha256sum.py $bin.gz))
-          echo $sha256 > "$bin.gz.sha256"
+          python scripts/sha256.py $bin.gz > "$bin.gz.sha256"
           echo "ASSET=$bin.gz" >> $GITHUB_ENV
           echo "SHA256_FILE=$bin.gz.sha256" >> $GITHUB_ENV
         fi
