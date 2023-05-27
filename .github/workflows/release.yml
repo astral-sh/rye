@@ -48,6 +48,9 @@ jobs:
           echo "RYE_VERSION: ${{ github.event.inputs.version }}"
           echo "RYE_DRY_RUN: ${{ github.event.inputs.dry-run }}"
 
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Get the release version from the tag
         shell: bash
         if: env.RYE_VERSION == ''
@@ -57,6 +60,7 @@ jobs:
           # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
           echo "RYE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.RYE_VERSION }}"
+
       - name: Create GitHub release
         id: release
         if: env.RYE_DRY_RUN != 'yes'
