@@ -157,7 +157,7 @@ jobs:
         fi
 
     - name: Upload release archive
-      if: ${{ needs.create-release.outputs.rye_dry_run }} == 'no'
+      if: ${{ needs.create-release.outputs.rye_dry_run }} != 'yes'
       env:
         GH_TOKEN: ${{ github.token }}
       run: gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
