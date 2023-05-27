@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Failed tool installations now properly clean up.  #225
+
 <!-- released start -->
 
 ## 0.3.0
