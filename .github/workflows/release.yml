@@ -144,7 +144,7 @@ jobs:
     - name: Build release binary
       run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
 
-    - name: Build archive
+    - name: Build release file
       shell: bash
       run: |
         outdir="$(scripts/cargo-out-dir "${{ env.TARGET_DIR }}")"
@@ -152,22 +152,58 @@ jobs:
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
           cp "target/${{ matrix.target }}/release/rye.exe" "$bin.exe"
+          sha256=($(python sha256sum $bin.exe))
+          echo $sha256 > "$bin.exe.sha256"
           echo "ASSET=$bin.exe" >> $GITHUB_ENV
+          echo "SHA256_FILE=$bin.exe.sha256" >> $GITHUB_ENV
         else
           cp "target/${{ matrix.target }}/release/rye" "$bin"
           gzip "$bin"
+          sha256=($(python sha256sum $bin.gz))
+          echo $sha256 > "$bin.gz.sha256"
           echo "ASSET=$bin.gz" >> $GITHUB_ENV
+          echo "SHA256_FILE=$bin.gz.sha256" >> $GITHUB_ENV
         fi
 
     - name: Upload release archive
       if: ${{ needs.create-release.outputs.rye_dry_run }} != 'yes'
       env:
         GH_TOKEN: ${{ github.token }}
-      run: gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
+      run: |
+        gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
+        gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.SHA256_FILE }}"
 
-    - name: Upload dry run asset
+    - name: Upload artifact
       uses: actions/upload-artifact@v3
-      if: ${{ needs.create-release.outputs.rye_dry_run }} == 'yes'
       with:
         name: ${{ env.ASSET }}
         path: ${{ env.ASSET }}
+
+    - name: Upload artifact hash
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.SHA256_FILE }}
+        path: ${{ env.SHA256_FILE }}
+
+  write-release-meta:
+    name: write-release-meta
+    runs-on: ubuntu-22.04
+    needs: ['create-release', 'build-release']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Upload Release Meta
+      if: ${{ needs.create-release.outputs.rye_dry_run }} != 'yes'
+      shell: bash
+      run: |
+        gh run download $GH_RUNID -D artifacts-tmp -p "*.sha256"
+        python scripts/summarize-release.py "${{ needs.create-release.outputs.rye_version }}" artifacts-tmp > MANIFEST.json
+        gh release upload "${{ needs.create-release.outputs.rye_version }}" MANIFEST.json
+
+    - name: Upload artifact hash
+      uses: actions/upload-artifact@v3
+      with:
+        name: MANIFEST.json
+        path: MANIFEST.json
