@@ -66,7 +66,7 @@ jobs:
         if: env.RYE_DRY_RUN != 'yes'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create --draft "${{ env.RYE_VERSION }}"
+        run: gh release create --draft --title "${{ env.RYE_VERSION }}" "${{ env.RYE_VERSION }}"
 
   build-release:
     name: build-release
