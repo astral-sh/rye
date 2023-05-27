@@ -12,6 +12,13 @@ on:
     tags:
     - "[0-9]+.[0-9]+.[0-9]+"
   workflow_dispatch:
+    inputs:
+      dry-run:
+        type: choice
+        description: "Dry Run"
+        options:
+          - "no"
+          - "yes"
 
 jobs:
   create-release:
@@ -32,7 +39,7 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
           echo "RYE_VERSION=0.0.0" >> $GITHUB_ENV
-          echo "RYE_DRY_RUN=1" >> $GITHUB_ENV
+          echo "RYE_DRY_RUN=${{ github.event.inputs.dry-run }}" >> $GITHUB_ENV
           echo "Dry run enabled!"
 
       - name: Get the release version from the tag
@@ -46,7 +53,7 @@ jobs:
           echo "version is: ${{ env.RYE_VERSION }}"
       - name: Create GitHub release
         id: release
-        if: env.RYE_DRY_RUN == ''
+        if: env.RYE_DRY_RUN == 'yes'
         env:
           GH_TOKEN: ${{ github.token }}
         run: gh release create --draft "${{ env.RYE_VERSION }}"
@@ -150,14 +157,14 @@ jobs:
         fi
 
     - name: Upload release archive
-      if: ${{ needs.create-release.outputs.rye_dry_run }} == ''
+      if: ${{ needs.create-release.outputs.rye_dry_run }} == 'no'
       env:
         GH_TOKEN: ${{ github.token }}
       run: gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
 
     - name: Upload dry run asset
       uses: actions/upload-artifact@v3
-      if: ${{ needs.create-release.outputs.rye_dry_run }} == '1'
+      if: ${{ needs.create-release.outputs.rye_dry_run }} == 'yes'
       with:
         name: ${{ env.ASSET }}
         path: ${{ env.ASSET }}
