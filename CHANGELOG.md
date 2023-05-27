@@ -9,6 +9,15 @@ _Unreleased_
 
 - Support retrieving username and repository-url from credentials if not provided. #217
 
+- The installer now validates the availability of shared libraries
+  on Linux with `ldd` and emits an error with additional information
+  if necessary shared libraries are missing.  #220
+
+- It's now possible to configure http and https proxies.  #215
+
+- If a package is not found because it only has matching pre-releases,
+  a warning is now printed to tell the user to pass `--pre`.  #218
+
 - Add username args for rye publish.  #211
 
 - The shims are now more resilient.  Previously a `pyproject.toml` file
