@@ -1,16 +1,4 @@
-# Taken from ripgrep
-#
-# The way this works is the following:
-#
-# The create-release job runs purely to initialize the GitHub release itself
-# and to output upload_url for the following job.
-#
-# The build-release job runs only once create-release is finished. It gets the
-# release upload URL from create-release job outputs, then builds the release
-# executables for each supported platform and attaches them as release assets
-# to the previously created release.
-#
-# The key here is that we create the release only once.
+# Taken from ripgrep with modifications
 #
 # Reference:
 # https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
@@ -24,6 +12,18 @@ on:
     tags:
     - "[0-9]+.[0-9]+.[0-9]+"
   workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: "Releas version"
+        required: true
+      dry-run:
+        type: choice
+        description: "Dry Run"
+        options:
+          - "no"
+          - "yes"
+        required: true
 
 jobs:
   create-release:
@@ -35,17 +35,21 @@ jobs:
     ##  RYE_VERSION: 0.0.0
 
     outputs:
-      upload_url: ${{ steps.release.outputs.upload_url }}
       rye_version: ${{ env.RYE_VERSION }}
+      rye_dry_run: ${{ env.RYE_DRY_RUN }}
 
     steps:
-      - name: Dry run when from workflow dispatch
+      - name: Inputs from workflow dispatch
         shell: bash
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "RYE_VERSION=0.0.0" >> $GITHUB_ENV
-          echo "RYE_DRY_RUN=1" >> $GITHUB_ENV
-          echo "Dry run enabled!"
+          echo "RYE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "RYE_DRY_RUN=${{ github.event.inputs.dry-run }}" >> $GITHUB_ENV
+          echo "RYE_VERSION: ${{ github.event.inputs.version }}"
+          echo "RYE_DRY_RUN: ${{ github.event.inputs.dry-run }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
 
       - name: Get the release version from the tag
         shell: bash
@@ -56,16 +60,13 @@ jobs:
           # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
           echo "RYE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.RYE_VERSION }}"
+
       - name: Create GitHub release
         id: release
-        uses: actions/create-release@v1
-        if: env.RYE_DRY_RUN == ''
+        if: env.RYE_DRY_RUN != 'yes'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.RYE_VERSION }}
-          release_name: ${{ env.RYE_VERSION }}
-          draft: true
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create --draft --title "${{ env.RYE_VERSION }}" "${{ env.RYE_VERSION }}"
 
   build-release:
     name: build-release
@@ -120,13 +121,6 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    - name: Dry run when from workflow dispatch
-      shell: bash
-      if: ${{ github.event_name == 'workflow_dispatch' }}
-      run: |
-        echo "RYE_DRY_RUN=1" >> $GITHUB_ENV
-        echo "Dry run enabled!"
-
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
       with:
@@ -166,19 +160,14 @@ jobs:
         fi
 
     - name: Upload release archive
-      uses: actions/upload-release-asset@v1.0.2
-      if: env.RYE_DRY_RUN == ''
+      if: ${{ needs.create-release.outputs.rye_dry_run }} != 'yes'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ${{ env.ASSET }}
-        asset_name: ${{ env.ASSET }}
-        asset_content_type: application/octet-stream
+        GH_TOKEN: ${{ github.token }}
+      run: gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
 
     - name: Upload dry run asset
       uses: actions/upload-artifact@v3
-      if: env.RYE_DRY_RUN == '1'
+      if: ${{ needs.create-release.outputs.rye_dry_run }} == 'yes'
       with:
         name: ${{ env.ASSET }}
         path: ${{ env.ASSET }}
