@@ -23,6 +23,8 @@ on:
      - feature/release-ci
     tags:
     - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+
 jobs:
   create-release:
     name: create-release
@@ -35,7 +37,16 @@ jobs:
     outputs:
       upload_url: ${{ steps.release.outputs.upload_url }}
       rye_version: ${{ env.RYE_VERSION }}
+
     steps:
+      - name: Dry run when from workflow dispatch
+        shell: bash
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "RYE_VERSION=0.0.0" >> $GITHUB_ENV
+          echo "RYE_DRY_RUN=1" >> $GITHUB_ENV
+          echo "Dry run enabled!"
+
       - name: Get the release version from the tag
         shell: bash
         if: env.RYE_VERSION == ''
@@ -148,6 +159,7 @@ jobs:
 
     - name: Upload release archive
       uses: actions/upload-release-asset@v1.0.2
+      if: env.RYE_DRY_RUN == ''
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
@@ -155,3 +167,10 @@ jobs:
         asset_path: ${{ env.ASSET }}
         asset_name: ${{ env.ASSET }}
         asset_content_type: application/octet-stream
+
+    - name: Upload dry run asset
+      uses: actions/upload-artifact@v3
+      if: env.RYE_DRY_RUN == '1'
+      with:
+        name: ${{ env.ASSET }}
+        path: ${{ env.ASSET }}
