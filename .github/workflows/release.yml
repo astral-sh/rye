@@ -1,16 +1,4 @@
-# Taken from ripgrep
-#
-# The way this works is the following:
-#
-# The create-release job runs purely to initialize the GitHub release itself
-# and to output upload_url for the following job.
-#
-# The build-release job runs only once create-release is finished. It gets the
-# release upload URL from create-release job outputs, then builds the release
-# executables for each supported platform and attaches them as release assets
-# to the previously created release.
-#
-# The key here is that we create the release only once.
+# Taken from ripgrep with modifications
 #
 # Reference:
 # https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
@@ -35,7 +23,6 @@ jobs:
     ##  RYE_VERSION: 0.0.0
 
     outputs:
-      upload_url: ${{ steps.release.outputs.upload_url }}
       rye_version: ${{ env.RYE_VERSION }}
 
     steps:
@@ -58,14 +45,10 @@ jobs:
           echo "version is: ${{ env.RYE_VERSION }}"
       - name: Create GitHub release
         id: release
-        uses: actions/create-release@v1
         if: env.RYE_DRY_RUN == ''
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.RYE_VERSION }}
-          release_name: ${{ env.RYE_VERSION }}
-          draft: true
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create --draft "${{ env.RYE_VERSION }}"
 
   build-release:
     name: build-release
@@ -166,15 +149,10 @@ jobs:
         fi
 
     - name: Upload release archive
-      uses: actions/upload-release-asset@v1.0.2
       if: env.RYE_DRY_RUN == ''
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ${{ env.ASSET }}
-        asset_name: ${{ env.ASSET }}
-        asset_content_type: application/octet-stream
+        GH_TOKEN: ${{ github.token }}
+      run: gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
 
     - name: Upload dry run asset
       uses: actions/upload-artifact@v3
