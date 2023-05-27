@@ -380,7 +380,7 @@ fn validate_shared_libraries(py: &Path) -> Result<(), Error> {
 
     missing.sort();
     eprintln!(
-        "{}: detected missing Python librar{}:",
+        "{}: detected missing shared librar{} required by Python:",
         style("error").red(),
         if missing.len() == 1 { "y" } else { "ies" }
     );

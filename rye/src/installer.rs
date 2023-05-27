@@ -93,12 +93,6 @@ pub fn install(
     // make sure we have a compatible python version
     let py_ver = fetch(py_ver, output)?;
 
-    // linux specific detection of shared libraries.
-    #[cfg(target_os = "linux")]
-    {
-        validate_shared_libraries(&self_venv)?;
-    }
-
     create_virtualenv(output, &self_venv, &py_ver, &target_venv_path)?;
 
     let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
@@ -357,40 +351,4 @@ pub fn resolve_local_requirement(
     } else {
         Ok(None)
     }
-}
-
-#[cfg(target_os = "linux")]
-fn validate_shared_libraries(self_venv: &Path) -> Result<(), Error> {
-    let out = Command::new("ldd")
-        .arg(self_venv.join("bin/python3"))
-        .output()
-        .context("unable to invoke ldd on downloaded python binary")?;
-    let stdout = String::from_utf8_lossy(&out.stdout);
-    let mut missing = Vec::new();
-    for line in stdout.lines() {
-        let line = line.trim();
-        if let Some((before, after)) = line.split_once(" => ") {
-            if after == "not found" && !missing.contains(&before) {
-                missing.push(before);
-            }
-        }
-    }
-
-    if missing.is_empty() {
-        return Ok(());
-    }
-
-    missing.sort();
-    eprintln!(
-        "{}: detected missing Python librar{}:",
-        style("error").red(),
-        if missing.len() == 1 { "y" } else { "ies" }
-    );
-    for lib in missing {
-        eprintln!("  - {}", style(lib).yellow());
-    }
-    bail!(
-        "Python installation is unable to run on this machine due to missing libraries.\n\
-        Visit https://rye-up.com/guide/faq/#missing-shared-libraries-on-linux for next steps."
-    );
 }
