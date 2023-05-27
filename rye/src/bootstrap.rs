@@ -192,30 +192,37 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         this = env::current_exe()?;
     }
 
+    update_core_shims(&shims, &this)?;
+
+    Ok(())
+}
+
+pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
     #[cfg(unix)]
     {
         let use_softlinks = !cfg!(target_os = "linux");
         fs::remove_file(shims.join("python")).ok();
-        if use_softlinks || fs::hard_link(&this, shims.join("python")).is_err() {
-            symlink_file(&this, shims.join("python")).context("tried to symlink python shim")?;
+        if use_softlinks || fs::hard_link(this, shims.join("python")).is_err() {
+            symlink_file(this, shims.join("python")).context("tried to symlink python shim")?;
         }
         fs::remove_file(shims.join("python3")).ok();
-        if use_softlinks || fs::hard_link(&this, shims.join("python3")).is_err() {
-            symlink_file(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
+        if use_softlinks || fs::hard_link(this, shims.join("python3")).is_err() {
+            symlink_file(this, shims.join("python3")).context("tried to symlink python3 shim")?;
         }
     }
+
     #[cfg(windows)]
     {
         // on windows we need privileges to symlink.  Not everyone might have that, so we
         // fall back to hardlinks.
         fs::remove_file(shims.join("python.exe")).ok();
-        if symlink_file(&this, shims.join("python.exe")).is_err() {
-            fs::hard_link(&this, shims.join("python.exe"))
+        if symlink_file(this, shims.join("python.exe")).is_err() {
+            fs::hard_link(this, shims.join("python.exe"))
                 .context("tried to symlink python shim")?;
         }
         fs::remove_file(shims.join("pythonw.exe")).ok();
-        if symlink_file(&this, shims.join("pythonw.exe")).is_err() {
-            fs::hard_link(&this, shims.join("pythonw.exe"))
+        if symlink_file(this, shims.join("pythonw.exe")).is_err() {
+            fs::hard_link(this, shims.join("pythonw.exe"))
                 .context("tried to symlink pythonw shim")?;
         }
     }
