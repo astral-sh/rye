@@ -13,12 +13,17 @@ on:
     - "[0-9]+.[0-9]+.[0-9]+"
   workflow_dispatch:
     inputs:
+      version:
+        type: string
+        description: "Releas version"
+        required: true
       dry-run:
         type: choice
         description: "Dry Run"
         options:
           - "no"
           - "yes"
+        required: true
 
 jobs:
   create-release:
@@ -34,11 +39,11 @@ jobs:
       rye_dry_run: ${{ env.RYE_DRY_RUN }}
 
     steps:
-      - name: Dry run when from workflow dispatch
+      - name: Inputs from workflow dispatch
         shell: bash
         if: ${{ github.event_name == 'workflow_dispatch' }}
         run: |
-          echo "RYE_VERSION=0.0.0" >> $GITHUB_ENV
+          echo "RYE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
           echo "RYE_DRY_RUN=${{ github.event.inputs.dry-run }}" >> $GITHUB_ENV
           echo "Dry run enabled!"
 
