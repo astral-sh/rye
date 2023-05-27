@@ -195,6 +195,8 @@ jobs:
     - name: Upload Release Meta
       if: ${{ needs.create-release.outputs.rye_dry_run }} != 'yes'
       shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
       run: |
         gh run download $GH_RUNID -D artifacts-tmp -p "*.sha256"
         python scripts/summarize-release.py "${{ needs.create-release.outputs.rye_version }}" artifacts-tmp > MANIFEST.json
