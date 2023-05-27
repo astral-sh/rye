@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- The installer now validates the availability of shared libraries
+  on Linux with `ldd` and emits an error with additional information
+  if necessary shared libraries are missing.  #220
+
 - It's now possible to configure http and https proxies.  #215
 
 - If a package is not found because it only has matching pre-releases,
