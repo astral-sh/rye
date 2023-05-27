@@ -13,12 +13,13 @@ use once_cell::sync::Lazy;
 use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, symlinks_supported,
 };
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::utils::{symlink_file, unpack_archive, CommandOutput};
+use crate::utils::{set_proxy_variables, symlink_file, unpack_archive, CommandOutput};
 
 pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
@@ -117,6 +118,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     }
 
     venv_cmd.arg(&venv_dir);
+    set_proxy_variables(&mut venv_cmd);
 
     let status = venv_cmd
         .status()
@@ -171,6 +173,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         pip_install_cmd.arg("--quiet");
         pip_install_cmd.env("PYTHONWARNINGS", "ignore");
     }
+    set_proxy_variables(&mut pip_install_cmd);
     let status = pip_install_cmd
         .status()
         .context("unable to install self-dependencies")?;
@@ -309,11 +312,23 @@ pub fn fetch(
 }
 
 pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> {
+    // for now we only allow HTTPS downloads.
+    if !url.starts_with("https://") {
+        bail!("Refusing insecure download");
+    }
+
+    let config = Config::current();
     let mut archive_buffer = Vec::new();
     let mut handle = curl::easy::Easy::new();
     handle.url(url)?;
     handle.progress(true)?;
     handle.follow_location(true)?;
+
+    // we only do https requests here, so we always set an https proxy
+    if let Some(proxy) = config.https_proxy_url() {
+        handle.proxy(&proxy)?;
+    }
+
     let write_archive = &mut archive_buffer;
     {
         let mut transfer = handle.transfer();

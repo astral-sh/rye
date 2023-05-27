@@ -11,6 +11,8 @@ _Unreleased_
   on Linux with `ldd` and emits an error with additional information
   if necessary shared libraries are missing.  #220
 
+- It's now possible to configure http and https proxies.  #215
+
 - If a package is not found because it only has matching pre-releases,
   a warning is now printed to tell the user to pass `--pre`.  #218
 

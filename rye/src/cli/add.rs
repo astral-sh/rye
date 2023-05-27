@@ -14,7 +14,7 @@ use url::Url;
 use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{DependencyKind, ExpandedSources, PyProject};
-use crate::utils::{format_requirement, CommandOutput};
+use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
 import sys
@@ -338,6 +338,7 @@ fn find_best_matches(
     if pre {
         unearth.arg("--pre");
     }
+    set_proxy_variables(&mut unearth);
     let unearth = unearth.stdout(Stdio::piped()).output()?;
     if unearth.status.success() {
         Ok(serde_json::from_slice(&unearth.stdout)?)

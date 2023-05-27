@@ -16,7 +16,7 @@ use crate::piptools::get_pip_sync;
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{get_current_venv_python_version, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
-use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};
+use crate::utils::{get_venv_python_bin, set_proxy_variables, symlink_dir, CommandOutput};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -251,6 +251,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             } else {
                 pip_sync_cmd.arg("-q");
             }
+            set_proxy_variables(&mut pip_sync_cmd);
             let status = pip_sync_cmd.status().context("unable to run pip-sync")?;
             if !status.success() {
                 bail!("Installation of dependencies failed");
