@@ -362,7 +362,7 @@ pub fn resolve_local_requirement(
 #[cfg(target_os = "linux")]
 fn validate_shared_libraries(self_venv: &Path) -> Result<(), Error> {
     let out = Command::new("ldd")
-        .arg(self_venv.join("bin/python"))
+        .arg(self_venv.join("bin/python3"))
         .output()
         .context("unable to invoke ldd on downloaded python binary")?;
     let stdout = String::from_utf8_lossy(&out.stdout);

@@ -59,6 +59,7 @@ jobs:
       - name: Create GitHub release
         id: release
         uses: actions/create-release@v1
+        if: env.RYE_DRY_RUN == ''
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
@@ -118,6 +119,13 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+
+    - name: Dry run when from workflow dispatch
+      shell: bash
+      if: ${{ github.event_name == 'workflow_dispatch' }}
+      run: |
+        echo "RYE_DRY_RUN=1" >> $GITHUB_ENV
+        echo "Dry run enabled!"
 
     - name: Install Rust
       uses: dtolnay/rust-toolchain@master
