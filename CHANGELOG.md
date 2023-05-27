@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.3.0
 
-_Unreleased_
+Released on 2023-05-27
 
 - Support retrieving username and repository-url from credentials if not
   provided for the `publish` command.  #217
@@ -25,8 +27,6 @@ _Unreleased_
   caused in all cases a virtualenv to be created.  Now this will only
   happen when the `rye.tool.managed` flag is set to `true`.  The old
   behavior can be forced via the global config.  #212
-
-<!-- released start -->
 
 ## 0.2.0
 
