@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Support retrieving username and repository-url from credentials if not provided. #217
+
 - The installer now validates the availability of shared libraries
   on Linux with `ldd` and emits an error with additional information
   if necessary shared libraries are missing.  #220
