@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fix invalid version error when using rye init with custom toolchain.  #234
+
 - Failed tool installations now properly clean up.  #225
 
 - Correctly swap the rye executable on windows when performing an update
