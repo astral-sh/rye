@@ -18,4 +18,4 @@ for folder in os.listdir(base):
 print(json.dumps({
     "version": version,
     "checksums": checksums,
-}), indent=2)
+}, indent=2))
