@@ -220,7 +220,7 @@ impl fmt::Display for PythonVersionRequest {
     }
 }
 
-fn matches_version(req: &PythonVersionRequest, v: &PythonVersion) -> bool {
+pub fn matches_version(req: &PythonVersionRequest, v: &PythonVersion) -> bool {
     if req.kind.as_deref().unwrap_or(DEFAULT_KIND) != v.kind {
         return false;
     }

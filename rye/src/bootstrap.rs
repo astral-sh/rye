@@ -15,9 +15,10 @@ use tempfile::NamedTempFile;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{
-    get_app_dir, get_canonical_py_path, get_toolchain_python_bin, symlinks_supported,
+    get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
+    symlinks_supported,
 };
-use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
+use crate::sources::{get_download_url, matches_version, PythonVersion, PythonVersionRequest};
 use crate::utils::{
     check_checksum, set_proxy_variables, symlink_file, unpack_archive, CommandOutput,
 };
@@ -92,7 +93,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         eprintln!("Bootstrapping rye internals");
     }
 
-    let version = fetch(&SELF_PYTHON_VERSION, output).with_context(|| {
+    let version = ensure_toolchain(&SELF_PYTHON_VERSION, output).with_context(|| {
         format!(
             "failed to fetch internal cpython toolchain {}",
             SELF_PYTHON_VERSION
@@ -245,6 +246,21 @@ pub fn get_pip_module(venv: &Path) -> PathBuf {
     rv
 }
 
+pub fn ensure_toolchain(
+    req: &PythonVersionRequest,
+    output: CommandOutput,
+) -> Result<PythonVersion, Error> {
+    for (version, path) in list_known_toolchains()? {
+        if matches_version(req, &version) {
+            if output != CommandOutput::Quiet {
+                let path = path.to_string_lossy();
+                eprintln!("Found a matching python version: {version}, path: {path}")
+            }
+            return Ok(version);
+        }
+    }
+    fetch(req, output)
+}
 /// Fetches a version if missing.
 pub fn fetch(
     version: &PythonVersionRequest,
