@@ -291,5 +291,55 @@ pub fn create_virtualenv(
     if !status.success() {
         bail!("failed to initialize virtualenv");
     }
+
+    #[cfg(unix)]
+    {
+        inject_tcl_config(venv, &py_bin, py_ver)?;
+    }
+
+    Ok(())
+}
+
+/// On UNIX systems Python is unable to find the tcl config that is placed outside of the
+/// virtualenv.  It also sometimes is entirely unable to find the tcl config that comes
+/// from the standalone python builds.
+#[cfg(unix)]
+fn inject_tcl_config(venv: &Path, py_bin: &Path, py_ver: &PythonVersion) -> Result<(), Error> {
+    let lib_path = match py_bin
+        .parent()
+        .and_then(|x| x.parent())
+        .map(|x| x.join("lib"))
+    {
+        Some(path) => path,
+        None => return Ok(()),
+    };
+
+    let tcl_lib = lib_path.join("tcl8.6");
+    let tcl_lib_exists = tcl_lib.is_dir();
+    let tk_lib = lib_path.join("tk8.6");
+    let tk_lib_exists = tk_lib.is_dir();
+    let site_packages = venv
+        .join("lib")
+        .join(format!("python{}.{}", py_ver.major, py_ver.minor))
+        .join("site-packages");
+
+    if !(tk_lib_exists || tcl_lib_exists) {
+        return Ok(());
+    }
+
+    let pth = minijinja::render!(
+        r#"import os, sys;
+{%- if tcl_lib_exists -%}
+os.environ.setdefault('TCL_LIBRARY', sys.base_prefix + '/lib/tcl8.6');
+{%- endif -%}
+{%- if tk_lib_exists -%}
+os.environ.setdefault('TK_LIBRARY', sys.base_prefix + '/lib/tk8.6');
+{%- endif -%}"#,
+        tcl_lib_exists,
+        tk_lib_exists,
+    );
+
+    fs::write(site_packages.join("_tcl-init.pth"), pth)?;
+
     Ok(())
 }
