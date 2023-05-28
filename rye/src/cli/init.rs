@@ -8,11 +8,12 @@ use clap::{Parser, ValueEnum};
 use console::style;
 use license::License;
 use minijinja::{context, Environment};
-use pep440_rs::{Version, VersionSpecifier};
+use pep440_rs::VersionSpecifier;
 use serde::Serialize;
 
 use crate::config::Config;
 use crate::platform::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
+use crate::sources::PythonVersion;
 use crate::utils::is_inside_git_work_tree;
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
@@ -156,23 +157,22 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
-        Some(py) => py,
-        None => {
-            let version = get_python_version_from_pyenv_pin()
-                .map(Ok)
-                .unwrap_or_else(get_latest_cpython)?;
-            format!("{}.{}.{}", version.major, version.minor, version.patch)
+        Some(py) => {
+            PythonVersion::from_str(&py).map_err(|msg| anyhow!("invalid version: {}", msg))?
         }
+        None => get_python_version_from_pyenv_pin()
+            .map(Ok)
+            .unwrap_or_else(get_latest_cpython)?,
     };
     if !VersionSpecifier::from_str(&requires_python)
         .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
-        .contains(&Version::from_str(&py).map_err(|msg| anyhow!("invalid version: {}", msg))?)
+        .contains(&py.clone().into())
     {
         eprintln!(
             "{} conflicted python version with project's requires-python, will auto fix it.",
             style("warning:").red()
         );
-        requires_python = format!(">= {}", py.split('.').take(2).collect::<Vec<_>>().join("."));
+        requires_python = format!(">= {}.{}", py.major, py.minor);
     }
 
     let name = slug::slugify(
