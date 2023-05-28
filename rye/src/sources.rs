@@ -91,6 +91,23 @@ impl fmt::Display for PythonVersion {
     }
 }
 
+impl From<PythonVersion> for Version {
+    fn from(value: PythonVersion) -> Self {
+        Version {
+            epoch: 0,
+            release: vec![
+                value.major as usize,
+                value.minor as usize,
+                value.patch as usize,
+            ],
+            pre: None,
+            post: None,
+            dev: None,
+            local: None,
+        }
+    }
+}
+
 /// Internal descriptor for a python version request.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct PythonVersionRequest {
