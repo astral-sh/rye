@@ -14,7 +14,7 @@ use same_file::is_same_file;
 use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
-use crate::bootstrap::{download_url, ensure_self_venv};
+use crate::bootstrap::{download_url, ensure_self_venv, update_core_shims};
 use crate::platform::{get_app_dir, symlinks_supported};
 use crate::utils::{CommandOutput, QuietExit};
 
@@ -163,8 +163,8 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         if !status.success() {
             bail!("failed to self-update via cargo-install");
         }
-        self_replace::self_replace(
-            tmp.path()
+        update_exe_and_shims(
+            &tmp.path()
                 .join("bin")
                 .join("rye")
                 .with_extension(EXE_EXTENSION),
@@ -196,8 +196,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         {
             fs::write(tmp.path(), bytes)?;
         }
-
-        self_replace::self_replace(tmp.path())?;
+        update_exe_and_shims(tmp.path())?;
     }
 
     eprintln!("Updated!");
@@ -205,6 +204,24 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
     Command::new(env::current_exe()?)
         .arg("--version")
         .status()?;
+
+    Ok(())
+}
+
+fn update_exe_and_shims(new_exe: &Path) -> Result<(), Error> {
+    let app_dir = get_app_dir().canonicalize()?;
+    let current_exe = env::current_exe()?.canonicalize()?;
+    let shims = app_dir.join("shims");
+
+    self_replace::self_replace(new_exe)?;
+
+    // if the shims have been created before (they really should have)
+    // we want to make sure that they point to the new executable now.
+    // for symlinks that probably is not necessary, but for hardlinks
+    // that's very important.
+    if shims.is_dir() {
+        update_core_shims(&shims, &current_exe)?;
+    }
 
     Ok(())
 }
