@@ -15,7 +15,7 @@ on:
     inputs:
       version:
         type: string
-        description: "Releas version"
+        description: "Release version"
         required: true
       dry-run:
         type: choice
