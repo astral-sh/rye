@@ -93,6 +93,7 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
         },
     };
 
+    env::set_current_dir(workspace.path()).expect("TODO: panic message");
     install(requirement, &py_ver, cmd.force, &cmd.include_dep, output)?;
     Ok(())
 }
