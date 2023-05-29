@@ -369,6 +369,7 @@ impl Workspace {
         self: &'a Arc<Self>,
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
         walkdir::WalkDir::new(&self.root)
+            .follow_links(true)
             .into_iter()
             .filter_map(move |entry| match entry {
                 Ok(entry) => {
