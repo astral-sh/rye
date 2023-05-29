@@ -131,6 +131,8 @@ fn completion(args: CompletionCommand) -> Result<(), Error> {
 }
 
 fn update(args: UpdateCommand) -> Result<(), Error> {
+    let current_exe = env::current_exe()?;
+
     // git based installation with cargo
     if args.rev.is_some() || args.tag.is_some() {
         let mut cmd = Command::new("cargo");
@@ -201,7 +203,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
 
     eprintln!("Updated!");
     eprintln!();
-    Command::new(env::current_exe()?)
+    Command::new(current_exe)
         .arg("--version")
         .status()?;
 
