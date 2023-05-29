@@ -12,9 +12,10 @@ use same_file::is_same_file;
 use url::Url;
 
 use crate::bootstrap::{ensure_self_venv, fetch};
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::get_app_dir;
-use crate::pyproject::normalize_package_name;
+use crate::pyproject::{normalize_package_name, ExpandedSources};
 use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
 use crate::utils::{get_short_executable_name, get_venv_python_bin, symlink_file, CommandOutput};
@@ -72,6 +73,8 @@ pub fn install(
     include_deps: &[String],
     output: CommandOutput,
 ) -> Result<(), Error> {
+    let config = Config::current();
+    let sources = ExpandedSources::from_sources(&config.sources()?)?;
     let app_dir = get_app_dir();
     let shim_dir = app_dir.join("shims");
     let self_venv = ensure_self_venv(output)?;
@@ -100,6 +103,8 @@ pub fn install(
         .arg(&py)
         .arg("install")
         .env("PYTHONWARNINGS", "ignore");
+    sources.add_as_pip_args(&mut cmd);
+
     if output == CommandOutput::Verbose {
         cmd.arg("--verbose");
     } else {

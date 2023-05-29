@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- The `install` command can now install tools from custom indexes.  #240
+
 - Virtualenvs on Unix are now created with a hack to pre-configure TCL and
   TKinter.  #233
 
