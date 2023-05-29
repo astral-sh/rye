@@ -22,7 +22,7 @@ use crate::utils::is_inside_git_work_tree;
 pub enum BuildSystem {
     Hatchling,
     Setuptools,
-    Filt,
+    Flit,
     Pdm,
 }
 
