@@ -167,9 +167,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .map(Ok)
             .unwrap_or_else(get_latest_cpython)?,
     };
-    if !cmd.no_pin && !VersionSpecifier::from_str(&requires_python)
-        .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
-        .contains(&py.clone().into())
+    if !cmd.no_pin
+        && !VersionSpecifier::from_str(&requires_python)
+            .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
+            .contains(&py.clone().into())
     {
         eprintln!(
             "{} conflicted python version with project's requires-python, will auto fix it.",
@@ -205,7 +206,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     };
 
     // write .python-version
-    if !python_version_file.is_file() && !cmd.no_pin {
+    if !cmd.no_pin && !python_version_file.is_file() {
         fs::write(python_version_file, format!("{}\n", py))
             .context("could not write .python-version file")?;
     }
