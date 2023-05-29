@@ -10,7 +10,8 @@ _Unreleased_
 - It's now possible for `.python-version` to request partial Python versions
   in which case the latest available is used.  In particular this means that
   a version like `3.10` can be written into `.python-version` rather than
-  `3.10.11`.  #255
+  `3.10.11`.  This can be accomplished by invoking `pin` with the new
+  `--relaxed` flag.  #255
 
 - Fixed an issue where the `init` command would not let you create
   `flit` based projects.  #254

@@ -22,7 +22,7 @@ use url::Url;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
-use crate::platform::get_python_version_request_from_pyenv_pin;
+use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
 use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
@@ -859,12 +859,27 @@ pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion
 pub fn latest_available_python_version(
     requested_version: &PythonVersionRequest,
 ) -> Option<PythonVersion> {
-    // TODO: consider also registered toolchains
-    if let Some((latest, _, _)) = get_download_url(requested_version, OS, ARCH) {
-        Some(latest)
+    let mut all = if let Ok(available) = list_known_toolchains() {
+        available
+            .into_iter()
+            .filter_map(|(ver, _)| {
+                if Some(&ver.kind as &str) == requested_version.kind.as_deref() {
+                    Some(ver)
+                } else {
+                    None
+                }
+            })
+            .collect()
     } else {
-        None
-    }
+        Vec::new()
+    };
+
+    if let Some((latest, _, _)) = get_download_url(requested_version, OS, ARCH) {
+        all.push(latest);
+    };
+
+    all.sort();
+    all.into_iter().rev().next()
 }
 
 fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {

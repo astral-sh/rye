@@ -106,40 +106,43 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
 /// Returns a pinnable version for this version request.
 ///
 /// This is the version number that will be written into `.python-version`
-pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
-    let mut target_version = None;
+pub fn get_pinnable_version(req: &PythonVersionRequest, relaxed: bool) -> Option<String> {
+    let serialized = if relaxed {
+        req.to_string()
+    } else {
+        let mut target_version = None;
 
-    // If the version request points directly to a known version for which we
-    // have a known binary, we can use that.
-    if let Ok(ver) = PythonVersion::try_from(req.clone()) {
-        if let Ok(path) = get_toolchain_python_bin(&ver) {
-            if path.is_file() {
-                target_version = Some(ver);
+        // If the version request points directly to a known version for which we
+        // have a known binary, we can use that.
+        if let Ok(ver) = PythonVersion::try_from(req.clone()) {
+            if let Ok(path) = get_toolchain_python_bin(&ver) {
+                if path.is_file() {
+                    target_version = Some(ver);
+                }
             }
         }
-    }
 
-    // otherwise, any version we can download is an acceptable version
-    if target_version.is_none() {
-        if let Some(version) = latest_available_python_version(req) {
-            target_version = Some(version);
+        // otherwise, any version we can download is an acceptable version
+        if target_version.is_none() {
+            if let Some(version) = latest_available_python_version(req) {
+                target_version = Some(version);
+            }
         }
-    }
 
-    // we return the stringified version of the version, but if always remove the
-    // cpython@ prefix to make it reusable with other toolchains such as pyenv.
-    if let Some(version) = target_version {
-        let serialized_version = version.to_string();
-        Some(
-            if let Some(rest) = serialized_version.strip_prefix("cpython@") {
-                rest.to_string()
-            } else {
-                serialized_version
-            },
-        )
+        // we return the stringified version of the version, but if always remove the
+        // cpython@ prefix to make it reusable with other toolchains such as pyenv.
+        if let Some(version) = target_version {
+            version.to_string()
+        } else {
+            return None;
+        }
+    };
+
+    Some(if let Some(rest) = serialized.strip_prefix("cpython@") {
+        rest.to_string()
     } else {
-        None
-    }
+        serialized
+    })
 }
 
 /// Returns a list of all registered toolchains.
