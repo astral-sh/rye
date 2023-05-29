@@ -34,6 +34,34 @@ on modern Windows versions.  Here is how you can enable it:
       tools might accidentally not detect junction points which can cause deletion of
       virtualenvs to accidentally also delete or destroy the toolchain behind it.
 
+## Missing Shared Libraries on Linux
+
+The Python builds that Rye uses require a Linux installation compatible to the
+Linux Standard Base Core Specification (LSB).  Unfortunately not all Linux
+distributions are strictly adhering to that specification out of the box.  In
+particularly the library `libcrypt.so.1` is commonly not installed on certain
+Linux distributions but the `_crypt` standard library module depends on it.
+Depending on the Linux distributions you need to run different commands to
+resolve this:
+
+* archlinux: `pacman -S libxcrypt-compat`
+* CentOS/RedHat: `dnf install libxcrypt-compat`
+
+## TKinter Support
+
+TKinter uses TCL behind the scenes.  Unfortunately this also means that some runtime
+support is required.  This runtime support is provided by the portable Python builds,
+however the way TCL is initialized on macOS and Linux won't find these files in
+virtualenvs.  Newer versions of Rye will automatically export the `TCL_LIBRARY`
+and `TK_LIBRARY` environment variables for you in a manner very similar to this:
+
+```python
+import os
+import sys
+os.environ["TCL_LIBRARY"] = sys.base_prefix + "/lib/tcl8.6"
+os.environ["TK_LIBRARY"] = sys.base_prefix + "/lib/tk8.6"
+```
+
 ## Python Interactive Prompt Input Messed Up
 
 The Python builds that Rye uses are compiled against `libedit` rather than `readline`

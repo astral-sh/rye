@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, EXE_EXTENSION, OS};
+use std::env::{join_paths, split_paths};
 use std::path::Path;
 use std::process::Command;
 use std::{env, fs};
@@ -11,8 +12,9 @@ use console::style;
 use minijinja::render;
 use same_file::is_same_file;
 use self_replace::self_delete_outside_path;
+use tempfile::tempdir;
 
-use crate::bootstrap::{download_url, ensure_self_venv};
+use crate::bootstrap::{download_url, ensure_self_venv, update_core_shims};
 use crate::platform::{get_app_dir, symlinks_supported};
 use crate::utils::{CommandOutput, QuietExit};
 
@@ -132,9 +134,20 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
     // git based installation with cargo
     if args.rev.is_some() || args.tag.is_some() {
         let mut cmd = Command::new("cargo");
+        let tmp = tempdir()?;
         cmd.arg("install")
             .arg("--git")
-            .arg("https://github.com/mitsuhiko/rye");
+            .arg("https://github.com/mitsuhiko/rye")
+            .arg("--root")
+            .env(
+                "PATH",
+                join_paths(
+                    Some(tmp.path().join("bin"))
+                        .into_iter()
+                        .chain(split_paths(&env::var_os("PATH").unwrap_or_default())),
+                )?,
+            )
+            .arg(tmp.path());
         if let Some(ref rev) = args.rev {
             cmd.arg("--rev");
             cmd.arg(rev);
@@ -150,6 +163,12 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         if !status.success() {
             bail!("failed to self-update via cargo-install");
         }
+        update_exe_and_shims(
+            &tmp.path()
+                .join("bin")
+                .join("rye")
+                .with_extension(EXE_EXTENSION),
+        )?;
     } else {
         let version = args.version.as_deref().unwrap_or("latest");
         eprintln!("Updating to {version}");
@@ -177,13 +196,31 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         {
             fs::write(tmp.path(), bytes)?;
         }
+        update_exe_and_shims(tmp.path())?;
+    }
 
-        self_replace::self_replace(tmp.path())?;
-        eprintln!("Updated!");
-        eprintln!();
-        Command::new(env::current_exe()?)
-            .arg("--version")
-            .status()?;
+    eprintln!("Updated!");
+    eprintln!();
+    Command::new(env::current_exe()?)
+        .arg("--version")
+        .status()?;
+
+    Ok(())
+}
+
+fn update_exe_and_shims(new_exe: &Path) -> Result<(), Error> {
+    let app_dir = get_app_dir().canonicalize()?;
+    let current_exe = env::current_exe()?.canonicalize()?;
+    let shims = app_dir.join("shims");
+
+    self_replace::self_replace(new_exe)?;
+
+    // if the shims have been created before (they really should have)
+    // we want to make sure that they point to the new executable now.
+    // for symlinks that probably is not necessary, but for hardlinks
+    // that's very important.
+    if shims.is_dir() {
+        update_core_shims(&shims, &current_exe)?;
     }
 
     Ok(())

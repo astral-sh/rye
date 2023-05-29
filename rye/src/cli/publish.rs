@@ -25,8 +25,8 @@ pub struct Args {
     #[arg(short, long, default_value = "pypi")]
     repository: String,
     /// The repository url to publish to.
-    #[arg(long, default_value = "https://upload.pypi.org/legacy/")]
-    repository_url: Url,
+    #[arg(long)]
+    repository_url: Option<Url>,
     /// The username to authenticate to the repository with.
     #[arg(short, long)]
     username: Option<String>,
@@ -65,21 +65,40 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // b. Get token from ~/.rye/credentials keyed by provided repository and provide decryption option.
     // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
     let repository = &cmd.repository;
-
-    // If -r is pypi but the url isn't pypi then bail
-    if repository == "pypi" && cmd.repository_url.domain() != Some("upload.pypi.org") {
-        bail!("invalid pypi url {} (use -h for help)", cmd.repository_url);
-    }
-
-    let username = match cmd.username {
-        Some(username) => username,
-        None => "__token__".to_string(),
-    };
-
     let mut credentials = get_credentials()?;
     credentials
         .entry(repository)
         .or_insert(Item::Table(Table::new()));
+
+    let repository_url = match cmd.repository_url {
+        Some(url) => url,
+        None => {
+            let default_repository_url = Url::parse("https://upload.pypi.org/legacy/")?;
+            credentials
+                .get(repository)
+                .and_then(|table| table.get("repository-url"))
+                .map(|url| match Url::parse(&escape_string(url.to_string())) {
+                    Ok(url) => url,
+                    Err(_) => default_repository_url.clone(),
+                })
+                .unwrap_or(default_repository_url)
+        }
+    };
+
+    // If -r is pypi but the url isn't pypi then bail
+    if repository == "pypi" && repository_url.domain() != Some("upload.pypi.org") {
+        bail!("invalid pypi url {} (use -h for help)", repository_url);
+    }
+
+    let username = match cmd.username {
+        Some(username) => username,
+        None => credentials
+            .get(repository)
+            .and_then(|table| table.get("username"))
+            .map(|username| username.to_string())
+            .map(escape_string)
+            .unwrap_or("__token__".to_string()),
+    };
 
     let token = if let Some(token) = cmd.token {
         let secret = Secret::new(token);
@@ -108,10 +127,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
         let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
         credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
-        write_credentials(&credentials)?;
 
         secret
     };
+
+    credentials[repository]["repository-url"] = Item::Value(repository_url.to_string().into());
+    credentials[repository]["username"] = Item::Value(username.clone().into());
+    write_credentials(&credentials)?;
 
     let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
     publish_cmd
@@ -124,7 +146,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .arg("--password")
         .arg(token.expose_secret())
         .arg("--repository-url")
-        .arg(cmd.repository_url.to_string());
+        .arg(repository_url.to_string());
     if cmd.sign {
         publish_cmd.arg("--sign");
     }

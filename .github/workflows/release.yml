@@ -1,16 +1,4 @@
-# Taken from ripgrep
-#
-# The way this works is the following:
-#
-# The create-release job runs purely to initialize the GitHub release itself
-# and to output upload_url for the following job.
-#
-# The build-release job runs only once create-release is finished. It gets the
-# release upload URL from create-release job outputs, then builds the release
-# executables for each supported platform and attaches them as release assets
-# to the previously created release.
-#
-# The key here is that we create the release only once.
+# Taken from ripgrep with modifications
 #
 # Reference:
 # https://eugene-babichenko.github.io/blog/2020/05/09/github-actions-cross-platform-auto-releases/
@@ -23,6 +11,20 @@ on:
      - feature/release-ci
     tags:
     - "[0-9]+.[0-9]+.[0-9]+"
+  workflow_dispatch:
+    inputs:
+      version:
+        type: string
+        description: "Release version"
+        required: true
+      dry-run:
+        type: choice
+        description: "Dry Run"
+        options:
+          - "no"
+          - "yes"
+        required: true
+
 jobs:
   create-release:
     name: create-release
@@ -33,9 +35,22 @@ jobs:
     ##  RYE_VERSION: 0.0.0
 
     outputs:
-      upload_url: ${{ steps.release.outputs.upload_url }}
       rye_version: ${{ env.RYE_VERSION }}
+      rye_dry_run: ${{ env.RYE_DRY_RUN }}
+
     steps:
+      - name: Inputs from workflow dispatch
+        shell: bash
+        if: ${{ github.event_name == 'workflow_dispatch' }}
+        run: |
+          echo "RYE_VERSION=${{ github.event.inputs.version }}" >> $GITHUB_ENV
+          echo "RYE_DRY_RUN=${{ github.event.inputs.dry-run }}" >> $GITHUB_ENV
+          echo "RYE_VERSION: ${{ github.event.inputs.version }}"
+          echo "RYE_DRY_RUN: ${{ github.event.inputs.dry-run }}"
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
       - name: Get the release version from the tag
         shell: bash
         if: env.RYE_VERSION == ''
@@ -45,15 +60,13 @@ jobs:
           # See: https://github.community/t5/GitHub-Actions/How-to-get-just-the-tag-name/m-p/32167/highlight/true#M1027
           echo "RYE_VERSION=${GITHUB_REF#refs/tags/}" >> $GITHUB_ENV
           echo "version is: ${{ env.RYE_VERSION }}"
+
       - name: Create GitHub release
         id: release
-        uses: actions/create-release@v1
+        if: env.RYE_DRY_RUN != 'yes'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ env.RYE_VERSION }}
-          release_name: ${{ env.RYE_VERSION }}
-          draft: true
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create --draft --title "${{ env.RYE_VERSION }}" "${{ env.RYE_VERSION }}"
 
   build-release:
     name: build-release
@@ -131,7 +144,7 @@ jobs:
     - name: Build release binary
       run: ${{ env.CARGO }} build --verbose --release ${{ env.TARGET_FLAGS }}
 
-    - name: Build archive
+    - name: Build release file
       shell: bash
       run: |
         outdir="$(scripts/cargo-out-dir "${{ env.TARGET_DIR }}")"
@@ -139,19 +152,58 @@ jobs:
 
         if [ "${{ matrix.os }}" = "windows-2022" ]; then
           cp "target/${{ matrix.target }}/release/rye.exe" "$bin.exe"
+          python scripts/sha256.py $bin.exe > "$bin.exe.sha256"
           echo "ASSET=$bin.exe" >> $GITHUB_ENV
+          echo "SHA256_FILE=$bin.exe.sha256" >> $GITHUB_ENV
         else
           cp "target/${{ matrix.target }}/release/rye" "$bin"
           gzip "$bin"
+          python scripts/sha256.py $bin.gz > "$bin.gz.sha256"
           echo "ASSET=$bin.gz" >> $GITHUB_ENV
+          echo "SHA256_FILE=$bin.gz.sha256" >> $GITHUB_ENV
         fi
 
     - name: Upload release archive
-      uses: actions/upload-release-asset@v1.0.2
+      if: ${{ needs.create-release.outputs.rye_dry_run }} != 'yes'
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.ASSET }}"
+        gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.SHA256_FILE }}"
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v3
       with:
-        upload_url: ${{ needs.create-release.outputs.upload_url }}
-        asset_path: ${{ env.ASSET }}
-        asset_name: ${{ env.ASSET }}
-        asset_content_type: application/octet-stream
+        name: ${{ env.ASSET }}
+        path: ${{ env.ASSET }}
+
+    - name: Upload artifact hash
+      uses: actions/upload-artifact@v3
+      with:
+        name: ${{ env.SHA256_FILE }}
+        path: ${{ env.SHA256_FILE }}
+
+  write-release-meta:
+    name: write-release-meta
+    runs-on: ubuntu-22.04
+    needs: ['create-release', 'build-release']
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Upload Release Meta
+      if: ${{ needs.create-release.outputs.rye_dry_run }} != 'yes'
+      shell: bash
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        gh run download $GH_RUNID -D artifacts-tmp -p "*.sha256"
+        python scripts/summarize-release.py "${{ needs.create-release.outputs.rye_version }}" artifacts-tmp > MANIFEST.json
+        gh release upload "${{ needs.create-release.outputs.rye_version }}" MANIFEST.json
+
+    - name: Upload artifact hash
+      uses: actions/upload-artifact@v3
+      with:
+        name: MANIFEST.json
+        path: MANIFEST.json

@@ -3,18 +3,54 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.3.0
+## 0.5.0
 
 _Unreleased_
 
-- Add username args for rye publish.  #211
+<!-- released start -->
+
+## 0.4.0
+
+Released on 2023-05-29
+
+- Releases starting with `0.4.0` onwards are published with SHA256 checksum
+  files for all release assets.  These files are not yet validated by the
+  installer or updater however.
+
+- The `install` command can now install tools from custom indexes.  #240
+
+- Virtualenvs on Unix are now created with a hack to pre-configure TCL and
+  TKinter.  #233
+
+- Fix invalid version error when using rye init with custom toolchain.  #234
+
+- Failed tool installations now properly clean up.  #225
+
+- Correctly swap the rye executable on windows when performing an update
+  to a git version via `self update`.
+
+## 0.3.0
+
+Released on 2023-05-27
+
+- Support retrieving username and repository-url from credentials if not
+  provided for the `publish` command.  #217
+
+- The installer now validates the availability of shared libraries
+  on Linux with `ldd` and emits an error with additional information
+  if necessary shared libraries are missing.  #220
+
+- It's now possible to configure http and https proxies.  #215
+
+- If a package is not found because it only has matching pre-releases,
+  a warning is now printed to tell the user to pass `--pre`.  #218
+
+- Add `--username` parameter for rye publish.  #211
 
 - The shims are now more resilient.  Previously a `pyproject.toml` file
   caused in all cases a virtualenv to be created.  Now this will only
   happen when the `rye.tool.managed` flag is set to `true`.  The old
   behavior can be forced via the global config.  #212
-
-<!-- released start -->
 
 ## 0.2.0
 

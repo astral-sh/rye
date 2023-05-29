@@ -16,7 +16,7 @@ use crate::piptools::get_pip_sync;
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{get_current_venv_python_version, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
-use crate::utils::{get_venv_python_bin, symlink_dir, CommandOutput};
+use crate::utils::{get_venv_python_bin, set_proxy_variables, symlink_dir, CommandOutput};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -251,6 +251,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             } else {
                 pip_sync_cmd.arg("-q");
             }
+            set_proxy_variables(&mut pip_sync_cmd);
             let status = pip_sync_cmd.status().context("unable to run pip-sync")?;
             if !status.success() {
                 bail!("Installation of dependencies failed");
@@ -290,5 +291,76 @@ pub fn create_virtualenv(
     if !status.success() {
         bail!("failed to initialize virtualenv");
     }
+
+    // On UNIX systems Python is unable to find the tcl config that is placed
+    // outside of the virtualenv.  It also sometimes is entirely unable to find
+    // the tcl config that comes from the standalone python builds.
+    #[cfg(unix)]
+    {
+        inject_tcl_config(venv, &py_bin, py_ver)?;
+    }
+
+    Ok(())
+}
+
+#[cfg(unix)]
+fn inject_tcl_config(venv: &Path, py_bin: &Path, py_ver: &PythonVersion) -> Result<(), Error> {
+    let lib_path = match py_bin
+        .parent()
+        .and_then(|x| x.parent())
+        .map(|x| x.join("lib"))
+    {
+        Some(path) => path,
+        None => return Ok(()),
+    };
+
+    let mut tcl_lib = None;
+    let mut tk_lib = None;
+
+    if let Ok(dir) = lib_path.read_dir() {
+        for entry in dir.filter_map(|x| x.ok()) {
+            let filename = entry.file_name();
+            let name = match filename.to_str() {
+                Some(name) => name,
+                None => continue,
+            };
+            if name.starts_with("tcl8") {
+                tcl_lib = Some(name.to_string());
+                if tk_lib.is_some() {
+                    break;
+                }
+            } else if name.starts_with("tk8") {
+                tk_lib = Some(name.to_string());
+                if tcl_lib.is_some() {
+                    break;
+                }
+            }
+        }
+    }
+
+    let site_packages = venv
+        .join("lib")
+        .join(format!("python{}.{}", py_ver.major, py_ver.minor))
+        .join("site-packages");
+
+    if tk_lib.is_none() && tcl_lib.is_none() {
+        return Ok(());
+    }
+
+    fs::write(
+        site_packages.join("_tcl-init.pth"),
+        minijinja::render!(
+            r#"import os, sys;
+{%- if tcl_lib -%}
+os.environ.setdefault('TCL_LIBRARY', sys.base_prefix + '/lib/{{ tcl_lib }}');
+{%- endif -%}
+{%- if tk_lib -%}
+os.environ.setdefault('TK_LIBRARY', sys.base_prefix + '/lib/{{ tk_lib }}');
+{%- endif -%}"#,
+            tcl_lib,
+            tk_lib,
+        ),
+    )?;
+
     Ok(())
 }

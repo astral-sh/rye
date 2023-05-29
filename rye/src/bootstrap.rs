@@ -13,12 +13,13 @@ use once_cell::sync::Lazy;
 use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, symlinks_supported,
 };
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::utils::{symlink_file, unpack_archive, CommandOutput};
+use crate::utils::{set_proxy_variables, symlink_file, unpack_archive, CommandOutput};
 
 pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
@@ -98,6 +99,12 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     })?;
     let py_bin = get_toolchain_python_bin(&version)?;
 
+    // linux specific detection of shared libraries.
+    #[cfg(target_os = "linux")]
+    {
+        validate_shared_libraries(&py_bin)?;
+    }
+
     // initialize the virtualenv
     let mut venv_cmd = Command::new(&py_bin);
     venv_cmd.arg("-mvenv");
@@ -111,6 +118,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     }
 
     venv_cmd.arg(&venv_dir);
+    set_proxy_variables(&mut venv_cmd);
 
     let status = venv_cmd
         .status()
@@ -165,6 +173,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         pip_install_cmd.arg("--quiet");
         pip_install_cmd.env("PYTHONWARNINGS", "ignore");
     }
+    set_proxy_variables(&mut pip_install_cmd);
     let status = pip_install_cmd
         .status()
         .context("unable to install self-dependencies")?;
@@ -183,30 +192,37 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         this = env::current_exe()?;
     }
 
+    update_core_shims(&shims, &this)?;
+
+    Ok(())
+}
+
+pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
     #[cfg(unix)]
     {
         let use_softlinks = !cfg!(target_os = "linux");
         fs::remove_file(shims.join("python")).ok();
-        if use_softlinks || fs::hard_link(&this, shims.join("python")).is_err() {
-            symlink_file(&this, shims.join("python")).context("tried to symlink python shim")?;
+        if use_softlinks || fs::hard_link(this, shims.join("python")).is_err() {
+            symlink_file(this, shims.join("python")).context("tried to symlink python shim")?;
         }
         fs::remove_file(shims.join("python3")).ok();
-        if use_softlinks || fs::hard_link(&this, shims.join("python3")).is_err() {
-            symlink_file(&this, shims.join("python3")).context("tried to symlink python3 shim")?;
+        if use_softlinks || fs::hard_link(this, shims.join("python3")).is_err() {
+            symlink_file(this, shims.join("python3")).context("tried to symlink python3 shim")?;
         }
     }
+
     #[cfg(windows)]
     {
         // on windows we need privileges to symlink.  Not everyone might have that, so we
         // fall back to hardlinks.
         fs::remove_file(shims.join("python.exe")).ok();
-        if symlink_file(&this, shims.join("python.exe")).is_err() {
-            fs::hard_link(&this, shims.join("python.exe"))
+        if symlink_file(this, shims.join("python.exe")).is_err() {
+            fs::hard_link(this, shims.join("python.exe"))
                 .context("tried to symlink python shim")?;
         }
         fs::remove_file(shims.join("pythonw.exe")).ok();
-        if symlink_file(&this, shims.join("pythonw.exe")).is_err() {
-            fs::hard_link(&this, shims.join("pythonw.exe"))
+        if symlink_file(this, shims.join("pythonw.exe")).is_err() {
+            fs::hard_link(this, shims.join("pythonw.exe"))
                 .context("tried to symlink pythonw shim")?;
         }
     }
@@ -303,11 +319,23 @@ pub fn fetch(
 }
 
 pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> {
+    // for now we only allow HTTPS downloads.
+    if !url.starts_with("https://") {
+        bail!("Refusing insecure download");
+    }
+
+    let config = Config::current();
     let mut archive_buffer = Vec::new();
     let mut handle = curl::easy::Easy::new();
     handle.url(url)?;
     handle.progress(true)?;
     handle.follow_location(true)?;
+
+    // we only do https requests here, so we always set an https proxy
+    if let Some(proxy) = config.https_proxy_url() {
+        handle.proxy(&proxy)?;
+    }
+
     let write_archive = &mut archive_buffer;
     {
         let mut transfer = handle.transfer();
@@ -349,4 +377,40 @@ pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> 
     } else {
         Ok(archive_buffer)
     }
+}
+
+#[cfg(target_os = "linux")]
+fn validate_shared_libraries(py: &Path) -> Result<(), Error> {
+    let out = Command::new("ldd")
+        .arg(py)
+        .output()
+        .context("unable to invoke ldd on downloaded python binary")?;
+    let stdout = String::from_utf8_lossy(&out.stdout);
+    let mut missing = Vec::new();
+    for line in stdout.lines() {
+        let line = line.trim();
+        if let Some((before, after)) = line.split_once(" => ") {
+            if after == "not found" && !missing.contains(&before) {
+                missing.push(before);
+            }
+        }
+    }
+
+    if missing.is_empty() {
+        return Ok(());
+    }
+
+    missing.sort();
+    eprintln!(
+        "{}: detected missing shared librar{} required by Python:",
+        style("error").red(),
+        if missing.len() == 1 { "y" } else { "ies" }
+    );
+    for lib in missing {
+        eprintln!("  - {}", style(lib).yellow());
+    }
+    bail!(
+        "Python installation is unable to run on this machine due to missing libraries.\n\
+        Visit https://rye-up.com/guide/faq/#missing-shared-libraries-on-linux for next steps."
+    );
 }
