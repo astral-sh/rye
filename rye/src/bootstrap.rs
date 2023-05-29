@@ -10,7 +10,6 @@ use anyhow::{bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
-use sha2::{Digest, Sha256};
 use tempfile::NamedTempFile;
 
 use crate::config::Config;
@@ -19,7 +18,9 @@ use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, symlinks_supported,
 };
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::utils::{set_proxy_variables, symlink_file, unpack_archive, CommandOutput};
+use crate::utils::{
+    check_checksum, set_proxy_variables, symlink_file, unpack_archive, CommandOutput,
+};
 
 pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
@@ -244,17 +245,6 @@ pub fn get_pip_module(venv: &Path) -> PathBuf {
     rv
 }
 
-fn check_hash(content: &[u8], hash: &'static str) -> Result<(), Error> {
-    let mut hasher = Sha256::new();
-    hasher.update(content);
-    let digest = hasher.finalize();
-    let digest = hex::encode(digest);
-    if digest != hash {
-        bail!("hash mismatch: expected {} got {}", hash, digest);
-    }
-    Ok(())
-}
-
 /// Fetches a version if missing.
 pub fn fetch(
     version: &PythonVersionRequest,
@@ -300,12 +290,12 @@ pub fn fetch(
 
     if let Some(sha256) = sha256 {
         if output != CommandOutput::Quiet {
-            eprintln!("{}", style("Checking hash").cyan());
+            eprintln!("{}", style("Checking checksum").cyan());
         }
-        check_hash(&archive_buffer, sha256)
+        check_checksum(&archive_buffer, sha256)
             .with_context(|| format!("hash check of {} failed", &url))?;
     } else if output != CommandOutput::Quiet {
-        eprintln!("hash check skipped (no hash available)");
+        eprintln!("Checksum check skipped (no hash available)");
     }
 
     unpack_archive(&archive_buffer, &target_dir, 1)
@@ -319,6 +309,13 @@ pub fn fetch(
 }
 
 pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> {
+    match download_url_ignore_404(url, output)? {
+        Some(result) => Ok(result),
+        None => bail!("Failed to download: 404 not found"),
+    }
+}
+
+pub fn download_url_ignore_404(url: &str, output: CommandOutput) -> Result<Option<Vec<u8>>, Error> {
     // for now we only allow HTTPS downloads.
     if !url.starts_with("https://") {
         bail!("Refusing insecure download");
@@ -372,10 +369,12 @@ pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> 
             .with_context(|| format!("download of {} failed", &url))?;
     }
     let code = handle.response_code()?;
-    if !(200..300).contains(&code) {
+    if code == 404 {
+        Ok(None)
+    } else if !(200..300).contains(&code) {
         bail!("Failed to download: {}", code)
     } else {
-        Ok(archive_buffer)
+        Ok(Some(archive_buffer))
     }
 }
 

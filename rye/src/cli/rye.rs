@@ -14,9 +14,11 @@ use same_file::is_same_file;
 use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
-use crate::bootstrap::{download_url, ensure_self_venv, update_core_shims};
+use crate::bootstrap::{
+    download_url, download_url_ignore_404, ensure_self_venv, update_core_shims,
+};
 use crate::platform::{get_app_dir, symlinks_supported};
-use crate::utils::{CommandOutput, QuietExit};
+use crate::utils::{check_checksum, CommandOutput, QuietExit};
 
 #[cfg(windows)]
 const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
@@ -181,8 +183,18 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         } else {
             format!("{GITHUB_REPO}/releases/download/{version}/{binary}{ext}")
         };
+        let sha256_url = format!("{}.sha256", url);
         let bytes = download_url(&url, CommandOutput::Normal)
-            .with_context(|| format!("could not download {version} release for this platform"))?;
+            .with_context(|| format!("could not download release {version} for this platform"))?;
+        if let Some(sha256_bytes) = download_url_ignore_404(&sha256_url, CommandOutput::Normal)? {
+            let checksum = String::from_utf8_lossy(&sha256_bytes);
+            eprintln!("Checking checksum");
+            check_checksum(&bytes, checksum.trim())
+                .with_context(|| format!("hash check of {} failed", url))?;
+        } else {
+            eprintln!("Checksum check skipped (no hash available)");
+        }
+
         let tmp = tempfile::NamedTempFile::new()?;
 
         // unix currently comes compressed, windows comes uncompressed
