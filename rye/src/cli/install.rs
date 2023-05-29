@@ -1,3 +1,4 @@
+use std::env;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -15,6 +16,7 @@ use crate::utils::CommandOutput;
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The name of the package to install.
+    #[arg(default_value = ".")]
     requirement: String,
     #[command(flatten)]
     req_extras: ReqExtras,
@@ -53,7 +55,12 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
     let workspace = project.workspace().unwrap(); // Get the workspace
 
     // Try to resolve the requirement to an absolute path if it matches a project
-    let requirement = resolve_requirement_to_path(&cmd.requirement, workspace.clone())?;
+    // If the requirement is ".", use the absolute path of the current directory
+    let requirement = if cmd.requirement == "." {
+        env::current_dir()?.canonicalize()?
+    } else {
+        resolve_requirement_to_path(&cmd.requirement, workspace.clone())?
+    };
 
     let mut requirement = match resolve_local_requirement(&requirement, output)? {
         Some(req) => req,
