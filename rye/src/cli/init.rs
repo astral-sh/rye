@@ -12,8 +12,10 @@ use pep440_rs::VersionSpecifier;
 use serde::Serialize;
 
 use crate::config::Config;
-use crate::platform::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
-use crate::sources::PythonVersion;
+use crate::platform::{
+    get_default_author, get_latest_cpython_version, get_python_version_request_from_pyenv_pin,
+};
+use crate::sources::PythonVersionRequest;
 use crate::utils::is_inside_git_work_tree;
 
 #[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
@@ -155,17 +157,17 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // Write pyproject.toml
     let mut requires_python = match cmd.min_py {
         Some(py) => format!(">= {}", py),
-        None => get_python_version_from_pyenv_pin()
-            .map(|x| format!(">= {}.{}", x.major, x.minor))
+        None => get_python_version_request_from_pyenv_pin()
+            .map(|x| format!(">= {}.{}", x.major, x.minor.unwrap_or_default()))
             .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
-        Some(py) => {
-            PythonVersion::from_str(&py).map_err(|msg| anyhow!("invalid version: {}", msg))?
-        }
-        None => get_python_version_from_pyenv_pin()
-            .map(Ok)
-            .unwrap_or_else(get_latest_cpython)?,
+        Some(py) => PythonVersionRequest::from_str(&py)
+            .map_err(|msg| anyhow!("invalid version: {}", msg))?,
+        None => match get_python_version_request_from_pyenv_pin() {
+            Some(ver) => ver,
+            None => PythonVersionRequest::from(get_latest_cpython_version()?),
+        },
     };
     if !cmd.no_pin
         && !VersionSpecifier::from_str(&requires_python)
@@ -176,7 +178,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             "{} conflicted python version with project's requires-python, will auto fix it.",
             style("warning:").red()
         );
-        requires_python = format!(">= {}.{}", py.major, py.minor);
+        requires_python = format!(">= {}.{}", py.major, py.minor.unwrap_or_default());
     }
 
     let name = slug::slugify(

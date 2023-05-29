@@ -22,7 +22,7 @@ use url::Url;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
-use crate::platform::get_python_version_from_pyenv_pin;
+use crate::platform::get_python_version_request_from_pyenv_pin;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
 use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
@@ -856,15 +856,13 @@ pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion
 fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
-        .or_else(|| get_python_version_from_pyenv_pin().map(Into::into))
+        .or_else(|| get_python_version_request_from_pyenv_pin().map(Into::into))
         .or_else(|| Config::current().default_toolchain().ok())
 }
 
 fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
-    if let Some(ver) = get_python_version_from_pyenv_pin() {
-        return Ok(ver);
-    }
-    let requested_version = resolve_lower_bound_python_version(doc)
+    let requested_version = get_python_version_request_from_pyenv_pin()
+        .or_else(|| resolve_lower_bound_python_version(doc))
         .or_else(|| Config::current().default_toolchain().ok())
         .ok_or_else(|| {
             anyhow!(

@@ -108,6 +108,23 @@ impl From<PythonVersion> for Version {
     }
 }
 
+impl From<PythonVersionRequest> for Version {
+    fn from(value: PythonVersionRequest) -> Self {
+        Version {
+            epoch: 0,
+            release: vec![
+                value.major as usize,
+                value.minor.unwrap_or_default() as usize,
+                value.patch.unwrap_or_default() as usize,
+            ],
+            pre: None,
+            post: None,
+            dev: None,
+            local: None,
+        }
+    }
+}
+
 /// Internal descriptor for a python version request.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct PythonVersionRequest {

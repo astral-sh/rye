@@ -120,8 +120,10 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
     }
 
     // otherwise, any version we can download is an acceptable version
-    if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
-        target_version = Some(version);
+    if target_version.is_none() {
+        if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
+            target_version = Some(version);
+        }
     }
 
     // we return the stringified version of the version, but if always remove the
@@ -190,7 +192,7 @@ pub fn get_default_author() -> Option<(String, String)> {
 }
 
 /// Reads the current `.python-version` file.
-pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
+pub fn get_python_version_request_from_pyenv_pin() -> Option<PythonVersionRequest> {
     let mut here = env::current_dir().ok()?;
 
     loop {
@@ -209,7 +211,7 @@ pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
 }
 
 /// Returns the most recent cpython release.
-pub fn get_latest_cpython() -> Result<PythonVersion, Error> {
+pub fn get_latest_cpython_version() -> Result<PythonVersion, Error> {
     get_download_url(
         &PythonVersionRequest {
             kind: None,
