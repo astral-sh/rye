@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.4.0
 
-_Unreleased_
+Released on 2023-05-29
 
 - Releases starting with `0.4.0` onwards are published with SHA256 checksum
   files for all release assets.  These files are not yet validated by the
@@ -22,8 +24,6 @@ _Unreleased_
 
 - Correctly swap the rye executable on windows when performing an update
   to a git version via `self update`.
-
-<!-- released start -->
 
 ## 0.3.0
 
