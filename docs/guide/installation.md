@@ -12,7 +12,26 @@ a folder in your home directory and mange itself there.
 {% include-markdown "../.includes/quick-install.md" %}
 
 Rye will automatically download suitable Python toolchains as needed.  For more
-information about this [read about toolchains](toolchains/index.md).
+information about this [read about toolchains](toolchains/index.md).  To install
+a specific version download a binary directly
+[from GitHub](https://github.com/mitsuhiko/rye/releases).
+
+## Customized Installation
+
+On some platforms there is some limited support for customizing the installation
+experience.
+
+=== "Linux"
+
+    {% include-markdown "../.includes/curl-to-bash-options.md" %}
+
+=== "macOS"
+
+    {% include-markdown "../.includes/curl-to-bash-options.md" %}
+
+=== "Windows"
+
+    The Windows installer does not support customizations.
 
 ## Add Shims to Path
 
