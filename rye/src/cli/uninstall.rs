@@ -1,7 +1,9 @@
-use anyhow::Error;
+use std::path::Path;
+use anyhow::{anyhow, Error};
 use clap::Parser;
 
 use crate::installer::uninstall;
+use crate::pyproject::PyProject;
 use crate::utils::CommandOutput;
 
 /// Uninstalls a global tool.
@@ -20,6 +22,16 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    uninstall(&cmd.name, output)?;
+
+    let name = if cmd.name == "." {
+        PyProject::load(Path::new("pyproject.toml"))?
+            .name()
+            .ok_or_else(|| anyhow!("project name not found"))?
+            .to_string()
+    } else {
+        cmd.name.to_string()
+    };
+
+    uninstall(name.as_str(), output)?;
     Ok(())
 }
