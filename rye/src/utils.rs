@@ -5,10 +5,11 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::{fmt, fs};
 
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, bail, Error};
 use once_cell::sync::Lazy;
 use pep508_rs::{Requirement, VersionOrUrl};
 use regex::{Captures, Regex};
+use sha2::{Digest, Sha256};
 
 static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").unwrap());
 
@@ -330,6 +331,18 @@ pub fn success_status() -> ExitStatus {
         use std::os::unix::process::ExitStatusExt;
         ExitStatus::from_raw(0)
     }
+}
+
+/// Takes a bytes slice and compares it to a given string checksum.
+pub fn check_checksum(content: &[u8], checksum: &str) -> Result<(), Error> {
+    let mut hasher = Sha256::new();
+    hasher.update(content);
+    let digest = hasher.finalize();
+    let digest = hex::encode(digest);
+    if !digest.eq_ignore_ascii_case(checksum) {
+        bail!("hash mismatch: expected {} got {}", checksum, digest);
+    }
+    Ok(())
 }
 
 #[test]
