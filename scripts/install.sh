@@ -7,6 +7,8 @@ __wrap__() {
 
 # allow overriding the version
 VERSION=${RYE_VERSION:-latest}
+# allow overriding the install option
+INSTALL_OPTION=${RYE_INSTALL_OPTION:-""}
 
 REPO=mitsuhiko/rye
 PLATFORM=`uname -s`
@@ -66,6 +68,6 @@ fi
 rm -f "$TEMP_FILE"
 gunzip "$TEMP_FILE_GZ" 
 chmod +x "$TEMP_FILE"
-"$TEMP_FILE" self install
+"$TEMP_FILE" self install $INSTALL_OPTION
 
 }; __wrap__
