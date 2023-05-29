@@ -24,14 +24,18 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
 
     let name = if cmd.name == "." {
-        PyProject::load(Path::new("pyproject.toml"))?
-            .name()
-            .ok_or_else(|| anyhow!("project name not found"))?
-            .to_string()
+        get_project_name_in_current_directory().ok().unwrap()
     } else {
         cmd.name.to_string()
     };
 
     uninstall(name.as_str(), output)?;
     Ok(())
+}
+
+pub fn get_project_name_in_current_directory() -> Result<String, Error> {
+    Ok(PyProject::load(Path::new("pyproject.toml"))?
+        .name()
+        .ok_or_else(|| anyhow!("project name not found"))?
+        .to_string())
 }

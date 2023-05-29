@@ -7,7 +7,8 @@ use clap::Parser;
 use pep508_rs::Requirement;
 
 use crate::cli::add::ReqExtras;
-use crate::installer::{install, resolve_local_requirement};
+use crate::cli::uninstall::get_project_name_in_current_directory;
+use crate::installer::{install, resolve_local_requirement, uninstall};
 use crate::pyproject::{normalize_package_name, PyProject, Workspace};
 use crate::sources::PythonVersionRequest;
 use crate::utils::CommandOutput;
@@ -57,6 +58,7 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
     // Try to resolve the requirement to an absolute path if it matches a project
     // If the requirement is ".", use the absolute path of the current directory
     let requirement = if cmd.requirement == "." {
+        uninstall(get_project_name_in_current_directory()?.as_str(), output.clone())?; // Uninstall the current project (if it exists
         env::current_dir()?.canonicalize()?
     } else {
         resolve_requirement_to_path(&cmd.requirement, workspace.clone())?
