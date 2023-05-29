@@ -7,7 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
-- Support install tools from custom indexes. #240
+- The `install` command can now install tools from custom indexes.  #240
+
+- Virtualenvs on Unix are now created with a hack to pre-configure TCL and
+  TKinter.  #233
 
 - Fix invalid version error when using rye init with custom toolchain.  #234
 

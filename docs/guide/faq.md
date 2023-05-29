@@ -51,9 +51,9 @@ resolve this:
 
 TKinter uses TCL behind the scenes.  Unfortunately this also means that some runtime
 support is required.  This runtime support is provided by the portable Python builds,
-however the way TCL is initialized on macOS and Linux won't find these files.  The
-easiest way to accomplish this is to export the `TCL_LIBRARY` and `TK_LIBRARY`
-environment variables before you import tkinter:
+however the way TCL is initialized on macOS and Linux won't find these files in
+virtualenvs.  Newer versions of Rye will automatically export the `TCL_LIBRARY`
+and `TK_LIBRARY` environment variables for you in a manner very similar to this:
 
 ```python
 import os
@@ -61,9 +61,6 @@ import sys
 os.environ["TCL_LIBRARY"] = sys.base_prefix + "/lib/tcl8.6"
 os.environ["TK_LIBRARY"] = sys.base_prefix + "/lib/tk8.6"
 ```
-
-There is a desire to make this process automatic in the future, but for now this is
-a workaround to get you unblocked.
 
 ## Python Interactive Prompt Input Messed Up
 
