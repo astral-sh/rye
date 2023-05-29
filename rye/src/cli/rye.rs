@@ -133,6 +133,8 @@ fn completion(args: CompletionCommand) -> Result<(), Error> {
 }
 
 fn update(args: UpdateCommand) -> Result<(), Error> {
+    // make sure to read the exe before self_replace as otherwise we might read
+    // a bad executable name on Linux where the move is picked up.
     let current_exe = env::current_exe()?;
 
     // git based installation with cargo
@@ -215,9 +217,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
 
     eprintln!("Updated!");
     eprintln!();
-    Command::new(current_exe)
-        .arg("--version")
-        .status()?;
+    Command::new(current_exe).arg("--version").status()?;
 
     Ok(())
 }

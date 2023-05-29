@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Resolve an error ("No such file or directory") shown after updates on
+  Linux machines.  (#252)
+
 - The built-in updater now validates checksums of updates when updates have
   SHA-256 hashes available.  #253
 
