@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- `init` not accepts `--no-pin` to not create a `.python-version` file.  #247
+
 <!-- released start -->
 
 ## 0.4.0
