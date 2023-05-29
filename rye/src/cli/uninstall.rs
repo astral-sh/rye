@@ -8,6 +8,7 @@ use crate::utils::CommandOutput;
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The package to uninstall
+    #[arg(default_value = ".")]
     name: String,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
