@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Virtualenvs on Unix are now created with a hack to pre-configure TCL and
+  TKinter.  #233
+
 - Fix invalid version error when using rye init with custom toolchain.  #234
 
 - Failed tool installations now properly clean up.  #225
