@@ -15,6 +15,11 @@ rye install ruff
 Afterwards the tool is installed into `~/.rye/tools/ruff` and the necessary shims
 are placed in `~/.rye/shims`.
 
++/- 0.4.0
+
+    The `install` command now considers custom sources configured
+    in the `config.toml` file.  For more information see [Dependency Sources](sources.md).
+
 ## Listing Tools
 
 If you want to see which tools are installed, you can use `rye tools list`:

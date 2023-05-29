@@ -34,6 +34,10 @@ and out of the box points to PyPI.
     url = "https://company.internal/simple/"
     ```
 
++/- 0.4.0
+
+    Sources in the global config are also considered for tool installations.
+
 ### Index Types
 
 Rye supports different types of sources and also allows overriding the `default`
