@@ -1,4 +1,5 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::sync::Arc;
 
 use anyhow::{Context, Error};
 use clap::Parser;
@@ -6,6 +7,7 @@ use pep508_rs::Requirement;
 
 use crate::cli::add::ReqExtras;
 use crate::installer::{install, resolve_local_requirement};
+use crate::pyproject::{normalize_package_name, PyProject, Workspace};
 use crate::sources::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
@@ -33,10 +35,27 @@ pub struct Args {
     quiet: bool,
 }
 
+fn resolve_requirement_to_path(req: &str, workspace: Arc<Workspace>) -> Result<PathBuf, Error> {
+    let normalized_name = normalize_package_name(req);
+    for project in workspace.iter_projects() {
+        let project = project?;
+        if project.normalized_name()? == normalized_name {
+            return Ok(project.root_path().into());
+        }
+    }
+    Ok(req.into())  // No match, return original string as path
+}
+
 pub fn execute(mut cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
 
-    let mut requirement = match resolve_local_requirement(Path::new(&cmd.requirement), output)? {
+    let project = PyProject::discover()?;
+    let workspace = project.workspace().unwrap(); // Get the workspace
+
+    // Try to resolve the requirement to an absolute path if it matches a project
+    let requirement = resolve_requirement_to_path(&cmd.requirement, workspace.clone())?;
+
+    let mut requirement = match resolve_local_requirement(&requirement, output)? {
         Some(req) => req,
         None => cmd.requirement.parse::<Requirement>().with_context(|| {
             if cmd.requirement.contains("://") {
