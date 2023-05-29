@@ -1,4 +1,3 @@
-use std::env::consts::{ARCH, OS};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
@@ -6,7 +5,8 @@ use std::{env, fs};
 
 use anyhow::{anyhow, Context, Error};
 
-use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
+use crate::pyproject::latest_available_python_version;
+use crate::sources::{PythonVersion, PythonVersionRequest};
 
 static APP_DIR: Mutex<Option<&'static PathBuf>> = Mutex::new(None);
 
@@ -121,7 +121,7 @@ pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
 
     // otherwise, any version we can download is an acceptable version
     if target_version.is_none() {
-        if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
+        if let Some(version) = latest_available_python_version(req) {
             target_version = Some(version);
         }
     }
@@ -212,18 +212,13 @@ pub fn get_python_version_request_from_pyenv_pin() -> Option<PythonVersionReques
 
 /// Returns the most recent cpython release.
 pub fn get_latest_cpython_version() -> Result<PythonVersion, Error> {
-    get_download_url(
-        &PythonVersionRequest {
-            kind: None,
-            major: 3,
-            minor: None,
-            patch: None,
-            suffix: None,
-        },
-        OS,
-        ARCH,
-    )
-    .map(|x| x.0)
+    latest_available_python_version(&PythonVersionRequest {
+        kind: None,
+        major: 3,
+        minor: None,
+        patch: None,
+        suffix: None,
+    })
     .context("unsupported platform")
 }
 

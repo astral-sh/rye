@@ -853,6 +853,20 @@ pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion
     Some(marker.python)
 }
 
+/// Give a given python version request, returns the latest available version.
+///
+/// This can return a version that requires downloading.
+pub fn latest_available_python_version(
+    requested_version: &PythonVersionRequest,
+) -> Option<PythonVersion> {
+    // TODO: consider also registered toolchains
+    if let Some((latest, _, _)) = get_download_url(requested_version, OS, ARCH) {
+        Some(latest)
+    } else {
+        None
+    }
+}
+
 fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
@@ -875,7 +889,7 @@ fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion,
         return Ok(ver);
     }
 
-    if let Some((latest, _, _)) = get_download_url(&requested_version, OS, ARCH) {
+    if let Some(latest) = latest_available_python_version(&requested_version) {
         Ok(latest)
     } else {
         Err(anyhow!(
