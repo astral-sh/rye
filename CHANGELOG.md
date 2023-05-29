@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- Releases starting with `0.4.0` onwards are published with SHA256 checksum
+  files for all release assets.  These files are not yet validated by the
+  installer or updater however.
+
 - The `install` command can now install tools from custom indexes.  #240
 
 - Virtualenvs on Unix are now created with a hack to pre-configure TCL and
