@@ -175,25 +175,26 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     );
     let version = "0.1.0";
     let author = get_default_author();
-    let license = if let Some(license) = cmd.license {
-        if !license_file.is_file() {
-            let license_obj: &dyn License = license
-                .parse()
-                .expect("current license not an valid license id");
-            let license_text = license_obj.text();
-            let rv = env.render_named_str(
-                "LICENSE.txt",
-                LICENSE_TEMPLATE,
-                context! {
-                    license_text,
-                },
-            )?;
-            fs::write(&license_file, rv)?;
-        };
-        Some(license)
-    } else {
-        None
+    let license = match cmd.license {
+        Some(license) => Some(license),
+        None => cfg.default_license(),
     };
+    if license.is_some() && !license_file.is_file() {
+        let license_obj: &dyn License = license
+            .clone()
+            .unwrap()
+            .parse()
+            .expect("current license not an valid license id");
+        let license_text = license_obj.text();
+        let rv = env.render_named_str(
+            "LICENSE.txt",
+            LICENSE_TEMPLATE,
+            context! {
+                license_text,
+            },
+        )?;
+        fs::write(&license_file, rv)?;
+    }
 
     // write .python-version
     if !cmd.no_pin && !python_version_file.is_file() {

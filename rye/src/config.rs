@@ -89,12 +89,22 @@ impl Config {
         .context("failed to get default toolchain")
     }
 
+    /// Returns the default build system
     pub fn default_build_system(&self) -> Option<BuildSystem> {
         self.doc
             .get("default")
             .and_then(|x| x.get("build-system"))
             .and_then(|x| x.as_str())
             .map(|x| x.to_string().parse::<BuildSystem>().unwrap())
+    }
+
+    /// Returns the default license
+    pub fn default_license(&self) -> Option<String> {
+        self.doc
+            .get("default")
+            .and_then(|x| x.get("license"))
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string())
     }
 
     /// Pretend that all projects are rye managed.
