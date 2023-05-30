@@ -4,27 +4,17 @@ use std::str::FromStr;
 use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use console::style;
 use license::License;
 use minijinja::{context, Environment};
 use pep440_rs::VersionSpecifier;
-use serde::Serialize;
 
 use crate::config::Config;
 use crate::platform::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
+use crate::pyproject::BuildSystem;
 use crate::sources::PythonVersion;
 use crate::utils::is_inside_git_work_tree;
-
-#[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
-#[value(rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum BuildSystem {
-    Hatchling,
-    Setuptools,
-    Flit,
-    Pdm,
-}
 
 /// Creates a new python project.
 #[derive(Parser, Debug)]
@@ -45,8 +35,8 @@ pub struct Args {
     #[arg(long)]
     no_pin: bool,
     /// Which build system should be used?
-    #[arg(long, default_value = "hatchling")]
-    build_system: BuildSystem,
+    #[arg(long)]
+    build_system: Option<BuildSystem>,
     /// Which license should be used (SPDX identifier)?
     #[arg(long)]
     license: Option<String>,
@@ -229,6 +219,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         false
     };
 
+    let build_system = match cmd.build_system {
+        Some(build_system) => build_system,
+        None => cfg.default_build_system().unwrap_or(BuildSystem::Hatchling),
+    };
+
     let rv = env.render_named_str(
         "pyproject.json",
         TOML_TEMPLATE,
@@ -239,7 +234,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             requires_python,
             license,
             with_readme,
-            build_system => cmd.build_system,
+            build_system,
         },
     )?;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;
