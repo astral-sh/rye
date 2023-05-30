@@ -144,7 +144,7 @@ wheels/
 
 /// Script used for setup.py setup proxy.
 const SETUP_PY_PROXY_SCRIPT: &str = r#"
-import json, os, shutil, subprocess, sys
+import json, sys
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
