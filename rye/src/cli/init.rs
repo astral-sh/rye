@@ -23,7 +23,7 @@ use crate::platform::{
 };
 use crate::pyproject::BuildSystem;
 use crate::sources::PythonVersionRequest;
-use crate::utils::is_inside_git_work_tree;
+use crate::utils::{escape_string, is_inside_git_work_tree};
 
 /// Creates a new python project.
 #[derive(Parser, Debug)]
@@ -386,16 +386,20 @@ fn import_project_metadata<T: AsRef<Path>>(
             if let Some(description) = section.get("description") {
                 metadata.description = description.to_string();
             }
-            if let Some(it) = section.get("author") {
+            if let Some(author) = section.get("author") {
                 metadata.author = Some((
-                    it.to_string(),
+                    author.to_string(),
                     section.get("author_email").unwrap_or("").to_string(),
                 ));
             }
-            metadata.license = section.get("license").map(|x| x.to_string());
+            if let Some(license) = section.get("license") {
+                metadata.license = Some(license.to_string());
+            }
         }
         if let Some(section) = ini.section(Some("options")) {
-            metadata.requires_python = section.get("requires_python").map(|x| x.to_string());
+            if let Some(requires_python) = section.get("requires_python") {
+                metadata.requires_python = Some(requires_python.to_string());
+            }
             if let Some(reqs) = section.get("install_requires") {
                 metadata.dependencies = Some(reqs.lines().map(|x| x.to_string()).collect());
             }
@@ -404,27 +408,28 @@ fn import_project_metadata<T: AsRef<Path>>(
 
     if let Ok(json) = get_setup_py_json(setup_py.as_path(), python) {
         if let Some(name) = json.get("name") {
-            metadata.name = name.to_string();
+            metadata.name = escape_string(name.to_string());
         }
         if let Some(version) = json.get("version") {
-            metadata.version = version.to_string();
+            metadata.version = escape_string(version.to_string());
         }
         if let Some(description) = json.get("description") {
-            metadata.description = description.to_string();
+            metadata.description = escape_string(description.to_string());
         }
         if let Some(it) = json.get("author") {
             metadata.author = Some((
-                it.to_string(),
+                escape_string(it.to_string()),
                 json.get("author_email")
                     .map(|x| x.to_string())
+                    .map(escape_string)
                     .unwrap_or_else(String::new),
             ));
         }
         if let Some(requires_python) = json.get("requires_python") {
-            metadata.requires_python = Some(requires_python.to_string());
+            metadata.requires_python = Some(escape_string(requires_python.to_string()));
         }
         if let Some(license) = json.get("license") {
-            metadata.license = Some(license.to_string());
+            metadata.license = Some(escape_string(license.to_string()));
         }
         if let Some(Value::Array(reqs)) = json.get("install_requires") {
             metadata.dependencies = Some(
