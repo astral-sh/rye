@@ -17,9 +17,11 @@ use crate::utils::symlink_file;
 const INSPECT_SCRIPT: &str = r#"
 import json
 import platform
+import sysconfig
 print(json.dumps({
     "python_implementation": platform.python_implementation(),
     "python_version": platform.python_version(),
+    "python_debug": bool(sysconfig.get_config_var('Py_DEBUG')),
 }))
 "#;
 
@@ -27,6 +29,7 @@ print(json.dumps({
 struct InspectInfo {
     python_implementation: String,
     python_version: String,
+    python_debug: bool,
 }
 
 /// Helper utility to manage Python toolchains.
@@ -98,8 +101,9 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
         Some(ref name) => format!("{}@{}", name, info.python_version),
         None => {
             format!(
-                "{}@{}",
+                "{}{}@{}",
                 info.python_implementation.to_ascii_lowercase(),
+                if info.python_debug { "-dbg" } else { "" },
                 info.python_version
             )
         }
