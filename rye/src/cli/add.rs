@@ -13,7 +13,7 @@ use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
-use crate::pyproject::{DependencyKind, ExpandedSources, PyProject};
+use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
@@ -126,7 +126,8 @@ impl ReqExtras {
             // For hatchling build backend, it use {root:uri} for file relative path,
             // but this not supported by pip-tools,
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
-            let is_hatchling = PyProject::discover()?.build_backend().unwrap() == "hatchling";
+            let is_hatchling =
+                PyProject::discover()?.build_backend().unwrap() == BuildSystem::Hatchling;
             let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
