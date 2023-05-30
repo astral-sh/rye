@@ -249,7 +249,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         dependencies: Some(Vec::new()),
         dev_dependencies: None,
     };
-    if cmd.import {
+
+    // Attempt to import metadata if --import is used or setup files are available.
+    if cmd.import | import_available(&dir) {
         // TODO(cnpryer): May need to be smarter with what Python version is used
         let python = get_toolchain_python_bin(&get_latest_cpython_version()?)?;
         import_project_metadata(
@@ -360,6 +362,12 @@ struct Metadata {
     license: Option<String>,
     dependencies: Option<Vec<String>>,
     dev_dependencies: Option<Vec<String>>,
+}
+
+/// Check if setup.py or setup.cfg exist.
+fn import_available<T: AsRef<Path>>(dir: T) -> bool {
+    let dir = dir.as_ref();
+    dir.join("setup.py").is_file() | dir.join("setup.cfg").is_file()
 }
 
 fn import_project_metadata<T: AsRef<Path>>(
