@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- When a Python debug build (`Py_DEBUG`) is registered as custom toolchain,
+  `-dbg` is automatically appended to the name by default.  #269
+
 - lto+pgo builds are now preferred for the Python toolchain builds when
   available.  #268
 
