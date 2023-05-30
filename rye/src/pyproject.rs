@@ -381,6 +381,7 @@ impl Workspace {
                 Ok(entry) => {
                     if entry.file_type().is_file()
                         && entry.file_name() == OsStr::new("pyproject.toml")
+                        && self.is_member(entry.path().parent().unwrap())
                     {
                         let project =
                             match PyProject::load_with_workspace(entry.path(), self.clone()) {
@@ -388,9 +389,7 @@ impl Workspace {
                                 Ok(None) => return None,
                                 Err(err) => return Some(Err(err)),
                             };
-                        if self.is_member(entry.path().parent().unwrap()) {
-                            return Some(Ok(project));
-                        }
+                        return Some(Ok(project));
                     }
                     None
                 }
