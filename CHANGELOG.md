@@ -16,6 +16,9 @@ _Unreleased_
   `3.10.11`.  This can be accomplished by invoking `pin` with the new
   `--relaxed` flag.  #255
 
+- Workspaces will no longer discover `pyproject.toml` files in virtualenvs
+  or `.git` folders.  #266
+
 - Adding or removing dependencies with `add` or `remove` now reformats
   the `dependencies` array in the `pyproject.toml` file to multi-line
   with trailing commas.  This should result in significantly better
