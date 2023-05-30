@@ -7,6 +7,12 @@ that were not yet released.
 
 _Unreleased_
 
+- It's now possible for `.python-version` to request partial Python versions
+  in which case the latest available is used.  In particular this means that
+  a version like `3.10` can be written into `.python-version` rather than
+  `3.10.11`.  This can be accomplished by invoking `pin` with the new
+  `--relaxed` flag.  #255
+
 - Adding or removing dependencies with `add` or `remove` now reformats
   the `dependencies` array in the `pyproject.toml` file to multi-line
   with trailing commas.  This should result in significantly better
