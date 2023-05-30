@@ -186,10 +186,13 @@ impl FromStr for PythonVersionRequest {
         let major = iter
             .next()
             .and_then(|x| x.parse::<u8>().ok())
-            .ok_or_else(|| anyhow!("invalid version"))?;
+            .ok_or_else(|| anyhow!("invalid syntax for version"))?;
         let minor = iter.next().and_then(|x| x.parse::<u8>().ok());
         let patch = iter.next().and_then(|x| x.parse::<u8>().ok());
         let suffix = iter.next().map(|x| Cow::Owned(x.to_string()));
+        if iter.next().is_some() {
+            return Err(anyhow!("unexpected garbage after version"));
+        }
 
         Ok(PythonVersionRequest {
             kind: kind.map(|x| x.to_string().into()),
