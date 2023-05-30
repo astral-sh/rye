@@ -23,7 +23,7 @@ use url::Url;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
-use crate::platform::get_python_version_from_pyenv_pin;
+use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
 use crate::utils::{
@@ -862,18 +862,45 @@ pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion
     Some(marker.python)
 }
 
+/// Give a given python version request, returns the latest available version.
+///
+/// This can return a version that requires downloading.
+pub fn latest_available_python_version(
+    requested_version: &PythonVersionRequest,
+) -> Option<PythonVersion> {
+    let mut all = if let Ok(available) = list_known_toolchains() {
+        available
+            .into_iter()
+            .filter_map(|(ver, _)| {
+                if Some(&ver.kind as &str) == requested_version.kind.as_deref() {
+                    Some(ver)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    if let Some((latest, _, _)) = get_download_url(requested_version, OS, ARCH) {
+        all.push(latest);
+    };
+
+    all.sort();
+    all.into_iter().rev().next()
+}
+
 fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
-        .or_else(|| get_python_version_from_pyenv_pin().map(Into::into))
+        .or_else(|| get_python_version_request_from_pyenv_pin().map(Into::into))
         .or_else(|| Config::current().default_toolchain().ok())
 }
 
 fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
-    if let Some(ver) = get_python_version_from_pyenv_pin() {
-        return Ok(ver);
-    }
-    let requested_version = resolve_lower_bound_python_version(doc)
+    let requested_version = get_python_version_request_from_pyenv_pin()
+        .or_else(|| resolve_lower_bound_python_version(doc))
         .or_else(|| Config::current().default_toolchain().ok())
         .ok_or_else(|| {
             anyhow!(
@@ -886,7 +913,7 @@ fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion,
         return Ok(ver);
     }
 
-    if let Some((latest, _, _)) = get_download_url(&requested_version, OS, ARCH) {
+    if let Some(latest) = latest_available_python_version(&requested_version) {
         Ok(latest)
     } else {
         Err(anyhow!(

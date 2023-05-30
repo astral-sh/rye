@@ -19,14 +19,20 @@ use crate::sources::PythonVersionRequest;
 pub struct Args {
     /// The version of Python to pin.
     version: String,
+    /// Issue a relaxed pin
+    #[arg(long)]
+    relaxed: bool,
     /// Prevent updating requires-python in the pyproject.toml.
     #[arg(long)]
     no_update_requires_python: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let req: PythonVersionRequest = cmd.version.parse()?;
-    let to_write = get_pinnable_version(&req)
+    let req: PythonVersionRequest = cmd
+        .version
+        .parse()
+        .with_context(|| format!("'{}' is not a valid version", cmd.version))?;
+    let to_write = get_pinnable_version(&req, cmd.relaxed)
         .ok_or_else(|| anyhow!("unsupported/unknown version for this platform"))?;
 
     let version_file = match PyProject::discover() {

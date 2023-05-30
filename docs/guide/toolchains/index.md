@@ -22,6 +22,20 @@ rye pin cpython@3.11.4
 ```
 
 Pinning a downloadable version means that Rye will automatically fetch it when necessary.
+By default toolchains are pinned to a precise version.  This means that even if you
+write `rye pin cpython@3.11`, a very specific version of cpython is written into the
+`.python-version` file.  With Rye 0.5.0 onwards it's possible to perform "relaxed" pins:
+
+```
+rye pin --relaxed cpython@3.11
+```
+
+This will then persist `3.11` in the `.python-version` file and Rye will use the latest
+available compatible version for the virtual environment.
+
++/- 0.5.0
+
+    Relaxed pinning with `rye pin --relaxed` was added.
 
 ## Listing Toolchains
 

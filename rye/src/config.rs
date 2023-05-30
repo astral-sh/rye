@@ -5,7 +5,7 @@ use std::sync::{Arc, Mutex};
 use anyhow::{Context, Error};
 use toml_edit::Document;
 
-use crate::platform::{get_app_dir, get_latest_cpython};
+use crate::platform::{get_app_dir, get_latest_cpython_version};
 use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
 use crate::sources::PythonVersionRequest;
 
@@ -84,7 +84,7 @@ impl Config {
             .and_then(|x| x.as_str())
         {
             Some(ver) => ver.parse(),
-            None => get_latest_cpython().map(Into::into),
+            None => get_latest_cpython_version().map(Into::into),
         }
         .context("failed to get default toolchain")
     }
