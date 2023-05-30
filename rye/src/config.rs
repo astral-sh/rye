@@ -91,11 +91,15 @@ impl Config {
 
     /// Returns the default build system
     pub fn default_build_system(&self) -> Option<BuildSystem> {
-        self.doc
+        match self
+            .doc
             .get("default")
             .and_then(|x| x.get("build-system"))
             .and_then(|x| x.as_str())
-            .map(|x| x.to_string().parse::<BuildSystem>().unwrap())
+        {
+            Some(build_system) => build_system.parse::<BuildSystem>().ok(),
+            None => None,
+        }
     }
 
     /// Returns the default license

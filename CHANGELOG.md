@@ -7,7 +7,7 @@ that were not yet released.
 
 _Unreleased_
 
-- Default license can be specified in global config.  #244
+- Default build-system and license can be specified in global config.  #244
 
 - Fixed an issue where the `init` command would not let you create
   `flit` based projects.  #254
