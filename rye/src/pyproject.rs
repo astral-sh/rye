@@ -26,7 +26,10 @@ use crate::consts::VENV_BIN;
 use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
-use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
+use crate::utils::{
+    expand_env_vars, format_requirement, get_short_executable_name, is_executable,
+    reformat_toml_array_multiline,
+};
 
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
 
@@ -824,6 +827,7 @@ fn set_dependency(deps: &mut Array, req: &Requirement) {
     } else {
         deps.push(formatted);
     }
+    reformat_toml_array_multiline(deps);
 }
 
 fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement> {
@@ -840,9 +844,12 @@ fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement>
     }
 
     if let Some(idx) = to_remove {
-        deps.remove(idx)
+        let rv = deps
+            .remove(idx)
             .as_str()
-            .and_then(|x| Requirement::from_str(x).ok())
+            .and_then(|x| Requirement::from_str(x).ok());
+        reformat_toml_array_multiline(deps);
+        rv
     } else {
         None
     }

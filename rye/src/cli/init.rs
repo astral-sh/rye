@@ -87,6 +87,7 @@ build-backend = "pdm.backend"
 managed = true
 
 {%- if build_system == "hatchling" %}
+
 [tool.hatch.metadata]
 allow-direct-references = true
 {%- endif %}

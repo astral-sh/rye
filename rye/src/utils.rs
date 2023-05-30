@@ -10,6 +10,7 @@ use once_cell::sync::Lazy;
 use pep508_rs::{Requirement, VersionOrUrl};
 use regex::{Captures, Regex};
 use sha2::{Digest, Sha256};
+use toml_edit::{Array, RawString};
 
 static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").unwrap());
 
@@ -343,6 +344,47 @@ pub fn check_checksum(content: &[u8], checksum: &str) -> Result<(), Error> {
         bail!("hash mismatch: expected {} got {}", checksum, digest);
     }
     Ok(())
+}
+
+/// Reformats a TOML array to multi line while trying to
+/// preserve all comments and move them around.  This also makes
+/// the array to have a trailing comma.
+pub fn reformat_toml_array_multiline(deps: &mut Array) {
+    fn find_comments(s: Option<&RawString>) -> impl Iterator<Item = &str> {
+        s.and_then(|x| x.as_str())
+            .unwrap_or("")
+            .lines()
+            .filter_map(|line| {
+                let line = line.trim();
+                line.starts_with('#').then_some(line)
+            })
+    }
+
+    for item in deps.iter_mut() {
+        let decor = item.decor_mut();
+        let mut prefix = String::new();
+        for comment in find_comments(decor.prefix()).chain(find_comments(decor.suffix())) {
+            prefix.push_str("\n    ");
+            prefix.push_str(comment);
+        }
+        prefix.push_str("\n    ");
+        decor.set_prefix(prefix);
+        decor.set_suffix("");
+    }
+
+    deps.set_trailing(&{
+        let mut comments = find_comments(Some(deps.trailing())).peekable();
+        let mut rv = String::new();
+        if comments.peek().is_some() {
+            for comment in comments {
+                rv.push_str("\n    ");
+                rv.push_str(comment);
+            }
+        }
+        rv.push('\n');
+        rv
+    });
+    deps.set_trailing_comma(true);
 }
 
 #[test]
