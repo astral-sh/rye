@@ -7,6 +7,11 @@ that were not yet released.
 
 _Unreleased_
 
+- Adding or removing dependencies with `add` or `remove` now reformats
+  the `dependencies` array in the `pyproject.toml` file to multi-line
+  with trailing commas.  This should result in significantly better
+  diffing behavior out of the box.  #263
+
 - Default build-system and license can be specified in global config.  #244
 
 - Fixed an issue where the `init` command would not let you create
