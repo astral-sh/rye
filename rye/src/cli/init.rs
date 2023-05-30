@@ -53,10 +53,10 @@ pub struct Args {
     #[arg(long)]
     import: bool,
     /// Requirements files to initialize pyproject.toml with.
-    #[arg(short, long, name = "requirements_file")]
+    #[arg(short, long, name = "REQUIREMENTS_FILE")]
     requirements: Option<Vec<PathBuf>>,
     /// Development requirements files to initialize pyproject.toml with.
-    #[arg(long, name = "dev_requirements_file")]
+    #[arg(long, name = "DEV_REQUIREMENTS_FILE")]
     dev_requirements: Option<Vec<PathBuf>>,
 }
 
