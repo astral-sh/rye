@@ -387,6 +387,10 @@ pub fn reformat_toml_array_multiline(deps: &mut Array) {
     deps.set_trailing_comma(true);
 }
 
+pub fn escape_string(s: String) -> String {
+    s.trim().replace(['\\', '"'], "")
+}
+
 #[test]
 fn test_quiet_exit_display() {
     let quiet_exit = QuietExit(0);

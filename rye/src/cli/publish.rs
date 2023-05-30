@@ -14,7 +14,7 @@ use url::Url;
 use crate::bootstrap::ensure_self_venv;
 use crate::platform::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
-use crate::utils::{get_venv_python_bin, CommandOutput};
+use crate::utils::{escape_string, get_venv_python_bin, CommandOutput};
 
 /// Publish packages to a package repository.
 #[derive(Parser, Debug)]
@@ -258,8 +258,4 @@ fn pad_hex(s: String) -> String {
     } else {
         s
     }
-}
-
-fn escape_string(s: String) -> String {
-    s.trim().replace(['\\', '"'], "")
 }
