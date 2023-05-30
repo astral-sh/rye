@@ -374,6 +374,9 @@ impl Workspace {
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
         walkdir::WalkDir::new(&self.root)
             .into_iter()
+            .filter_entry(|entry| {
+                !(entry.file_type().is_dir() && skip_recurse_into(entry.file_name()))
+            })
             .filter_map(move |entry| match entry {
                 Ok(entry) => {
                     if entry.file_type().is_file()
@@ -436,6 +439,11 @@ impl Workspace {
     pub fn rye_managed(&self) -> bool {
         is_rye_managed(&self.doc)
     }
+}
+
+/// Check if recurse should be skipped into directory with this name
+fn skip_recurse_into(name: &OsStr) -> bool {
+    return name == OsStr::new(".venv") || name == OsStr::new(".git");
 }
 
 /// Helps working with pyproject.toml files
