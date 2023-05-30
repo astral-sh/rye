@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- lto+pgo builds are now preferred for the Python toolchain builds when
+  available.  #268
+
 - It's now possible for `.python-version` to request partial Python versions
   in which case the latest available is used.  In particular this means that
   a version like `3.10` can be written into `.python-version` rather than
