@@ -51,6 +51,12 @@ requires-python = ">= 3.8"
 # This is the default toolchain that is used
 toolchain = "cpython@3.11.1"
 
+# This is the default build system that is used
+build-system = "hatchling"
+
+# This is the default license that is used
+license = "MIT"
+
 [proxy]
 # the proxy to use for HTTP (overridden by the http_proxy environment variable)
 http = "http://127.0.0.1:4000"

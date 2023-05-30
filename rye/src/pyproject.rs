@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use core::fmt;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
@@ -612,16 +613,17 @@ impl PyProject {
     }
 
     /// Returns the build backend.
-    pub fn build_backend(&self) -> Option<&str> {
+    pub fn build_backend(&self) -> Option<BuildSystem> {
         let backend = self
             .doc
             .get("build-system")
             .and_then(|x| x.get("build-backend"))
             .and_then(|x| x.as_str());
         match backend {
-            Some("hatchling.build") => Some("hatchling"),
-            Some("setuptools.build_meta") => Some("setuptools"),
-            Some("flit_core.buildapi") => Some("flit"),
+            Some("hatchling.build") => Some(BuildSystem::Hatchling),
+            Some("setuptools.build_meta") => Some(BuildSystem::Setuptools),
+            Some("flit_core.buildapi") => Some(BuildSystem::Flit),
+            Some("pdm.backend") => Some(BuildSystem::Pdm),
             _ => None,
         }
     }
@@ -1067,6 +1069,30 @@ impl ExpandedSources {
         for host in &self.trusted_hosts {
             cmd.arg("--trusted-host");
             cmd.arg(host);
+        }
+    }
+}
+
+#[derive(ValueEnum, Copy, Clone, Serialize, Debug, PartialEq)]
+#[value(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum BuildSystem {
+    Hatchling,
+    Setuptools,
+    Flit,
+    Pdm,
+}
+
+impl FromStr for BuildSystem {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "hatchling" => Ok(BuildSystem::Hatchling),
+            "setuptools" => Ok(BuildSystem::Setuptools),
+            "flit" => Ok(BuildSystem::Flit),
+            "pdm" => Ok(BuildSystem::Pdm),
+            _ => Err(anyhow!("unknown build system")),
         }
     }
 }

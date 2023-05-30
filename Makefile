@@ -21,7 +21,7 @@ format:
 format-check:
 	@cargo fmt --all -- --check
 
-.PHONE: serve-docs
+.PHONY: serve-docs
 serve-docs: .venv
 	@rye run serve-docs
 
