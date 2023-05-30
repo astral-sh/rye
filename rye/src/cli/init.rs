@@ -1,7 +1,9 @@
+use std::fs::File;
+use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
-use std::{env, fs};
+use std::{env, fs, io};
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
@@ -10,6 +12,7 @@ use ini::Ini;
 use license::License;
 use minijinja::{context, Environment};
 use pep440_rs::VersionSpecifier;
+use pep508_rs::Requirement;
 use serde_json::Value;
 use tempfile::tempdir;
 
@@ -72,7 +75,7 @@ authors = [
     { name = {{ author[0] }}, email = {{ author[1] }} }
 ]
 {%- endif %}
-dependencies = []
+dependencies = {{ dependencies }}
 {%- if with_readme %}
 readme = "README.md"
 {%- endif %}
@@ -98,6 +101,9 @@ build-backend = "pdm.backend"
 
 [tool.rye]
 managed = true
+{%- if dev_dependencies is not none %}
+dev-dependencies = {{ dev_dependencies }}
+{%- endif %}
 
 {%- if build_system == "hatchling" %}
 
@@ -240,13 +246,19 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         author,
         requires_python: Some(requires_python),
         license,
-        dependencies: None,
+        dependencies: Some(Vec::new()),
         dev_dependencies: None,
     };
     if cmd.import {
         // TODO(cnpryer): May need to be smarter with what Python version is used
         let python = get_toolchain_python_bin(&get_latest_cpython_version()?)?;
-        import_project_metadata(&mut metadata, &dir, &python, None, None)?;
+        import_project_metadata(
+            &mut metadata,
+            &dir,
+            &python,
+            cmd.requirements,
+            cmd.dev_requirements,
+        )?;
     }
 
     // write .python-version
@@ -288,6 +300,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             author => metadata.author,
             requires_python => metadata.requires_python,
             license => metadata.license,
+            dependencies => metadata.dependencies,
+            dev_dependencies => metadata.dev_dependencies,
             with_readme,
             build_system,
         },
@@ -474,8 +488,17 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
     }
 }
 
-fn parse_requirements_file<T: AsRef<Path>>(_path: T) -> Result<Vec<String>, Error> {
-    todo!()
+// TODO(cnpryer): A more robust parse + caveats
+fn parse_requirements_file<T: AsRef<Path>>(path: T) -> Result<Vec<String>, Error> {
+    let file = File::open(path)?;
+    let reader = io::BufReader::new(file);
+    let mut requirements = Vec::new();
+    for line in reader.lines() {
+        if let Ok(req) = Requirement::from_str(&line?) {
+            requirements.push(req.to_string());
+        }
+    }
+    Ok(requirements)
 }
 
 // TODO(cnpryer)
