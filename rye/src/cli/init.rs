@@ -253,7 +253,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     };
 
     // Attempt to import metadata if --import is used or setup files are available.
-    if cmd.import | import_available(&dir) {
+    if cmd.import || import_available(&dir) {
         // TODO(cnpryer): May need to be smarter with what Python version is used
         let python = get_toolchain_python_bin(&get_latest_cpython_version()?)?;
         import_project_metadata(
@@ -369,7 +369,7 @@ struct Metadata {
 /// Check if setup.py or setup.cfg exist.
 fn import_available<T: AsRef<Path>>(dir: T) -> bool {
     let dir = dir.as_ref();
-    dir.join("setup.py").is_file() | dir.join("setup.cfg").is_file()
+    dir.join("setup.py").is_file() || dir.join("setup.cfg").is_file()
 }
 
 /// Pull importable data from setup.py, setup.cfg, and requirement files.
