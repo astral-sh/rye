@@ -22,10 +22,6 @@ The following structure will be created:
         └── __init__.py
 ``` 
 
-!!! Tip
-    Use `--import` to migrate from projects or `setup.py`, `setup.cfg`, and 
-    `requirements.txt`/`requirements-dev.txt` files.
-
 A `pyproject.toml` is used to store metadata about your project as well as some Rye
 configuration.  Most of Rye's commands will require a `pyproject.toml` to work.  Note
 that Rye today does not support `setup.py` based projects.  Note that when Rye initializes
