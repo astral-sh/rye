@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Calling `rye init` on the root directory no longer fails.  #274
+
 <!-- released start -->
 
 ## 0.5.0
