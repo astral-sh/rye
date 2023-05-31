@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- The `publish` command now supports `--yes` to disable prompts.  #270
+
 - When a Python debug build (`Py_DEBUG`) is registered as custom toolchain,
   `-dbg` is automatically appended to the name by default.  #269
 
