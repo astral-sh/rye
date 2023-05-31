@@ -15,7 +15,8 @@ use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
 use crate::bootstrap::{
-    download_url, download_url_ignore_404, ensure_self_venv, update_core_shims,
+    download_url, download_url_ignore_404, ensure_self_venv, is_self_compatible_toolchain,
+    update_core_shims,
 };
 use crate::cli::toolchain::register_toolchain;
 use crate::platform::{get_app_dir, symlinks_supported};
@@ -408,9 +409,17 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     // Register a toolchain if provided.
     if let Some(toolchain_path) = toolchain_path {
         eprintln!("Registering toolchain at {}", toolchain_path.display());
-        // Intentional hack here: we lie and register this toolchain as cpython
-        // in all cases
-        let version = register_toolchain(toolchain_path, Some("cpython"))?;
+        let version = register_toolchain(toolchain_path, None, |ver| {
+            if ver.kind != "cpython" {
+                bail!("Only cpython toolchains are allowed, got '{}'", ver.kind);
+            } else if !is_self_compatible_toolchain(ver) {
+                bail!(
+                    "Toolchain {} is not version compatible for internal use.",
+                    ver
+                );
+            }
+            Ok(())
+        })?;
         eprintln!("Registered toolchain as {}", style(version).cyan());
     }
 

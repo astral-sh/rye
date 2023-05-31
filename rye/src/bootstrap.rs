@@ -275,20 +275,18 @@ pub fn get_pip_module(venv: &Path) -> Result<PathBuf, Error> {
     Ok(rv)
 }
 
-fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> {
-    let mut possible_versions = Vec::new();
-    for (version, _) in list_known_toolchains()? {
-        // we only support cpython 3.9 to 3.11
-        if version.kind == "cpython"
-            && version.major == 3
-            && version.minor >= 9
-            && version.minor < 12
-        {
-            possible_versions.push(version);
-        }
-    }
+/// we only support cpython 3.9 to 3.11
+pub fn is_self_compatible_toolchain(version: &PythonVersion) -> bool {
+    version.kind == "cpython" && version.major == 3 && version.minor >= 9 && version.minor < 12
+}
 
-    if possible_versions.is_empty() {}
+fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> {
+    let possible_versions = list_known_toolchains()?
+        .into_iter()
+        .map(|x| x.0)
+        .filter(is_self_compatible_toolchain)
+        .collect::<Vec<_>>();
+
     if let Some(version) = possible_versions.into_iter().min() {
         eprintln!("Found a compatible python version: {version}");
         Ok(version)

@@ -5,7 +5,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
 use console::style;
 use serde::Deserialize;
@@ -86,7 +86,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 }
 
 fn register(cmd: RegisterCommand) -> Result<(), Error> {
-    let target_version = register_toolchain(&cmd.path, cmd.name.as_deref())?;
+    let target_version = register_toolchain(&cmd.path, cmd.name.as_deref(), |_| Ok(()))?;
     println!("Registered {} as {}", cmd.path.display(), target_version);
     Ok(())
 }
@@ -135,7 +135,14 @@ fn list(cmd: ListCommand) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn register_toolchain(path: &Path, name: Option<&str>) -> Result<PythonVersion, Error> {
+pub fn register_toolchain<F>(
+    path: &Path,
+    name: Option<&str>,
+    validate: F,
+) -> Result<PythonVersion, Error>
+where
+    F: FnOnce(&PythonVersion) -> Result<(), Error>,
+{
     let output = Command::new(path)
         .arg("-c")
         .arg(INSPECT_SCRIPT)
@@ -159,6 +166,9 @@ pub fn register_toolchain(path: &Path, name: Option<&str>) -> Result<PythonVersi
         }
     };
     let target_version: PythonVersion = target_version.parse()?;
+    validate(&target_version)
+        .with_context(|| anyhow!("{} is not a valid toolchain", &target_version))?;
+
     let target = get_canonical_py_path(&target_version)?;
 
     if target.is_file() || target.is_dir() {
@@ -185,8 +195,7 @@ pub fn register_toolchain(path: &Path, name: Option<&str>) -> Result<PythonVersi
         if symlink_file(path, &target).is_err() {
             fs::write(
                 &target,
-                cmd.path
-                    .as_os_str()
+                path.as_os_str()
                     .to_str()
                     .ok_or_else(|| anyhow::anyhow!("non unicode path to interpreter"))?,
             )
