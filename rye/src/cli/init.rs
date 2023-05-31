@@ -172,10 +172,12 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         requires_python = format!(">= {}.{}", py.major, py.minor.unwrap_or_default());
     }
 
-    let name = slug::slugify(
-        cmd.name
-            .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().into_owned()),
-    );
+    // In some cases there might not be a file name (eg: docker root)
+    let name = slug::slugify(cmd.name.unwrap_or_else(|| {
+        dir.file_name()
+            .map(|x| x.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "unknown".into())
+    }));
     let version = "0.1.0";
     let author = get_default_author();
     let license = match cmd.license {
