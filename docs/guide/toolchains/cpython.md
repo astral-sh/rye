@@ -36,10 +36,10 @@ The following changes to a regular Python versions you should be aware of:
   standard library provides alternatives.
 
 Additionally due to how these builds are created, there are some other quirks
-you might run into related to terminal support or TKinter.  The PyOxizier
-project maintains documentation for this:
-
-* [Behavior Quirks](https://python-build-standalone.readthedocs.io/en/latest/quirks.html)
+you might run into related to terminal support or TKinter.  Some of these
+issues are collected in the [FAQ](../faq.md).  Additionally the Python
+Standalone Builds have a [Behavior Quirks](https://python-build-standalone.readthedocs.io/en/latest/quirks.html)
+page.
 
 ## Sources
 
