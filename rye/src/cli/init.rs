@@ -534,14 +534,14 @@ pub fn copy_dir<T: AsRef<Path>>(from: T, to: T) -> Result<(), Error> {
             target_root.join(&src)
         };
         if !dest.exists() {
-            fs::create_dir_all(&dest).expect("to create dir");
+            fs::create_dir_all(&dest)?;
         }
-        for entry in fs::read_dir(working_path).expect("to read dir") {
-            let path = entry.expect("an entry").path();
+        for entry in fs::read_dir(working_path)? {
+            let path = entry?.path();
             if path.is_dir() {
                 stack.push(path);
             } else if let Some(filename) = path.file_name() {
-                fs::copy(&path, dest.join(filename)).expect("to copy");
+                fs::copy(&path, dest.join(filename))?;
             }
         }
     }
