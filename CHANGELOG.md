@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.5.0
 
-_Unreleased_
+Released on 2023-05-31
 
 - Rye will no longer enforce a downloaded interpreter for the internal
   toolchain.  If one has been registered that is compatible it will be
@@ -47,8 +49,6 @@ _Unreleased_
   SHA-256 hashes available.  #253
 
 - `init` now accepts `--no-pin` to not create a `.python-version` file.  #247
-
-<!-- released start -->
 
 ## 0.4.0
 
