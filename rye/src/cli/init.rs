@@ -370,6 +370,7 @@ fn import_available<T: AsRef<Path>>(dir: T) -> bool {
     dir.join("setup.py").is_file() | dir.join("setup.cfg").is_file()
 }
 
+/// Pull importable data from setup.py, setup.cfg, and requirement files.
 fn import_project_metadata<T: AsRef<Path>>(
     metadata: &mut Metadata,
     dir: T,
@@ -424,9 +425,9 @@ fn import_project_metadata<T: AsRef<Path>>(
         if let Some(description) = json.get("description") {
             metadata.description = escape_string(description.to_string());
         }
-        if let Some(it) = json.get("author") {
+        if let Some(author) = json.get("author") {
             metadata.author = Some((
-                escape_string(it.to_string()),
+                escape_string(author.to_string()),
                 json.get("author_email")
                     .map(|x| x.to_string())
                     .map(escape_string)
@@ -450,19 +451,15 @@ fn import_project_metadata<T: AsRef<Path>>(
 
     if let Some(paths) = requirements_files {
         for p in paths {
-            if let Ok(deps) = parse_requirements_file(p) {
-                if let Some(x) = metadata.dependencies.as_mut() {
-                    x.extend(deps)
-                }
+            if let Some(x) = metadata.dependencies.as_mut() {
+                x.extend(parse_requirements_file(p)?);
             }
         }
     }
     if let Some(paths) = dev_requirements_files {
         for p in paths {
-            if let Ok(deps) = parse_requirements_file(p) {
-                if let Some(x) = metadata.dev_dependencies.as_mut() {
-                    x.extend(deps)
-                }
+            if let Some(x) = metadata.dependencies.as_mut() {
+                x.extend(parse_requirements_file(p)?);
             }
         }
     }
