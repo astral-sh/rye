@@ -288,7 +288,10 @@ fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> 
         .collect::<Vec<_>>();
 
     if let Some(version) = possible_versions.into_iter().min() {
-        eprintln!("Found a compatible python version: {version}");
+        eprintln!(
+            "Found a compatible python version: {}",
+            style(&version).cyan()
+        );
         Ok(version)
     } else {
         fetch(&SELF_PYTHON_TARGET_VERSION, output)

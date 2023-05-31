@@ -408,7 +408,10 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
 
     // Register a toolchain if provided.
     if let Some(toolchain_path) = toolchain_path {
-        eprintln!("Registering toolchain at {}", toolchain_path.display());
+        eprintln!(
+            "Registering toolchain at {}",
+            style(toolchain_path.display()).cyan()
+        );
         let version = register_toolchain(toolchain_path, None, |ver| {
             if ver.kind != "cpython" {
                 bail!("Only cpython toolchains are allowed, got '{}'", ver.kind);
