@@ -4,4 +4,4 @@
     interpreter that should be used as the internal interpreter.  If not
     provided a suitable interpreter is automatically downloaded.
 
-    At present only CPython 3.8 to 3.11 are supported.
+    At present only CPython 3.9 to 3.11 are supported.
