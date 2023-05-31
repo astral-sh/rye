@@ -42,6 +42,9 @@ pub struct Args {
     /// Path to alternate CA bundle.
     #[arg(long)]
     cert: Option<PathBuf>,
+    /// Skip prompts.
+    #[arg(short, long)]
+    yes: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -102,7 +105,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     let token = if let Some(token) = cmd.token {
         let secret = Secret::new(token);
-        let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
+        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
         let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
         credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
         write_credentials(&credentials)?;
@@ -116,15 +119,19 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     {
         let secret = Secret::new(token);
 
-        prompt_maybe_decrypt(&secret)?
+        maybe_decrypt(&secret, cmd.yes)?
     } else {
         eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
-        let token = prompt_for_token()?;
+        let token = if !cmd.yes {
+            prompt_for_token()?
+        } else {
+            "".to_string()
+        };
         if token.is_empty() {
             bail!("an access token is required")
         }
         let secret = Secret::new(token);
-        let maybe_encrypted = prompt_maybe_encrypt(&secret)?;
+        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
         let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
         credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
 
@@ -177,13 +184,17 @@ fn prompt_for_token() -> Result<String, Error> {
     Ok(token)
 }
 
-fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Secret<Vec<u8>>, Error> {
-    let phrase = dialoguer::Password::new()
-        .with_prompt("Enter a passphrase (optional)")
-        .allow_empty_password(true)
-        .report(false)
-        .interact()
-        .map(Secret::new)?;
+fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, Error> {
+    let phrase = if !yes {
+        dialoguer::Password::new()
+            .with_prompt("Enter a passphrase (optional)")
+            .allow_empty_password(true)
+            .report(false)
+            .interact()
+            .map(Secret::new)?
+    } else {
+        Secret::new("".to_string())
+    };
 
     let token = if phrase.expose_secret().is_empty() {
         secret.expose_secret().as_bytes().to_vec()
@@ -201,13 +212,17 @@ fn prompt_maybe_encrypt(secret: &Secret<String>) -> Result<Secret<Vec<u8>>, Erro
     Ok(Secret::new(token.to_vec()))
 }
 
-fn prompt_maybe_decrypt(secret: &Secret<String>) -> Result<Secret<String>, Error> {
-    let phrase = dialoguer::Password::new()
-        .with_prompt("Enter a passphrase (optional)")
-        .allow_empty_password(true)
-        .report(false)
-        .interact()
-        .map(Secret::new)?;
+fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, Error> {
+    let phrase = if !yes {
+        dialoguer::Password::new()
+            .with_prompt("Enter a passphrase (optional)")
+            .allow_empty_password(true)
+            .report(false)
+            .interact()
+            .map(Secret::new)?
+    } else {
+        Secret::new("".to_string())
+    };
 
     if phrase.expose_secret().is_empty() {
         return Ok(secret.clone());
