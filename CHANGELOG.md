@@ -13,6 +13,8 @@ _Unreleased_
   environment variable which allows a user to supply an already existing
   Python interpreter at install time.  #267
 
+- The `publish` command now supports `--yes` to disable prompts.  #270
+
 - When a Python debug build (`Py_DEBUG`) is registered as custom toolchain,
   `-dbg` is automatically appended to the name by default.  #269
 
