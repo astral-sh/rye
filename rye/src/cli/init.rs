@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufRead;
 use std::path::{Path, PathBuf};
@@ -384,6 +385,8 @@ fn import_project_metadata<T: AsRef<Path>>(
     let python = python.as_ref();
     let setup_cfg = dir.join("setup.cfg");
     let setup_py = dir.join("setup.py");
+    let mut requirements = HashMap::new();
+    let mut dev_requirements = HashMap::new();
 
     // TODO(cnpryer): Start with setup.py import and then selectively import from cfg
     if setup_cfg.is_file() {
@@ -416,12 +419,11 @@ fn import_project_metadata<T: AsRef<Path>>(
                 metadata.requires_python = Some(requires_python.to_string());
             }
             if let Some(Some(reqs)) = section.get("install_requires") {
-                metadata.dependencies = Some(
-                    reqs.lines()
-                        .filter(|x| !x.is_empty())
-                        .map(|x| x.to_string())
-                        .collect(),
-                );
+                reqs.lines()
+                    .filter_map(|x| Requirement::from_str(x).ok())
+                    .for_each(|x| {
+                        requirements.insert(x.name.to_string(), x.to_string());
+                    });
             }
         }
     }
@@ -452,33 +454,29 @@ fn import_project_metadata<T: AsRef<Path>>(
             metadata.license = Some(license.to_string());
         }
         if let Some(Value::Array(reqs)) = json.get("install_requires") {
-            metadata.dependencies = Some(
-                reqs.iter()
-                    .filter_map(|value| value.as_str().map(String::from))
-                    .collect::<Vec<String>>(),
-            );
+            reqs.iter()
+                .filter_map(|x| Requirement::from_str(&x.to_string()).ok())
+                .for_each(|x| {
+                    requirements.insert(x.name.to_string(), x.to_string());
+                });
         }
     }
 
     if let Some(paths) = requirements_files {
         for p in paths {
-            if let Some(x) = metadata.dependencies.as_mut() {
-                x.extend(parse_requirements_file(p)?);
-            }
+            import_requirements(&mut requirements, p)?;
         }
     }
     if let Some(paths) = dev_requirements_files {
         for p in paths {
-            if let Some(x) = metadata.dependencies.as_mut() {
-                x.extend(parse_requirements_file(p)?);
-            }
+            import_requirements(&mut dev_requirements, p)?;
         }
     }
-    if let Some(x) = metadata.dependencies.as_mut() {
-        x.dedup()
+    if !requirements.is_empty() {
+        metadata.dependencies = Some(requirements.into_values().collect());
     }
-    if let Some(x) = metadata.dev_dependencies.as_mut() {
-        x.dedup()
+    if !dev_requirements.is_empty() {
+        metadata.dev_dependencies = Some(dev_requirements.into_values().collect());
     }
 
     Ok(metadata)
@@ -510,16 +508,20 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
 }
 
 // TODO(cnpryer): A more robust parse + caveats
-fn parse_requirements_file<T: AsRef<Path>>(path: T) -> Result<Vec<String>, Error> {
+fn import_requirements<T: AsRef<Path>>(
+    requirements: &mut HashMap<String, String>,
+    path: T,
+) -> Result<(), Error> {
     let file = File::open(path)?;
     let reader = io::BufReader::new(file);
-    let mut requirements = Vec::new();
     for line in reader.lines() {
         if let Ok(req) = Requirement::from_str(&line?) {
-            requirements.push(req.to_string());
+            requirements
+                .entry(req.name.to_string())
+                .or_insert(req.to_string());
         }
     }
-    Ok(requirements)
+    Ok(())
 }
 
 // TODO(cnpryer)
