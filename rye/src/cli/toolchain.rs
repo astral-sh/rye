@@ -2,10 +2,10 @@ use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::env::consts::{ARCH, OS};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
 use console::style;
 use serde::Deserialize;
@@ -86,65 +86,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 }
 
 fn register(cmd: RegisterCommand) -> Result<(), Error> {
-    let output = Command::new(&cmd.path)
-        .arg("-c")
-        .arg(INSPECT_SCRIPT)
-        .output()
-        .context("error executing interpreter to inspect version")?;
-    if !output.status.success() {
-        bail!("passed path does not appear to be a valid Python installation");
-    }
-
-    let info: InspectInfo = serde_json::from_slice(&output.stdout)
-        .context("could not parse interpreter output as json")?;
-    let target_version = match cmd.name {
-        Some(ref name) => format!("{}@{}", name, info.python_version),
-        None => {
-            format!(
-                "{}{}@{}",
-                info.python_implementation.to_ascii_lowercase(),
-                if info.python_debug { "-dbg" } else { "" },
-                info.python_version
-            )
-        }
-    };
-    let target_version: PythonVersion = target_version.parse()?;
-    let target = get_canonical_py_path(&target_version)?;
-
-    if target.is_file() || target.is_dir() {
-        bail!("target Python path {} is already in use", target.display());
-    }
-
-    // for the unlikely case that no python installation has been bootstrapped yet
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).ok();
-    }
-
-    // on unix we always create a symlink
-    #[cfg(unix)]
-    {
-        symlink_file(&cmd.path, target).context("could not symlink interpreter")?;
-    }
-
-    // on windows on the other hand we try a symlink first, but if that fails we fall back
-    // to writing the interpreter into the text file.  This is also supported by the
-    // interpreter lookup (see: get_toolchain_python_bin).  This is done because symlinks
-    // require higher privileges.
-    #[cfg(windows)]
-    {
-        if symlink_file(&cmd.path, &target).is_err() {
-            fs::write(
-                &target,
-                cmd.path
-                    .as_os_str()
-                    .to_str()
-                    .ok_or_else(|| anyhow::anyhow!("non unicode path to interpreter"))?,
-            )
-            .context("could not register interpreter")?;
-        }
-    }
+    let target_version = register_toolchain(&cmd.path, cmd.name.as_deref(), |_| Ok(()))?;
     println!("Registered {} as {}", cmd.path.display(), target_version);
-
     Ok(())
 }
 
@@ -190,4 +133,75 @@ fn list(cmd: ListCommand) -> Result<(), Error> {
         }
     }
     Ok(())
+}
+
+pub fn register_toolchain<F>(
+    path: &Path,
+    name: Option<&str>,
+    validate: F,
+) -> Result<PythonVersion, Error>
+where
+    F: FnOnce(&PythonVersion) -> Result<(), Error>,
+{
+    let output = Command::new(path)
+        .arg("-c")
+        .arg(INSPECT_SCRIPT)
+        .output()
+        .context("error executing interpreter to inspect version")?;
+    if !output.status.success() {
+        bail!("passed path does not appear to be a valid Python installation");
+    }
+
+    let info: InspectInfo = serde_json::from_slice(&output.stdout)
+        .context("could not parse interpreter output as json")?;
+    let target_version = match name {
+        Some(ref name) => format!("{}@{}", name, info.python_version),
+        None => {
+            format!(
+                "{}{}@{}",
+                info.python_implementation.to_ascii_lowercase(),
+                if info.python_debug { "-dbg" } else { "" },
+                info.python_version
+            )
+        }
+    };
+    let target_version: PythonVersion = target_version.parse()?;
+    validate(&target_version)
+        .with_context(|| anyhow!("{} is not a valid toolchain", &target_version))?;
+
+    let target = get_canonical_py_path(&target_version)?;
+
+    if target.is_file() || target.is_dir() {
+        bail!("target Python path {} is already in use", target.display());
+    }
+
+    // for the unlikely case that no python installation has been bootstrapped yet
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).ok();
+    }
+
+    // on unix we always create a symlink
+    #[cfg(unix)]
+    {
+        symlink_file(path, target).context("could not symlink interpreter")?;
+    }
+
+    // on windows on the other hand we try a symlink first, but if that fails we fall back
+    // to writing the interpreter into the text file.  This is also supported by the
+    // interpreter lookup (see: get_toolchain_python_bin).  This is done because symlinks
+    // require higher privileges.
+    #[cfg(windows)]
+    {
+        if symlink_file(path, &target).is_err() {
+            fs::write(
+                &target,
+                path.as_os_str()
+                    .to_str()
+                    .ok_or_else(|| anyhow::anyhow!("non unicode path to interpreter"))?,
+            )
+            .context("could not register interpreter")?;
+        }
+    }
+
+    Ok(target_version)
 }

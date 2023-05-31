@@ -203,8 +203,11 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 eprintln!("Installing dependencies");
             }
             let tempdir = tempdir()?;
-            symlink_dir(get_pip_module(&self_venv), tempdir.path().join("pip"))
-                .context("failed linking pip module into for pip-sync")?;
+            symlink_dir(
+                get_pip_module(&self_venv).context("could not locate pip")?,
+                tempdir.path().join("pip"),
+            )
+            .context("failed linking pip module into for pip-sync")?;
             let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
             let root = pyproject.workspace_path();
 

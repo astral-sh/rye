@@ -31,7 +31,17 @@ experience.
 
 === "Windows"
 
-    The Windows installer does not support customizations.
+    The Windows installer has limited support for customizations via environment
+    variables.  To set these you need to run the installer from `cmd.exe`.
+
+    {% include-markdown "../.includes/installer-options.md" %}
+
+    This for instance installs Rye with a specific toolchain:
+
+    ```batch
+    set RYE_TOOLCHAIN=%USERPROFILE%\AppData\Local\Programs\Python\Python310\python.exe
+    rye-x86_64-windows.exe
+    ```
 
 ## Add Shims to Path
 

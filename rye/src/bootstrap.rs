@@ -15,26 +15,24 @@ use tempfile::NamedTempFile;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{
-    get_app_dir, get_canonical_py_path, get_toolchain_python_bin, symlinks_supported,
+    get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
+    symlinks_supported,
 };
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{
     check_checksum, set_proxy_variables, symlink_file, unpack_archive, CommandOutput,
 };
 
-pub const SELF_PYTHON_VERSION: PythonVersionRequest = PythonVersionRequest {
+/// this is the target version that we want to fetch
+pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
     major: 3,
     minor: Some(10),
     patch: None,
     suffix: None,
 };
-const SELF_VERSION: u64 = 3;
 
-#[cfg(unix)]
-const SELF_SITE_PACKAGES: &str = "python3.10/site-packages";
-#[cfg(windows)]
-const SELF_SITE_PACKAGES: &str = "site-packages";
+const SELF_VERSION: u64 = 3;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==0.10.0
@@ -92,10 +90,10 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         eprintln!("Bootstrapping rye internals");
     }
 
-    let version = fetch(&SELF_PYTHON_VERSION, output).with_context(|| {
+    let version = ensure_self_toolchain(output).with_context(|| {
         format!(
             "failed to fetch internal cpython toolchain {}",
-            SELF_PYTHON_VERSION
+            SELF_PYTHON_TARGET_VERSION
         )
     })?;
     let py_bin = get_toolchain_python_bin(&version)?;
@@ -232,19 +230,73 @@ pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
 }
 
 /// Returns the pip runner for the self venv
-pub fn get_pip_runner(venv: &Path) -> PathBuf {
-    get_pip_module(venv).join("__pip-runner__.py")
+pub fn get_pip_runner(venv: &Path) -> Result<PathBuf, Error> {
+    Ok(get_pip_module(venv)?.join("__pip-runner__.py"))
 }
 
 /// Returns the pip module for the self venv
-pub fn get_pip_module(venv: &Path) -> PathBuf {
+pub fn get_pip_module(venv: &Path) -> Result<PathBuf, Error> {
     let mut rv = venv.to_path_buf();
     rv.push("lib");
-    rv.push(SELF_SITE_PACKAGES);
+    #[cfg(windows)]
+    {
+        rv.push("site-packages");
+    }
+    #[cfg(unix)]
+    {
+        // This is not optimal.  We find the first thing that
+        // looks like pythonX.X/site-packages and just use it.
+        // It also means that this requires us to do some unnecessary
+        // file system operations.  However given how hopefully
+        // infrequent this function is called, we might be good.
+        let dir = rv.read_dir()?;
+        let mut found = false;
+        for entry in dir.filter_map(|x| x.ok()) {
+            let filename = entry.file_name();
+            if let Some(filename) = filename.to_str() {
+                if filename.starts_with("python") {
+                    rv.push(filename);
+                    rv.push("site-packages");
+                    if rv.is_dir() {
+                        found = true;
+                        break;
+                    } else {
+                        rv.pop();
+                        rv.pop();
+                    }
+                }
+            }
+        }
+        if !found {
+            bail!("no site-packages in venv");
+        }
+    }
     rv.push("pip");
-    rv
+    Ok(rv)
 }
 
+/// we only support cpython 3.9 to 3.11
+pub fn is_self_compatible_toolchain(version: &PythonVersion) -> bool {
+    version.kind == "cpython" && version.major == 3 && version.minor >= 9 && version.minor < 12
+}
+
+fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> {
+    let possible_versions = list_known_toolchains()?
+        .into_iter()
+        .map(|x| x.0)
+        .filter(is_self_compatible_toolchain)
+        .collect::<Vec<_>>();
+
+    if let Some(version) = possible_versions.into_iter().min() {
+        eprintln!(
+            "Found a compatible python version: {}",
+            style(&version).cyan()
+        );
+        Ok(version)
+    } else {
+        fetch(&SELF_PYTHON_TARGET_VERSION, output)
+    }
+}
 /// Fetches a version if missing.
 pub fn fetch(
     version: &PythonVersionRequest,

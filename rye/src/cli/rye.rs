@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, EXE_EXTENSION, OS};
 use std::env::{join_paths, split_paths};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
 
@@ -15,8 +15,10 @@ use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
 use crate::bootstrap::{
-    download_url, download_url_ignore_404, ensure_self_venv, update_core_shims,
+    download_url, download_url_ignore_404, ensure_self_venv, is_self_compatible_toolchain,
+    update_core_shims,
 };
+use crate::cli::toolchain::register_toolchain;
 use crate::platform::{get_app_dir, symlinks_supported};
 use crate::utils::{check_checksum, CommandOutput, QuietExit};
 
@@ -86,6 +88,9 @@ pub struct InstallCommand {
     /// Skip prompts.
     #[arg(short, long)]
     yes: bool,
+    /// Register a specific toolchain before bootstrap.
+    #[arg(long)]
+    toolchain: Option<PathBuf>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -241,11 +246,14 @@ fn update_exe_and_shims(new_exe: &Path) -> Result<(), Error> {
 }
 
 fn install(args: InstallCommand) -> Result<(), Error> {
-    perform_install(if args.yes {
-        InstallMode::NoPrompts
-    } else {
-        InstallMode::Default
-    })
+    perform_install(
+        if args.yes {
+            InstallMode::NoPrompts
+        } else {
+            InstallMode::Default
+        },
+        args.toolchain.as_deref(),
+    )
 }
 
 fn remove_dir_all_if_exists(path: &Path) -> Result<(), Error> {
@@ -320,7 +328,7 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     Ok(())
 }
 
-fn perform_install(mode: InstallMode) -> Result<(), Error> {
+fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(), Error> {
     let exe = env::current_exe()?;
     let app_dir = get_app_dir();
     let shims = app_dir.join("shims");
@@ -398,6 +406,26 @@ fn perform_install(mode: InstallMode) -> Result<(), Error> {
         )?;
     }
 
+    // Register a toolchain if provided.
+    if let Some(toolchain_path) = toolchain_path {
+        eprintln!(
+            "Registering toolchain at {}",
+            style(toolchain_path.display()).cyan()
+        );
+        let version = register_toolchain(toolchain_path, None, |ver| {
+            if ver.kind != "cpython" {
+                bail!("Only cpython toolchains are allowed, got '{}'", ver.kind);
+            } else if !is_self_compatible_toolchain(ver) {
+                bail!(
+                    "Toolchain {} is not version compatible for internal use.",
+                    ver
+                );
+            }
+            Ok(())
+        })?;
+        eprintln!("Registered toolchain as {}", style(version).cyan());
+    }
+
     // Ensure internals next
     let self_path = ensure_self_venv(CommandOutput::Normal)?;
     eprintln!(
@@ -443,6 +471,10 @@ pub fn auto_self_install() -> Result<bool, Error> {
         return Ok(false);
     }
 
+    // auto install reads RYE_TOOLCHAIN to pre-register a
+    // regular toolchain.
+    let toolchain_path = env::var_os("RYE_TOOLCHAIN");
+
     let app_dir = get_app_dir();
     let rye_exe = app_dir
         .join("shims")
@@ -460,7 +492,10 @@ pub fn auto_self_install() -> Result<bool, Error> {
             crate::request_continue_prompt();
         }
 
-        perform_install(InstallMode::AutoInstall)?;
+        perform_install(
+            InstallMode::AutoInstall,
+            toolchain_path.as_ref().map(Path::new),
+        )?;
         Ok(true)
     }
 }

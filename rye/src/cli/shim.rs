@@ -48,7 +48,7 @@ fn get_pip_shim(
     output: CommandOutput,
 ) -> Result<Vec<OsString>, Error> {
     let venv = ensure_self_venv(output)?;
-    let runner = get_pip_runner(&venv);
+    let runner = get_pip_runner(&venv).context("could not locate pip")?;
     let python = get_venv_python_bin(&pyproject.venv_path());
 
     // pip likes to emit deprecation warnings
