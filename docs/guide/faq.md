@@ -48,7 +48,7 @@ resolve this:
 * CentOS/RedHat: `dnf install libxcrypt-compat`
 
 There have also been reports of an error being generated at installation time
-despite `libcrypt.so.1` being installed when a differnt `ldd` (eg: Homebrew)
+despite `libcrypt.so.1` being installed when a different `ldd` (eg: Homebrew)
 shadows the system one.  In that case try the installation again after giving
 the default one higher priority in the `PATH:
 
