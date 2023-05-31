@@ -416,29 +416,29 @@ fn import_project_metadata<T: AsRef<Path>>(
     }
 
     if let Ok(json) = get_setup_py_json(setup_py.as_path(), python) {
-        if let Some(name) = json.get("name") {
-            metadata.name = escape_string(name.to_string());
+        if let Some(Value::String(name)) = json.get("name") {
+            metadata.name = name.to_string();
         }
-        if let Some(version) = json.get("version") {
-            metadata.version = escape_string(version.to_string());
+        if let Some(Value::String(version)) = json.get("version") {
+            metadata.version = version.to_string();
         }
-        if let Some(description) = json.get("description") {
-            metadata.description = escape_string(description.to_string());
+        if let Some(Value::String(description)) = json.get("description") {
+            metadata.description = description.to_string();
         }
-        if let Some(author) = json.get("author") {
+        if let Some(Value::String(author)) = json.get("author") {
             metadata.author = Some((
-                escape_string(author.to_string()),
+                author.to_string(),
                 json.get("author_email")
                     .map(|x| x.to_string())
                     .map(escape_string)
                     .unwrap_or_else(String::new),
             ));
         }
-        if let Some(requires_python) = json.get("requires_python") {
-            metadata.requires_python = Some(escape_string(requires_python.to_string()));
+        if let Some(Value::String(requires_python)) = json.get("requires_python") {
+            metadata.requires_python = Some(requires_python.to_string());
         }
-        if let Some(license) = json.get("license") {
-            metadata.license = Some(escape_string(license.to_string()));
+        if let Some(Value::String(license)) = json.get("license") {
+            metadata.license = Some(license.to_string());
         }
         if let Some(Value::Array(reqs)) = json.get("install_requires") {
             metadata.dependencies = Some(
