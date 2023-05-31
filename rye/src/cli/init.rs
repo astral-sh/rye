@@ -414,7 +414,12 @@ fn import_project_metadata<T: AsRef<Path>>(
                 metadata.requires_python = Some(requires_python.to_string());
             }
             if let Some(Some(reqs)) = section.get("install_requires") {
-                metadata.dependencies = Some(reqs.lines().map(|x| x.to_string()).collect());
+                metadata.dependencies = Some(
+                    reqs.lines()
+                        .filter(|x| !x.is_empty())
+                        .map(|x| x.to_string())
+                        .collect(),
+                );
             }
         }
     }
