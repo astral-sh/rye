@@ -7,8 +7,8 @@ use std::{env, fs, io};
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
+use configparser::ini::Ini;
 use console::style;
-use ini::Ini;
 use license::License;
 use minijinja::{context, Environment};
 use pep440_rs::VersionSpecifier;
@@ -384,32 +384,36 @@ fn import_project_metadata<T: AsRef<Path>>(
     let setup_py = dir.join("setup.py");
 
     // TODO(cnpryer): Start with setup.py import and then selectively import from cfg
-    if let Ok(ini) = Ini::load_from_file(setup_cfg) {
-        if let Some(section) = ini.section(Some("metadata")) {
-            if let Some(name) = section.get("name") {
+    if setup_cfg.is_file() {
+        let mut ini = Ini::new();
+        ini.set_multiline(true);
+        let config = ini.load(setup_cfg).map_err(|msg| anyhow::anyhow!(msg))?;
+        if let Some(section) = config.get("metadata") {
+            if let Some(Some(name)) = section.get("name") {
                 metadata.name = name.to_string();
             }
-            if let Some(version) = section.get("version") {
+            if let Some(Some(version)) = section.get("version") {
                 metadata.version = version.to_string();
             }
-            if let Some(description) = section.get("description") {
+            if let Some(Some(description)) = section.get("description") {
                 metadata.description = description.to_string();
             }
-            if let Some(author) = section.get("author") {
-                metadata.author = Some((
-                    author.to_string(),
-                    section.get("author_email").unwrap_or("").to_string(),
-                ));
+            if let Some(Some(author)) = section.get("author") {
+                let email = match section.get("author_email") {
+                    Some(Some(it)) => it,
+                    _ => "",
+                };
+                metadata.author = Some((author.to_string(), email.to_string()));
             }
-            if let Some(license) = section.get("license") {
+            if let Some(Some(license)) = section.get("license") {
                 metadata.license = Some(license.to_string());
             }
         }
-        if let Some(section) = ini.section(Some("options")) {
-            if let Some(requires_python) = section.get("requires_python") {
+        if let Some(section) = config.get("options") {
+            if let Some(Some(requires_python)) = section.get("requires_python") {
                 metadata.requires_python = Some(requires_python.to_string());
             }
-            if let Some(reqs) = section.get("install_requires") {
+            if let Some(Some(reqs)) = section.get("install_requires") {
                 metadata.dependencies = Some(reqs.lines().map(|x| x.to_string()).collect());
             }
         }
