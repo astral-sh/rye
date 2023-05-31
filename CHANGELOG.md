@@ -7,6 +7,12 @@ that were not yet released.
 
 _Unreleased_
 
+- Rye will no longer enforce a downloaded interpreter for the internal
+  toolchain.  If one has been registered that is compatible it will be
+  used.  Additionally the installer now supports the `RYE_TOOLCHAIN`
+  environment variable which allows a user to supply an already existing
+  Python interpreter at install time.  #267
+
 - When a Python debug build (`Py_DEBUG`) is registered as custom toolchain,
   `-dbg` is automatically appended to the name by default.  #269
 
