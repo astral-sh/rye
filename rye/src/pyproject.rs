@@ -478,7 +478,8 @@ impl PyProject {
     /// Loads a pyproject toml.
     pub fn load(filename: &Path) -> Result<PyProject, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
-        let doc = fs::read_to_string(filename)?
+        let doc = fs::read_to_string(filename)
+            .with_context(|| format!("failed to read pyproject.toml from {}", &filename.display()))?
             .parse::<Document>()
             .with_context(|| {
                 format!(
