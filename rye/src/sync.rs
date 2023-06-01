@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
 
@@ -47,6 +47,8 @@ pub struct SyncOptions {
     pub no_lock: bool,
     /// Controls locking.
     pub lock_options: LockOptions,
+    /// Explicit pyproject location (Only usable by PythonOnly mode)
+    pub pyproject: Option<PathBuf>,
 }
 
 impl SyncOptions {
@@ -56,6 +58,11 @@ impl SyncOptions {
             mode: SyncMode::PythonOnly,
             ..Default::default()
         }
+    }
+
+    pub fn pyproject(mut self, pyproject: Option<PathBuf>) -> Self {
+        self.pyproject = pyproject;
+        self
     }
 }
 
@@ -67,12 +74,17 @@ pub struct VenvMarker {
 
 /// Synchronizes a project's virtualenv.
 pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
-    let pyproject = PyProject::discover()?;
+    let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
     let lockfile = pyproject.workspace_path().join("requirements.lock");
     let dev_lockfile = pyproject.workspace_path().join("requirements-dev.lock");
     let venv = pyproject.venv_path();
     let py_ver = pyproject.venv_python_version()?;
     let output = cmd.output;
+
+    // check conflicting options
+    if cmd.pyproject.is_some() && cmd.mode != SyncMode::PythonOnly {
+        bail!("pypyroject location: only implemented for PythonOnly sync");
+    }
 
     // ensure we are bootstrapped
     let self_venv = ensure_self_venv(output).context("could not sync because bootstrap failed")?;
