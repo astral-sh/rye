@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::env;
 use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -461,6 +462,7 @@ impl fmt::Display for DiscoveryUnsuccessful {
 #[derive(Debug)]
 pub struct PyProject {
     root: PathBuf,
+    basename: OsString,
     workspace: Option<Arc<Workspace>>,
     doc: Document,
 }
@@ -503,8 +505,14 @@ impl PyProject {
             }
         }
 
+        let basename = match filename.file_name() {
+            Some(name) => name.to_os_string(),
+            None => bail!("project {} has no file name", root.display()),
+        };
+
         Ok(PyProject {
             root: root.to_owned(),
+            basename,
             workspace,
             doc,
         })
@@ -532,8 +540,14 @@ impl PyProject {
             return Ok(None);
         }
 
+        let basename = match filename.file_name() {
+            Some(name) => name.to_os_string(),
+            None => bail!("project {} has no file name", root.display()),
+        };
+
         Ok(Some(PyProject {
             root: root.to_owned(),
+            basename,
             workspace: Some(workspace),
             doc,
         }))
@@ -569,7 +583,7 @@ impl PyProject {
 
     /// Returns the path to the toml file.
     pub fn toml_path(&self) -> Cow<'_, Path> {
-        Cow::Owned(self.root.join("pyproject.toml"))
+        Cow::Owned(self.root.join(&self.basename))
     }
 
     /// Returns the location of the virtualenv.
