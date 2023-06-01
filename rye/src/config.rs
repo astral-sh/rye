@@ -121,15 +121,15 @@ impl Config {
     }
 
     /// Returns the default default_kind.
-    pub fn default_default_kind(&self) -> String {
+    pub fn default_default_kind(&self) -> &str {
         match self
             .doc
             .get("behavior")
             .and_then(|x| x.get("default_kind"))
             .and_then(|x| x.as_str())
         {
-            Some(kind) => kind.to_string(),
-            None => "cpython".into(),
+            Some(kind) => kind,
+            None => "cpython",
         }
     }
 
