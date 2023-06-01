@@ -221,7 +221,12 @@ impl fmt::Display for PythonVersionRequest {
 }
 
 fn matches_version(req: &PythonVersionRequest, v: &PythonVersion) -> bool {
-    if req.kind.as_deref().unwrap_or(Config::current().default_default_kind()) != v.kind {
+    if req
+        .kind
+        .as_deref()
+        .unwrap_or(Config::current().default_default_kind())
+        != v.kind
+    {
         return false;
     }
     if req.major != v.major {
