@@ -6,6 +6,7 @@ use anyhow::{anyhow, Error};
 use clap::Parser;
 
 use crate::platform::get_pinnable_version;
+use crate::pyproject::DiscoveryUnsuccessful;
 use crate::pyproject::PyProject;
 use crate::sources::PythonVersionRequest;
 
@@ -35,15 +36,27 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let to_write = get_pinnable_version(&req, cmd.relaxed)
         .ok_or_else(|| anyhow!("unsupported/unknown version for this platform"))?;
 
-    let version_file = match PyProject::discover() {
-        Ok(proj) => proj.root_path().join(".python-version"),
-        Err(_) => env::current_dir()?.join(".python-version"),
+    let pyproject = match PyProject::discover() {
+        Ok(proj) => Some(proj),
+        Err(err) => {
+            if err.is::<DiscoveryUnsuccessful>() {
+                // ok
+                None
+            } else {
+                return Err(err);
+            }
+        }
+    };
+
+    let version_file = match pyproject {
+        Some(ref proj) => proj.root_path().join(".python-version"),
+        None => env::current_dir()?.join(".python-version"),
     };
     fs::write(&version_file, format!("{}\n", to_write))
         .context("failed to write .python-version file")?;
 
     if !cmd.no_update_requires_python {
-        if let Ok(mut pyproject_toml) = PyProject::discover() {
+        if let Some(mut pyproject_toml) = pyproject {
             let new_version = to_write.parse::<PythonVersionRequest>()?;
             if let Some(curr_version) = pyproject_toml.target_python_version() {
                 if new_version < curr_version {

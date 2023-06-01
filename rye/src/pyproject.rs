@@ -445,6 +445,18 @@ fn skip_recurse_into(name: &OsStr) -> bool {
     return name == OsStr::new(".venv") || name == OsStr::new(".git");
 }
 
+/// Could not auto-discover any pyproject
+#[derive(Debug, Clone)]
+pub struct DiscoveryUnsuccessful;
+
+impl std::error::Error for DiscoveryUnsuccessful {}
+
+impl fmt::Display for DiscoveryUnsuccessful {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "did not find pyproject.toml")
+    }
+}
+
 /// Helps working with pyproject.toml files
 #[derive(Debug)]
 pub struct PyProject {
@@ -458,7 +470,7 @@ impl PyProject {
     pub fn discover() -> Result<PyProject, Error> {
         let pyproject_toml = match find_project_root() {
             Some(root) => root.join("pyproject.toml"),
-            None => bail!("did not find pyproject.toml"),
+            None => return Err(Error::from(DiscoveryUnsuccessful)),
         };
         Self::load(&pyproject_toml)
     }
@@ -466,7 +478,8 @@ impl PyProject {
     /// Loads a pyproject toml.
     pub fn load(filename: &Path) -> Result<PyProject, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
-        let doc = fs::read_to_string(filename)?
+        let doc = fs::read_to_string(filename)
+            .with_context(|| format!("failed to read pyproject.toml from {}", &filename.display()))?
             .parse::<Document>()
             .with_context(|| {
                 format!(
