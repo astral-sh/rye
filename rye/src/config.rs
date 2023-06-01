@@ -120,6 +120,19 @@ impl Config {
             .unwrap_or(false)
     }
 
+    /// Returns the default default_kind.
+    pub fn default_default_kind(&self) -> String {
+        match self
+            .doc
+            .get("behavior")
+            .and_then(|x| x.get("default_kind"))
+            .and_then(|x| x.as_str())
+        {
+            Some(kind) => kind.to_string(),
+            None => "cpython".into(),
+        }
+    }
+
     /// Returns the HTTP proxy that should be used.
     pub fn http_proxy_url(&self) -> Option<String> {
         std::env::var("http_proxy").ok().or_else(|| {
