@@ -485,14 +485,14 @@ fn import_project_metadata<T: AsRef<Path>>(
 fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error> {
     let python = python.as_ref();
     let setup_py = path.as_ref();
-    let temp_dir = tempdir().unwrap();
+    let temp_dir = tempdir()?;
     let dir = setup_py
         .parent()
         .context("could not establish setup.py parent dir")?;
-    copy_dir(dir, temp_dir.path()).unwrap();
+    copy_dir(dir, temp_dir.path())?;
 
     let setuptools_proxy = temp_dir.path().join("setuptools.py");
-    fs::write(setuptools_proxy, SETUP_PY_PROXY_SCRIPT).unwrap();
+    fs::write(setuptools_proxy, SETUP_PY_PROXY_SCRIPT)?;
 
     let cmd = Command::new(python)
         .arg(setup_py)
