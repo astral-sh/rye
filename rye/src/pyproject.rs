@@ -468,6 +468,17 @@ pub struct PyProject {
 }
 
 impl PyProject {
+    /// Load a pyproject toml if explicitly given, else discover from current directory
+    ///
+    /// Used for command line arguments.
+    pub fn load_or_discover(arg: Option<&Path>) -> Result<PyProject, Error> {
+        match arg {
+            // canonicalize because it comes from a command line argument
+            Some(path) => Self::load(&path.canonicalize()?),
+            None => Self::discover(),
+        }
+    }
+
     /// Discovers and loads a pyproject toml.
     pub fn discover() -> Result<PyProject, Error> {
         let pyproject_toml = match find_project_root() {
