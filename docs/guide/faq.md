@@ -47,6 +47,16 @@ resolve this:
 * archlinux: `pacman -S libxcrypt-compat`
 * CentOS/RedHat: `dnf install libxcrypt-compat`
 
+There have also been reports of an error being generated at installation time
+despite `libcrypt.so.1` being installed when a different `ldd` (eg: Homebrew)
+shadows the system one.  In that case try the installation again after giving
+the default one higher priority in the `PATH:
+
+```
+export PATH="/usr/bin:$PATH"
+curl -sSf https://rye-up.com/get | bash
+```
+
 ## TKinter Support
 
 TKinter uses TCL behind the scenes.  Unfortunately this also means that some runtime

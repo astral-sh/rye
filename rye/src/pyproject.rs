@@ -1,3 +1,4 @@
+use clap::ValueEnum;
 use core::fmt;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
@@ -22,10 +23,13 @@ use url::Url;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
-use crate::platform::get_python_version_from_pyenv_pin;
+use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
-use crate::utils::{expand_env_vars, format_requirement, get_short_executable_name, is_executable};
+use crate::utils::{
+    expand_env_vars, format_requirement, get_short_executable_name, is_executable,
+    reformat_toml_array_multiline,
+};
 
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
 
@@ -370,10 +374,14 @@ impl Workspace {
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
         walkdir::WalkDir::new(&self.root)
             .into_iter()
+            .filter_entry(|entry| {
+                !(entry.file_type().is_dir() && skip_recurse_into(entry.file_name()))
+            })
             .filter_map(move |entry| match entry {
                 Ok(entry) => {
                     if entry.file_type().is_file()
                         && entry.file_name() == OsStr::new("pyproject.toml")
+                        && self.is_member(entry.path().parent().unwrap())
                     {
                         let project =
                             match PyProject::load_with_workspace(entry.path(), self.clone()) {
@@ -381,9 +389,7 @@ impl Workspace {
                                 Ok(None) => return None,
                                 Err(err) => return Some(Err(err)),
                             };
-                        if self.is_member(entry.path().parent().unwrap()) {
-                            return Some(Ok(project));
-                        }
+                        return Some(Ok(project));
                     }
                     None
                 }
@@ -432,6 +438,11 @@ impl Workspace {
     pub fn rye_managed(&self) -> bool {
         is_rye_managed(&self.doc)
     }
+}
+
+/// Check if recurse should be skipped into directory with this name
+fn skip_recurse_into(name: &OsStr) -> bool {
+    return name == OsStr::new(".venv") || name == OsStr::new(".git");
 }
 
 /// Helps working with pyproject.toml files
@@ -612,16 +623,17 @@ impl PyProject {
     }
 
     /// Returns the build backend.
-    pub fn build_backend(&self) -> Option<&str> {
+    pub fn build_backend(&self) -> Option<BuildSystem> {
         let backend = self
             .doc
             .get("build-system")
             .and_then(|x| x.get("build-backend"))
             .and_then(|x| x.as_str());
         match backend {
-            Some("hatchling.build") => Some("hatchling"),
-            Some("setuptools.build_meta") => Some("setuptools"),
-            Some("flit_core.buildapi") => Some("flit"),
+            Some("hatchling.build") => Some(BuildSystem::Hatchling),
+            Some("setuptools.build_meta") => Some(BuildSystem::Setuptools),
+            Some("flit_core.buildapi") => Some(BuildSystem::Flit),
+            Some("pdm.backend") => Some(BuildSystem::Pdm),
             _ => None,
         }
     }
@@ -822,6 +834,7 @@ fn set_dependency(deps: &mut Array, req: &Requirement) {
     } else {
         deps.push(formatted);
     }
+    reformat_toml_array_multiline(deps);
 }
 
 fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement> {
@@ -838,9 +851,12 @@ fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement>
     }
 
     if let Some(idx) = to_remove {
-        deps.remove(idx)
+        let rv = deps
+            .remove(idx)
             .as_str()
-            .and_then(|x| Requirement::from_str(x).ok())
+            .and_then(|x| Requirement::from_str(x).ok());
+        reformat_toml_array_multiline(deps);
+        rv
     } else {
         None
     }
@@ -853,18 +869,45 @@ pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion
     Some(marker.python)
 }
 
+/// Give a given python version request, returns the latest available version.
+///
+/// This can return a version that requires downloading.
+pub fn latest_available_python_version(
+    requested_version: &PythonVersionRequest,
+) -> Option<PythonVersion> {
+    let mut all = if let Ok(available) = list_known_toolchains() {
+        available
+            .into_iter()
+            .filter_map(|(ver, _)| {
+                if Some(&ver.kind as &str) == requested_version.kind.as_deref() {
+                    Some(ver)
+                } else {
+                    None
+                }
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+
+    if let Some((latest, _, _)) = get_download_url(requested_version, OS, ARCH) {
+        all.push(latest);
+    };
+
+    all.sort();
+    all.into_iter().rev().next()
+}
+
 fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
-        .or_else(|| get_python_version_from_pyenv_pin().map(Into::into))
+        .or_else(|| get_python_version_request_from_pyenv_pin().map(Into::into))
         .or_else(|| Config::current().default_toolchain().ok())
 }
 
 fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
-    if let Some(ver) = get_python_version_from_pyenv_pin() {
-        return Ok(ver);
-    }
-    let requested_version = resolve_lower_bound_python_version(doc)
+    let requested_version = get_python_version_request_from_pyenv_pin()
+        .or_else(|| resolve_lower_bound_python_version(doc))
         .or_else(|| Config::current().default_toolchain().ok())
         .ok_or_else(|| {
             anyhow!(
@@ -877,7 +920,7 @@ fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion,
         return Ok(ver);
     }
 
-    if let Some((latest, _, _)) = get_download_url(&requested_version, OS, ARCH) {
+    if let Some(latest) = latest_available_python_version(&requested_version) {
         Ok(latest)
     } else {
         Err(anyhow!(
@@ -1040,6 +1083,30 @@ impl ExpandedSources {
         for host in &self.trusted_hosts {
             cmd.arg("--trusted-host");
             cmd.arg(host);
+        }
+    }
+}
+
+#[derive(ValueEnum, Copy, Clone, Serialize, Debug, PartialEq)]
+#[value(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum BuildSystem {
+    Hatchling,
+    Setuptools,
+    Flit,
+    Pdm,
+}
+
+impl FromStr for BuildSystem {
+    type Err = Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "hatchling" => Ok(BuildSystem::Hatchling),
+            "setuptools" => Ok(BuildSystem::Setuptools),
+            "flit" => Ok(BuildSystem::Flit),
+            "pdm" => Ok(BuildSystem::Pdm),
+            _ => Err(anyhow!("unknown build system")),
         }
     }
 }

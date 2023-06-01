@@ -5,7 +5,7 @@ tools like `black` or `ruff` globally.
 
 ## Installing Tools
 
-Use the `rye tool install` (aliased to `rye install`) command to install a tool
+Use the `rye tools install` (aliased to `rye install`) command to install a tool
 globally with a shim:
 
 ```bash

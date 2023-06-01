@@ -4,27 +4,19 @@ use std::str::FromStr;
 use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 use console::style;
 use license::License;
 use minijinja::{context, Environment};
 use pep440_rs::VersionSpecifier;
-use serde::Serialize;
 
 use crate::config::Config;
-use crate::platform::{get_default_author, get_latest_cpython, get_python_version_from_pyenv_pin};
-use crate::sources::PythonVersion;
+use crate::platform::{
+    get_default_author, get_latest_cpython_version, get_python_version_request_from_pyenv_pin,
+};
+use crate::pyproject::BuildSystem;
+use crate::sources::PythonVersionRequest;
 use crate::utils::is_inside_git_work_tree;
-
-#[derive(ValueEnum, Copy, Clone, Serialize, Debug)]
-#[value(rename_all = "snake_case")]
-#[serde(rename_all = "snake_case")]
-pub enum BuildSystem {
-    Hatchling,
-    Setuptools,
-    Filt,
-    Pdm,
-}
 
 /// Creates a new python project.
 #[derive(Parser, Debug)]
@@ -41,9 +33,12 @@ pub struct Args {
     /// Do not create a readme.
     #[arg(long)]
     no_readme: bool,
-    /// Which build system should be used?
-    #[arg(long, default_value = "hatchling")]
-    build_system: BuildSystem,
+    /// Do not create .python-version file (requires-python will be used)
+    #[arg(long)]
+    no_pin: bool,
+    /// Which build system should be used(defaults to hatchling)?
+    #[arg(long)]
+    build_system: Option<BuildSystem>,
     /// Which license should be used (SPDX identifier)?
     #[arg(long)]
     license: Option<String>,
@@ -92,6 +87,7 @@ build-backend = "pdm.backend"
 managed = true
 
 {%- if build_system == "hatchling" %}
+
 [tool.hatch.metadata]
 allow-direct-references = true
 {%- endif %}
@@ -152,57 +148,61 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // Write pyproject.toml
     let mut requires_python = match cmd.min_py {
         Some(py) => format!(">= {}", py),
-        None => get_python_version_from_pyenv_pin()
-            .map(|x| format!(">= {}.{}", x.major, x.minor))
+        None => get_python_version_request_from_pyenv_pin()
+            .map(|x| format!(">= {}.{}", x.major, x.minor.unwrap_or_default()))
             .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
-        Some(py) => {
-            PythonVersion::from_str(&py).map_err(|msg| anyhow!("invalid version: {}", msg))?
-        }
-        None => get_python_version_from_pyenv_pin()
-            .map(Ok)
-            .unwrap_or_else(get_latest_cpython)?,
+        Some(py) => PythonVersionRequest::from_str(&py)
+            .map_err(|msg| anyhow!("invalid version: {}", msg))?,
+        None => match get_python_version_request_from_pyenv_pin() {
+            Some(ver) => ver,
+            None => PythonVersionRequest::from(get_latest_cpython_version()?),
+        },
     };
-    if !VersionSpecifier::from_str(&requires_python)
-        .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
-        .contains(&py.clone().into())
+    if !cmd.no_pin
+        && !VersionSpecifier::from_str(&requires_python)
+            .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
+            .contains(&py.clone().into())
     {
         eprintln!(
             "{} conflicted python version with project's requires-python, will auto fix it.",
             style("warning:").red()
         );
-        requires_python = format!(">= {}.{}", py.major, py.minor);
+        requires_python = format!(">= {}.{}", py.major, py.minor.unwrap_or_default());
     }
 
-    let name = slug::slugify(
-        cmd.name
-            .unwrap_or_else(|| dir.file_name().unwrap().to_string_lossy().into_owned()),
-    );
+    // In some cases there might not be a file name (eg: docker root)
+    let name = slug::slugify(cmd.name.unwrap_or_else(|| {
+        dir.file_name()
+            .map(|x| x.to_string_lossy().into_owned())
+            .unwrap_or_else(|| "unknown".into())
+    }));
     let version = "0.1.0";
     let author = get_default_author();
-    let license = if let Some(license) = cmd.license {
-        if !license_file.is_file() {
-            let license_obj: &dyn License = license
-                .parse()
-                .expect("current license not an valid license id");
-            let license_text = license_obj.text();
-            let rv = env.render_named_str(
-                "LICENSE.txt",
-                LICENSE_TEMPLATE,
-                context! {
-                    license_text,
-                },
-            )?;
-            fs::write(&license_file, rv)?;
-        };
-        Some(license)
-    } else {
-        None
+    let license = match cmd.license {
+        Some(license) => Some(license),
+        None => cfg.default_license(),
     };
+    if license.is_some() && !license_file.is_file() {
+        let license_obj: &dyn License = license
+            .clone()
+            .unwrap()
+            .parse()
+            .expect("current license not an valid license id");
+        let license_text = license_obj.text();
+        let rv = env.render_named_str(
+            "LICENSE.txt",
+            LICENSE_TEMPLATE,
+            context! {
+                license_text,
+            },
+        )?;
+        fs::write(&license_file, rv)?;
+    }
 
     // write .python-version
-    if !python_version_file.is_file() {
+    if !cmd.no_pin && !python_version_file.is_file() {
         fs::write(python_version_file, format!("{}\n", py))
             .context("could not write .python-version file")?;
     }
@@ -225,6 +225,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         false
     };
 
+    let build_system = match cmd.build_system {
+        Some(build_system) => build_system,
+        None => cfg.default_build_system().unwrap_or(BuildSystem::Hatchling),
+    };
+
     let rv = env.render_named_str(
         "pyproject.json",
         TOML_TEMPLATE,
@@ -235,7 +240,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             requires_python,
             license,
             with_readme,
-            build_system => cmd.build_system,
+            build_system,
         },
     )?;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;

@@ -5,8 +5,8 @@ use std::sync::{Arc, Mutex};
 use anyhow::{Context, Error};
 use toml_edit::Document;
 
-use crate::platform::{get_app_dir, get_latest_cpython};
-use crate::pyproject::{SourceRef, SourceRefType};
+use crate::platform::{get_app_dir, get_latest_cpython_version};
+use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
 use crate::sources::PythonVersionRequest;
 
 static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);
@@ -84,9 +84,31 @@ impl Config {
             .and_then(|x| x.as_str())
         {
             Some(ver) => ver.parse(),
-            None => get_latest_cpython().map(Into::into),
+            None => get_latest_cpython_version().map(Into::into),
         }
         .context("failed to get default toolchain")
+    }
+
+    /// Returns the default build system
+    pub fn default_build_system(&self) -> Option<BuildSystem> {
+        match self
+            .doc
+            .get("default")
+            .and_then(|x| x.get("build-system"))
+            .and_then(|x| x.as_str())
+        {
+            Some(build_system) => build_system.parse::<BuildSystem>().ok(),
+            None => None,
+        }
+    }
+
+    /// Returns the default license
+    pub fn default_license(&self) -> Option<String> {
+        self.doc
+            .get("default")
+            .and_then(|x| x.get("license"))
+            .and_then(|x| x.as_str())
+            .map(|x| x.to_string())
     }
 
     /// Pretend that all projects are rye managed.

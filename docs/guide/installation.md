@@ -12,7 +12,36 @@ a folder in your home directory and mange itself there.
 {% include-markdown "../.includes/quick-install.md" %}
 
 Rye will automatically download suitable Python toolchains as needed.  For more
-information about this [read about toolchains](toolchains/index.md).
+information about this [read about toolchains](toolchains/index.md).  To install
+a specific version download a binary directly
+[from GitHub](https://github.com/mitsuhiko/rye/releases).
+
+## Customized Installation
+
+On some platforms there is some limited support for customizing the installation
+experience.
+
+=== "Linux"
+
+    {% include-markdown "../.includes/curl-to-bash-options.md" %}
+
+=== "macOS"
+
+    {% include-markdown "../.includes/curl-to-bash-options.md" %}
+
+=== "Windows"
+
+    The Windows installer has limited support for customizations via environment
+    variables.  To set these you need to run the installer from `cmd.exe`.
+
+    {% include-markdown "../.includes/installer-options.md" %}
+
+    This for instance installs Rye with a specific toolchain:
+
+    ```batch
+    set RYE_TOOLCHAIN=%USERPROFILE%\AppData\Local\Programs\Python\Python310\python.exe
+    rye-x86_64-windows.exe
+    ```
 
 ## Add Shims to Path
 

@@ -22,6 +22,20 @@ rye pin cpython@3.11.4
 ```
 
 Pinning a downloadable version means that Rye will automatically fetch it when necessary.
+By default toolchains are pinned to a precise version.  This means that even if you
+write `rye pin cpython@3.11`, a very specific version of cpython is written into the
+`.python-version` file.  With Rye 0.5.0 onwards it's possible to perform "relaxed" pins:
+
+```
+rye pin --relaxed cpython@3.11
+```
+
+This will then persist `3.11` in the `.python-version` file and Rye will use the latest
+available compatible version for the virtual environment.
+
++/- 0.5.0
+
+    Relaxed pinning with `rye pin --relaxed` was added.
 
 ## Listing Toolchains
 
@@ -64,9 +78,11 @@ command.
 rye toolchain register /path/to/python
 ```
 
-The name of the toolchain is picked based on the interpreter.  For instance linking a regular
-cpython installation will be called `cpython@version`, whereas linking pypy would show up as
-`pypy@version`.  To override the name you can pass `--name`:
+The name of the toolchain is picked based on the interpreter.  For instance
+linking a regular cpython installation will be called `cpython@version`, whereas
+linking pypy would show up as `pypy@version`.  From Rye 0.5.0 onwards `-dbg` is
+appended to the name of the toolchain if it's a debug build.  To override the
+name you can pass `--name`:
 
 ```
 rye toolchain register --name=custom /path/to/python

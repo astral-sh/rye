@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, EXE_EXTENSION, OS};
 use std::env::{join_paths, split_paths};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::{env, fs};
 
@@ -14,9 +14,13 @@ use same_file::is_same_file;
 use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
-use crate::bootstrap::{download_url, ensure_self_venv, update_core_shims};
+use crate::bootstrap::{
+    download_url, download_url_ignore_404, ensure_self_venv, is_self_compatible_toolchain,
+    update_core_shims,
+};
+use crate::cli::toolchain::register_toolchain;
 use crate::platform::{get_app_dir, symlinks_supported};
-use crate::utils::{CommandOutput, QuietExit};
+use crate::utils::{check_checksum, CommandOutput, QuietExit};
 
 #[cfg(windows)]
 const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
@@ -84,6 +88,9 @@ pub struct InstallCommand {
     /// Skip prompts.
     #[arg(short, long)]
     yes: bool,
+    /// Register a specific toolchain before bootstrap.
+    #[arg(long)]
+    toolchain: Option<PathBuf>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -131,6 +138,10 @@ fn completion(args: CompletionCommand) -> Result<(), Error> {
 }
 
 fn update(args: UpdateCommand) -> Result<(), Error> {
+    // make sure to read the exe before self_replace as otherwise we might read
+    // a bad executable name on Linux where the move is picked up.
+    let current_exe = env::current_exe()?;
+
     // git based installation with cargo
     if args.rev.is_some() || args.tag.is_some() {
         let mut cmd = Command::new("cargo");
@@ -179,8 +190,18 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         } else {
             format!("{GITHUB_REPO}/releases/download/{version}/{binary}{ext}")
         };
+        let sha256_url = format!("{}.sha256", url);
         let bytes = download_url(&url, CommandOutput::Normal)
-            .with_context(|| format!("could not download {version} release for this platform"))?;
+            .with_context(|| format!("could not download release {version} for this platform"))?;
+        if let Some(sha256_bytes) = download_url_ignore_404(&sha256_url, CommandOutput::Normal)? {
+            let checksum = String::from_utf8_lossy(&sha256_bytes);
+            eprintln!("Checking checksum");
+            check_checksum(&bytes, checksum.trim())
+                .with_context(|| format!("hash check of {} failed", url))?;
+        } else {
+            eprintln!("Checksum check skipped (no hash available)");
+        }
+
         let tmp = tempfile::NamedTempFile::new()?;
 
         // unix currently comes compressed, windows comes uncompressed
@@ -201,9 +222,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
 
     eprintln!("Updated!");
     eprintln!();
-    Command::new(env::current_exe()?)
-        .arg("--version")
-        .status()?;
+    Command::new(current_exe).arg("--version").status()?;
 
     Ok(())
 }
@@ -227,11 +246,14 @@ fn update_exe_and_shims(new_exe: &Path) -> Result<(), Error> {
 }
 
 fn install(args: InstallCommand) -> Result<(), Error> {
-    perform_install(if args.yes {
-        InstallMode::NoPrompts
-    } else {
-        InstallMode::Default
-    })
+    perform_install(
+        if args.yes {
+            InstallMode::NoPrompts
+        } else {
+            InstallMode::Default
+        },
+        args.toolchain.as_deref(),
+    )
 }
 
 fn remove_dir_all_if_exists(path: &Path) -> Result<(), Error> {
@@ -306,7 +328,7 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     Ok(())
 }
 
-fn perform_install(mode: InstallMode) -> Result<(), Error> {
+fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(), Error> {
     let exe = env::current_exe()?;
     let app_dir = get_app_dir();
     let shims = app_dir.join("shims");
@@ -384,6 +406,26 @@ fn perform_install(mode: InstallMode) -> Result<(), Error> {
         )?;
     }
 
+    // Register a toolchain if provided.
+    if let Some(toolchain_path) = toolchain_path {
+        eprintln!(
+            "Registering toolchain at {}",
+            style(toolchain_path.display()).cyan()
+        );
+        let version = register_toolchain(toolchain_path, None, |ver| {
+            if ver.kind != "cpython" {
+                bail!("Only cpython toolchains are allowed, got '{}'", ver.kind);
+            } else if !is_self_compatible_toolchain(ver) {
+                bail!(
+                    "Toolchain {} is not version compatible for internal use.",
+                    ver
+                );
+            }
+            Ok(())
+        })?;
+        eprintln!("Registered toolchain as {}", style(version).cyan());
+    }
+
     // Ensure internals next
     let self_path = ensure_self_venv(CommandOutput::Normal)?;
     eprintln!(
@@ -429,6 +471,10 @@ pub fn auto_self_install() -> Result<bool, Error> {
         return Ok(false);
     }
 
+    // auto install reads RYE_TOOLCHAIN to pre-register a
+    // regular toolchain.
+    let toolchain_path = env::var_os("RYE_TOOLCHAIN");
+
     let app_dir = get_app_dir();
     let rye_exe = app_dir
         .join("shims")
@@ -446,7 +492,10 @@ pub fn auto_self_install() -> Result<bool, Error> {
             crate::request_continue_prompt();
         }
 
-        perform_install(InstallMode::AutoInstall)?;
+        perform_install(
+            InstallMode::AutoInstall,
+            toolchain_path.as_ref().map(Path::new),
+        )?;
         Ok(true)
     }
 }

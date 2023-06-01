@@ -1,4 +1,3 @@
-use std::env::consts::{ARCH, OS};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
@@ -6,7 +5,8 @@ use std::{env, fs};
 
 use anyhow::{anyhow, Context, Error};
 
-use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
+use crate::pyproject::latest_available_python_version;
+use crate::sources::{PythonVersion, PythonVersionRequest};
 
 static APP_DIR: Mutex<Option<&'static PathBuf>> = Mutex::new(None);
 
@@ -106,38 +106,43 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
 /// Returns a pinnable version for this version request.
 ///
 /// This is the version number that will be written into `.python-version`
-pub fn get_pinnable_version(req: &PythonVersionRequest) -> Option<String> {
-    let mut target_version = None;
+pub fn get_pinnable_version(req: &PythonVersionRequest, relaxed: bool) -> Option<String> {
+    let serialized = if relaxed {
+        req.to_string()
+    } else {
+        let mut target_version = None;
 
-    // If the version request points directly to a known version for which we
-    // have a known binary, we can use that.
-    if let Ok(ver) = PythonVersion::try_from(req.clone()) {
-        if let Ok(path) = get_toolchain_python_bin(&ver) {
-            if path.is_file() {
-                target_version = Some(ver);
+        // If the version request points directly to a known version for which we
+        // have a known binary, we can use that.
+        if let Ok(ver) = PythonVersion::try_from(req.clone()) {
+            if let Ok(path) = get_toolchain_python_bin(&ver) {
+                if path.is_file() {
+                    target_version = Some(ver);
+                }
             }
         }
-    }
 
-    // otherwise, any version we can download is an acceptable version
-    if let Some((version, _, _)) = get_download_url(req, OS, ARCH) {
-        target_version = Some(version);
-    }
+        // otherwise, any version we can download is an acceptable version
+        if target_version.is_none() {
+            if let Some(version) = latest_available_python_version(req) {
+                target_version = Some(version);
+            }
+        }
 
-    // we return the stringified version of the version, but if always remove the
-    // cpython@ prefix to make it reusable with other toolchains such as pyenv.
-    if let Some(version) = target_version {
-        let serialized_version = version.to_string();
-        Some(
-            if let Some(rest) = serialized_version.strip_prefix("cpython@") {
-                rest.to_string()
-            } else {
-                serialized_version
-            },
-        )
+        // we return the stringified version of the version, but if always remove the
+        // cpython@ prefix to make it reusable with other toolchains such as pyenv.
+        if let Some(version) = target_version {
+            version.to_string()
+        } else {
+            return None;
+        }
+    };
+
+    Some(if let Some(rest) = serialized.strip_prefix("cpython@") {
+        rest.to_string()
     } else {
-        None
-    }
+        serialized
+    })
 }
 
 /// Returns a list of all registered toolchains.
@@ -190,7 +195,7 @@ pub fn get_default_author() -> Option<(String, String)> {
 }
 
 /// Reads the current `.python-version` file.
-pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
+pub fn get_python_version_request_from_pyenv_pin() -> Option<PythonVersionRequest> {
     let mut here = env::current_dir().ok()?;
 
     loop {
@@ -209,19 +214,14 @@ pub fn get_python_version_from_pyenv_pin() -> Option<PythonVersion> {
 }
 
 /// Returns the most recent cpython release.
-pub fn get_latest_cpython() -> Result<PythonVersion, Error> {
-    get_download_url(
-        &PythonVersionRequest {
-            kind: None,
-            major: 3,
-            minor: None,
-            patch: None,
-            suffix: None,
-        },
-        OS,
-        ARCH,
-    )
-    .map(|x| x.0)
+pub fn get_latest_cpython_version() -> Result<PythonVersion, Error> {
+    latest_available_python_version(&PythonVersionRequest {
+        kind: None,
+        major: 3,
+        minor: None,
+        patch: None,
+        suffix: None,
+    })
     .context("unsupported platform")
 }
 

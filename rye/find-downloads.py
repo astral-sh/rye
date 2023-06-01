@@ -143,13 +143,13 @@ def _sort_key(info):
     try:
         pref = FLAVOR_PREFERENCES.index(flavor)
     except ValueError:
-        pref = -1
+        pref = len(FLAVOR_PREFERENCES) + 1
     return pref
 
 
 final_results = {}
 for py_ver, choices in results.items():
-    choices.sort(key=_sort_key, reverse=True)
+    choices.sort(key=_sort_key)
     urls = {}
     for triple, flavor, url in choices:
         triple = tuple(triple.split("-"))
