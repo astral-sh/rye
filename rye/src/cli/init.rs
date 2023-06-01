@@ -1,10 +1,8 @@
 use std::collections::HashMap;
-use std::fs::File;
-use std::io::BufRead;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
-use std::{env, fs, io};
+use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
@@ -12,6 +10,7 @@ use configparser::ini::Ini;
 use console::style;
 use license::License;
 use minijinja::{context, Environment};
+use monotrail::RequirementsTxt;
 use pep440_rs::VersionSpecifier;
 use pep508_rs::Requirement;
 use serde_json::Value;
@@ -464,12 +463,12 @@ fn import_project_metadata<T: AsRef<Path>>(
 
     if let Some(paths) = requirements_files {
         for p in paths {
-            import_requirements(&mut requirements, p)?;
+            import_requirements_file(&mut requirements, p)?;
         }
     }
     if let Some(paths) = dev_requirements_files {
         for p in paths {
-            import_requirements(&mut dev_requirements, p)?;
+            import_requirements_file(&mut dev_requirements, p)?;
         }
     }
     if !requirements.is_empty() {
@@ -507,20 +506,21 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
     }
 }
 
-// TODO(cnpryer): A more robust parse + caveats
-fn import_requirements<T: AsRef<Path>>(
+/// See https://github.com/konstin/poc-monotrail/blob/7487250e5ace3447f25a5573b7a9953cdbd9537e/src/requirements_txt.rs#L12-L16
+fn import_requirements_file<T: AsRef<Path>>(
     requirements: &mut HashMap<String, String>,
     path: T,
 ) -> Result<(), Error> {
-    let file = File::open(path)?;
-    let reader = io::BufReader::new(file);
-    for line in reader.lines() {
-        if let Ok(req) = Requirement::from_str(&line?) {
-            requirements
-                .entry(req.name.to_string())
-                .or_insert(req.to_string());
-        }
-    }
+    let path = path.as_ref();
+    let dir = path
+        .parent()
+        .context("could not establish setup.py parent dir")?;
+    let data = RequirementsTxt::parse(path, dir)?;
+    data.requirements.iter().for_each(|x| {
+        requirements
+            .entry(x.requirement.name.to_string())
+            .or_insert(x.requirement.to_string());
+    });
     Ok(())
 }
 
