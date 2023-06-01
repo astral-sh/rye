@@ -6,12 +6,12 @@ use anyhow::{anyhow, Error};
 use pep440_rs::Version;
 use serde::{de, Deserialize, Serialize};
 
+use crate::config::Config;
+
 mod downloads {
     use super::PythonVersion;
     include!("downloads.inc");
 }
-
-const DEFAULT_KIND: &str = "cpython";
 
 /// Internal descriptor for a python version.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
@@ -49,7 +49,7 @@ impl FromStr for PythonVersion {
         let req: PythonVersionRequest = s.parse()?;
         Ok(PythonVersion {
             kind: match req.kind {
-                None => Cow::Borrowed(DEFAULT_KIND),
+                None => Cow::Borrowed(default_kind),
                 Some(other) => other,
             },
             major: req.major,
@@ -66,7 +66,7 @@ impl TryFrom<PythonVersionRequest> for PythonVersion {
     fn try_from(req: PythonVersionRequest) -> Result<Self, Self::Error> {
         Ok(PythonVersion {
             kind: match req.kind {
-                None => Cow::Borrowed(DEFAULT_KIND),
+                None => Cow::Borrowed(default_kind),
                 Some(other) => other,
             },
             major: req.major,
@@ -220,8 +220,13 @@ impl fmt::Display for PythonVersionRequest {
     }
 }
 
+fn default_kind() -> &str {
+    let cfg = Config::current();
+    &cfg.default_default_kind()
+}
+
 fn matches_version(req: &PythonVersionRequest, v: &PythonVersion) -> bool {
-    if req.kind.as_deref().unwrap_or(DEFAULT_KIND) != v.kind {
+    if req.kind.as_deref().unwrap_or(default_kind()) != v.kind {
         return false;
     }
     if req.major != v.major {
