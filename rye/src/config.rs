@@ -121,7 +121,7 @@ impl Config {
     }
 
     /// Returns the default default_kind.
-    pub fn default_default_kind(&self) -> &str {
+    pub fn default_default_kind(&self) -> &'static str {
         match self
             .doc
             .get("behavior")
