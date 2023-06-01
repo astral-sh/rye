@@ -27,6 +27,9 @@ pub struct Args {
     /// An output directory (defaults to `workspace/dist`)
     #[arg(short, long)]
     out: Option<PathBuf>,
+    /// Use this pyproject.toml file
+    #[arg(long, value_name = "PYPROJECT_TOML")]
+    pyproject: Option<PathBuf>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -38,7 +41,7 @@ pub struct Args {
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let venv = ensure_self_venv(output)?;
-    let project = PyProject::discover()?;
+    let project = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     let out = match cmd.out {
         Some(path) => path,
