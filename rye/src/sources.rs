@@ -49,7 +49,7 @@ impl FromStr for PythonVersion {
         let req: PythonVersionRequest = s.parse()?;
         Ok(PythonVersion {
             kind: match req.kind {
-                None => Cow::Borrowed(Config::current().default_default_kind()),
+                None => Cow::Borrowed(&Config::current().default_default_kind()),
                 Some(other) => other,
             },
             major: req.major,
@@ -66,7 +66,7 @@ impl TryFrom<PythonVersionRequest> for PythonVersion {
     fn try_from(req: PythonVersionRequest) -> Result<Self, Self::Error> {
         Ok(PythonVersion {
             kind: match req.kind {
-                None => Cow::Borrowed(Config::current().default_default_kind()),
+                None => Cow::Borrowed(&Config::current().default_default_kind()),
                 Some(other) => other,
             },
             major: req.major,
@@ -224,7 +224,7 @@ fn matches_version(req: &PythonVersionRequest, v: &PythonVersion) -> bool {
     if req
         .kind
         .as_deref()
-        .unwrap_or(Config::current().default_default_kind())
+        .unwrap_or(&Config::current().default_default_kind())
         != v.kind
     {
         return false;
