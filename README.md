@@ -4,6 +4,11 @@
 </div>
 
 ----
+<div align="center">
+
+[![](https://dcbadge.vercel.app/api/server/drbkcdtSbg)](https://discord.gg/drbkcdtSbg)
+
+</div>
 
 Rye is [Armin's](https://github.com/mitsuhiko/) personal one-stop-shop for all
 his Python needs. It installs and manages Python installations, manages
