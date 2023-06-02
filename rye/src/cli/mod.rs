@@ -22,6 +22,7 @@ mod sync;
 mod toolchain;
 mod tools;
 mod uninstall;
+mod version;
 
 use git_testament::git_testament;
 
@@ -61,6 +62,7 @@ enum Command {
     #[command(name = "self")]
     Rye(rye::Args),
     Uninstall(uninstall::Args),
+    Version(version::Args),
 }
 
 pub fn execute() -> Result<(), Error> {
@@ -106,6 +108,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Tools(cmd) => tools::execute(cmd),
         Command::Rye(cmd) => rye::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
+        Command::Version(cmd) => version::execute(cmd),
     }
 }
 
