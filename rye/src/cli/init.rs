@@ -274,17 +274,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     // by default rye attempts to import metadata.
     if !cmd.no_import {
-        // TODO(cnpryer): May need to be smarter with what Python version is used
         let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-        let python =
-            get_venv_python_bin(&ensure_self_venv(output).context("error bootstrapping venv")?);
-        import_project_metadata(
-            &mut metadata,
-            &dir,
-            &python,
-            cmd.requirements.as_ref(),
-            cmd.dev_requirements.as_ref(),
-        )?;
+        let options = ImportOptions {
+            output,
+            requiremennts: cmd.requirements,
+            dev_requiremennts: cmd.dev_requirements,
+            ..Default::default()
+        };
+        import_project_metadata(&mut metadata, &dir, options)?;
     }
 
     // write .python-version
@@ -376,7 +373,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     Ok(())
 }
 
-#[derive(Default)]
 struct Metadata {
     name: String,
     version: String,
@@ -388,18 +384,35 @@ struct Metadata {
     dev_dependencies: Option<Vec<String>>,
 }
 
+struct ImportOptions {
+    output: CommandOutput,
+    setup_py_name: String,
+    setup_cfg_name: String,
+    requiremennts: Option<Vec<PathBuf>>,
+    dev_requiremennts: Option<Vec<PathBuf>>,
+}
+
+impl Default for ImportOptions {
+    fn default() -> Self {
+        Self {
+            output: Default::default(),
+            setup_py_name: "setup.py".to_string(),
+            setup_cfg_name: "setup.cfg".to_string(),
+            requiremennts: None,
+            dev_requiremennts: None,
+        }
+    }
+}
+
 /// Import data from existing setup.py, setup.cfg files, and provided requirements files.
-fn import_project_metadata<'a, T: AsRef<Path>>(
-    metadata: &'a mut Metadata,
-    dir: T,
-    python: T,
-    requirements_files: Option<&'a Vec<PathBuf>>,
-    dev_requirements_files: Option<&'a Vec<PathBuf>>,
-) -> Result<&'a mut Metadata, Error> {
-    let dir = dir.as_ref();
-    let python = python.as_ref();
-    let setup_cfg = dir.join("setup.cfg");
-    let setup_py = dir.join("setup.py");
+fn import_project_metadata(
+    metadata: &mut Metadata,
+    from: impl AsRef<Path>,
+    options: ImportOptions,
+) -> Result<&mut Metadata, Error> {
+    let dir = from.as_ref();
+    let setup_cfg = dir.join(options.setup_cfg_name);
+    let setup_py = dir.join(options.setup_py_name);
     let mut requirements = BTreeMap::new();
     let mut dev_requirements = BTreeMap::new();
 
@@ -444,7 +457,11 @@ fn import_project_metadata<'a, T: AsRef<Path>>(
     }
 
     if setup_py.is_file() {
-        let json = get_setup_py_json(setup_py.as_path(), python)?;
+        // TODO(cnpryer): May need to be smarter with what Python version is used
+        let python = get_venv_python_bin(
+            &ensure_self_venv(options.output).context("error bootstrapping venv")?,
+        );
+        let json = get_setup_py_json(setup_py.as_path(), &python)?;
         if let Some(Value::String(name)) = json.get("name") {
             metadata.name = name.to_string();
         }
@@ -478,12 +495,12 @@ fn import_project_metadata<'a, T: AsRef<Path>>(
         }
     }
 
-    if let Some(paths) = requirements_files {
+    if let Some(paths) = options.requiremennts {
         for p in paths {
             import_requirements_file(&mut requirements, p)?;
         }
     }
-    if let Some(paths) = dev_requirements_files {
+    if let Some(paths) = options.dev_requiremennts {
         for p in paths {
             import_requirements_file(&mut dev_requirements, p)?;
         }
@@ -524,9 +541,9 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
 }
 
 /// See https://github.com/konstin/poc-monotrail/blob/7487250e5ace3447f25a5573b7a9953cdbd9537e/src/requirements_txt.rs#L12-L16
-fn import_requirements_file<T: AsRef<Path>>(
+fn import_requirements_file(
     requirements: &mut BTreeMap<String, String>,
-    path: T,
+    path: impl AsRef<Path>,
 ) -> Result<(), Error> {
     let path = path.as_ref();
     let dir = path
