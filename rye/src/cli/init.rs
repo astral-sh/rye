@@ -281,7 +281,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             dev_requiremennts: cmd.dev_requirements,
             ..Default::default()
         };
-        import_project_metadata(&mut metadata, &dir, options)?;
+        try_import_project_metadata(&mut metadata, &dir, options)?;
     }
 
     // write .python-version
@@ -404,8 +404,8 @@ impl Default for ImportOptions {
     }
 }
 
-/// Import data from existing setup.py, setup.cfg files, and provided requirements files.
-fn import_project_metadata(
+/// Attempt to import data from existing setup.py, setup.cfg files, and provided requirements files.
+fn try_import_project_metadata(
     metadata: &mut Metadata,
     from: impl AsRef<Path>,
     options: ImportOptions,
