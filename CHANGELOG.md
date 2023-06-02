@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed `rye pin` pinning the wrong version.  #288
+
 - Calling `rye init` on the root directory no longer fails.  #274
 
 <!-- released start -->
