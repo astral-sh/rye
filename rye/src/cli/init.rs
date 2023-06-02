@@ -148,14 +148,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // Write pyproject.toml
     let mut requires_python = match cmd.min_py {
         Some(py) => format!(">= {}", py),
-        None => get_python_version_request_from_pyenv_pin()
+        None => get_python_version_request_from_pyenv_pin(&dir)
             .map(|x| format!(">= {}.{}", x.major, x.minor.unwrap_or_default()))
             .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
         Some(py) => PythonVersionRequest::from_str(&py)
             .map_err(|msg| anyhow!("invalid version: {}", msg))?,
-        None => match get_python_version_request_from_pyenv_pin() {
+        None => match get_python_version_request_from_pyenv_pin(&dir) {
             Some(ver) => ver,
             None => PythonVersionRequest::from(get_latest_cpython_version()?),
         },

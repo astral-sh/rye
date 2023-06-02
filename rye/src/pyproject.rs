@@ -419,14 +419,14 @@ impl Workspace {
     /// That is the Python version that appears as lower bound in the
     /// pyproject toml.
     pub fn target_python_version(&self) -> Option<PythonVersionRequest> {
-        resolve_target_python_version(&self.doc, &self.venv_path())
+        resolve_target_python_version(&self.doc, &self.root, &self.venv_path())
     }
 
     /// Returns the project's intended venv python version.
     ///
     /// This is the python version that should be used for virtualenvs.
     pub fn venv_python_version(&self) -> Result<PythonVersion, Error> {
-        resolve_intended_venv_python_version(&self.doc)
+        resolve_intended_venv_python_version(&self.doc, &self.root)
     }
 
     /// Returns a list of index URLs that should be considered.
@@ -590,7 +590,7 @@ impl PyProject {
         if let Some(workspace) = self.workspace() {
             workspace.target_python_version()
         } else {
-            resolve_target_python_version(&self.doc, &self.venv_path())
+            resolve_target_python_version(&self.doc, &self.root, &self.venv_path())
         }
     }
 
@@ -601,7 +601,7 @@ impl PyProject {
         if let Some(workspace) = self.workspace() {
             workspace.venv_python_version()
         } else {
-            resolve_intended_venv_python_version(&self.doc)
+            resolve_intended_venv_python_version(&self.doc, &self.root)
         }
     }
 
@@ -911,15 +911,22 @@ pub fn latest_available_python_version(
     all.into_iter().rev().next()
 }
 
-fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {
+fn resolve_target_python_version(
+    doc: &Document,
+    root: &Path,
+    venv_path: &Path,
+) -> Option<PythonVersionRequest> {
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
-        .or_else(|| get_python_version_request_from_pyenv_pin().map(Into::into))
+        .or_else(|| get_python_version_request_from_pyenv_pin(root).map(Into::into))
         .or_else(|| Config::current().default_toolchain().ok())
 }
 
-fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
-    let requested_version = get_python_version_request_from_pyenv_pin()
+fn resolve_intended_venv_python_version(
+    doc: &Document,
+    root: &Path,
+) -> Result<PythonVersion, Error> {
+    let requested_version = get_python_version_request_from_pyenv_pin(root)
         .or_else(|| resolve_lower_bound_python_version(doc))
         .or_else(|| Config::current().default_toolchain().ok())
         .ok_or_else(|| {
