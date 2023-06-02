@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
@@ -16,14 +16,14 @@ use pep508_rs::Requirement;
 use serde_json::Value;
 use tempfile::tempdir;
 
+use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::platform::{
     get_default_author, get_latest_cpython_version, get_python_version_request_from_pyenv_pin,
-    get_toolchain_python_bin,
 };
 use crate::pyproject::BuildSystem;
 use crate::sources::PythonVersionRequest;
-use crate::utils::{escape_string, is_inside_git_work_tree};
+use crate::utils::{escape_string, get_venv_python_bin, is_inside_git_work_tree, CommandOutput};
 
 /// Creates a new python project.
 #[derive(Parser, Debug)]
@@ -52,15 +52,21 @@ pub struct Args {
     /// The name of the package.
     #[arg(long)]
     name: Option<String>,
-    /// Import a project with a setup.cfg, setup.py, or requirements files.
+    /// Don't import from setup.cfg, setup.py, or requirements files.
     #[arg(long)]
-    import: bool,
+    no_import: bool,
     /// Requirements files to initialize pyproject.toml with.
-    #[arg(short, long, name = "REQUIREMENTS_FILE")]
+    #[arg(short, long, name = "REQUIREMENTS_FILE", conflicts_with = "no-import")]
     requirements: Option<Vec<PathBuf>>,
     /// Development requirements files to initialize pyproject.toml with.
-    #[arg(long, name = "DEV_REQUIREMENTS_FILE")]
+    #[arg(long, name = "DEV_REQUIREMENTS_FILE", conflicts_with = "no-import")]
     dev_requirements: Option<Vec<PathBuf>>,
+    /// Enables verbose diagnostics.
+    #[arg(short, long)]
+    verbose: bool,
+    /// Turns off all output.
+    #[arg(short, long, conflicts_with = "verbose")]
+    quiet: bool,
 }
 
 /// The pyproject.toml template
@@ -75,7 +81,15 @@ authors = [
     { name = {{ author[0] }}, email = {{ author[1] }} }
 ]
 {%- endif %}
-dependencies = {{ dependencies }}
+{%- if dependencies %}
+dependencies = [
+{%- for dependency in dependencies %}
+    {{ dependency }},
+{%- endfor %}
+]
+{%- else %}
+dependencies = []
+{%- endif %}
 {%- if with_readme %}
 readme = "README.md"
 {%- endif %}
@@ -101,8 +115,14 @@ build-backend = "pdm.backend"
 
 [tool.rye]
 managed = true
-{%- if dev_dependencies is not none %}
-dev-dependencies = {{ dev_dependencies }}
+{%- if dev_dependencies %}
+dev_dependencies = [
+{%- for dependency in dev_dependencies %}
+    {{ dependency }},
+{%- endfor %}
+]
+{%- else %}
+dev_dependencies = []
 {%- endif %}
 
 {%- if build_system == "hatchling" %}
@@ -252,16 +272,18 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         dev_dependencies: None,
     };
 
-    // Attempt to import metadata if --import is used or setup files are available.
-    if cmd.import || import_available(&dir) {
+    // by default rye attempts to import metadata.
+    if !cmd.no_import {
         // TODO(cnpryer): May need to be smarter with what Python version is used
-        let python = get_toolchain_python_bin(&get_latest_cpython_version()?)?;
+        let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
+        let python =
+            get_venv_python_bin(&ensure_self_venv(output).context("error bootstrapping venv")?);
         import_project_metadata(
             &mut metadata,
             &dir,
             &python,
-            cmd.requirements,
-            cmd.dev_requirements,
+            cmd.requirements.as_ref(),
+            cmd.dev_requirements.as_ref(),
         )?;
     }
 
@@ -366,26 +388,20 @@ struct Metadata {
     dev_dependencies: Option<Vec<String>>,
 }
 
-/// Check if setup.py or setup.cfg exist.
-fn import_available<T: AsRef<Path>>(dir: T) -> bool {
-    let dir = dir.as_ref();
-    dir.join("setup.py").is_file() || dir.join("setup.cfg").is_file()
-}
-
-/// Pull importable data from setup.py, setup.cfg, and requirement files.
-fn import_project_metadata<T: AsRef<Path>>(
-    metadata: &mut Metadata,
+/// Import data from existing setup.py, setup.cfg files, and provided requirements files.
+fn import_project_metadata<'a, T: AsRef<Path>>(
+    metadata: &'a mut Metadata,
     dir: T,
     python: T,
-    requirements_files: Option<Vec<PathBuf>>,
-    dev_requirements_files: Option<Vec<PathBuf>>,
-) -> Result<&mut Metadata, Error> {
+    requirements_files: Option<&'a Vec<PathBuf>>,
+    dev_requirements_files: Option<&'a Vec<PathBuf>>,
+) -> Result<&'a mut Metadata, Error> {
     let dir = dir.as_ref();
     let python = python.as_ref();
     let setup_cfg = dir.join("setup.cfg");
     let setup_py = dir.join("setup.py");
-    let mut requirements = HashMap::new();
-    let mut dev_requirements = HashMap::new();
+    let mut requirements = BTreeMap::new();
+    let mut dev_requirements = BTreeMap::new();
 
     // TODO(cnpryer): Start with setup.py import and then selectively import from cfg
     if setup_cfg.is_file() {
@@ -427,7 +443,8 @@ fn import_project_metadata<T: AsRef<Path>>(
         }
     }
 
-    if let Ok(json) = get_setup_py_json(setup_py.as_path(), python) {
+    if setup_py.is_file() {
+        let json = get_setup_py_json(setup_py.as_path(), python)?;
         if let Some(Value::String(name)) = json.get("name") {
             metadata.name = name.to_string();
         }
@@ -508,7 +525,7 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
 
 /// See https://github.com/konstin/poc-monotrail/blob/7487250e5ace3447f25a5573b7a9953cdbd9537e/src/requirements_txt.rs#L12-L16
 fn import_requirements_file<T: AsRef<Path>>(
-    requirements: &mut HashMap<String, String>,
+    requirements: &mut BTreeMap<String, String>,
     path: T,
 ) -> Result<(), Error> {
     let path = path.as_ref();
