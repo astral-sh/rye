@@ -22,7 +22,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             pyproject_toml.set_version(&version);
             pyproject_toml.save()?;
 
-            eprintln!("version set to {}.", version.to_string());
+            eprintln!("version set to {}", version);
         }
         None => {
             eprintln!("{}", pyproject_toml.version()?);

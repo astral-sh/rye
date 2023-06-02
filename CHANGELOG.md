@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Add `version` subcommand for rye. #285
+
 - Calling `rye init` on the root directory no longer fails.  #274
 
 <!-- released start -->
