@@ -25,6 +25,9 @@ Released on 2023-06-03
 
 - Calling `rye init` on the root directory no longer fails.  #274
 
+- `rye run`, `show`, `pin`, `shell` and `build` now take a `--pyproject`
+  argument. #232
+
 ## 0.5.0
 
 Released on 2023-05-31
