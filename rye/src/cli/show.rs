@@ -1,4 +1,5 @@
 use std::path::Path;
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{bail, Error};
@@ -16,10 +17,13 @@ pub struct Args {
     /// Print the installed dependencies from the venv
     #[arg(long)]
     installed_deps: bool,
+    /// Use this pyproject.toml file
+    #[arg(long, value_name = "PYPROJECT_TOML")]
+    pyproject: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let project = PyProject::discover()?;
+    let project = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     if cmd.installed_deps {
         return print_installed_deps(&project);

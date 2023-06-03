@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::env;
 use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -419,14 +420,14 @@ impl Workspace {
     /// That is the Python version that appears as lower bound in the
     /// pyproject toml.
     pub fn target_python_version(&self) -> Option<PythonVersionRequest> {
-        resolve_target_python_version(&self.doc, &self.venv_path())
+        resolve_target_python_version(&self.doc, &self.root, &self.venv_path())
     }
 
     /// Returns the project's intended venv python version.
     ///
     /// This is the python version that should be used for virtualenvs.
     pub fn venv_python_version(&self) -> Result<PythonVersion, Error> {
-        resolve_intended_venv_python_version(&self.doc)
+        resolve_intended_venv_python_version(&self.doc, &self.root)
     }
 
     /// Returns a list of index URLs that should be considered.
@@ -461,11 +462,23 @@ impl fmt::Display for DiscoveryUnsuccessful {
 #[derive(Debug)]
 pub struct PyProject {
     root: PathBuf,
+    basename: OsString,
     workspace: Option<Arc<Workspace>>,
     doc: Document,
 }
 
 impl PyProject {
+    /// Load a pyproject toml if explicitly given, else discover from current directory
+    ///
+    /// Used for command line arguments.
+    pub fn load_or_discover(arg: Option<&Path>) -> Result<PyProject, Error> {
+        match arg {
+            // canonicalize because it comes from a command line argument
+            Some(path) => Self::load(&path.canonicalize()?),
+            None => Self::discover(),
+        }
+    }
+
     /// Discovers and loads a pyproject toml.
     pub fn discover() -> Result<PyProject, Error> {
         let pyproject_toml = match find_project_root() {
@@ -503,8 +516,14 @@ impl PyProject {
             }
         }
 
+        let basename = match filename.file_name() {
+            Some(name) => name.to_os_string(),
+            None => bail!("project {} has no file name", root.display()),
+        };
+
         Ok(PyProject {
             root: root.to_owned(),
+            basename,
             workspace,
             doc,
         })
@@ -532,8 +551,14 @@ impl PyProject {
             return Ok(None);
         }
 
+        let basename = match filename.file_name() {
+            Some(name) => name.to_os_string(),
+            None => bail!("project {} has no file name", root.display()),
+        };
+
         Ok(Some(PyProject {
             root: root.to_owned(),
+            basename,
             workspace: Some(workspace),
             doc,
         }))
@@ -569,7 +594,7 @@ impl PyProject {
 
     /// Returns the path to the toml file.
     pub fn toml_path(&self) -> Cow<'_, Path> {
-        Cow::Owned(self.root.join("pyproject.toml"))
+        Cow::Owned(self.root.join(&self.basename))
     }
 
     /// Returns the location of the virtualenv.
@@ -590,7 +615,7 @@ impl PyProject {
         if let Some(workspace) = self.workspace() {
             workspace.target_python_version()
         } else {
-            resolve_target_python_version(&self.doc, &self.venv_path())
+            resolve_target_python_version(&self.doc, &self.root, &self.venv_path())
         }
     }
 
@@ -601,7 +626,7 @@ impl PyProject {
         if let Some(workspace) = self.workspace() {
             workspace.venv_python_version()
         } else {
-            resolve_intended_venv_python_version(&self.doc)
+            resolve_intended_venv_python_version(&self.doc, &self.root)
         }
     }
 
@@ -943,15 +968,22 @@ pub fn latest_available_python_version(
     all.into_iter().rev().next()
 }
 
-fn resolve_target_python_version(doc: &Document, venv_path: &Path) -> Option<PythonVersionRequest> {
+fn resolve_target_python_version(
+    doc: &Document,
+    root: &Path,
+    venv_path: &Path,
+) -> Option<PythonVersionRequest> {
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
-        .or_else(|| get_python_version_request_from_pyenv_pin().map(Into::into))
+        .or_else(|| get_python_version_request_from_pyenv_pin(root).map(Into::into))
         .or_else(|| Config::current().default_toolchain().ok())
 }
 
-fn resolve_intended_venv_python_version(doc: &Document) -> Result<PythonVersion, Error> {
-    let requested_version = get_python_version_request_from_pyenv_pin()
+fn resolve_intended_venv_python_version(
+    doc: &Document,
+    root: &Path,
+) -> Result<PythonVersion, Error> {
+    let requested_version = get_python_version_request_from_pyenv_pin(root)
         .or_else(|| resolve_lower_bound_python_version(doc))
         .or_else(|| Config::current().default_toolchain().ok())
         .ok_or_else(|| {
