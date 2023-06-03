@@ -9,6 +9,8 @@ _Unreleased_
 
 - Add `version` subcommand for rye. #285
 
+- Fixed `rye pin` pinning the wrong version.  #288
+
 - Calling `rye init` on the root directory no longer fails.  #274
 
 <!-- released start -->

@@ -24,7 +24,7 @@ use url::Url;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
-use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
+use crate::sources::{get_download_url, matches_version, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
 use crate::utils::{
     expand_env_vars, format_requirement, get_short_executable_name, is_executable,
@@ -924,7 +924,7 @@ pub fn latest_available_python_version(
         available
             .into_iter()
             .filter_map(|(ver, _)| {
-                if Some(&ver.kind as &str) == requested_version.kind.as_deref() {
+                if matches_version(requested_version, &ver) {
                     Some(ver)
                 } else {
                     None
