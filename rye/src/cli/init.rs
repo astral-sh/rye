@@ -45,6 +45,9 @@ pub struct Args {
     /// The name of the package.
     #[arg(long)]
     name: Option<String>,
+    /// Set "Private :: Do Not Upload" classifier, used for private projects
+    #[arg(long)]
+    private: bool,
 }
 
 /// The pyproject.toml template
@@ -66,6 +69,9 @@ readme = "README.md"
 requires-python = {{ requires_python }}
 {%- if license %}
 license = { text = {{ license }} }
+{%- endif %}
+{%- if private %}
+classifiers = ["Private :: Do Not Upload"]
 {%- endif %}
 
 [build-system]
@@ -230,6 +236,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => cfg.default_build_system().unwrap_or(BuildSystem::Hatchling),
     };
 
+    let private = cmd.private;
+
     let rv = env.render_named_str(
         "pyproject.json",
         TOML_TEMPLATE,
@@ -241,6 +249,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             license,
             with_readme,
             build_system,
+            private,
         },
     )?;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;
