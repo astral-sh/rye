@@ -14,7 +14,7 @@ use std::sync::Arc;
 use anyhow::{anyhow, bail, Context, Error};
 use globset::Glob;
 use once_cell::sync::Lazy;
-use pep440_rs::{Operator, VersionSpecifiers};
+use pep440_rs::{Operator, Version, VersionSpecifiers};
 use pep508_rs::Requirement;
 use regex::Regex;
 use serde::Serialize;
@@ -620,6 +620,16 @@ impl PyProject {
         project["requires-python"] = Item::Value(Value::String(Formatted::new(marker)));
     }
 
+    /// Set the project version.
+    pub fn set_version(&mut self, version: &Version) {
+        let project = self
+            .doc
+            .entry("project")
+            .or_insert(Item::Table(Table::new()));
+
+        project["version"] = Item::Value(Value::String(Formatted::new(version.to_string())));
+    }
+
     /// Returns the project name.
     pub fn name(&self) -> Option<&str> {
         self.doc
@@ -633,6 +643,28 @@ impl PyProject {
         self.name()
             .map(normalize_package_name)
             .ok_or_else(|| anyhow!("project from '{}' has no name", self.root_path().display()))
+    }
+
+    /// Returns the version.
+    pub fn version(&mut self) -> Result<Version, Error> {
+        let version = self
+            .doc
+            .get("project")
+            .and_then(|x| x.get("version"))
+            .and_then(|x| x.as_str());
+
+        match version {
+            Some(version) => {
+                Version::from_str(version).map_err(|msg| anyhow!("invalid version: {}", msg))
+            }
+            None => {
+                let version = Version::from_str("0.1.0").unwrap();
+                self.set_version(&version);
+                self.save()?;
+
+                Ok(version)
+            }
+        }
     }
 
     /// Returns the build backend.
