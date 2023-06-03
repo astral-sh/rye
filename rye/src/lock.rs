@@ -329,6 +329,7 @@ fn generate_lockfile(
         .arg("-o")
         .arg(&requirements_file)
         .arg(requirements_file_in)
+        .current_dir(workspace_path)
         .env("PYTHONWARNINGS", "ignore");
     if output == CommandOutput::Verbose {
         cmd.arg("--verbose");
