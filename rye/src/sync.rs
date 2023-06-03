@@ -81,9 +81,12 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     let py_ver = pyproject.venv_python_version()?;
     let output = cmd.output;
 
-    // check conflicting options
-    if cmd.pyproject.is_some() && cmd.mode != SyncMode::PythonOnly {
-        bail!("pypyroject location: only implemented for PythonOnly sync");
+    if cmd.pyproject.is_some()
+        && cmd.mode != SyncMode::PythonOnly
+        && !pyproject.toml_path().ends_with("pyproject.toml")
+    {
+        // pip-tools will search for pyproject.toml
+        bail!("cannot sync or generate lockfile: package needs 'pyproject.toml'");
     }
 
     // ensure we are bootstrapped
