@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed an issue where pip was not invoked from the right working directory
+  causing issues for workspace installations.  #292
+
 - `rye init` now accepts `--private` to set the `Private :: Do Not Upload` classifier
   that prevents uploads to PyPI.  #291
 
