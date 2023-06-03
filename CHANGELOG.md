@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye init` now accepts `--private` to set the `Private :: Do Not Upload` classifier
+  that prevents uploads to PyPI.  #291
+
 <!-- released start -->
 
 ## 0.6.0

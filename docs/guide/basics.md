@@ -22,6 +22,11 @@ The following structure will be created:
         └── __init__.py
 ``` 
 
+!!! tip "Good to Know"
+
+    The `init` command accepts a lot of options to customize what it generates.  Run
+    `rye init --help` to see all the options available in the version you have installed.
+
 A `pyproject.toml` is used to store metadata about your project as well as some Rye
 configuration.  Most of Rye's commands will require a `pyproject.toml` to work.  Note
 that Rye today does not support `setup.py` based projects.  Note that when Rye initializes
