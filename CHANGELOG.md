@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Add `--clean` for `build` command.  #297
+
 - Fixed an issue where pip was not invoked from the right working directory
   causing issues for workspace installations.  #292
 
