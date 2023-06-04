@@ -11,6 +11,9 @@ use crate::pyproject::PyProject;
 pub struct Args {
     /// The version to set
     version: Option<String>,
+    /// The version bump to apply
+    #[arg(short, long)]
+    bump: Option<String>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -25,8 +28,28 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             eprintln!("version set to {}", version);
         }
         None => {
-            eprintln!("{}", pyproject_toml.version()?);
+            let mut version = pyproject_toml.version()?;
+            if let Some(bump) = cmd.bump {
+                let bumped = bump_version(&mut version, &bump);
+                pyproject_toml.set_version(&version);
+                pyproject_toml.save()?;
+                if bumped {
+                    eprintln!("version bumped to {}", version);
+                }
+            } else {
+                eprintln!("{}", version);
+            }
         }
     }
     Ok(())
+}
+
+fn bump_version(version: &mut Version, bump: &str) -> bool {
+    match bump {
+        "major" => version.release[0] += 1,
+        "minor" => version.release[1] += 1,
+        "patch" => version.release[2] += 1,
+        _ => return false,
+    }
+    true
 }
