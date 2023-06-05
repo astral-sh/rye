@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye version` can bump version by `--bump` option now.  #298
+
 - Add `--clean` for `build` command.  #297
 
 - Fixed an issue where pip was not invoked from the right working directory

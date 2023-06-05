@@ -57,7 +57,7 @@ fn bump_version(version: &mut Version, bump: &str, pyproject: &mut PyProject) {
         }
     }
 
-    pyproject.set_version(&version);
+    pyproject.set_version(version);
     pyproject.save().unwrap();
 
     eprintln!("version bumped to {}", version);
