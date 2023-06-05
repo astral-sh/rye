@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed members not handled correctly in workspaces.  #300
+
 - Add `--clean` for `build` command.  #297
 
 - Fixed an issue where pip was not invoked from the right working directory
