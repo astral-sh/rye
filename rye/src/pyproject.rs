@@ -349,8 +349,7 @@ impl Workspace {
 
     /// Checks if a project is a member of the declared workspace.
     pub fn is_member(&self, path: &Path) -> bool {
-        let canonicalized = self.root.join(path);
-        if let Ok(relative) = path.strip_prefix(canonicalized) {
+        if let Ok(relative) = path.strip_prefix(&self.root) {
             if relative == Path::new("") || self.members.is_empty() {
                 true
             } else {
