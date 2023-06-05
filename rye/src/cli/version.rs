@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::pyproject::PyProject;
 use anyhow::{anyhow, Error};
-use clap::Parser;
+use clap::{Parser, ValueEnum};
 use console::style;
 use pep440_rs::Version;
 
@@ -11,9 +11,16 @@ use pep440_rs::Version;
 pub struct Args {
     /// The version to set
     version: Option<String>,
-    /// The version bump to apply [major, minor, patch]
+    /// The version bump to apply
     #[arg(short, long)]
-    bump: Option<String>,
+    bump: Option<Bump>,
+}
+
+#[derive(Debug, Clone, ValueEnum)]
+pub enum Bump {
+    Major,
+    Minor,
+    Patch,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -30,7 +37,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => {
             let mut version = pyproject_toml.version()?;
             match cmd.bump {
-                Some(bump) => bump_version(&mut version, &bump, &mut pyproject_toml),
+                Some(bump) => bump_version(&mut version, bump, &mut pyproject_toml)?,
                 None => eprintln!("{}", version),
             }
         }
@@ -38,7 +45,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     Ok(())
 }
 
-fn bump_version(version: &mut Version, bump: &str, pyproject: &mut PyProject) {
+fn bump_version(version: &mut Version, bump: Bump, pyproject: &mut PyProject) -> Result<(), Error> {
     if version.is_post() {
         version.post = None;
     }
@@ -49,16 +56,13 @@ fn bump_version(version: &mut Version, bump: &str, pyproject: &mut PyProject) {
             style("warning:").red()
         );
     } else {
-        match bump {
-            "major" => version.release[0] += 1,
-            "minor" => version.release[1] += 1,
-            "patch" => version.release[2] += 1,
-            _ => return,
-        }
+        version.release[bump as usize] += 1;
     }
 
     pyproject.set_version(version);
     pyproject.save().unwrap();
 
     eprintln!("version bumped to {}", version);
+
+    Ok(())
 }
