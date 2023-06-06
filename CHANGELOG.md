@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye version` can bump version by `--bump` option now.  #298
+
 - Fixed members not handled correctly in workspaces.  #300
 
 - Add `--clean` for `build` command.  #297
