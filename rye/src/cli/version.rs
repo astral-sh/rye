@@ -56,7 +56,11 @@ fn bump_version(version: &mut Version, bump: Bump, pyproject: &mut PyProject) ->
             style("warning:").red()
         );
     } else {
-        version.release[bump as usize] += 1;
+        let index = bump as usize;
+        if version.release.get(index).is_none() {
+            version.release.resize(index + 1, 0);
+        }
+        version.release[index] += 1;
     }
 
     pyproject.set_version(version);
