@@ -31,6 +31,7 @@ use crate::platform::symlinks_supported;
 
 git_testament!(TESTAMENT);
 
+/// An Experimental Package Management Solution for Python
 #[derive(Parser, Debug)]
 #[command(arg_required_else_help = true)]
 struct Args {
