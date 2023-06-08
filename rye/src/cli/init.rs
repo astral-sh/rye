@@ -52,6 +52,9 @@ pub struct Args {
     /// The name of the package.
     #[arg(long)]
     name: Option<String>,
+    /// Set "Private :: Do Not Upload" classifier, used for private projects
+    #[arg(long)]
+    private: bool,
     /// Don't import from setup.cfg, setup.py, or requirements files.
     #[arg(long)]
     no_import: bool,
@@ -96,6 +99,9 @@ readme = "README.md"
 requires-python = {{ requires_python }}
 {%- if license %}
 license = { text = {{ license }} }
+{%- endif %}
+{%- if private %}
+classifiers = ["Private :: Do Not Upload"]
 {%- endif %}
 
 [build-system]
@@ -208,14 +214,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // Write pyproject.toml
     let mut requires_python = match cmd.min_py {
         Some(py) => format!(">= {}", py),
-        None => get_python_version_request_from_pyenv_pin()
+        None => get_python_version_request_from_pyenv_pin(&dir)
             .map(|x| format!(">= {}.{}", x.major, x.minor.unwrap_or_default()))
             .unwrap_or_else(|| cfg.default_requires_python()),
     };
     let py = match cmd.py {
         Some(py) => PythonVersionRequest::from_str(&py)
             .map_err(|msg| anyhow!("invalid version: {}", msg))?,
-        None => match get_python_version_request_from_pyenv_pin() {
+        None => match get_python_version_request_from_pyenv_pin(&dir) {
             Some(ver) => ver,
             None => PythonVersionRequest::from(get_latest_cpython_version()?),
         },
@@ -313,6 +319,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => cfg.default_build_system().unwrap_or(BuildSystem::Hatchling),
     };
 
+    let private = cmd.private;
+
     let rv = env.render_named_str(
         "pyproject.json",
         TOML_TEMPLATE,
@@ -327,6 +335,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             dev_dependencies => metadata.dev_dependencies,
             with_readme,
             build_system,
+            private,
         },
     )?;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;

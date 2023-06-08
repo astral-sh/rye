@@ -3,13 +3,36 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.6.0
+## 0.7.0
 
 _Unreleased_
 
-- Calling `rye init` on the root directory no longer fails.  #274
+- `rye version` can bump version by `--bump` option now.  #298
+
+- Fixed members not handled correctly in workspaces.  #300
+
+- Add `--clean` for `build` command.  #297
+
+- Fixed an issue where pip was not invoked from the right working directory
+  causing issues for workspace installations.  #292
+
+- `rye init` now accepts `--private` to set the `Private :: Do Not Upload` classifier
+  that prevents uploads to PyPI.  #291
 
 <!-- released start -->
+
+## 0.6.0
+
+Released on 2023-06-03
+
+- Add `version` subcommand for rye. #285
+
+- Fixed `rye pin` pinning the wrong version.  #288
+
+- Calling `rye init` on the root directory no longer fails.  #274
+
+- `rye run`, `show`, `pin`, `shell` and `build` now take a `--pyproject`
+  argument. #232
 
 ## 0.5.0
 

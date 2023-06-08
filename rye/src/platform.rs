@@ -195,16 +195,20 @@ pub fn get_default_author() -> Option<(String, String)> {
 }
 
 /// Reads the current `.python-version` file.
-pub fn get_python_version_request_from_pyenv_pin() -> Option<PythonVersionRequest> {
-    let mut here = env::current_dir().ok()?;
+pub fn get_python_version_request_from_pyenv_pin(root: &Path) -> Option<PythonVersionRequest> {
+    let mut here = root.to_owned();
 
     loop {
-        let ver_file = here.join(".python-version");
-        if let Ok(contents) = fs::read_to_string(&ver_file) {
+        here.push(".python-version");
+        if let Ok(contents) = fs::read_to_string(&here) {
             let ver = contents.trim().parse().ok()?;
             return Some(ver);
         }
 
+        // pop filename
+        here.pop();
+
+        // pop parent
         if !here.pop() {
             break;
         }

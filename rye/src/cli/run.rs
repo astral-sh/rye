@@ -1,5 +1,6 @@
 use std::env::{self, join_paths, split_paths};
 use std::ffi::OsString;
+use std::path::PathBuf;
 use std::process::{Command, ExitStatus};
 
 use anyhow::{bail, Context, Error};
@@ -20,6 +21,9 @@ pub struct Args {
     /// The command to run
     #[command(subcommand)]
     cmd: Option<Cmd>,
+    /// Use this pyproject.toml file
+    #[arg(long, value_name = "PYPROJECT_TOML")]
+    pyproject: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug)]
@@ -29,10 +33,11 @@ enum Cmd {
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let pyproject = PyProject::discover()?;
+    let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only()).context("failed to sync ahead of run")?;
+    sync(SyncOptions::python_only().pyproject(cmd.pyproject))
+        .context("failed to sync ahead of run")?;
 
     if cmd.list || cmd.cmd.is_none() {
         return list_scripts(&pyproject);

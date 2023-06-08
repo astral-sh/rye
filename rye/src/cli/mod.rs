@@ -22,6 +22,7 @@ mod sync;
 mod toolchain;
 mod tools;
 mod uninstall;
+mod version;
 
 use git_testament::git_testament;
 
@@ -30,6 +31,7 @@ use crate::platform::symlinks_supported;
 
 git_testament!(TESTAMENT);
 
+/// An Experimental Package Management Solution for Python
 #[derive(Parser, Debug)]
 #[command(arg_required_else_help = true)]
 struct Args {
@@ -61,6 +63,7 @@ enum Command {
     #[command(name = "self")]
     Rye(rye::Args),
     Uninstall(uninstall::Args),
+    Version(version::Args),
 }
 
 pub fn execute() -> Result<(), Error> {
@@ -106,6 +109,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Tools(cmd) => tools::execute(cmd),
         Command::Rye(cmd) => rye::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
+        Command::Version(cmd) => version::execute(cmd),
     }
 }
 

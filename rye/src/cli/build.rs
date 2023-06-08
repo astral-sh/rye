@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
@@ -27,6 +28,12 @@ pub struct Args {
     /// An output directory (defaults to `workspace/dist`)
     #[arg(short, long)]
     out: Option<PathBuf>,
+    /// Use this pyproject.toml file
+    #[arg(long, value_name = "PYPROJECT_TOML")]
+    pyproject: Option<PathBuf>,
+    /// Clean the output directory first
+    #[arg(short, long)]
+    clean: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -38,12 +45,21 @@ pub struct Args {
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let venv = ensure_self_venv(output)?;
-    let project = PyProject::discover()?;
+    let project = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     let out = match cmd.out {
         Some(path) => path,
         None => project.workspace_path().join("dist"),
     };
+
+    if cmd.clean {
+        for entry in fs::read_dir(&out)? {
+            let path = entry?.path();
+            if path.is_file() {
+                fs::remove_file(path)?;
+            }
+        }
+    }
 
     let mut projects = Vec::new();
 

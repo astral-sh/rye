@@ -1,4 +1,5 @@
 use std::env;
+use std::path::PathBuf;
 use std::process::Command;
 
 use anyhow::{bail, Context, Error};
@@ -18,6 +19,9 @@ pub struct Args {
     /// Allow nested invocations.
     #[arg(long)]
     allow_nested: bool,
+    /// Use this pyproject.toml file
+    #[arg(long, value_name = "PYPROJECT_TOML")]
+    pyproject: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -25,8 +29,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         bail!("cannot invoke recursive rye shell");
     }
 
-    let pyproject = PyProject::discover()?;
-    sync(SyncOptions::python_only()).context("failed to sync ahead of shell")?;
+    let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
+    sync(SyncOptions::python_only().pyproject(cmd.pyproject))
+        .context("failed to sync ahead of shell")?;
 
     let venv_path = pyproject.venv_path();
     let venv_bin = venv_path.join("bin");

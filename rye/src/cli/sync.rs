@@ -59,6 +59,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             features: cmd.features,
             all_features: cmd.all_features,
         },
+        pyproject: None,
     })?;
     Ok(())
 }
