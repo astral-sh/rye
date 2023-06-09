@@ -191,8 +191,6 @@ if __name__ == "setuptools":
     sys.modules["setuptools"] = _setup_proxy_module
     def __getattr__(name):
         return getattr(__setuptools, name)
-    del _setup_proxy_module
-    del _setup_proxy_cwd
 "#;
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -267,18 +265,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         fs::write(&license_file, rv)?;
     }
 
-    let mut metadata = Metadata {
-        name,
-        version: version.to_string(),
-        description: "Add your description here".to_string(),
-        author,
-        requires_python: Some(requires_python),
-        license,
-        dependencies: Some(Vec::new()),
-        dev_dependencies: None,
-    };
+    // initialize with no metadata
+    let mut metadata = Metadata::new();
 
-    // by default rye attempts to import metadata.
+    // by default rye attempts to import metadata first.
+    // if we're missing metadata after the import we update it with what's found from normal initialization.
     if !cmd.no_import {
         let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
         let options = ImportOptions {
@@ -288,6 +279,28 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             ..Default::default()
         };
         try_import_project_metadata(&mut metadata, &dir, options)?;
+    } else {
+        if metadata.name.is_none() {
+            metadata.name = Some(name);
+        }
+        if metadata.version.is_none() {
+            metadata.version = Some(version.to_string());
+        }
+        if metadata.description.is_none() {
+            metadata.description = Some("Add your description here".to_string())
+        }
+        if metadata.author.is_none() {
+            metadata.author = author;
+        }
+        if metadata.requires_python.is_none() {
+            metadata.requires_python = Some(requires_python);
+        }
+        if metadata.license.is_none() {
+            metadata.license = license;
+        }
+        if metadata.dependencies.is_none() {
+            metadata.dependencies = Some(Vec::new())
+        }
     }
 
     // write .python-version
@@ -342,13 +355,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     let src_dir = dir.join("src");
     if !src_dir.is_dir() {
-        let project_dir = src_dir.join(metadata.name.replace('-', "_"));
+        let name = metadata.name.expect("project name");
+        let project_dir = src_dir.join(name.replace('-', "_"));
         fs::create_dir_all(&project_dir).ok();
-        let rv = env.render_named_str(
-            "__init__.py",
-            INIT_PY_TEMPLATE,
-            context! { name => metadata.name },
-        )?;
+        let rv = env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
         fs::write(project_dir.join("__init__.py"), rv).context("failed to write __init__.py")?;
     }
 
@@ -382,15 +392,22 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     Ok(())
 }
 
+#[derive(Default)]
 struct Metadata {
-    name: String,
-    version: String,
-    description: String,
+    name: Option<String>,
+    version: Option<String>,
+    description: Option<String>,
     author: Option<(String, String)>,
     requires_python: Option<String>,
     license: Option<String>,
     dependencies: Option<Vec<String>>,
     dev_dependencies: Option<Vec<String>>,
+}
+
+impl Metadata {
+    fn new() -> Self {
+        Self::default()
+    }
 }
 
 struct ImportOptions {
@@ -413,7 +430,7 @@ impl Default for ImportOptions {
     }
 }
 
-/// Attempt to import data from existing setup.py, setup.cfg files, and provided requirements files.
+/// Attempt to import data from setup.py, setup.cfg, and requirements files if metadata is missing.
 fn try_import_project_metadata(
     metadata: &mut Metadata,
     from: impl AsRef<Path>,
@@ -425,16 +442,17 @@ fn try_import_project_metadata(
     let mut requirements = BTreeMap::new();
     let mut dev_requirements = BTreeMap::new();
 
-    // TODO(cnpryer): Less operations and fix `requirements`
-    if setup_cfg.is_file() {
-        import_setup_cfg(metadata, &mut requirements, &setup_cfg)?;
-    }
+    // if a setup.py or setup.cfg are found we attempt an import, only importing
+    // what our metadata is missing
     if setup_py.is_file() {
         // TODO(cnpryer): May need to be smarter with what Python version is used
         let python = get_venv_python_bin(
             &ensure_self_venv(options.output).context("error bootstrapping venv")?,
         );
         import_setup_py(metadata, &mut requirements, &setup_py, &python)?;
+    }
+    if setup_cfg.is_file() {
+        import_setup_cfg(metadata, &mut requirements, &setup_cfg)?;
     }
 
     if let Some(paths) = options.requirements {
@@ -447,14 +465,67 @@ fn try_import_project_metadata(
             import_requirements_file(&mut dev_requirements, p)?;
         }
     }
-    if !requirements.is_empty() {
+    if metadata.dependencies.is_none() && !requirements.is_empty() {
         metadata.dependencies = Some(requirements.into_values().collect());
     }
-    if !dev_requirements.is_empty() {
+    if metadata.dependencies.is_none() && !dev_requirements.is_empty() {
         metadata.dev_dependencies = Some(dev_requirements.into_values().collect());
     }
 
     Ok(metadata)
+}
+
+fn import_setup_py<T: AsRef<Path>>(
+    metadata: &mut Metadata,
+    requirements: &mut BTreeMap<String, String>,
+    path: T,
+    python: T,
+) -> Result<(), Error> {
+    let json = get_setup_py_json(path, python)?;
+    if let Some(Value::String(name)) = json.get("name") {
+        if metadata.name.is_none() {
+            metadata.name = Some(name.to_string());
+        }
+    }
+    if let Some(Value::String(version)) = json.get("version") {
+        if metadata.version.is_none() {
+            metadata.version = Some(version.to_string());
+        }
+    }
+    if let Some(Value::String(description)) = json.get("description") {
+        if metadata.description.is_none() {
+            metadata.description = Some(description.to_string());
+        }
+    }
+    if let Some(Value::String(author)) = json.get("author") {
+        if metadata.author.is_none() {
+            metadata.author = Some((
+                author.to_string(),
+                json.get("author_email")
+                    .map(|x| x.to_string())
+                    .map(escape_string)
+                    .unwrap_or_else(String::new),
+            ));
+        }
+    }
+    if let Some(Value::String(requires_python)) = json.get("requires_python") {
+        if metadata.requires_python.is_none() {
+            metadata.requires_python = Some(requires_python.to_string());
+        }
+    }
+    if let Some(Value::String(license)) = json.get("license") {
+        if metadata.license.is_none() {
+            metadata.license = Some(license.to_string());
+        }
+    }
+    if let Some(Value::Array(reqs)) = json.get("install_requires") {
+        reqs.iter()
+            .filter_map(|x| Requirement::from_str(&x.to_string()).ok())
+            .for_each(|x| {
+                requirements.insert(x.name.to_string(), x.to_string());
+            });
+    }
+    Ok(())
 }
 
 fn import_setup_cfg(
@@ -467,28 +538,40 @@ fn import_setup_cfg(
     let config = ini.load(path).map_err(|msg| anyhow::anyhow!(msg))?;
     if let Some(section) = config.get("metadata") {
         if let Some(Some(name)) = section.get("name") {
-            metadata.name = name.to_string();
+            if metadata.name.is_none() {
+                metadata.name = Some(name.to_string());
+            }
         }
         if let Some(Some(version)) = section.get("version") {
-            metadata.version = version.to_string();
+            if metadata.version.is_none() {
+                metadata.version = Some(version.to_string());
+            }
         }
         if let Some(Some(description)) = section.get("description") {
-            metadata.description = description.to_string();
+            if metadata.description.is_none() {
+                metadata.description = Some(description.to_string());
+            }
         }
         if let Some(Some(author)) = section.get("author") {
-            let email = match section.get("author_email") {
-                Some(Some(it)) => it,
-                _ => "",
-            };
-            metadata.author = Some((author.to_string(), email.to_string()));
+            if metadata.author.is_none() {
+                let email = match section.get("author_email") {
+                    Some(Some(it)) => it,
+                    _ => "",
+                };
+                metadata.author = Some((author.to_string(), email.to_string()));
+            }
         }
         if let Some(Some(license)) = section.get("license") {
-            metadata.license = Some(license.to_string());
+            if metadata.license.is_none() {
+                metadata.license = Some(license.to_string());
+            }
         }
     }
     if let Some(section) = config.get("options") {
         if let Some(Some(requires_python)) = section.get("requires_python") {
-            metadata.requires_python = Some(requires_python.to_string());
+            if metadata.requires_python.is_none() {
+                metadata.requires_python = Some(requires_python.to_string());
+            }
         }
         if let Some(Some(reqs)) = section.get("install_requires") {
             reqs.lines()
@@ -497,47 +580,6 @@ fn import_setup_cfg(
                     requirements.insert(x.name.to_string(), x.to_string());
                 });
         }
-    }
-    Ok(())
-}
-
-fn import_setup_py<T: AsRef<Path>>(
-    metadata: &mut Metadata,
-    requirements: &mut BTreeMap<String, String>,
-    path: T,
-    python: T,
-) -> Result<(), Error> {
-    let json = get_setup_py_json(path, python)?;
-    if let Some(Value::String(name)) = json.get("name") {
-        metadata.name = name.to_string();
-    }
-    if let Some(Value::String(version)) = json.get("version") {
-        metadata.version = version.to_string();
-    }
-    if let Some(Value::String(description)) = json.get("description") {
-        metadata.description = description.to_string();
-    }
-    if let Some(Value::String(author)) = json.get("author") {
-        metadata.author = Some((
-            author.to_string(),
-            json.get("author_email")
-                .map(|x| x.to_string())
-                .map(escape_string)
-                .unwrap_or_else(String::new),
-        ));
-    }
-    if let Some(Value::String(requires_python)) = json.get("requires_python") {
-        metadata.requires_python = Some(requires_python.to_string());
-    }
-    if let Some(Value::String(license)) = json.get("license") {
-        metadata.license = Some(license.to_string());
-    }
-    if let Some(Value::Array(reqs)) = json.get("install_requires") {
-        reqs.iter()
-            .filter_map(|x| Requirement::from_str(&x.to_string()).ok())
-            .for_each(|x| {
-                requirements.insert(x.name.to_string(), x.to_string());
-            });
     }
     Ok(())
 }
