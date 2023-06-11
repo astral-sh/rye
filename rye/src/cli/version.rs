@@ -32,13 +32,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             pyproject_toml.set_version(&version);
             pyproject_toml.save()?;
 
-            eprintln!("version set to {}", version);
+            println!("version set to {}", version);
         }
         None => {
             let mut version = pyproject_toml.version()?;
             match cmd.bump {
                 Some(bump) => bump_version(&mut version, bump, &mut pyproject_toml)?,
-                None => eprintln!("{}", version),
+                None => println!("{}", version),
             }
         }
     }
@@ -66,7 +66,7 @@ fn bump_version(version: &mut Version, bump: Bump, pyproject: &mut PyProject) ->
     pyproject.set_version(version);
     pyproject.save().unwrap();
 
-    eprintln!("version bumped to {}", version);
+    println!("version bumped to {}", version);
 
     Ok(())
 }
