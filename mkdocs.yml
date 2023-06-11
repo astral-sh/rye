@@ -14,6 +14,7 @@ nav:
     - Configuration: guide/config.md
     - Python Project: guide/pyproject.md
     - Syncing and Locking: guide/sync.md
+    - Building and Publishing: guide/publish.md
     - Dependency Sources: guide/sources.md
     - Dependencies: guide/deps.md
     - Toolchains:
@@ -66,7 +67,7 @@ markdown_extensions:
   - pymdownx.keys
   - pymdownx.superfences
   - pymdownx.tabbed:
-      alternate_style: true 
+      alternate_style: true
   - mdx_gh_links:
       user: mitsuhiko
       repo: rye
