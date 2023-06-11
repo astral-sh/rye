@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye sync` and `rye lock` now accept `--pyproject`.  #296
+
 - Added JSON output to `rye toolchain list` by adding `--format=json`.  #306
 
 - `rye version` can bump version by `--bump` option now.  #298
