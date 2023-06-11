@@ -47,6 +47,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let venv = ensure_self_venv(output)?;
     let project = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
+    if project.workspace_only() {
+        bail!("building is not supported for workspace-only projects");
+    }
+
     let out = match cmd.out {
         Some(path) => path,
         None => project.workspace_path().join("dist"),

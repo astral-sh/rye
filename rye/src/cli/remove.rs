@@ -35,12 +35,16 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let requirement = Requirement::from_str(&str_requirement)?;
         if let Some(removed) = pyproject_toml.remove_dependency(
             &requirement,
-            if cmd.dev {
-                DependencyKind::Dev
-            } else if let Some(ref section) = cmd.optional {
-                DependencyKind::Optional(section.into())
+            if !pyproject_toml.workspace_only() {
+                if cmd.dev {
+                    DependencyKind::Dev
+                } else if let Some(ref section) = cmd.optional {
+                    DependencyKind::Optional(section.into())
+                } else {
+                    DependencyKind::Normal
+                }
             } else {
-                DependencyKind::Normal
+                DependencyKind::Dev
             },
         )? {
             removed_packages.push(removed);

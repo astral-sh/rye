@@ -48,6 +48,9 @@ pub struct Args {
     /// Set "Private :: Do Not Upload" classifier, used for private projects
     #[arg(long)]
     private: bool,
+    /// Only workspace, not a package.
+    #[arg(long)]
+    workspace_only: bool,
 }
 
 /// The pyproject.toml template
@@ -98,6 +101,11 @@ managed = true
 allow-direct-references = true
 {%- endif %}
 
+"#;
+
+const WORKSPACE_ONLY_TOML_TEMPLATE: &str = r#"[tool.rye]
+managed = true
+workspace-only = true
 "#;
 
 /// The template for the readme file.
@@ -237,21 +245,24 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     };
 
     let private = cmd.private;
-
-    let rv = env.render_named_str(
-        "pyproject.json",
-        TOML_TEMPLATE,
-        context! {
-            name,
-            version,
-            author,
-            requires_python,
-            license,
-            with_readme,
-            build_system,
-            private,
-        },
-    )?;
+    let rv = if cmd.workspace_only {
+        env.render_named_str("pyproject.json", WORKSPACE_ONLY_TOML_TEMPLATE, context!())
+    } else {
+        env.render_named_str(
+            "pyproject.json",
+            TOML_TEMPLATE,
+            context! {
+                name,
+                version,
+                author,
+                requires_python,
+                license,
+                with_readme,
+                build_system,
+                private,
+            },
+        )
+    }?;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;
 
     let src_dir = dir.join("src");

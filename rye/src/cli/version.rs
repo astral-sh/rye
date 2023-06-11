@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::pyproject::PyProject;
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, bail, Error};
 use clap::{Parser, ValueEnum};
 use console::style;
 use pep440_rs::Version;
@@ -25,6 +25,9 @@ pub enum Bump {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut pyproject_toml = PyProject::discover()?;
+    if pyproject_toml.workspace_only() {
+        bail!("get or set version is not supported for workspace-only projects");
+    }
     match cmd.version {
         Some(version) => {
             let version =

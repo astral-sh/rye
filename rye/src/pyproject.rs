@@ -438,6 +438,10 @@ impl Workspace {
     pub fn rye_managed(&self) -> bool {
         is_rye_managed(&self.doc)
     }
+
+    pub fn workspace_only(&self) -> bool {
+        is_workspace_only(&self.doc)
+    }
 }
 
 /// Check if recurse should be skipped into directory with this name
@@ -870,6 +874,14 @@ impl PyProject {
         })?;
         Ok(())
     }
+
+    /// Is this only a workspace, not a package?
+    pub fn workspace_only(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.workspace_only(),
+            None => is_workspace_only(&self.doc),
+        }
+    }
 }
 
 pub fn normalize_package_name(x: &str) -> String {
@@ -1103,6 +1115,14 @@ fn is_rye_managed(doc: &Document) -> bool {
     doc.get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("managed"))
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false)
+}
+
+fn is_workspace_only(doc: &Document) -> bool {
+    doc.get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("workspace-only"))
         .and_then(|x| x.as_bool())
         .unwrap_or(false)
 }
