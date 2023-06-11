@@ -10,7 +10,7 @@ By default, `rye` will build the both sdist and wheel target in the `dist` direc
 rye build
 ```
 
-You can using the `--sdist` or `--wheel` flag to build the specific target, or specify the output directory with `--out`.
+You can use the `--sdist` or `--wheel` flag to build the specific target, or specify the output directory with `--out`.
 
 ```
 rye build --wheel --out target
@@ -30,7 +30,7 @@ Rye will publish the distribution files under the `dist` directory to PyPI by de
 rye publish
 ```
 
-You maybe be asked to input your access token and some other info if needed.
+You might be asked to input your access token and some other info if needed.
 
 ```
 No access token found, generate one at: https://pypi.org/manage/account/token/
@@ -46,7 +46,7 @@ rye publish dist/example-0.1.0.tar.gz
 
 ### --repository
 
-Rye support publish the package to a different repository by using the `--repository` and `--repository-url` flags. For example, to publish to the test repository:
+Rye supports publishing the package to a different repository by using the `--repository` and `--repository-url` flags. For example, to publish to the test PyPI repository:
 
 ```
 rye publish --repository testpypi --repository-url https://test.pypi.org/legacy/
@@ -54,10 +54,10 @@ rye publish --repository testpypi --repository-url https://test.pypi.org/legacy/
 
 ### --yes
 
-You can optionally set the `--yes` flag to skip the confirmation prompt, this can be useful for CI/CD pipelines.
+You can optionally set the `--yes` flag to skip the confirmation prompt. This can be useful for CI/CD pipelines.
 
 ```
 rye publish --token <your_token> --yes
 ```
 
-In the backend, rye save the credentials info in the `$HOME/.rye/credentials`, it means you don't need to provide the credentials info next time.
+Rye will store your repository info in `$HOME/.rye/credentials` for future use.
