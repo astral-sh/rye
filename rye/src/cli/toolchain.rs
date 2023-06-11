@@ -7,8 +7,10 @@ use std::process::Command;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
+use clap::ValueEnum;
 use console::style;
 use serde::Deserialize;
+use serde::Serialize;
 
 use crate::platform::{get_canonical_py_path, list_known_toolchains};
 use crate::sources::{iter_downloadable, PythonVersion};
@@ -66,6 +68,16 @@ pub struct ListCommand {
     /// Also include non installed, but downloadable toolchains
     #[arg(long)]
     include_downloadable: bool,
+    /// Request parseable output format
+    #[arg(long)]
+    format: Option<Format>,
+}
+
+#[derive(ValueEnum, Copy, Clone, Serialize, Debug, PartialEq)]
+#[value(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+enum Format {
+    Json,
 }
 
 #[derive(Parser, Debug)]
@@ -106,6 +118,17 @@ pub fn remove(cmd: RemoveCommand) -> Result<(), Error> {
     Ok(())
 }
 
+/// Output structure for toolchain list --format=json
+// Reserves the right to expand with new fields.
+#[derive(Serialize)]
+struct ListVersion {
+    name: PythonVersion,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    downloadable: Option<bool>,
+}
+
 fn list(cmd: ListCommand) -> Result<(), Error> {
     let mut toolchains = list_known_toolchains()?
         .into_iter()
@@ -121,15 +144,28 @@ fn list(cmd: ListCommand) -> Result<(), Error> {
     let mut versions = toolchains.into_iter().collect::<Vec<_>>();
     versions.sort_by_cached_key(|a| (a.1.is_none(), a.0.kind.to_string(), Reverse(a.clone())));
 
-    for (version, path) in versions {
-        if let Some(path) = path {
-            println!(
-                "{} ({})",
-                style(&version).green(),
-                style(path.display()).dim()
-            );
-        } else {
-            println!("{} (downloadable)", style(version).dim());
+    if let Some(Format::Json) = cmd.format {
+        let json_versions = versions
+            .into_iter()
+            .map(|(version, path)| ListVersion {
+                name: version,
+                downloadable: if path.is_none() { Some(true) } else { None },
+                path: path.map(|p| p.to_string_lossy().into_owned()),
+            })
+            .collect::<Vec<_>>();
+        serde_json::to_writer_pretty(std::io::stdout().lock(), &json_versions)?;
+        println!();
+    } else {
+        for (version, path) in versions {
+            if let Some(path) = path {
+                println!(
+                    "{} ({})",
+                    style(&version).green(),
+                    style(path.display()).dim()
+                );
+            } else {
+                println!("{} (downloadable)", style(version).dim());
+            }
         }
     }
     Ok(())
