@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.7.0
 
-_Unreleased_
+Released on 2023-06-12
 
 - `rye sync` and `rye lock` now accept `--pyproject`.  #296
 
@@ -22,8 +24,6 @@ _Unreleased_
 
 - `rye init` now accepts `--private` to set the `Private :: Do Not Upload` classifier
   that prevents uploads to PyPI.  #291
-
-<!-- released start -->
 
 ## 0.6.0
 
