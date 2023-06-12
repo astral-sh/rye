@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use anyhow::Error;
 use clap::Parser;
 
@@ -29,6 +31,9 @@ pub struct Args {
     /// Enables all features.
     #[arg(long)]
     all_features: bool,
+    /// Use this pyproject.toml file
+    #[arg(long, value_name = "PYPROJECT_TOML")]
+    pyproject: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -43,6 +48,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             features: cmd.features,
             all_features: cmd.all_features,
         },
+        pyproject: cmd.pyproject,
         ..SyncOptions::default()
     })?;
     Ok(())
