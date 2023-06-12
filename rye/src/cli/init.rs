@@ -23,7 +23,10 @@ use crate::platform::{
 };
 use crate::pyproject::BuildSystem;
 use crate::sources::PythonVersionRequest;
-use crate::utils::{escape_string, get_venv_python_bin, is_inside_git_work_tree, CommandOutput};
+use crate::utils::{
+    copy_dir, escape_string, get_venv_python_bin, is_inside_git_work_tree, CommandOutput,
+    CopyDirOptions,
+};
 
 /// Creates a new python project.
 #[derive(Parser, Debug)]
@@ -591,7 +594,11 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
     let dir = setup_py
         .parent()
         .context("could not establish setup.py parent dir")?;
-    copy_dir(dir, temp_dir.path())?;
+
+    let options = CopyDirOptions {
+        exclude: vec![dir.join(".git"), dir.join(".tox")],
+    };
+    copy_dir(dir, temp_dir.path(), &options)?;
 
     let setuptools_proxy = temp_dir.path().join("setuptools.py");
     fs::write(setuptools_proxy, SETUP_PY_PROXY_SCRIPT)?;
@@ -624,39 +631,5 @@ fn import_requirements_file(
             .entry(x.requirement.name.to_string())
             .or_insert(x.requirement.to_string());
     });
-    Ok(())
-}
-
-// TODO(cnpryer): Add `ignore`
-pub fn copy_dir<T: AsRef<Path>>(from: T, to: T) -> Result<(), Error> {
-    let (from, to) = (from.as_ref(), to.as_ref());
-    let mut stack = Vec::new();
-    stack.push(PathBuf::from(from));
-    let target_root = to.to_path_buf();
-    let from_component_count = from.to_path_buf().components().count();
-    while let Some(working_path) = stack.pop() {
-        // Collects the trailing components of the path
-        let src: PathBuf = working_path
-            .components()
-            .skip(from_component_count)
-            .collect();
-        let dest = if src.components().count() == 0 {
-            target_root.clone()
-        } else {
-            target_root.join(&src)
-        };
-        if !dest.exists() {
-            fs::create_dir_all(&dest)?;
-        }
-        for entry in fs::read_dir(working_path)? {
-            let path = entry?.path();
-            if path.is_dir() {
-                stack.push(path);
-            } else if let Some(filename) = path.file_name() {
-                fs::copy(&path, dest.join(filename))?;
-            }
-        }
-    }
-
     Ok(())
 }
