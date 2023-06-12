@@ -470,7 +470,7 @@ fn try_import_project_metadata(
     if metadata.dependencies.is_none() && !requirements.is_empty() {
         metadata.dependencies = Some(requirements.into_values().collect());
     }
-    if metadata.dependencies.is_none() && !dev_requirements.is_empty() {
+    if metadata.dev_dependencies.is_none() && !dev_requirements.is_empty() {
         metadata.dev_dependencies = Some(dev_requirements.into_values().collect());
     }
 
@@ -504,7 +504,7 @@ fn import_setup_py<T: AsRef<Path>>(
             metadata.author = Some((
                 author.to_string(),
                 json.get("author_email")
-                    .map(|x| x.to_string())
+                    .map(ToString::to_string)
                     .map(escape_string)
                     .unwrap_or_else(String::new),
             ));
@@ -522,7 +522,9 @@ fn import_setup_py<T: AsRef<Path>>(
     }
     if let Some(Value::Array(reqs)) = json.get("install_requires") {
         reqs.iter()
-            .filter_map(|x| Requirement::from_str(&x.to_string()).ok())
+            .map(ToString::to_string)
+            .map(escape_string)
+            .filter_map(|x| Requirement::from_str(&x).ok())
             .for_each(|x| {
                 requirements.insert(x.name.to_string(), format_requirement(&x).to_string());
             });
@@ -615,7 +617,7 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
     }
 }
 
-/// See https://github.com/konstin/poc-monotrail/blob/7487250e5ace3447f25a5573b7a9953cdbd9537e/src/requirements_txt.rs#L12-L16
+/// See https://github.com/konstin/poc-monotrail/blob/7487250e5ace3447f25a5573b7a9953ccd9537e/src/requirements_txt.rs#L12-L16
 fn import_requirements_file(
     requirements: &mut BTreeMap<String, String>,
     path: impl AsRef<Path>,
