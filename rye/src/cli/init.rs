@@ -24,8 +24,8 @@ use crate::platform::{
 use crate::pyproject::BuildSystem;
 use crate::sources::PythonVersionRequest;
 use crate::utils::{
-    copy_dir, escape_string, get_venv_python_bin, is_inside_git_work_tree, CommandOutput,
-    CopyDirOptions,
+    copy_dir, escape_string, format_requirement, get_venv_python_bin, is_inside_git_work_tree,
+    CommandOutput, CopyDirOptions,
 };
 
 /// Creates a new python project.
@@ -525,7 +525,7 @@ fn import_setup_py<T: AsRef<Path>>(
         reqs.iter()
             .filter_map(|x| Requirement::from_str(&x.to_string()).ok())
             .for_each(|x| {
-                requirements.insert(x.name.to_string(), x.to_string());
+                requirements.insert(x.name.to_string(), format_requirement(&x).to_string());
             });
     }
     Ok(())
@@ -580,7 +580,7 @@ fn import_setup_cfg(
             reqs.lines()
                 .filter_map(|x| Requirement::from_str(x).ok())
                 .for_each(|x| {
-                    requirements.insert(x.name.to_string(), x.to_string());
+                    requirements.insert(x.name.to_string(), format_requirement(&x).to_string());
                 });
         }
     }
@@ -629,7 +629,7 @@ fn import_requirements_file(
     data.requirements.iter().for_each(|x| {
         requirements
             .entry(x.requirement.name.to_string())
-            .or_insert(x.requirement.to_string());
+            .or_insert(format_requirement(&x.requirement).to_string());
     });
     Ok(())
 }
