@@ -8,7 +8,7 @@ TOKEN = open("token.txt").read().strip()
 RELEASE_URL = "https://api.github.com/repos/indygreg/python-build-standalone/releases"
 HEADERS = {
     "X-GitHub-Api-Version": "2022-11-28",
-    "Authorization": "Bearer " + TOKEN,
+    "Authorization": f"Bearer {TOKEN}",
 }
 FLAVOR_PREFERENCES = [
     "shared-pgo",
@@ -102,14 +102,12 @@ def normalize_triple(triple):
             return
     except IndexError:
         return
-    return "%s-%s" % (arch, platform)
+    return f"{arch}-{platform}"
 
 
 def read_sha256(url):
-    resp = sess.get(url + ".sha256", headers=HEADERS)
-    if not resp.ok:
-        return None
-    return resp.text.strip()
+    resp = sess.get(f"{url}.sha256", headers=HEADERS)
+    return None if not resp.ok else resp.text.strip()
 
 
 results = {}
@@ -241,7 +239,7 @@ for interpreter, py_ver, choices in sorted(
 ):
     for (arch, platform), url in sorted(choices.items()):
         sha256 = read_sha256(url)
-        sha256 = 'Some("%s")' % sha256 if sha256 else "None"
+        sha256 = f'Some("{sha256}")' if sha256 else "None"
         print(
             '    (PythonVersion { kind: Cow::Borrowed("%s"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s", %s),'
             % ((interpreter,) + py_ver + (arch, platform, url, sha256))
