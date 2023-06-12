@@ -1108,7 +1108,7 @@ dependencies = [
 [[package]]
 name = "monotrail-utils"
 version = "0.0.1"
-source = "git+https://github.com/cnpryer/poc-monotrail?branch=monotrail-utils#e6526ad3dd9700a05b5a6b3708ee12a8c54fe017"
+source = "git+https://github.com/konstin/poc-monotrail#596c51ed1955ada7117b09b526eba6140cbdc288"
 dependencies = [
  "anyhow",
  "fs-err",
