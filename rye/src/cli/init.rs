@@ -272,7 +272,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut metadata = Metadata::new();
 
     // by default rye attempts to import metadata first.
-    // if we're missing metadata after the import we update it with what's found from normal initialization.
     if !cmd.no_import {
         let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
         let options = ImportOptions {
@@ -282,28 +281,28 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             ..Default::default()
         };
         try_import_project_metadata(&mut metadata, &dir, options)?;
-    } else {
-        if metadata.name.is_none() {
-            metadata.name = Some(name);
-        }
-        if metadata.version.is_none() {
-            metadata.version = Some(version.to_string());
-        }
-        if metadata.description.is_none() {
-            metadata.description = Some("Add your description here".to_string())
-        }
-        if metadata.author.is_none() {
-            metadata.author = author;
-        }
-        if metadata.requires_python.is_none() {
-            metadata.requires_python = Some(requires_python);
-        }
-        if metadata.license.is_none() {
-            metadata.license = license;
-        }
-        if metadata.dependencies.is_none() {
-            metadata.dependencies = Some(Vec::new())
-        }
+    }
+    // if we're missing metadata after the import we update it with what's found from normal initialization.
+    if metadata.name.is_none() {
+        metadata.name = Some(name);
+    }
+    if metadata.version.is_none() {
+        metadata.version = Some(version.to_string());
+    }
+    if metadata.description.is_none() {
+        metadata.description = Some("Add your description here".to_string())
+    }
+    if metadata.author.is_none() {
+        metadata.author = author;
+    }
+    if metadata.requires_python.is_none() {
+        metadata.requires_python = Some(requires_python);
+    }
+    if metadata.license.is_none() {
+        metadata.license = license;
+    }
+    if metadata.dependencies.is_none() {
+        metadata.dependencies = Some(Vec::new())
     }
 
     // write .python-version
@@ -540,23 +539,23 @@ fn import_setup_cfg(
     ini.set_multiline(true);
     let config = ini.load(path).map_err(|msg| anyhow::anyhow!(msg))?;
     if let Some(section) = config.get("metadata") {
-        if let Some(Some(name)) = section.get("name") {
-            if metadata.name.is_none() {
+        if metadata.name.is_none() {
+            if let Some(Some(name)) = section.get("name") {
                 metadata.name = Some(name.to_string());
             }
         }
-        if let Some(Some(version)) = section.get("version") {
-            if metadata.version.is_none() {
+        if metadata.version.is_none() {
+            if let Some(Some(version)) = section.get("version") {
                 metadata.version = Some(version.to_string());
             }
         }
-        if let Some(Some(description)) = section.get("description") {
-            if metadata.description.is_none() {
+        if metadata.description.is_none() {
+            if let Some(Some(description)) = section.get("description") {
                 metadata.description = Some(description.to_string());
             }
         }
-        if let Some(Some(author)) = section.get("author") {
-            if metadata.author.is_none() {
+        if metadata.author.is_none() {
+            if let Some(Some(author)) = section.get("author") {
                 let email = match section.get("author_email") {
                     Some(Some(it)) => it,
                     _ => "",
@@ -564,15 +563,15 @@ fn import_setup_cfg(
                 metadata.author = Some((author.to_string(), email.to_string()));
             }
         }
-        if let Some(Some(license)) = section.get("license") {
-            if metadata.license.is_none() {
+        if metadata.license.is_none() {
+            if let Some(Some(license)) = section.get("license") {
                 metadata.license = Some(license.to_string());
             }
         }
     }
     if let Some(section) = config.get("options") {
-        if let Some(Some(requires_python)) = section.get("requires_python") {
-            if metadata.requires_python.is_none() {
+        if metadata.requires_python.is_none() {
+            if let Some(Some(requires_python)) = section.get("requires_python") {
                 metadata.requires_python = Some(requires_python.to_string());
             }
         }
