@@ -510,9 +510,9 @@ fn import_setup_py<T: AsRef<Path>>(
             ));
         }
     }
-    if let Some(Value::String(requires_python)) = json.get("requires_python") {
+    if let Some(Value::String(python_requires)) = json.get("python_requires") {
         if metadata.requires_python.is_none() {
-            metadata.requires_python = Some(requires_python.to_string());
+            metadata.requires_python = Some(python_requires.to_string());
         }
     }
     if let Some(Value::String(license)) = json.get("license") {
@@ -573,8 +573,8 @@ fn import_setup_cfg(
     }
     if let Some(section) = config.get("options") {
         if metadata.requires_python.is_none() {
-            if let Some(Some(requires_python)) = section.get("requires_python") {
-                metadata.requires_python = Some(requires_python.to_string());
+            if let Some(Some(python_requires)) = section.get("python_requires") {
+                metadata.requires_python = Some(python_requires.to_string());
             }
         }
         if let Some(Some(reqs)) = section.get("install_requires") {
