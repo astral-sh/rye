@@ -10,7 +10,7 @@ use configparser::ini::Ini;
 use console::style;
 use license::License;
 use minijinja::{context, Environment};
-use monotrail::RequirementsTxt;
+use monotrail_utils::RequirementsTxt;
 use pep440_rs::VersionSpecifier;
 use pep508_rs::Requirement;
 use serde_json::Value;
