@@ -617,7 +617,15 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
     }
 }
 
-/// See https://github.com/konstin/poc-monotrail/blob/7487250e5ace3447f25a5573b7a9953ccd9537e/src/requirements_txt.rs#L12-L16
+/// Import from requirements files.
+///
+/// Unsupported as of monotrail-utils v0.0.1:
+///  * `-e <path>`. TBD
+///  * `<path>`. TBD
+///  * `<archive_url>`. TBD
+///  * Options without a requirement, such as `--find-links` or `--index-url`
+///
+/// See https://github.com/mitsuhiko/rye/issues/191
 fn import_requirements_file(
     requirements: &mut BTreeMap<String, String>,
     path: impl AsRef<Path>,
