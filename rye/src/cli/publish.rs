@@ -58,10 +58,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let venv = ensure_self_venv(output)?;
     let project = PyProject::discover()?;
 
-    if project.workspace_only() {
-        bail!("publishing is not supported for workspace-only projects");
-    }
-
     // Get the files to publish.
     let files = match cmd.dist {
         Some(paths) => paths,

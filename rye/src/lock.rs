@@ -90,7 +90,7 @@ pub fn update_workspace_lockfile(
     for pyproject_result in workspace.iter_projects() {
         let pyproject = pyproject_result?;
         let rel_url = make_relative_url(&pyproject.root_path(), &workspace.path())?;
-        if !workspace.workspace_only() {
+        if !pyproject.project_only() {
             let applicable_extras =
                 format_project_extras(features_by_project.as_ref(), &pyproject)?;
             writeln!(local_req_file, "-e {}{}", rel_url, applicable_extras)?;
@@ -263,7 +263,7 @@ pub fn update_single_project_lockfile(
         eprintln!("Generating {} lockfile: {}", lock_mode, lockfile.display());
     }
     let mut req_file = NamedTempFile::new()?;
-    if !pyproject.workspace_only() {
+    if !pyproject.project_only() {
         let features_by_project = collect_workspace_features(lock_options);
         let applicable_extras = format_project_extras(features_by_project.as_ref(), pyproject)?;
         writeln!(

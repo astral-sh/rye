@@ -197,18 +197,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         Some(ver) => ver.format_simple(),
         None => "".to_string(),
     };
-    let dep_kind = if !pyproject_toml.workspace_only() {
-        if cmd.dev {
-            DependencyKind::Dev
-        } else if cmd.excluded {
-            DependencyKind::Excluded
-        } else if let Some(ref section) = cmd.optional {
-            DependencyKind::Optional(section.into())
-        } else {
-            DependencyKind::Normal
-        }
-    } else {
+    let dep_kind = if cmd.dev {
         DependencyKind::Dev
+    } else if cmd.excluded {
+        DependencyKind::Excluded
+    } else if let Some(ref section) = cmd.optional {
+        DependencyKind::Optional(section.into())
+    } else {
+        DependencyKind::Normal
     };
 
     for str_requirement in cmd.requirements {
