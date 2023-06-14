@@ -177,6 +177,9 @@ pub struct Args {
     /// Include pre-releases when finding a package version.
     #[arg(long)]
     pre: bool,
+    /// Add this as dependency to the given project.
+    #[arg(short, long)]
+    project: Option<String>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -191,8 +194,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut added = Vec::new();
     python_path.push(VENV_BIN);
     python_path.push("python");
-
     let mut pyproject_toml = PyProject::discover()?;
+    if cmd.project.is_some() && pyproject_toml.is_workspace_root() {
+        let workspace = pyproject_toml.workspace().unwrap();
+        pyproject_toml = workspace.get_project(&cmd.project.unwrap())?.unwrap();
+    }
     let py_ver = match pyproject_toml.target_python_version() {
         Some(ver) => ver.format_simple(),
         None => "".to_string(),
