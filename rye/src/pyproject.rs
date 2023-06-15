@@ -291,7 +291,7 @@ impl fmt::Display for Script {
 pub struct Workspace {
     root: PathBuf,
     doc: Document,
-    members: Vec<String>,
+    members: Option<Vec<String>>,
 }
 
 impl Workspace {
@@ -311,8 +311,7 @@ impl Workspace {
                         x.iter()
                             .filter_map(|item| item.as_str().map(|x| x.to_string()))
                             .collect::<Vec<_>>()
-                    })
-                    .unwrap_or_default(),
+                    }),
             })
     }
 
@@ -350,18 +349,23 @@ impl Workspace {
     /// Checks if a project is a member of the declared workspace.
     pub fn is_member(&self, path: &Path) -> bool {
         if let Ok(relative) = path.strip_prefix(&self.root) {
-            if relative == Path::new("") || self.members.is_empty() {
+            if relative == Path::new("") {
                 true
             } else {
-                let path = relative.to_string_lossy();
-                for pattern in &self.members {
-                    if let Ok(glob) = Glob::new(pattern) {
-                        if glob.compile_matcher().is_match(&*path) {
-                            return true;
+                match &self.members {
+                    None => true,
+                    Some(members) => {
+                        let path = relative.to_string_lossy();
+                        for pattern in members {
+                            if let Ok(glob) = Glob::new(pattern) {
+                                if glob.compile_matcher().is_match(&*path) {
+                                    return true;
+                                }
+                            }
                         }
+                        false
                     }
                 }
-                false
             }
         } else {
             false
