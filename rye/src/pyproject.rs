@@ -13,7 +13,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use anyhow::{anyhow, bail, Context, Error};
-use globset::Glob;
+use globset::GlobBuilder;
 use once_cell::sync::Lazy;
 use pep440_rs::{Operator, Version, VersionSpecifiers};
 use pep508_rs::Requirement;
@@ -357,9 +357,20 @@ impl Workspace {
                     Some(members) => {
                         let path = relative.to_string_lossy();
                         for pattern in members {
-                            if let Ok(glob) = Glob::new(pattern) {
-                                if glob.compile_matcher().is_match(&*path) {
-                                    return true;
+                            let glob = GlobBuilder::new(pattern)
+                                // backslash_escape=false for portability - same setting on all
+                                // platforms
+                                .literal_separator(true) // *,? do not match `/`
+                                .backslash_escape(false) // backslash is never an escape character
+                                .build();
+                            match glob {
+                                Ok(glob) => {
+                                    if glob.compile_matcher().is_match(&*path) {
+                                        return true;
+                                    }
+                                }
+                                Err(err) => {
+                                    eprintln!("warning: workspace.members: {}", err);
                                 }
                             }
                         }
