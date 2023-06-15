@@ -330,7 +330,8 @@ fn generate_lockfile(
         .arg(&requirements_file)
         .arg(requirements_file_in)
         .current_dir(workspace_path)
-        .env("PYTHONWARNINGS", "ignore");
+        .env("PYTHONWARNINGS", "ignore")
+        .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
     if output == CommandOutput::Verbose {
         cmd.arg("--verbose");
     } else {
@@ -407,6 +408,16 @@ fn finalize_lockfile(
         writeln!(rv, "{}", line)?;
     }
     Ok(())
+}
+
+pub fn make_project_root_fragment(root: &Path) -> String {
+    // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
+    // so let's make sure it is url escaped.  This is pretty hacky but
+    // good enough for now.
+    // No leading slash to fit with file:///${PROJECT_ROOT} convention
+    root.to_string_lossy()
+        .trim_start_matches('/')
+        .replace(' ', "%20")
 }
 
 fn make_relative_url(path: &Path, base: &Path) -> Result<String, Error> {
