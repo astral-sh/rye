@@ -442,7 +442,8 @@ impl Workspace {
 
 /// Check if recurse should be skipped into directory with this name
 fn skip_recurse_into(name: &OsStr) -> bool {
-    return name == OsStr::new(".venv") || name == OsStr::new(".git");
+    // We want to ignore hidden directories: .venv, .git, and others.
+    name.to_str().map(|s| s.starts_with('.')).unwrap_or(false)
 }
 
 /// Could not auto-discover any pyproject
