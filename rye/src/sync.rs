@@ -10,7 +10,8 @@ use tempfile::tempdir;
 use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
 use crate::consts::VENV_BIN;
 use crate::lock::{
-    update_single_project_lockfile, update_workspace_lockfile, LockMode, LockOptions,
+    make_project_root_fragment, update_single_project_lockfile, update_workspace_lockfile,
+    LockMode, LockOptions,
 };
 use crate::piptools::get_pip_sync;
 use crate::platform::get_toolchain_python_bin;
@@ -229,10 +230,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             let py_path = get_venv_python_bin(&venv);
 
             pip_sync_cmd
-                // XXX: ${PROJECT_ROOT} is supposed to be used in the context of file:///
-                // so let's make sure it is url escaped.  This is pretty hacky but
-                // good enough for now.
-                .env("PROJECT_ROOT", root.to_string_lossy().replace(' ', "%2F"))
+                .env("PROJECT_ROOT", make_project_root_fragment(&root))
                 .env("PYTHONPATH", tempdir.path())
                 .current_dir(&root)
                 .arg("--python-executable")
