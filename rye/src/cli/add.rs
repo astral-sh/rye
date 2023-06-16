@@ -85,6 +85,9 @@ pub struct ReqExtras {
     /// Adds a dependency with a specific feature.
     #[arg(long)]
     features: Vec<String>,
+    /// Add this as dependency to the given project if in workspace.
+    #[arg(short, long)]
+    project: Option<String>,
 }
 
 impl ReqExtras {
@@ -123,23 +126,40 @@ impl ReqExtras {
                 )),
             };
         } else if let Some(ref path) = self.path {
+            let project_dir = match &self.project {
+                Some(name) => {
+                    let mut pyproject_toml = PyProject::discover()?;
+                    if let Some(workspace) = pyproject_toml.workspace() {
+                        if let Some(project) = workspace.get_project(&name)? {
+                            pyproject_toml = project;
+                        } else {
+                            bail!("project {} not found", name);
+                        }
+                    } else {
+                        bail!("no workspace found");
+                    }
+                    pyproject_toml.root_path().as_ref().to_owned()
+                }
+                None => env::current_dir()?,
+            };
             // For hatchling build backend, it use {root:uri} for file relative path,
             // but this not supported by pip-tools,
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
                 PyProject::discover()?.build_backend().unwrap() == BuildSystem::Hatchling;
             let file_url = if self.absolute || is_hatchling {
-                Url::from_file_path(env::current_dir()?.join(path))
+                Url::from_file_path(project_dir.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
             } else {
-                let base = env::current_dir()?;
-                let rv = pathdiff::diff_paths(base.join(path), &base).ok_or_else(|| {
-                    anyhow!(
-                        "unable to create relative path from {} to {}",
-                        base.display(),
-                        path.display()
-                    )
-                })?;
+                let rv = pathdiff::diff_paths(project_dir.join(path), &project_dir).ok_or_else(
+                    || {
+                        anyhow!(
+                            "unable to create relative path from {} to {}",
+                            project_dir.display(),
+                            path.display()
+                        )
+                    },
+                )?;
                 Url::from_file_path(Path::new("/${PROJECT_ROOT}").join(rv)).unwrap()
             };
             req.version_or_url = match req.version_or_url {
@@ -177,9 +197,6 @@ pub struct Args {
     /// Include pre-releases when finding a package version.
     #[arg(long)]
     pre: bool,
-    /// Add this as dependency to the given project.
-    #[arg(short, long)]
-    project: Option<String>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -195,10 +212,17 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     python_path.push(VENV_BIN);
     python_path.push("python");
     let mut pyproject_toml = PyProject::discover()?;
-    if cmd.project.is_some() && pyproject_toml.is_workspace_root() {
-        let workspace = pyproject_toml.workspace().unwrap();
-        pyproject_toml = workspace.get_project(&cmd.project.unwrap())?.unwrap();
-    }
+    if let Some(ref name) = cmd.req_extras.project {
+        if let Some(workspace) = pyproject_toml.workspace() {
+            if let Some(project) = workspace.get_project(&name)? {
+                pyproject_toml = project;
+            } else {
+                bail!("project {} not found", name);
+            }
+        } else {
+            bail!("no workspace found");
+        }
+    };
     let py_ver = match pyproject_toml.target_python_version() {
         Some(ver) => ver.format_simple(),
         None => "".to_string(),
