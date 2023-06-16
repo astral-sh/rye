@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Improved handling of relative path installations by setting `PROJECT_PATH`
+  the same way as PDM does.  #321
+
 <!-- released start -->
 
 ## 0.7.0
