@@ -11,8 +11,11 @@ _Unreleased_
   during installation that are undeclared via the new `--extra-requirement`
   option.  #326
 
-- Improved handling of relative path installations by setting `PROJECT_PATH`
+- Improved handling of relative path installations by setting `PROJECT_ROOT`
   the same way as PDM does.  #321
+
+- Workspaces will now never discover `pyproject.toml` files in any dot
+  directories. (Name starting with `.`)  #329
 
 - Fixed `rye build` not working correctly on Windows.  #327
 
