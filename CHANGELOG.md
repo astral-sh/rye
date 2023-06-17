@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- The workspace member declaration is now platform independent.  If `members` is
+  now explicitly set to an empty list it will not fall back to auto discovery.  #331
+
 - `rye add` now pins versions with `==` instead of `~=` when the version of the
   package does not use at least two components.  This means that for instance it
   will now correctly use `openai-whisper==20230314` rather than
