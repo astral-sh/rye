@@ -14,6 +14,8 @@ _Unreleased_
 - Improved handling of relative path installations by setting `PROJECT_PATH`
   the same way as PDM does.  #321
 
+- Fixed `rye build` not working correctly on Windows.  #327
+
 <!-- released start -->
 
 ## 0.7.0
