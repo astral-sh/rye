@@ -8,7 +8,7 @@ use console::style;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::pyproject::{normalize_package_name, PyProject};
-use crate::utils::CommandOutput;
+use crate::utils::{get_venv_python_bin, CommandOutput};
 
 /// Builds a package for distribution.
 #[derive(Parser, Debug)]
@@ -100,7 +100,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             eprintln!("building {}", style(project.normalized_name()?).cyan());
         }
 
-        let mut build_cmd = Command::new(venv.join("bin/python"));
+        let mut build_cmd = Command::new(get_venv_python_bin(&venv));
         build_cmd
             .arg("-mbuild")
             .env("NO_COLOR", "1")
