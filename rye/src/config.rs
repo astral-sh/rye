@@ -3,6 +3,7 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Error};
+use pep440_rs::Operator;
 use toml_edit::Document;
 
 use crate::platform::{get_app_dir, get_latest_cpython_version};
@@ -109,6 +110,20 @@ impl Config {
             .and_then(|x| x.get("license"))
             .and_then(|x| x.as_str())
             .map(|x| x.to_string())
+    }
+
+    /// Should dependencies added by default by pinned with ~= or ==
+    pub fn default_dependency_operator(&self) -> Operator {
+        self.doc
+            .get("default")
+            .and_then(|x| x.get("dependency_operator"))
+            .and_then(|x| x.as_str())
+            .map_or(Operator::GreaterThanEqual, |x| match x {
+                "==" => Operator::Equal,
+                "~=" => Operator::TildeEqual,
+                ">=" => Operator::GreaterThanEqual,
+                _ => Operator::GreaterThanEqual,
+            })
     }
 
     /// Pretend that all projects are rye managed.

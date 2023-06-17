@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Rye for now prefers `>=` over `~=` for newly added dependencies.
+
 - The workspace member declaration is now platform independent.  If `members` is
   now explicitly set to an empty list it will not fall back to auto discovery.  #331
 

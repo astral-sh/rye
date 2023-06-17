@@ -57,6 +57,11 @@ build-system = "hatchling"
 # This is the default license that is used
 license = "MIT"
 
+# The dependency operator to use by default for dependencies.  The options are
+# '>=', '~=', and '=='.  The default currently is '>='.  This affects the behavior
+# of `rye add`.
+dependency_operator = ">="
+
 [proxy]
 # the proxy to use for HTTP (overridden by the http_proxy environment variable)
 http = "http://127.0.0.1:4000"

@@ -12,6 +12,7 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
@@ -206,6 +207,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     } else {
         DependencyKind::Normal
     };
+    let default_operator = Config::current().default_dependency_operator();
 
     for str_requirement in cmd.requirements {
         let mut requirement = Requirement::from_str(&str_requirement)?;
@@ -287,10 +289,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                         VersionSpecifier::new(
                             // local versions or versions with only one component cannot
                             // use ~= but need to use ==.
-                            if version.is_local() || version.release.len() < 2 {
-                                Operator::Equal
-                            } else {
-                                Operator::TildeEqual
+                            match default_operator {
+                                Operator::EqualStar
+                                    if version.is_local() || version.release.len() < 2 =>
+                                {
+                                    Operator::TildeEqual
+                                }
+                                ref other => other.clone(),
                             },
                             Version::from_str(m.version.as_ref().unwrap())
                                 .map_err(|msg| anyhow!("invalid version: {}", msg))?,
