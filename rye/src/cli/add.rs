@@ -285,7 +285,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
                     VersionSpecifiers::from_iter(Some(
                         VersionSpecifier::new(
-                            if version.is_local() {
+                            // local versions or versions with only one component cannot
+                            // use ~= but need to use ==.
+                            if version.is_local() || version.release.len() < 2 {
                                 Operator::Equal
                             } else {
                                 Operator::TildeEqual
