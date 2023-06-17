@@ -7,6 +7,11 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye add` now pins versions with `==` instead of `~=` when the version of the
+  package does not use at least two components.  This means that for instance it
+  will now correctly use `openai-whisper==20230314` rather than
+  `openai-whisper~=20230314` which is not actually satisfiable.  #328
+
 - `rye install` now lets you install dependencies into the tool's virtualenv
   during installation that are undeclared via the new `--extra-requirement`
   option.  #326
