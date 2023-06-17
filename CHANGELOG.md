@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye install` now lets you install dependencies into the tool's virtualenv
+  during installation that are undeclared via the new `--extra-requirement`
+  option.  #326
+
 - Improved handling of relative path installations by setting `PROJECT_PATH`
   the same way as PDM does.  #321
 

@@ -71,6 +71,7 @@ pub fn install(
     py_ver: &PythonVersionRequest,
     force: bool,
     include_deps: &[String],
+    extra_requirements: &[Requirement],
     output: CommandOutput,
 ) -> Result<(), Error> {
     let config = Config::current();
@@ -119,6 +120,10 @@ pub fn install(
     // to be installed
     if py_ver.major == 3 && py_ver.minor == 7 {
         cmd.arg("importlib-metadata==6.6.0");
+    }
+
+    for extra in extra_requirements {
+        cmd.arg(extra.to_string());
     }
 
     let status = cmd.status()?;
