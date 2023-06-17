@@ -1107,6 +1107,20 @@ fn is_rye_managed(doc: &Document) -> bool {
         .unwrap_or(false)
 }
 
+pub fn find_project_by_name(name: &str) -> Result<PyProject, Error> {
+    let mut pyproject_toml = PyProject::discover()?;
+    if let Some(workspace) = pyproject_toml.workspace() {
+        if let Some(project) = workspace.get_project(&name)? {
+            pyproject_toml = project;
+        } else {
+            bail!("project {} not found", name);
+        }
+    } else {
+        bail!("no workspace found");
+    }
+    Ok(pyproject_toml)
+}
+
 /// Represents expanded sources.
 #[derive(Debug, Clone, Serialize)]
 pub struct ExpandedSources {

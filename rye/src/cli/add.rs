@@ -13,7 +13,9 @@ use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
-use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
+use crate::pyproject::{
+    find_project_by_name, BuildSystem, DependencyKind, ExpandedSources, PyProject,
+};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
@@ -126,18 +128,10 @@ impl ReqExtras {
                 )),
             };
         } else if let Some(ref path) = self.path {
+            let mut pyproject_toml = PyProject::discover()?;
             let project_dir = match &self.project {
                 Some(name) => {
-                    let mut pyproject_toml = PyProject::discover()?;
-                    if let Some(workspace) = pyproject_toml.workspace() {
-                        if let Some(project) = workspace.get_project(&name)? {
-                            pyproject_toml = project;
-                        } else {
-                            bail!("project {} not found", name);
-                        }
-                    } else {
-                        bail!("no workspace found");
-                    }
+                    pyproject_toml = find_project_by_name(&name)?;
                     pyproject_toml.root_path().as_ref().to_owned()
                 }
                 None => env::current_dir()?,
@@ -146,7 +140,7 @@ impl ReqExtras {
             // but this not supported by pip-tools,
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
-                PyProject::discover()?.build_backend().unwrap() == BuildSystem::Hatchling;
+                pyproject_toml.build_backend().unwrap() == BuildSystem::Hatchling;
             let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(project_dir.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
@@ -211,17 +205,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut added = Vec::new();
     python_path.push(VENV_BIN);
     python_path.push("python");
-    let mut pyproject_toml = PyProject::discover()?;
-    if let Some(ref name) = cmd.req_extras.project {
-        if let Some(workspace) = pyproject_toml.workspace() {
-            if let Some(project) = workspace.get_project(&name)? {
-                pyproject_toml = project;
-            } else {
-                bail!("project {} not found", name);
-            }
-        } else {
-            bail!("no workspace found");
-        }
+    let mut pyproject_toml = match cmd.req_extras.project {
+        Some(ref name) => find_project_by_name(&name)?,
+        None => PyProject::discover()?,
     };
     let py_ver = match pyproject_toml.target_python_version() {
         Some(ver) => ver.format_simple(),

@@ -4,7 +4,7 @@ use anyhow::Error;
 use clap::Parser;
 use pep508_rs::Requirement;
 
-use crate::pyproject::{DependencyKind, PyProject};
+use crate::pyproject::{find_project_by_name, DependencyKind, PyProject};
 use crate::utils::{format_requirement, CommandOutput};
 
 /// Removes a package from this project.
@@ -18,6 +18,9 @@ pub struct Args {
     /// Remove this from an optional dependency group.
     #[arg(long, conflicts_with = "dev")]
     optional: Option<String>,
+    /// Remove from a specific project.
+    #[arg(long)]
+    project: Option<String>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -30,7 +33,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let mut removed_packages = Vec::new();
 
-    let mut pyproject_toml = PyProject::discover()?;
+    let mut pyproject_toml = match cmd.project {
+        Some(name) => find_project_by_name(&name)?,
+        None => PyProject::discover()?,
+    };
     for str_requirement in cmd.requirements {
         let requirement = Requirement::from_str(&str_requirement)?;
         if let Some(removed) = pyproject_toml.remove_dependency(
