@@ -19,6 +19,9 @@ pub struct Args {
     /// Include scripts from a given dependency.
     #[arg(long)]
     include_dep: Vec<String>,
+    /// Additional dependencies to install that are not declared by the main package.
+    #[arg(long)]
+    extra_requirement: Vec<String>,
     /// Optionally the Python version to use.
     #[arg(short, long)]
     python: Option<String>,
@@ -35,26 +38,18 @@ pub struct Args {
 
 pub fn execute(mut cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
+    let mut extra_requirements = Vec::new();
 
-    let mut requirement = match resolve_local_requirement(Path::new(&cmd.requirement), output)? {
-        Some(req) => req,
-        None => cmd.requirement.parse::<Requirement>().with_context(|| {
-            if cmd.requirement.contains("://") {
-                format!(
-                    "failed to parse requirement '{}'. It looks like a URL, maybe \
-                        you wanted to use --url or --git",
-                    cmd.requirement
-                )
-            } else {
-                format!("failed to parse requirement '{}'", cmd.requirement)
-            }
-        })?,
-    };
-
+    // main requirement
+    let mut requirement = handle_requirement(&cmd.requirement, output, true)?;
     // installations here always use absolute paths for local references
     // because we do not have a rye workspace to work with.
     cmd.req_extras.force_absolute();
     cmd.req_extras.apply_to_requirement(&mut requirement)?;
+
+    for req in cmd.extra_requirement {
+        extra_requirements.push(handle_requirement(&req, output, false)?);
+    }
 
     let py_ver: PythonVersionRequest = match cmd.python {
         Some(ref py) => py.parse()?,
@@ -67,6 +62,34 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
         },
     };
 
-    install(requirement, &py_ver, cmd.force, &cmd.include_dep, output)?;
+    install(
+        requirement,
+        &py_ver,
+        cmd.force,
+        &cmd.include_dep,
+        &extra_requirements,
+        output,
+    )?;
     Ok(())
+}
+
+fn handle_requirement(
+    req: &str,
+    output: CommandOutput,
+    local_hint: bool,
+) -> Result<Requirement, Error> {
+    Ok(match resolve_local_requirement(Path::new(req), output)? {
+        Some(req) => req,
+        None => req.parse::<Requirement>().with_context(|| {
+            if local_hint && req.contains("://") {
+                format!(
+                    "failed to parse requirement '{}'. It looks like a URL, maybe \
+                        you wanted to use --url or --git",
+                    req
+                )
+            } else {
+                format!("failed to parse requirement '{}'", req)
+            }
+        })?,
+    })
 }

@@ -20,6 +20,23 @@ are placed in `~/.rye/shims`.
     The `install` command now considers custom sources configured
     in the `config.toml` file.  For more information see [Dependency Sources](sources.md).
 
+## Extra Requirements
+
+Some tools do not declare all of their dependencies since they might be optional.
+In some cases these can be declared by passing extra features to the installer:
+
+```bash
+rye install black --features colorama
+```
+
+If dependencies are not at all specified, then they can be provided with `--extra-requirement`.
+This is particularly sometimes necessary if the tool uses `pkg_resources` (part of
+`setuptools`) but forgets to declare that dependency:
+
+```bash
+rye install gradio --extra-requirement setuptools
+```
+
 ## Listing Tools
 
 If you want to see which tools are installed, you can use `rye tools list`:
