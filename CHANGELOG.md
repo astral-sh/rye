@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.8.0
 
-_Unreleased_
+Released on 2023-06-18
 
 - Rye for now prefers `>=` over `~=` for newly added dependencies.
 
@@ -28,8 +30,6 @@ _Unreleased_
   directories. (Name starting with `.`)  #329
 
 - Fixed `rye build` not working correctly on Windows.  #327
-
-<!-- released start -->
 
 ## 0.7.0
 
