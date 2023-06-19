@@ -18,6 +18,26 @@ dependencies = [
 ]
 ```
 
+##  `project.scripts`
+
+This key specifies the scripts that are to be generated and installed into the virtual environment during `sync`.
+These scripts will invoke the configured entry point.
+
+```toml
+[project.scripts]
+my-hello-script = 'hello:main'
+```
+This configuration will generate a script `my-hello-script` that will call the `main` function of the
+`hello` module.
+
+Scripts can be installed using `rye sync` and run using `rye run`:
+
+```bash
+$ rye sync
+$ rye run my-hello-script
+Hello from hello!
+```
+
 ## `tool.rye.dev-dependencies`
 
 This works similar to `project.dependencies` but holds development only dependencies.  These
