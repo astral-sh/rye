@@ -94,6 +94,9 @@ interpreter.
 
     Note that you might need to restart your login session for this to take effect.
 
+There is a quite a bit to shims and their behavior.  Make sure to [read up on shims](shims.md)
+to learn more.
+
 ## Updating Rye
 
 To update rye to the latest version you can use `rye` itself:

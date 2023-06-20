@@ -94,6 +94,15 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
             sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
         }
 
+        if (target == "python" || target == "python3")
+            && args
+                .get(1)
+                .and_then(|x| x.as_os_str().to_str())
+                .map_or(false, |x| x.starts_with('+'))
+        {
+            bail!("Explicit Python selection is not possible within Rye managed projects.");
+        }
+
         let mut args = args.to_vec();
         let folder = pyproject.venv_path().join(VENV_BIN);
         if let Some(m) = which_in_global(target, Some(folder))?.next() {
@@ -105,47 +114,51 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
         if target == "pip" || target == "pip3" {
             return Ok(Some(get_pip_shim(&pyproject, args, CommandOutput::Normal)?));
         }
+
+    // Global shims (either implicit or requested)
     } else if target == "python" || target == "python3" {
         let config = Config::current();
-        if config.global_python() {
-            let mut args = args.to_vec();
-            let mut remove1 = false;
+        let mut remove1 = false;
 
-            let version_request = if let Some(rest) = args
-                .get(1)
-                .and_then(|x| x.as_os_str().to_str())
-                .and_then(|x| x.strip_prefix('+'))
-            {
-                remove1 = true;
-                PythonVersionRequest::from_str(rest)
-                    .context("invalid python version requested from command line")?
-            } else {
-                match get_python_version_request_from_pyenv_pin(&std::env::current_exe()?) {
-                    Some(version_request) => version_request,
-                    None => config.default_toolchain()?,
-                }
-            };
-
-            let py_ver = match PythonVersion::try_from(version_request.clone()) {
-                Ok(py_ver) => py_ver,
-                Err(_) => latest_available_python_version(&version_request)
-                    .ok_or_else(|| anyhow!("Unable to determine target Python version"))?,
-            };
-            let py = get_toolchain_python_bin(&py_ver)?;
-            if !py.is_file() {
-                bail!(
-                    "Requested Python version ({}) is not installed. Install with `rye fetch {}`",
-                    py_ver,
-                    py_ver
-                );
+        let version_request = if let Some(rest) = args
+            .get(1)
+            .and_then(|x| x.as_os_str().to_str())
+            .and_then(|x| x.strip_prefix('+'))
+        {
+            remove1 = true;
+            PythonVersionRequest::from_str(rest)
+                .context("invalid python version requested from command line")?
+        } else if config.global_python() {
+            match get_python_version_request_from_pyenv_pin(&std::env::current_exe()?) {
+                Some(version_request) => version_request,
+                None => config.default_toolchain()?,
             }
+        } else {
+            // if neither requested explicitly, nor global-python is enabled, we fall
+            // back to the next shadowed target
+            return find_shadowed_target(target, args);
+        };
 
-            args[0] = py.into();
-            if remove1 {
-                args.remove(1);
-            }
-            return Ok(Some(args));
+        let py_ver = match PythonVersion::try_from(version_request.clone()) {
+            Ok(py_ver) => py_ver,
+            Err(_) => latest_available_python_version(&version_request)
+                .ok_or_else(|| anyhow!("Unable to determine target Python version"))?,
+        };
+        let py = get_toolchain_python_bin(&py_ver)?;
+        if !py.is_file() {
+            bail!(
+                "Requested Python version ({}) is not installed. Install with `rye fetch {}`",
+                py_ver,
+                py_ver
+            );
         }
+
+        let mut args = args.to_vec();
+        args[0] = py.into();
+        if remove1 {
+            args.remove(1);
+        }
+        return Ok(Some(args));
     }
 
     // if we make it this far, we did not find a shim in the project, look for
