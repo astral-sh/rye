@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Added `rye config` to read and manipulate the `config.toml` file.  #339
+
 - Added support for the new `behavior.global-python` flag which turns on global
   Python shimming.  When enabled then the `python` shim works even outside of
   Rye managed projects.  Additionally the shim (when run outside of Rye managed

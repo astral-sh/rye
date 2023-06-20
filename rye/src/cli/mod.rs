@@ -5,6 +5,7 @@ use clap::Parser;
 
 mod add;
 mod build;
+mod config;
 mod fetch;
 mod init;
 mod install;
@@ -46,6 +47,7 @@ struct Args {
 enum Command {
     Add(add::Args),
     Build(build::Args),
+    Config(config::Args),
     Fetch(fetch::Args),
     Init(init::Args),
     Install(install::Args),
@@ -93,6 +95,7 @@ pub fn execute() -> Result<(), Error> {
     match cmd {
         Command::Add(cmd) => add::execute(cmd),
         Command::Build(cmd) => build::execute(cmd),
+        Command::Config(cmd) => config::execute(cmd),
         Command::Fetch(cmd) => fetch::execute(cmd),
         Command::Init(cmd) => init::execute(cmd),
         Command::Install(cmd) => install::execute(cmd),

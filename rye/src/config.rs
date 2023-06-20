@@ -1,5 +1,5 @@
 use std::fs;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Error};
@@ -17,22 +17,19 @@ pub fn load() -> Result<(), Error> {
     let cfg = if cfg_path.is_file() {
         Config::from_path(&cfg_path)?
     } else {
-        Config::default()
+        Config {
+            doc: Document::new(),
+            path: cfg_path,
+        }
     };
     *CONFIG.lock().unwrap() = Some(Arc::new(cfg));
     Ok(())
 }
 
+#[derive(Clone)]
 pub struct Config {
     doc: Document,
-}
-
-impl Default for Config {
-    fn default() -> Self {
-        Config {
-            doc: Document::new(),
-        }
-    }
+    path: PathBuf,
 }
 
 impl Config {
@@ -46,6 +43,22 @@ impl Config {
             .clone()
     }
 
+    /// Returns a clone of the internal doc.
+    pub fn doc_mut(&mut self) -> &mut Document {
+        &mut self.doc
+    }
+
+    /// Saves changes back.
+    pub fn save(&self) -> Result<(), Error> {
+        fs::write(&self.path, self.doc.to_string())?;
+        Ok(())
+    }
+
+    /// Returns the path.
+    pub fn path(&self) -> &Path {
+        &self.path
+    }
+
     /// Loads a config from a path.
     pub fn from_path(path: &Path) -> Result<Config, Error> {
         let contents = fs::read_to_string(path)
@@ -54,6 +67,7 @@ impl Config {
             doc: contents
                 .parse::<Document>()
                 .with_context(|| format!("failed to parse config from '{}'", path.display()))?,
+            path: path.to_path_buf(),
         })
     }
 

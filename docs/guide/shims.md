@@ -20,9 +20,8 @@ System python installation.
 To enable global shims, you need to enable the `global-python` flag in
 the [`config.toml`](config.md) file:
 
-```toml
-[behavior]
-global-python = true
+```bash
+rye config --set-bool behavior.global-python=true
 ```
 
 Afterwards if you run `python` outside of a Rye managed project it will
