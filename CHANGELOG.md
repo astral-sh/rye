@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye add` now accepts `--pin` to let one override the type of pin to use.  #341
+
 - Added `rye config` to read and manipulate the `config.toml` file.  #339
 
 - Added support for the new `behavior.global-python` flag which turns on global
