@@ -126,6 +126,15 @@ impl Config {
             })
     }
 
+    /// Allow rye shims to resolve globally installed Pythons.
+    pub fn global_python(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("global-python"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(false)
+    }
+
     /// Pretend that all projects are rye managed.
     pub fn force_rye_managed(&self) -> bool {
         self.doc

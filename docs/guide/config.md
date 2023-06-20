@@ -72,6 +72,9 @@ https = "http://127.0.0.1:4000"
 # When set to true the `managed` flag is always assumed to be true.
 force_rye_managed = false
 
+# Enables global shims when set to `true`
+global-python = false
+
 # a array of tables with optional sources.  Same format as in pyproject.toml
 [[sources]]
 name = "default"
