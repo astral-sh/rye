@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Renamed the config key `default.dependency_operator` to `default.dependency-operator`
+  and `behavior.force_rye_managed` to `behavior.force-rye-managed`.  #338
+
 <!-- released start -->
 
 ## 0.8.0
