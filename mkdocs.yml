@@ -12,6 +12,7 @@ nav:
     - Installation: guide/installation.md
     - Basics: guide/basics.md
     - Configuration: guide/config.md
+    - Shims: guide/shims.md
     - Python Project: guide/pyproject.md
     - Syncing and Locking: guide/sync.md
     - Building and Publishing: guide/publish.md

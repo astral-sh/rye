@@ -7,6 +7,12 @@ that were not yet released.
 
 _Unreleased_
 
+- Added support for the new `behavior.global-python` flag which turns on global
+  Python shimming.  When enabled then the `python` shim works even outside of
+  Rye managed projects.  Additionally the shim (when run outside of Rye managed
+  projects) supports a special first parameter `+VERSION` which requests a
+  specific version of Python (eg: `python +3.8` to request Python 3.8).  #336
+
 - Renamed the config key `default.dependency_operator` to `default.dependency-operator`
   and `behavior.force_rye_managed` to `behavior.force-rye-managed`.  #338
 
