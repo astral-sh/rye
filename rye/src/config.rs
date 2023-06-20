@@ -116,7 +116,11 @@ impl Config {
     pub fn default_dependency_operator(&self) -> Operator {
         self.doc
             .get("default")
-            .and_then(|x| x.get("dependency_operator"))
+            .and_then(|x| {
+                x.get("dependency-operator")
+                    // legacy typo key
+                    .or_else(|| x.get("dependency_operator"))
+            })
             .and_then(|x| x.as_str())
             .map_or(Operator::GreaterThanEqual, |x| match x {
                 "==" => Operator::Equal,
@@ -139,7 +143,11 @@ impl Config {
     pub fn force_rye_managed(&self) -> bool {
         self.doc
             .get("behavior")
-            .and_then(|x| x.get("force_rye_managed"))
+            .and_then(|x| {
+                x.get("force-rye-managed")
+                    // legacy typo key
+                    .or_else(|| x.get("force_rye_managed"))
+            })
             .and_then(|x| x.as_bool())
             .unwrap_or(false)
     }

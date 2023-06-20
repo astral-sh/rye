@@ -13,6 +13,9 @@ _Unreleased_
   projects) supports a special first parameter `+VERSION` which requests a
   specific version of Python (eg: `python +3.8` to request Python 3.8).  #336
 
+- Renamed the config key `default.dependency_operator` to `default.dependency-operator`
+  and `behavior.force_rye_managed` to `behavior.force-rye-managed`.  #338
+
 <!-- released start -->
 
 ## 0.8.0

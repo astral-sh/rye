@@ -60,7 +60,7 @@ license = "MIT"
 # The dependency operator to use by default for dependencies.  The options are
 # '>=', '~=', and '=='.  The default currently is '>='.  This affects the behavior
 # of `rye add`.
-dependency_operator = ">="
+dependency-operator = ">="
 
 [proxy]
 # the proxy to use for HTTP (overridden by the http_proxy environment variable)
@@ -70,7 +70,7 @@ https = "http://127.0.0.1:4000"
 
 [behavior]
 # When set to true the `managed` flag is always assumed to be true.
-force_rye_managed = false
+force-rye-managed = false
 
 # Enables global shims when set to `true`.  This means that the installed
 # `python` shim will resolve to a Rye managed toolchain even outside of
