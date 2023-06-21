@@ -9,6 +9,7 @@ use console::style;
 
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
+use crate::tui::redirect_to_stderr;
 use crate::utils::{exec_spawn, success_status};
 
 /// Runs a command installed into this package.
@@ -33,6 +34,7 @@ enum Cmd {
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
+    let _guard = redirect_to_stderr(true);
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     // make sure we have the minimal virtualenv.
@@ -143,9 +145,9 @@ fn list_scripts(pyproject: &PyProject) -> Result<(), Error> {
     scripts.sort_by(|a, b| a.0.to_ascii_lowercase().cmp(&b.0.to_ascii_lowercase()));
     for (name, script) in scripts {
         if matches!(script, Script::External(_)) {
-            println!("{}", name);
+            echo!("{}", name);
         } else {
-            println!("{} ({})", name, style(script).dim());
+            echo!("{} ({})", name, style(script).dim());
         }
     }
     Ok(())

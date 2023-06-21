@@ -24,7 +24,7 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
     }
 
     if output != CommandOutput::Quiet {
-        eprintln!("Creating virtualenv for pip-tools");
+        echo!("Creating virtualenv for pip-tools");
     }
     create_virtualenv(output, &self_venv, py_ver, &venv)?;
 

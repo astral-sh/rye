@@ -99,7 +99,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
 fn register(cmd: RegisterCommand) -> Result<(), Error> {
     let target_version = register_toolchain(&cmd.path, cmd.name.as_deref(), |_| Ok(()))?;
-    println!("Registered {} as {}", cmd.path.display(), target_version);
+    echo!("Registered {} as {}", cmd.path.display(), target_version);
     Ok(())
 }
 
@@ -108,12 +108,12 @@ pub fn remove(cmd: RemoveCommand) -> Result<(), Error> {
     let path = get_canonical_py_path(&ver)?;
     if path.is_file() {
         fs::remove_file(&path)?;
-        eprintln!("Removed toolchain link {}", &ver);
+        echo!("Removed toolchain link {}", &ver);
     } else if path.is_dir() {
         fs::remove_dir_all(&path)?;
-        eprintln!("Removed installed toolchain {}", &ver);
+        echo!("Removed installed toolchain {}", &ver);
     } else {
-        eprintln!("Toolchain is not installed");
+        echo!("Toolchain is not installed");
     }
     Ok(())
 }
@@ -154,17 +154,17 @@ fn list(cmd: ListCommand) -> Result<(), Error> {
             })
             .collect::<Vec<_>>();
         serde_json::to_writer_pretty(std::io::stdout().lock(), &json_versions)?;
-        println!();
+        echo!();
     } else {
         for (version, path) in versions {
             if let Some(path) = path {
-                println!(
+                echo!(
                     "{} ({})",
                     style(&version).green(),
                     style(path.display()).dim()
                 );
             } else {
-                println!("{} (downloadable)", style(version).dim());
+                echo!("{} (downloadable)", style(version).dim());
             }
         }
     }

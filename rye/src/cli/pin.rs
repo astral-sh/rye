@@ -71,7 +71,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    eprintln!("pinned {} in {}", to_write, version_file.display());
+    echo!("pinned {} in {}", to_write, version_file.display());
 
     Ok(())
 }

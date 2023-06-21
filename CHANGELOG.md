@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Rye now emits most messages, most of the time to stdout rather than stderr.  #342
+
 - `rye add` now accepts `--pin` to let one override the type of pin to use.  #341
 
 - Added `rye config` to read and manipulate the `config.toml` file.  #339

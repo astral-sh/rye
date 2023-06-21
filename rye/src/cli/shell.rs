@@ -8,6 +8,7 @@ use console::style;
 
 use crate::pyproject::PyProject;
 use crate::sync::{sync, SyncOptions};
+use crate::tui::redirect_to_stderr;
 use crate::utils::QuietExit;
 
 /// Spawns a shell with the virtualenv activated.
@@ -29,6 +30,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         bail!("cannot invoke recursive rye shell");
     }
 
+    let _guard = redirect_to_stderr(true);
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
     sync(SyncOptions::python_only().pyproject(cmd.pyproject))
         .context("failed to sync ahead of shell")?;
@@ -51,11 +53,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     shell.env("__RYE_SHELL", "1");
 
     if !cmd.no_banner {
-        eprintln!(
+        echo!(
             "Spawning virtualenv shell from {}",
             style(&venv_path.display()).cyan()
         );
-        eprintln!("Leave shell with 'exit'");
+        echo!("Leave shell with 'exit'");
     }
 
     let status = shell.status()?;

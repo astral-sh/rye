@@ -78,7 +78,7 @@ pub fn update_workspace_lockfile(
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
-        eprintln!("Generating {} lockfile: {}", lock_mode, lockfile.display());
+        echo!("Generating {} lockfile: {}", lock_mode, lockfile.display());
     }
 
     let features_by_project = collect_workspace_features(lock_options);
@@ -257,7 +257,7 @@ pub fn update_single_project_lockfile(
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
-        eprintln!("Generating {} lockfile: {}", lock_mode, lockfile.display());
+        echo!("Generating {} lockfile: {}", lock_mode, lockfile.display());
     }
 
     let features_by_project = collect_workspace_features(lock_options);

@@ -182,7 +182,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         )?;
     } else {
         let version = args.version.as_deref().unwrap_or("latest");
-        eprintln!("Updating to {version}");
+        echo!("Updating to {version}");
         let binary = format!("rye-{ARCH}-{OS}");
         let ext = if cfg!(unix) { ".gz" } else { ".exe" };
         let url = if version == "latest" {
@@ -195,11 +195,11 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
             .with_context(|| format!("could not download release {version} for this platform"))?;
         if let Some(sha256_bytes) = download_url_ignore_404(&sha256_url, CommandOutput::Normal)? {
             let checksum = String::from_utf8_lossy(&sha256_bytes);
-            eprintln!("Checking checksum");
+            echo!("Checking checksum");
             check_checksum(&bytes, checksum.trim())
                 .with_context(|| format!("hash check of {} failed", url))?;
         } else {
-            eprintln!("Checksum check skipped (no hash available)");
+            echo!("Checksum check skipped (no hash available)");
         }
 
         let tmp = tempfile::NamedTempFile::new()?;
@@ -220,8 +220,8 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         update_exe_and_shims(tmp.path())?;
     }
 
-    eprintln!("Updated!");
-    eprintln!();
+    echo!("Updated!");
+    echo!();
     Command::new(current_exe).arg("--version").status()?;
 
     Ok(())
@@ -307,19 +307,19 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
         }
     }
 
-    eprintln!("Done!");
-    eprintln!();
+    echo!("Done!");
+    echo!();
 
     let rye_home = env::var("RYE_HOME")
         .map(Cow::Owned)
         .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
     if cfg!(unix) {
-        eprintln!(
+        echo!(
             "Don't forget to remove the sourcing of {} from your shell config.",
             Path::new(&rye_home as &str).join("env").display()
         );
     } else {
-        eprintln!(
+        echo!(
             "Don't forget to remove {} from your PATH",
             Path::new(&rye_home as &str).join("shims").display()
         )
@@ -334,54 +334,51 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     let shims = app_dir.join("shims");
     let target = shims.join("rye").with_extension(EXE_EXTENSION);
 
-    eprintln!("{}", style("Welcome to Rye!").bold());
+    echo!("{}", style("Welcome to Rye!").bold());
 
     if matches!(mode, InstallMode::AutoInstall) {
-        eprintln!();
-        eprintln!("Rye has detected that it's not installed on this computer yet and");
-        eprintln!("automatically started the installer for you.  For more information");
-        eprintln!(
+        echo!();
+        echo!("Rye has detected that it's not installed on this computer yet and");
+        echo!("automatically started the installer for you.  For more information");
+        echo!(
             "read {}",
             style("https://rye-up.com/guide/installation/").yellow()
         );
     }
 
-    eprintln!();
-    eprintln!(
+    echo!();
+    echo!(
         "This installer will install rye to {}",
         style(app_dir.display()).cyan()
     );
-    eprintln!(
+    echo!(
         "This path can be changed by exporting the {} environment variable.",
         style("RYE_HOME").cyan()
     );
-    eprintln!();
-    eprintln!("{}", style("Details:").bold());
-    eprintln!("  Rye Version: {}", style(env!("CARGO_PKG_VERSION")).cyan());
-    eprintln!("  Platform: {} ({})", style(OS).cyan(), style(ARCH).cyan());
+    echo!();
+    echo!("{}", style("Details:").bold());
+    echo!("  Rye Version: {}", style(env!("CARGO_PKG_VERSION")).cyan());
+    echo!("  Platform: {} ({})", style(OS).cyan(), style(ARCH).cyan());
 
     if cfg!(windows) && !symlinks_supported() {
-        eprintln!();
-        eprintln!(
-            "{}: your Windows configuration does not support symlinks.",
-            style("Warning").red()
-        );
-        eprintln!();
-        eprintln!("It's strongly recommended that you enable developer mode in Windows to");
-        eprintln!("enable symlinks.  You need to enable this before continuing the setup.");
-        eprintln!(
+        echo!();
+        warn!("your Windows configuration does not support symlinks.");
+        echo!();
+        echo!("It's strongly recommended that you enable developer mode in Windows to");
+        echo!("enable symlinks.  You need to enable this before continuing the setup.");
+        echo!(
             "Learn more at {}",
             style("https://rye-up.com/guide/faq/#windows-developer-mode").yellow()
         );
     }
 
-    eprintln!();
+    echo!();
     if !matches!(mode, InstallMode::NoPrompts)
         && !dialoguer::Confirm::new()
             .with_prompt("Continue?")
             .interact()?
     {
-        eprintln!("Installation cancelled!");
+        elog!("Installation cancelled!");
         return Err(QuietExit(1).into());
     }
 
@@ -391,7 +388,7 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         fs::remove_file(&target)?;
     }
     fs::copy(exe, &target)?;
-    eprintln!("Installed binary to {}", style(target.display()).cyan());
+    echo!("Installed binary to {}", style(target.display()).cyan());
 
     // write an env file we can source later.  Prefer $HOME/.rye over
     // the expanded path, if not overridden.
@@ -408,7 +405,7 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
 
     // Register a toolchain if provided.
     if let Some(toolchain_path) = toolchain_path {
-        eprintln!(
+        echo!(
             "Registering toolchain at {}",
             style(toolchain_path.display()).cyan()
         );
@@ -423,12 +420,12 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
             }
             Ok(())
         })?;
-        eprintln!("Registered toolchain as {}", style(version).cyan());
+        echo!("Registered toolchain as {}", style(version).cyan());
     }
 
     // Ensure internals next
     let self_path = ensure_self_venv(CommandOutput::Normal)?;
-    eprintln!(
+    echo!(
         "Updated self-python installation at {}",
         style(self_path.display()).cyan()
     );
@@ -437,30 +434,28 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         if !env::split_paths(&env::var_os("PATH").unwrap())
             .any(|x| is_same_file(x, &shims).unwrap_or(false))
         {
-            eprintln!();
-            eprintln!(
+            echo!();
+            echo!(
                 "The rye directory {} was not detected on {}.",
                 style(shims.display()).cyan(),
                 style("PATH").cyan()
             );
-            eprintln!("It is highly recommended that you add it.");
-            eprintln!("Add this at the end of your .profile, .zprofile or similar:");
-            eprintln!();
-            eprintln!("    source \"{}/env\"", rye_home);
-            eprintln!();
-            eprintln!(
-                "Note: after adding rye to your path, restart your shell for it to take effect."
-            );
+            echo!("It is highly recommended that you add it.");
+            echo!("Add this at the end of your .profile, .zprofile or similar:");
+            echo!();
+            echo!("    source \"{}/env\"", rye_home);
+            echo!();
+            echo!("Note: after adding rye to your path, restart your shell for it to take effect.");
         }
     } else if cfg!(windows) {
-        eprintln!();
-        eprintln!("Note: You need to manually add {DEFAULT_HOME} to your PATH.");
+        echo!();
+        echo!("Note: You need to manually add {DEFAULT_HOME} to your PATH.");
     }
 
-    eprintln!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
+    echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
 
-    eprintln!();
-    eprintln!("{}", style("All done!").green());
+    echo!();
+    echo!("{}", style("All done!").green());
 
     Ok(())
 }

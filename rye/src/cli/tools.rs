@@ -40,11 +40,11 @@ fn list_tools(cmd: ListCommand) -> Result<(), Error> {
     tools.sort();
 
     for (tool, mut scripts) in tools {
-        println!("{}", style(tool).cyan());
+        echo!("{}", style(tool).cyan());
         if cmd.include_scripts {
             scripts.sort();
             for script in scripts {
-                println!("  {}", script);
+                echo!("  {}", script);
             }
         }
     }
