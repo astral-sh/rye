@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.9.0
 
-_Unreleased_
+Released on 2023-06-21
 
 - The internal Rye Python version is now 3.11.
 
@@ -23,8 +25,6 @@ _Unreleased_
 
 - Renamed the config key `default.dependency_operator` to `default.dependency-operator`
   and `behavior.force_rye_managed` to `behavior.force-rye-managed`.  #338
-
-<!-- released start -->
 
 ## 0.8.0
 
