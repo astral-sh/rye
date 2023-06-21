@@ -387,6 +387,38 @@ pub fn reformat_toml_array_multiline(deps: &mut Array) {
     deps.set_trailing_comma(true);
 }
 
+pub fn escape_string(s: String) -> String {
+    s.trim().replace(['\\', '"'], "")
+}
+
+pub fn copy_dir<T: AsRef<Path>>(from: T, to: T, options: &CopyDirOptions) -> Result<(), Error> {
+    let from = from.as_ref();
+    let to = to.as_ref();
+
+    if from.is_dir() {
+        for entry in fs::read_dir(from)?.filter_map(|e| e.ok()) {
+            let entry_path = entry.path();
+            if options.exclude.iter().any(|dir| *dir == entry_path) {
+                continue;
+            }
+
+            let destination = to.join(entry.file_name());
+            if entry.file_type()?.is_dir() {
+                fs::create_dir_all(&destination)?;
+                copy_dir(entry.path(), destination, options)?;
+            } else {
+                fs::copy(entry.path(), &destination)?;
+            }
+        }
+    }
+    Ok(())
+}
+
+pub struct CopyDirOptions {
+    /// Exclude paths
+    pub exclude: Vec<PathBuf>,
+}
+
 #[test]
 fn test_quiet_exit_display() {
     let quiet_exit = QuietExit(0);
