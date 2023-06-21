@@ -7,7 +7,6 @@
 #   all-features: false
 
 -e file:.
--e file:py
 blinker==1.6.2
 certifi==2023.5.7
 charset-normalizer==3.1.0
