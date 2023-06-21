@@ -27,7 +27,7 @@ use crate::utils::{
 pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionRequest {
     kind: Some(Cow::Borrowed("cpython")),
     major: 3,
-    minor: Some(10),
+    minor: Some(11),
     patch: None,
     suffix: None,
 };
@@ -287,7 +287,7 @@ fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> 
         .filter(is_self_compatible_toolchain)
         .collect::<Vec<_>>();
 
-    if let Some(version) = possible_versions.into_iter().min() {
+    if let Some(version) = possible_versions.into_iter().max() {
         echo!(
             "Found a compatible python version: {}",
             style(&version).cyan()
