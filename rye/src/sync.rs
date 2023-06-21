@@ -98,16 +98,17 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         if let Some(marker_python) = get_current_venv_python_version(&venv) {
             if marker_python != py_ver {
                 if cmd.output != CommandOutput::Quiet {
-                    eprintln!(
+                    echo!(
                         "Python version mismatch (found {}, expect {}), recreating.",
-                        marker_python, py_ver
+                        marker_python,
+                        py_ver
                     );
                 }
                 recreate = true;
             }
         } else if cmd.force {
             if cmd.output != CommandOutput::Quiet {
-                eprintln!("Forcing re-creation of non rye managed virtualenv");
+                echo!("Forcing re-creation of non rye managed virtualenv");
             }
             recreate = true;
         } else if cmd.mode == SyncMode::PythonOnly {
@@ -132,15 +133,15 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         if !matches!(cmd.mode, SyncMode::PythonOnly | SyncMode::LockOnly)
             && output != CommandOutput::Quiet
         {
-            eprintln!("Reusing already existing virtualenv");
+            echo!("Reusing already existing virtualenv");
         }
     } else {
         if output != CommandOutput::Quiet {
-            eprintln!(
+            echo!(
                 "Initializing new virtualenv in {}",
                 style(venv.display()).cyan()
             );
-            eprintln!("Python version: {}", style(&py_ver).cyan());
+            echo!("Python version: {}", style(&py_ver).cyan());
         }
         create_virtualenv(output, &self_venv, &py_ver, &venv)
             .context("failed creating virtualenv ahead of sync")?;
@@ -216,7 +217,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         // run pip install with the lockfile.
         if cmd.mode != SyncMode::LockOnly {
             if output != CommandOutput::Quiet {
-                eprintln!("Installing dependencies");
+                echo!("Installing dependencies");
             }
             let tempdir = tempdir()?;
             symlink_dir(
@@ -276,7 +277,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     }
 
     if output != CommandOutput::Quiet && cmd.mode != SyncMode::PythonOnly {
-        eprintln!("Done!");
+        echo!("Done!");
     }
 
     Ok(())

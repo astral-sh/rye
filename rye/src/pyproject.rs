@@ -370,7 +370,7 @@ impl Workspace {
                                     }
                                 }
                                 Err(err) => {
-                                    eprintln!("warning: workspace.members: {}", err);
+                                    echo!("warning: workspace.members: {}", err);
                                 }
                             }
                         }

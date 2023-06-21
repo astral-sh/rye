@@ -21,7 +21,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let mut requirement = Requirement::from_str(&requirement_str)
             .with_context(|| format!("unable to parse requirement '{}'", requirement_str))?;
         cmd.req_extras.apply_to_requirement(&mut requirement)?;
-        println!("{}", format_requirement(&requirement));
+        echo!("{}", format_requirement(&requirement));
     }
 
     Ok(())

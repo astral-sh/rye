@@ -5,7 +5,6 @@ use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::{Parser, ValueEnum};
-use console::style;
 use pep440_rs::{Operator, Version, VersionSpecifier, VersionSpecifiers};
 use pep508_rs::{Requirement, VersionOrUrl};
 use serde::Deserialize;
@@ -266,9 +265,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                         )
                         .unwrap_or_default();
                         if let Some(pre) = all_pre_matches.into_iter().next() {
-                            eprintln!(
-                                "{}: {} ({}) was found considering pre-releases.  Pass --pre to allow use.",
-                                style("warning").red(),
+                            warn!(
+                                "{} ({}) was found considering pre-releases.  Pass --pre to allow use.",
                                 pre.name,
                                 pre.version.unwrap_or_default()
                             );
@@ -285,9 +283,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     }
                 } else {
                     if output != CommandOutput::Quiet {
-                        eprintln!("Available package versions:");
+                        echo!("Available package versions:");
                         for pkg in all_matches {
-                            eprintln!(
+                            echo!(
                                 "  {} ({}) requires Python {}",
                                 pkg.name,
                                 pkg.version.unwrap_or_default(),
@@ -297,7 +295,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                                     .map_or("unknown", |x| x as &str)
                             );
                         }
-                        eprintln!("A possible solution is to raise the version in `requires-python` in `pyproject.toml`.");
+                        echo!("A possible solution is to raise the version in `requires-python` in `pyproject.toml`.");
                     }
                     bail!(
                         "did not find a version of package '{}' compatible with this version of Python.",
@@ -341,7 +339,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     if output != CommandOutput::Quiet {
         for ref requirement in added {
-            println!(
+            echo!(
                 "Added {} as {} dependency",
                 format_requirement(requirement),
                 &dep_kind

@@ -3,7 +3,6 @@ use std::str::FromStr;
 use crate::pyproject::PyProject;
 use anyhow::{anyhow, Error};
 use clap::{Parser, ValueEnum};
-use console::style;
 use pep440_rs::Version;
 
 /// Get or set project version
@@ -32,13 +31,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             pyproject_toml.set_version(&version);
             pyproject_toml.save()?;
 
-            eprintln!("version set to {}", version);
+            echo!("version set to {}", version);
         }
         None => {
             let mut version = pyproject_toml.version()?;
             match cmd.bump {
                 Some(bump) => bump_version(&mut version, bump, &mut pyproject_toml)?,
-                None => eprintln!("{}", version),
+                None => echo!("{}", version),
             }
         }
     }
@@ -51,10 +50,7 @@ fn bump_version(version: &mut Version, bump: Bump, pyproject: &mut PyProject) ->
     }
     if version.is_dev() {
         version.dev = None;
-        eprintln!(
-            "{} dev version will be bumped to release version",
-            style("warning:").red()
-        );
+        warn!("dev version will be bumped to release version");
     } else {
         let index = bump as usize;
         if version.release.get(index).is_none() {
@@ -66,7 +62,7 @@ fn bump_version(version: &mut Version, bump: Bump, pyproject: &mut PyProject) ->
     pyproject.set_version(version);
     pyproject.save().unwrap();
 
-    eprintln!("version bumped to {}", version);
+    echo!("version bumped to {}", version);
 
     Ok(())
 }

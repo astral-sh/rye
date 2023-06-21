@@ -3,6 +3,9 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use crate::utils::QuietExit;
 
+#[macro_use]
+mod tui;
+
 mod bootstrap;
 mod cli;
 mod config;
@@ -28,17 +31,20 @@ pub fn main() {
     let status = match result {
         Ok(()) => 0,
         Err(err) => {
-            if let Some(QuietExit(code)) = err.downcast_ref() {
+            if let Some(err) = err.downcast_ref::<clap::Error>() {
+                err.print().ok();
+                err.exit_code()
+            } else if let Some(QuietExit(code)) = err.downcast_ref() {
                 *code
             } else {
-                eprintln!("Error: {:?}", err);
+                error!("{:?}", err);
                 1
             }
         }
     };
 
     if SHOW_CONTINUE_PROMPT.load(Ordering::Relaxed) {
-        eprintln!("Press any key to continue");
+        echo!("Press any key to continue");
         console::Term::buffered_stderr().read_key().ok();
     }
 

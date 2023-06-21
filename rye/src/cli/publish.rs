@@ -121,7 +121,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
         maybe_decrypt(&secret, cmd.yes)?
     } else {
-        eprintln!("No access token found, generate one at: https://pypi.org/manage/account/token/");
+        echo!("No access token found, generate one at: https://pypi.org/manage/account/token/");
         let token = if !cmd.yes {
             prompt_for_token()?
         } else {

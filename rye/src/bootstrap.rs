@@ -76,7 +76,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
             return Ok(venv_dir);
         } else {
             if output != CommandOutput::Quiet {
-                eprintln!("detected outdated rye internals. Refreshing");
+                echo!("detected outdated rye internals. Refreshing");
             }
             fs::remove_dir_all(&venv_dir).context("could not remove self-venv for update")?;
             if pip_tools_dir.is_dir() {
@@ -87,7 +87,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     }
 
     if output != CommandOutput::Quiet {
-        eprintln!("Bootstrapping rye internals");
+        echo!("Bootstrapping rye internals");
     }
 
     let version = ensure_self_toolchain(output).with_context(|| {
@@ -136,7 +136,7 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
 
 fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
-        eprintln!("Upgrading pip");
+        echo!("Upgrading pip");
     }
     let venv_bin = venv_dir.join(VENV_BIN);
 
@@ -164,7 +164,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
         .arg("-r")
         .arg(req_file.path());
     if output != CommandOutput::Quiet {
-        eprintln!("Installing internal dependencies");
+        echo!("Installing internal dependencies");
     }
     if output == CommandOutput::Verbose {
         pip_install_cmd.arg("--verbose");
@@ -288,7 +288,7 @@ fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> 
         .collect::<Vec<_>>();
 
     if let Some(version) = possible_versions.into_iter().min() {
-        eprintln!(
+        echo!(
             "Found a compatible python version: {}",
             style(&version).cyan()
         );
@@ -306,7 +306,7 @@ pub fn fetch(
         let py_bin = get_toolchain_python_bin(&version)?;
         if py_bin.is_file() {
             if output == CommandOutput::Verbose {
-                eprintln!("Python version already downloaded. Skipping.");
+                echo!("Python version already downloaded. Skipping.");
             }
             return Ok(version);
         }
@@ -320,11 +320,11 @@ pub fn fetch(
     let target_dir = get_canonical_py_path(&version)?;
     let target_py_bin = get_toolchain_python_bin(&version)?;
     if output == CommandOutput::Verbose {
-        eprintln!("target dir: {}", target_dir.display());
+        echo!("target dir: {}", target_dir.display());
     }
     if target_dir.is_dir() && target_py_bin.is_file() {
         if output == CommandOutput::Verbose {
-            eprintln!("Python version already downloaded. Skipping.");
+            echo!("Python version already downloaded. Skipping.");
         }
         return Ok(version);
     }
@@ -333,28 +333,28 @@ pub fn fetch(
         .with_context(|| format!("failed to create target folder {}", target_dir.display()))?;
 
     if output == CommandOutput::Verbose {
-        eprintln!("download url: {}", url);
+        echo!("download url: {}", url);
     }
     if output != CommandOutput::Quiet {
-        eprintln!("{} {}", style("Downloading").cyan(), version);
+        echo!("{} {}", style("Downloading").cyan(), version);
     }
     let archive_buffer = download_url(url, output)?;
 
     if let Some(sha256) = sha256 {
         if output != CommandOutput::Quiet {
-            eprintln!("{}", style("Checking checksum").cyan());
+            echo!("{}", style("Checking checksum").cyan());
         }
         check_checksum(&archive_buffer, sha256)
             .with_context(|| format!("hash check of {} failed", &url))?;
     } else if output != CommandOutput::Quiet {
-        eprintln!("Checksum check skipped (no hash available)");
+        echo!("Checksum check skipped (no hash available)");
     }
 
     unpack_archive(&archive_buffer, &target_dir, 1)
         .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
 
     if output != CommandOutput::Quiet {
-        eprintln!("{} Downloaded {}", style("success:").green(), version);
+        echo!("{} Downloaded {}", style("success:").green(), version);
     }
 
     Ok(version)
@@ -452,13 +452,13 @@ fn validate_shared_libraries(py: &Path) -> Result<(), Error> {
     }
 
     missing.sort();
-    eprintln!(
+    echo!(
         "{}: detected missing shared librar{} required by Python:",
         style("error").red(),
         if missing.len() == 1 { "y" } else { "ies" }
     );
     for lib in missing {
-        eprintln!("  - {}", style(lib).yellow());
+        echo!("  - {}", style(lib).yellow());
     }
     bail!(
         "Python installation is unable to run on this machine due to missing libraries.\n\

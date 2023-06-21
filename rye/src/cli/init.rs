@@ -171,10 +171,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
             .contains(&py.clone().into())
     {
-        eprintln!(
-            "{} conflicted python version with project's requires-python, will auto fix it.",
-            style("warning:").red()
-        );
+        warn!("conflicted python version with project's requires-python, will auto fix it.");
         requires_python = format!(">= {}.{}", py.major, py.minor.unwrap_or_default());
     }
 
@@ -282,12 +279,12 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    eprintln!(
+    echo!(
         "{} Initialized project in {}",
         style("success:").green(),
         dir.display()
     );
-    eprintln!("  Run `rye sync` to get started");
+    echo!("  Run `rye sync` to get started");
 
     Ok(())
 }

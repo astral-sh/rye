@@ -15,6 +15,7 @@ use crate::platform::{get_python_version_request_from_pyenv_pin, get_toolchain_p
 use crate::pyproject::{latest_available_python_version, PyProject};
 use crate::sources::{PythonVersion, PythonVersionRequest};
 use crate::sync::{sync, SyncOptions};
+use crate::tui::redirect_to_stderr;
 use crate::utils::{exec_spawn, get_venv_python_bin, CommandOutput};
 
 fn detect_shim(args: &[OsString]) -> Option<String> {
@@ -91,6 +92,7 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
     if let Ok(pyproject) = PyProject::discover() {
         // However we only allow automatic synching, if we are rye managed.
         if pyproject.rye_managed() {
+            let _guard = redirect_to_stderr(true);
             sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
         }
 

@@ -171,35 +171,32 @@ pub fn install(
         && output != CommandOutput::Quiet
         && (installed.is_empty() || output == CommandOutput::Verbose)
     {
-        eprintln!(
+        echo!(
             "{}",
             style("Found additional non installed scripts in dependencies:").yellow()
         );
         scripts_found.sort();
         for (package, scripts) in scripts_found.iter() {
-            eprintln!("{}:", style(package).green());
+            echo!("{}:", style(package).green());
             for script in scripts {
-                eprintln!("  - {}", style(script).cyan());
+                echo!("  - {}", style(script).cyan());
             }
         }
-        eprintln!("To install scripts from these packages pass the appropriate --include-dep");
+        echo!("To install scripts from these packages pass the appropriate --include-dep");
     }
 
     if output != CommandOutput::Quiet {
-        eprintln!();
+        echo!();
         if installed.is_empty() {
-            eprintln!(
-                "{}",
-                style("warning: installed package did not expose any scripts").red()
-            );
+            warn!("installed package did not expose any scripts")
         } else {
-            eprintln!("Installed scripts:");
+            echo!("Installed scripts:");
             for script in installed {
-                eprintln!("  - {}", style(script).cyan());
+                echo!("  - {}", style(script).cyan());
             }
             if output != CommandOutput::Verbose && !scripts_found.is_empty() {
-                eprintln!();
-                eprintln!(
+                echo!();
+                echo!(
                     "note: {}",
                     style("additional scripts were encountered in non-installed dependencies.")
                         .dim()
@@ -259,14 +256,14 @@ pub fn uninstall(package: &str, output: CommandOutput) -> Result<(), Error> {
     let tool_dir = app_dir.join("tools");
     let target_venv_path = tool_dir.join(normalize_package_name(package));
     if !target_venv_path.is_dir() {
-        eprintln!("{} is not installed", style(package).cyan());
+        echo!("{} is not installed", style(package).cyan());
         return Ok(());
     }
 
     uninstall_helper(&target_venv_path, &shim_dir)
         .with_context(|| format!("unable to uninstall {}", target_venv_path.display()))?;
     if output != CommandOutput::Quiet {
-        eprintln!("Uninstalled {}", style(package).cyan());
+        echo!("Uninstalled {}", style(package).cyan());
     }
     Ok(())
 }

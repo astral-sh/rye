@@ -51,7 +51,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     if output != CommandOutput::Quiet {
         for requirement in removed_packages {
-            println!("Removed {}", format_requirement(&requirement));
+            echo!("Removed {}", format_requirement(&requirement));
         }
     }
 

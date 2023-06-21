@@ -57,7 +57,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let doc = Arc::make_mut(&mut config).doc_mut();
 
     if cmd.show_path {
-        println!("{}", config.path().display());
+        echo!("{}", config.path().display());
         return Ok(());
     }
 
@@ -166,11 +166,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     match cmd.format {
         None => {
             for line in read_as_string {
-                println!("{}", line);
+                echo!("{}", line);
             }
         }
         Some(Format::Json) => {
-            println!("{}", serde_json::to_string_pretty(&read_as_json)?);
+            echo!("{}", serde_json::to_string_pretty(&read_as_json)?);
         }
     }
 

@@ -29,30 +29,30 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         return print_installed_deps(&project);
     }
 
-    println!(
+    echo!(
         "project: {}",
         style(project.name().unwrap_or("<unnamed>")).yellow()
     );
-    println!("path: {}", style(project.root_path().display()).cyan());
-    println!("venv: {}", style(project.venv_path().display()).cyan());
+    echo!("path: {}", style(project.root_path().display()).cyan());
+    echo!("venv: {}", style(project.venv_path().display()).cyan());
     if let Some(ver) = project.target_python_version() {
-        println!("target python: {}", style(ver).cyan());
+        echo!("target python: {}", style(ver).cyan());
     }
     if let Ok(ver) = project.venv_python_version() {
-        println!("venv python: {}", style(&ver).cyan());
+        echo!("venv python: {}", style(&ver).cyan());
         if let Some(actual) = get_current_venv_python_version(&project.venv_path()) {
             if actual != ver {
-                println!("last synched venv python: {}", style(&actual).red());
+                echo!("last synched venv python: {}", style(&actual).red());
             }
         }
     }
 
     if let Some(workspace) = project.workspace() {
-        println!(
+        echo!(
             "workspace: {}",
             style(project.workspace_path().display()).cyan()
         );
-        println!("  members:");
+        echo!("  members:");
         let mut projects = workspace.iter_projects().collect::<Result<Vec<_>, _>>()?;
         projects.sort_by(|a, b| a.root_path().cmp(&b.root_path()));
         for child in projects {
@@ -62,7 +62,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     .strip_prefix(project.workspace_path())
                     .unwrap_or(&root_path),
             );
-            println!(
+            echo!(
                 "    {} ({})",
                 style(child.name().unwrap_or("<unnamed>")).cyan(),
                 style(rel_path.display()).dim(),
