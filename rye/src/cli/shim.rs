@@ -96,7 +96,7 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
             sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
         }
 
-        if (target == "python" || target == "python3")
+        if (matches_shim(target, "python") || matches_shim(target, "python3"))
             && args
                 .get(1)
                 .and_then(|x| x.as_os_str().to_str())
@@ -113,12 +113,12 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
         }
 
         // secret pip shims
-        if target == "pip" || target == "pip3" {
+        if matches_shim(target, "pip") || matches_shim(target, "pip3") {
             return Ok(Some(get_pip_shim(&pyproject, args, CommandOutput::Normal)?));
         }
 
     // Global shims (either implicit or requested)
-    } else if target == "python" || target == "python3" {
+    } else if matches_shim(target, "python") || matches_shim(target, "python3") {
         let config = Config::current();
         let mut remove1 = false;
 
@@ -172,6 +172,26 @@ fn spawn_shim(args: Vec<OsString>) -> Result<Infallible, Error> {
     let mut cmd = Command::new(&args[0]);
     cmd.args(&args[1..]);
     match exec_spawn(&mut cmd)? {}
+}
+
+#[cfg(not(windows))]
+fn matches_shim(s: &str, reference: &str) -> bool {
+    // we don't actually know if the file system is case sensitive or not, but
+    // at least on mac we can assume it is, so we err on the side of that for now.
+    s.eq_ignore_ascii_case(reference)
+}
+
+#[cfg(windows)]
+fn matches_shim(s: &str, reference: &str) -> bool {
+    if s.get(s.len().saturating_sub(4)..)
+        .unwrap_or("")
+        .eq_ignore_ascii_case(".exe")
+    {
+        &s[..s.len() - 4]
+    } else {
+        s
+    }
+    .eq_ignore_ascii_case(reference)
 }
 
 /// This replaces ourselves with the shim target for when the

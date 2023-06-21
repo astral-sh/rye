@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed the global shim behavior on Windows.  #344
+
 <!-- released start -->
 
 ## 0.9.0
