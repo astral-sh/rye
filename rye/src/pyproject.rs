@@ -19,7 +19,7 @@ use pep440_rs::{Operator, Version, VersionSpecifiers};
 use pep508_rs::Requirement;
 use regex::Regex;
 use serde::Serialize;
-use toml_edit::{Array, Document, Formatted, Item, Table, Value};
+use toml_edit::{Array, Document, Formatted, Item, Table, TableLike, Value};
 use url::Url;
 
 use crate::config::Config;
@@ -182,6 +182,8 @@ type EnvVars = HashMap<String, String>;
 /// A reference to a script
 #[derive(Clone, Debug)]
 pub enum Script {
+    /// Call python module entry
+    Call(String, EnvVars),
     /// A command alias
     Cmd(Vec<String>, EnvVars),
     /// A multi-script execution
@@ -210,29 +212,38 @@ fn toml_value_as_command_args(value: &Value) -> Option<Vec<String>> {
 
 impl Script {
     fn from_toml_item(item: &Item) -> Option<Script> {
+        fn get_env_vars(detailed: &dyn TableLike) -> HashMap<String, String> {
+            let env_vars = detailed
+                .get("env")
+                .and_then(|x| x.as_table_like())
+                .map(|x| {
+                    x.iter()
+                        .map(|x| {
+                            (
+                                x.0.to_string(),
+                                x.1.as_str()
+                                    .map(|x| x.to_string())
+                                    .unwrap_or_else(|| x.1.to_string()),
+                            )
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            env_vars
+        }
+
         if let Some(detailed) = item.as_table_like() {
-            if let Some(cmds) = detailed.get("chain").and_then(|x| x.as_array()) {
+            if let Some(call) = detailed.get("call") {
+                let entry = call.as_str()?.to_string();
+                let env_vars = get_env_vars(detailed);
+                Some(Script::Call(entry, env_vars))
+            } else if let Some(cmds) = detailed.get("chain").and_then(|x| x.as_array()) {
                 Some(Script::Chain(
                     cmds.iter().flat_map(toml_value_as_command_args).collect(),
                 ))
             } else if let Some(cmd) = detailed.get("cmd") {
                 let cmd = toml_value_as_command_args(cmd.as_value()?)?;
-                let env_vars = detailed
-                    .get("env")
-                    .and_then(|x| x.as_table_like())
-                    .map(|x| {
-                        x.iter()
-                            .map(|x| {
-                                (
-                                    x.0.to_string(),
-                                    x.1.as_str()
-                                        .map(|x| x.to_string())
-                                        .unwrap_or_else(|| x.1.to_string()),
-                                )
-                            })
-                            .collect()
-                    })
-                    .unwrap_or_default();
+                let env_vars = get_env_vars(detailed);
                 Some(Script::Cmd(cmd, env_vars))
             } else {
                 None
@@ -247,6 +258,18 @@ impl Script {
 impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
+            Script::Call(entry, env) => {
+                let mut need_space = false;
+                for (key, value) in env.iter() {
+                    if need_space {
+                        write!(f, " ")?;
+                    }
+                    write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                    need_space = true;
+                }
+                write!(f, "{}", shlex::quote(entry))?;
+                Ok(())
+            }
             Script::Cmd(args, env) => {
                 let mut need_space = false;
                 for (key, value) in env.iter() {

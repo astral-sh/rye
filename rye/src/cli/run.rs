@@ -62,6 +62,31 @@ fn invoke_script(
     let mut env_overrides = None;
 
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
+        Some(Script::Call(entry, env_vars)) => {
+            if entry.is_empty() {
+                bail!("script has no arguments");
+            }
+            env_overrides = Some(env_vars);
+            let splited: Vec<&str> = entry.split(':').collect();
+            let (module, func) = (splited[0], splited[1]);
+            if module.is_empty() || func.is_empty() {
+                bail!("Python callable must be in the form <module_name>:<callable_name>");
+            }
+            let short_name = "_1";
+            let real_func = if regex::Regex::new(r"\(.*?\)").unwrap().find(func).is_none() {
+                format!("{func}()")
+            } else {
+                func.to_string()
+            };
+            args = [
+                "python",
+                "-c",
+                &format!("import sys, {module} as {short_name};sys.exit({short_name}.{real_func})"),
+            ]
+            .into_iter()
+            .map(OsString::from)
+            .collect();
+        }
         Some(Script::Cmd(script_args, env_vars)) => {
             if script_args.is_empty() {
                 bail!("script has no arguments");

@@ -140,6 +140,15 @@ lint = { chain = ["lint:black", "lint:flake8" ] }
 "lint:flake8" = "flake8 src"
 ```
 
+### `call`
+
+This is a special key that can be set instead of `cmd` to make a command callable without install.
+
+```toml
+[tool.rye.scripts]
+entry = { call = "hello.world:main" }
+```
+
 ## `tool.rye.workspace`
 
 When a table with that key is stored, then a project is declared to be a workspace root.  By
