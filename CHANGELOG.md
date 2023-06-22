@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Scripts now support a PDM style `call` script type.  #345
+
 - The `init` command is now capable of importing existing projects.  #265
 
 - Fixed the global shim behavior on Windows.  #344

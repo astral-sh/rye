@@ -259,15 +259,17 @@ impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Script::Call(entry, env) => {
-                let mut need_space = false;
-                for (key, value) in env.iter() {
-                    if need_space {
-                        write!(f, " ")?;
-                    }
-                    write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
-                    need_space = true;
-                }
                 write!(f, "{}", shlex::quote(entry))?;
+                if !env.is_empty() {
+                    write!(f, " (env: ")?;
+                    for (idx, (key, value)) in env.iter().enumerate() {
+                        if idx > 0 {
+                            write!(f, " ")?;
+                        }
+                        write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                    }
+                    write!(f, ")")?;
+                }
                 Ok(())
             }
             Script::Cmd(args, env) => {
