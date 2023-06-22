@@ -146,7 +146,14 @@ This is a special key that can be set instead of `cmd` to make a command callabl
 
 ```toml
 [tool.rye.scripts]
-entry = { call = "hello.world:main" }
+entry = { call = "package.module:function" }
+```
+
+The function can be supplied with literal arguments:
+
+```toml
+[tool.rye.scripts]
+entry = { call = "package.module:function('an-argument')" }
 ```
 
 ## `tool.rye.workspace`

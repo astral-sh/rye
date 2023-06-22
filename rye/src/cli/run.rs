@@ -3,14 +3,14 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus};
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
 use console::style;
 
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
 use crate::tui::redirect_to_stderr;
-use crate::utils::{exec_spawn, success_status};
+use crate::utils::{exec_spawn, get_venv_python_bin, success_status};
 
 /// Runs a command installed into this package.
 #[derive(Parser, Debug)]
@@ -63,28 +63,24 @@ fn invoke_script(
 
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
         Some(Script::Call(entry, env_vars)) => {
-            if entry.is_empty() {
-                bail!("script has no arguments");
-            }
             env_overrides = Some(env_vars);
-            let splited: Vec<&str> = entry.split(':').collect();
-            let (module, func) = (splited[0], splited[1]);
-            if module.is_empty() || func.is_empty() {
-                bail!("Python callable must be in the form <module_name>:<callable_name>");
-            }
-            let short_name = "_1";
-            let real_func = if regex::Regex::new(r"\(.*?\)").unwrap().find(func).is_none() {
+            let (module, func) = entry
+                .split_once(':')
+                .filter(|(a, b)| !a.is_empty() && !b.is_empty())
+                .ok_or_else(|| {
+                    anyhow!("Python callable must be in the form <module_name>:<callable_name>")
+                })?;
+            let call = if !func.contains('(') {
                 format!("{func}()")
             } else {
                 func.to_string()
             };
             args = [
-                "python",
-                "-c",
-                &format!("import sys, {module} as {short_name};sys.exit({short_name}.{real_func})"),
+                OsString::from(get_venv_python_bin(&pyproject.venv_path())),
+                OsString::from("-c"),
+                OsString::from(format!("import sys, {module} as _1; sys.exit(_1.{call})")),
             ]
             .into_iter()
-            .map(OsString::from)
             .collect();
         }
         Some(Script::Cmd(script_args, env_vars)) => {
