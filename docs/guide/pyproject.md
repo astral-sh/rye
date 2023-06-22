@@ -142,18 +142,20 @@ lint = { chain = ["lint:black", "lint:flake8" ] }
 
 ### `call`
 
-This is a special key that can be set instead of `cmd` to make a command callable without install.
+This is a special key that can be set instead of `cmd` to make a command invoke python
+functions or modules.  The format is one of the three following formats:
+
+* `<module_name>`: equivalent to `python -m <module_name>`
+* `<module_name>:<function_name>`: runs `<function_name>` from `<module_name>` and exits with the return value
+* `<module_name>:<function_name>(<args>)`: passes specific arguments to the function
+
+Extra arguments provided on the command line are passed in `sys.argv`.
 
 ```toml
 [tool.rye.scripts]
-entry = { call = "package.module:function" }
-```
-
-The function can be supplied with literal arguments:
-
-```toml
-[tool.rye.scripts]
-entry = { call = "package.module:function('an-argument')" }
+serve = { call = "http.server" }
+help = { call = "builtins:help" }
+hello-world = { call = "builtins:print('Hello World!')" }
 ```
 
 ## `tool.rye.workspace`

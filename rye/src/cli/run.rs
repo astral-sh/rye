@@ -3,7 +3,7 @@ use std::ffi::OsString;
 use std::path::PathBuf;
 use std::process::{Command, ExitStatus};
 
-use anyhow::{anyhow, bail, Context, Error};
+use anyhow::{bail, Context, Error};
 use clap::Parser;
 use console::style;
 
@@ -63,24 +63,27 @@ fn invoke_script(
 
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
         Some(Script::Call(entry, env_vars)) => {
+            let py = OsString::from(get_venv_python_bin(&pyproject.venv_path()));
             env_overrides = Some(env_vars);
-            let (module, func) = entry
-                .split_once(':')
-                .filter(|(a, b)| !a.is_empty() && !b.is_empty())
-                .ok_or_else(|| {
-                    anyhow!("Python callable must be in the form <module_name>:<callable_name>")
-                })?;
-            let call = if !func.contains('(') {
-                format!("{func}()")
+            args = if let Some((module, func)) = entry.split_once(':') {
+                if module.is_empty() || func.is_empty() {
+                    bail!("Python callable must be in the form <module_name>:<callable_name> or <module_name>")
+                }
+                let call = if !func.contains('(') {
+                    format!("{func}()")
+                } else {
+                    func.to_string()
+                };
+                [
+                    py,
+                    OsString::from("-c"),
+                    OsString::from(format!("import sys, {module} as _1; sys.exit(_1.{call})")),
+                ]
             } else {
-                func.to_string()
-            };
-            args = [
-                OsString::from(get_venv_python_bin(&pyproject.venv_path())),
-                OsString::from("-c"),
-                OsString::from(format!("import sys, {module} as _1; sys.exit(_1.{call})")),
-            ]
+                [py, OsString::from("-m"), OsString::from(entry)]
+            }
             .into_iter()
+            .chain(args.into_iter().skip(1))
             .collect();
         }
         Some(Script::Cmd(script_args, env_vars)) => {
