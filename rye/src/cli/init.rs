@@ -62,10 +62,10 @@ pub struct Args {
     #[arg(long)]
     no_import: bool,
     /// Requirements files to initialize pyproject.toml with.
-    #[arg(short, long, name = "REQUIREMENTS_FILE", conflicts_with = "no-import")]
+    #[arg(short, long, name = "REQUIREMENTS_FILE", conflicts_with = "no_import")]
     requirements: Option<Vec<PathBuf>>,
     /// Development requirements files to initialize pyproject.toml with.
-    #[arg(long, name = "DEV_REQUIREMENTS_FILE", conflicts_with = "no-import")]
+    #[arg(long, name = "DEV_REQUIREMENTS_FILE", conflicts_with = "no_import")]
     dev_requirements: Option<Vec<PathBuf>>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
