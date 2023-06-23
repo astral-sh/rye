@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed a bug with `rye init` not operating correctly due to a argument conflict.  #346
+
+- Scripts now support a PDM style `call` script type.  #345
+
 - The `init` command is now capable of importing existing projects.  #265
 
 - Fixed the global shim behavior on Windows.  #344
