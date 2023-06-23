@@ -10,7 +10,7 @@ use console::style;
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
 use crate::tui::redirect_to_stderr;
-use crate::utils::{exec_spawn, success_status};
+use crate::utils::{exec_spawn, get_venv_python_bin, success_status};
 
 /// Runs a command installed into this package.
 #[derive(Parser, Debug)]
@@ -62,6 +62,30 @@ fn invoke_script(
     let mut env_overrides = None;
 
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
+        Some(Script::Call(entry, env_vars)) => {
+            let py = OsString::from(get_venv_python_bin(&pyproject.venv_path()));
+            env_overrides = Some(env_vars);
+            args = if let Some((module, func)) = entry.split_once(':') {
+                if module.is_empty() || func.is_empty() {
+                    bail!("Python callable must be in the form <module_name>:<callable_name> or <module_name>")
+                }
+                let call = if !func.contains('(') {
+                    format!("{func}()")
+                } else {
+                    func.to_string()
+                };
+                [
+                    py,
+                    OsString::from("-c"),
+                    OsString::from(format!("import sys, {module} as _1; sys.exit(_1.{call})")),
+                ]
+            } else {
+                [py, OsString::from("-m"), OsString::from(entry)]
+            }
+            .into_iter()
+            .chain(args.into_iter().skip(1))
+            .collect();
+        }
         Some(Script::Cmd(script_args, env_vars)) => {
             if script_args.is_empty() {
                 bail!("script has no arguments");
