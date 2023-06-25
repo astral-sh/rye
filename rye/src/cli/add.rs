@@ -182,6 +182,7 @@ impl ReqExtras {
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The package to add as PEP 508 requirement string. e.g. 'flask==2.2.3'
+    #[arg(required = true)]
     requirements: Vec<String>,
     #[command(flatten)]
     req_extras: ReqExtras,
