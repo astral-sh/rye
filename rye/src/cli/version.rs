@@ -33,7 +33,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 .unwrap()
                 .contains(&"version".to_string())
             {
-                bail!("unsupport set dynamic version");
+                bail!("unsupported set dynamic version");
             } else {
                 pyproject_toml.set_version(&version);
                 pyproject_toml.save()?;

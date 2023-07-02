@@ -749,7 +749,7 @@ impl PyProject {
             .doc
             .get("project")
             .and_then(|x| x.get("version"))
-            .and_then(|x| Some(x.to_string()));
+            .map(|x| x.to_string());
         if let Some(dynamic) = self.dynamic() {
             if dynamic.contains(&"version".to_string()) {
                 if let Ok(metadata) = get_project_metadata(&self.root_path()) {
