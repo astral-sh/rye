@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- The `version` command can show dynamic versions now. #355
+
 - Fixed a bug with `rye init` not operating correctly due to a argument conflict.  #346
 
 - Scripts now support a PDM style `call` script type.  #345
