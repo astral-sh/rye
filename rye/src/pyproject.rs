@@ -8,31 +8,48 @@ use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use std::str::FromStr;
 use std::sync::Arc;
 
-use anyhow::{anyhow, bail, Context, Error};
-use globset::GlobBuilder;
-use once_cell::sync::Lazy;
-use pep440_rs::{Operator, Version, VersionSpecifiers};
-use pep508_rs::Requirement;
-use regex::Regex;
-use serde::Serialize;
-use toml_edit::{Array, Document, Formatted, Item, Table, TableLike, Value};
-use url::Url;
-
+use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
 use crate::sources::{get_download_url, matches_version, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
+use crate::utils::CommandOutput;
 use crate::utils::{
-    expand_env_vars, format_requirement, get_short_executable_name, is_executable,
+    escape_string, expand_env_vars, format_requirement, get_short_executable_name, is_executable,
     reformat_toml_array_multiline,
 };
-
+use anyhow::{anyhow, bail, Context, Error};
+use globset::GlobBuilder;
+use once_cell::sync::Lazy;
+use pep440_rs::{Operator, Version, VersionSpecifiers};
+use pep508_rs::Requirement;
+use python_pkginfo::Metadata;
+use regex::Regex;
+use serde::Serialize;
+use toml_edit::{Array, Document, Formatted, Item, Table, TableLike, Value};
+use url::Url;
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
+
+const PROJECT_METADATA_SCRIPT: &str = r#"
+import json
+import sys
+
+from build import BuildBackendException
+from build.util import project_wheel_metadata
+
+source_dir = sys.argv[1]
+try:
+    metadata = project_wheel_metadata(source_dir).json
+except BuildBackendException:
+    metadata = {}
+
+print(json.dumps(metadata))
+"#;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
 pub enum DependencyKind<'a> {
@@ -710,18 +727,40 @@ impl PyProject {
             .ok_or_else(|| anyhow!("project from '{}' has no name", self.root_path().display()))
     }
 
+    /// Returns the dynamic field.
+    pub fn dynamic(&self) -> Option<Vec<String>> {
+        let mut dv = Vec::new();
+        if let Some(dynamic) = self
+            .doc
+            .get("project")
+            .and_then(|x| x.get("dynamic"))
+            .and_then(|x| x.as_array())
+        {
+            for d in dynamic {
+                dv.push(escape_string(d.to_string()));
+            }
+        }
+        Some(dv)
+    }
+
     /// Returns the version.
     pub fn version(&mut self) -> Result<Version, Error> {
-        let version = self
+        let mut version = self
             .doc
             .get("project")
             .and_then(|x| x.get("version"))
-            .and_then(|x| x.as_str());
+            .and_then(|x| Some(x.to_string()));
+        if let Some(dynamic) = self.dynamic() {
+            if dynamic.contains(&"version".to_string()) {
+                if let Ok(metadata) = get_project_metadata(&self.root_path()) {
+                    version = Some(metadata.version);
+                };
+            };
+        };
 
         match version {
-            Some(version) => {
-                Version::from_str(version).map_err(|msg| anyhow!("invalid version: {}", msg))
-            }
+            Some(version) => Version::from_str(version.as_str())
+                .map_err(|msg| anyhow!("invalid version: {}", msg)),
             None => {
                 let version = Version::from_str("0.1.0").unwrap();
                 self.set_version(&version);
@@ -1148,6 +1187,17 @@ fn is_rye_managed(doc: &Document) -> bool {
         .unwrap_or(false)
 }
 
+fn get_project_metadata(path: &Path) -> Result<Metadata, Error> {
+    let self_venv = ensure_self_venv(CommandOutput::Normal)?;
+    let mut metadata = Command::new(self_venv.join(VENV_BIN).join("python"));
+    metadata.arg("-c").arg(PROJECT_METADATA_SCRIPT).arg(path);
+    let metadata = metadata.stdout(Stdio::piped()).output()?;
+    if !metadata.status.success() {
+        let log = String::from_utf8_lossy(&metadata.stderr);
+        bail!("failed to get project metadata {}", log);
+    }
+    serde_json::from_slice(&metadata.stdout).map_err(Into::into)
+}
 /// Represents expanded sources.
 #[derive(Debug, Clone, Serialize)]
 pub struct ExpandedSources {
