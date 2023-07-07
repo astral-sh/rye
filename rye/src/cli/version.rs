@@ -1,7 +1,7 @@
 use std::str::FromStr;
 
 use crate::pyproject::PyProject;
-use anyhow::{anyhow, Error};
+use anyhow::{anyhow, bail, Error};
 use clap::{Parser, ValueEnum};
 use pep440_rs::Version;
 
@@ -28,10 +28,18 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         Some(version) => {
             let version =
                 Version::from_str(&version).map_err(|msg| anyhow!("invalid version: {}", msg))?;
-            pyproject_toml.set_version(&version);
-            pyproject_toml.save()?;
+            if pyproject_toml
+                .dynamic()
+                .unwrap()
+                .contains(&"version".to_string())
+            {
+                bail!("unsupported set dynamic version");
+            } else {
+                pyproject_toml.set_version(&version);
+                pyproject_toml.save()?;
 
-            echo!("version set to {}", version);
+                echo!("version set to {}", version);
+            }
         }
         None => {
             let mut version = pyproject_toml.version()?;

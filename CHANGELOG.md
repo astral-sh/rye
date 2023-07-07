@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- The `version` command can show dynamic versions now. #355
+
 - `rye add` now properly checks some incompatible argument combinations.  #347
 
 - There is now more toolchain validation.  This better supports cases where
