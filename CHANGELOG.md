@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.10.0
 
-_Unreleased_
+Released on 2023-07-07
 
 - Fixed a bug with `rye init` not operating correctly due to a argument conflict.  #346
 
@@ -14,8 +16,6 @@ _Unreleased_
 - The `init` command is now capable of importing existing projects.  #265
 
 - Fixed the global shim behavior on Windows.  #344
-
-<!-- released start -->
 
 ## 0.9.0
 
