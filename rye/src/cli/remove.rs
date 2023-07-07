@@ -11,6 +11,7 @@ use crate::utils::{format_requirement, CommandOutput};
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The packages to remove.
+    #[arg(required = true)]
     requirements: Vec<String>,
     /// Remove this from dev dependencies.
     #[arg(long)]
