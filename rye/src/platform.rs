@@ -159,6 +159,9 @@ pub fn list_known_toolchains() -> Result<Vec<(PythonVersion, PathBuf)>, Error> {
                 .parse::<PythonVersion>()
             {
                 let target = get_toolchain_python_bin(&ver)?;
+                if !target.exists() {
+                    continue
+                }
                 rv.push((ver, target));
             }
         }
