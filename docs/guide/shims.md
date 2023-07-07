@@ -4,7 +4,7 @@ After installation Rye places two shims on your `PATH`: `python` and `python3`. 
 shims have specific behavior that changes depending on if they are used within a Rye
 managed project or outside.
 
-Inside a Rye managed project the resolve to the Python interpreter of the virtualenv.
+Inside a Rye managed project they resolve to the Python interpreter of the virtualenv.
 This means that even if you do not enable the virtualenv, you can just run `python`
 in a shell, and it will automatically operate in the right environment.
 
