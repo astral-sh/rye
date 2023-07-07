@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye add` now properly checks some incompatible argument combinations.  #347
+
 <!-- released start -->
 
 ## 0.10.0
