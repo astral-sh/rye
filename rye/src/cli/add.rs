@@ -108,6 +108,12 @@ impl From<Pin> for Operator {
 }
 
 impl ReqExtras {
+    /// Return true if any path, url, features or similar are set
+    /// (anything specific for 1 requirement).
+    pub fn has_specifiers(&self) -> bool {
+        self.path.is_some() || self.url.is_some() || self.git.is_some() || !self.features.is_empty()
+    }
+
     pub fn force_absolute(&mut self) {
         self.absolute = true;
     }
@@ -182,6 +188,7 @@ impl ReqExtras {
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The package to add as PEP 508 requirement string. e.g. 'flask==2.2.3'
+    #[arg(required = true)]
     requirements: Vec<String>,
     #[command(flatten)]
     req_extras: ReqExtras,
@@ -233,6 +240,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         Some(pin) => Operator::from(pin),
         None => Config::current().default_dependency_operator(),
     };
+
+    if cmd.req_extras.has_specifiers() && cmd.requirements.len() != 1 {
+        bail!("path/url/git/features is not compatible with passing multiple requirements: expected one requirement.")
+    }
 
     for str_requirement in cmd.requirements {
         let mut requirement = Requirement::from_str(&str_requirement)?;
