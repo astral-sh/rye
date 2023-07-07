@@ -9,6 +9,9 @@ _Unreleased_
 
 - `rye add` now properly checks some incompatible argument combinations.  #347
 
+- There is now more toolchain validation.  This better supports cases where
+  rye was interrupted during sync.  #351
+
 <!-- released start -->
 
 ## 0.10.0
