@@ -125,13 +125,13 @@ build-backend = "pdm.backend"
 [tool.rye]
 managed = true
 {%- if dev_dependencies %}
-dev_dependencies = [
+dev-dependencies = [
 {%- for dependency in dev_dependencies %}
     {{ dependency }},
 {%- endfor %}
 ]
 {%- else %}
-dev_dependencies = []
+dev-dependencies = []
 {%- endif %}
 
 {%- if build_system == "hatchling" %}
