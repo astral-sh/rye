@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- Pin down pip to an older version to avoid issues with an incompatible
+  `pip-tools` version.  This does not yet update pip-tools to 7.0 as there
+  are significant regressions in 7.x. #374
+
 - The `version` command can show dynamic versions now. #355
 
 - `rye add` now properly checks some incompatible argument combinations.  #347
