@@ -279,6 +279,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         };
         try_import_project_metadata(&mut metadata, &dir, options)?;
     }
+
+    let imported_something = metadata.name.is_some() || metadata.dependencies.is_some();
+
     // if we're missing metadata after the import we update it with what's found from normal initialization.
     if metadata.name.is_none() {
         metadata.name = Some(name);
@@ -353,7 +356,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;
 
     let src_dir = dir.join("src");
-    if !src_dir.is_dir() {
+    if !imported_something && !src_dir.is_dir() {
         let name = metadata.name.expect("project name");
         let project_dir = src_dir.join(name.replace('-', "_"));
         fs::create_dir_all(&project_dir).ok();
