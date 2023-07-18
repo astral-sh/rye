@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- When importing with `rye init` and no `src` folder exists, it will not be
+  crated.  #375
+
 - Added support for `shell` command on Windows.  #363
 
 - Pin down pip to an older version to avoid issues with an incompatible
