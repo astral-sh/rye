@@ -39,20 +39,12 @@ fn get_shell() -> Result<String, Error> {
     let mut pid = Some(Pid::from_u32(process::id()));
     while let Some(p) = pid {
         if let Some(process) = system.process(p) {
-            match process.name() {
-                "cmd.exe" => {
-                    return Ok(String::from("cmd.exe"));
-                }
-                "powershell.exe" => {
-                    return Ok(String::from("powershell.exe"));
-                }
-                "pwsh.exe" => {
-                    return Ok(String::from("pwsh.exe"));
-                }
-                &_ => {
-                    pid = process.parent();
-                    continue;
-                }
+            let name = process.name();
+            if let "cmd.exe" | "powershell.exe" | "pwsh.exe" = name {
+                return Ok(String::from(name));
+            } else {
+                pid = process.parent();
+                continue;
             }
         }
         break;
