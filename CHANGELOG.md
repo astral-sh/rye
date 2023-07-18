@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.11.0
 
-_Unreleased_
+Released on 2023-07-18
 
 - Added a new config key `default.author` to configure the default author
   that should be set.  This overrides the default author that is normally
@@ -26,8 +28,6 @@ _Unreleased_
 
 - There is now more toolchain validation.  This better supports cases where
   rye was interrupted during sync.  #351
-
-<!-- released start -->
 
 ## 0.10.0
 
