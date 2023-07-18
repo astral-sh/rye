@@ -20,7 +20,8 @@ use crate::platform::{
 };
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{
-    check_checksum, set_proxy_variables, symlink_file, unpack_archive, CommandOutput,
+    check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
+    CommandOutput,
 };
 
 /// this is the target version that we want to fetch
@@ -140,7 +141,8 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     }
     let venv_bin = venv_dir.join(VENV_BIN);
 
-    let mut pip_install_cmd = Command::new(venv_bin.join("pip"));
+    let mut pip_install_cmd = Command::new(get_venv_python_bin(venv_dir));
+    pip_install_cmd.arg("-mpip");
     pip_install_cmd.arg("install");
     pip_install_cmd.arg("--upgrade");
     // pin to a specific pip version to work around a bug with pip-tools.  Fix this
