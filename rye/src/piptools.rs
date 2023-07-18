@@ -33,7 +33,8 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
         .arg(&py)
         .arg("install")
         .arg(PIP_TOOLS_VERSION)
-        .arg("-q");
+        .arg("-q")
+        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
     if output == CommandOutput::Verbose {
         cmd.arg("--verbose");
     } else {

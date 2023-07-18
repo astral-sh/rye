@@ -32,7 +32,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 3;
+const SELF_VERSION: u64 = 4;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==0.10.0
@@ -143,13 +143,16 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     let mut pip_install_cmd = Command::new(venv_bin.join("pip"));
     pip_install_cmd.arg("install");
     pip_install_cmd.arg("--upgrade");
-    pip_install_cmd.arg("pip");
+    // pin to a specific pip version to work around a bug with pip-tools.  Fix this
+    // once 7.0.0 is stable.  https://github.com/mitsuhiko/rye/issues/368
+    pip_install_cmd.arg("pip==23.1");
     if output == CommandOutput::Verbose {
         pip_install_cmd.arg("--verbose");
     } else {
         pip_install_cmd.arg("--quiet");
         pip_install_cmd.env("PYTHONWARNINGS", "ignore");
     }
+    pip_install_cmd.env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
     let status = pip_install_cmd
         .status()
         .context("unable to self-upgrade pip")?;
@@ -162,7 +165,8 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     pip_install_cmd
         .arg("install")
         .arg("-r")
-        .arg(req_file.path());
+        .arg(req_file.path())
+        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
     if output != CommandOutput::Quiet {
         echo!("Installing internal dependencies");
     }
