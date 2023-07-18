@@ -18,7 +18,7 @@ Released on 2023-07-18
   loaded from the git config.  #377
 
 - When importing with `rye init` and no `src` folder exists, it will not be
-  crated.  #375
+  created.  #375
 
 - Added support for `shell` command on Windows.  #363
 
