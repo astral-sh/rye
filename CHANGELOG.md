@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Added support for `shell` command on Windows.  #363
+
 - Pin down pip to an older version to avoid issues with an incompatible
   `pip-tools` version.  This does not yet update pip-tools to 7.0 as there
   are significant regressions in 7.x. #374
