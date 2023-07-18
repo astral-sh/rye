@@ -103,7 +103,8 @@ pub fn install(
     cmd.arg("--python")
         .arg(&py)
         .arg("install")
-        .env("PYTHONWARNINGS", "ignore");
+        .env("PYTHONWARNINGS", "ignore")
+        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
     sources.add_as_pip_args(&mut cmd);
 
     if output == CommandOutput::Verbose {

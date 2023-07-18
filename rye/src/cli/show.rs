@@ -85,6 +85,7 @@ fn print_installed_deps(project: &PyProject) -> Result<(), Error> {
         .arg(&python)
         .arg("freeze")
         .env("PYTHONWARNINGS", "ignore")
+        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1")
         .status()?;
 
     if !status.success() {

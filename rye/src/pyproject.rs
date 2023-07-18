@@ -1044,7 +1044,7 @@ pub fn latest_available_python_version(
     };
 
     all.sort();
-    all.into_iter().rev().next()
+    all.into_iter().next_back()
 }
 
 fn resolve_target_python_version(
