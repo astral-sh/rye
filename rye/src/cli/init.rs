@@ -19,7 +19,8 @@ use tempfile::tempdir;
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::platform::{
-    get_default_author, get_latest_cpython_version, get_python_version_request_from_pyenv_pin,
+    get_default_author_with_fallback, get_latest_cpython_version,
+    get_python_version_request_from_pyenv_pin,
 };
 use crate::pyproject::BuildSystem;
 use crate::sources::PythonVersionRequest;
@@ -243,7 +244,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .unwrap_or_else(|| "unknown".into())
     }));
     let version = "0.1.0";
-    let author = get_default_author();
+    let author = get_default_author_with_fallback();
     let license = match cmd.license {
         Some(license) => Some(license),
         None => cfg.default_license(),

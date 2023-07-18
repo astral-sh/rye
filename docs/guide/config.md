@@ -57,6 +57,10 @@ build-system = "hatchling"
 # This is the default license that is used
 license = "MIT"
 
+# This sets the default author (overrides the defaults from git).  The
+# format here is "Name <email>".
+author = "Full Name <email@address.invalid>"
+
 # The dependency operator to use by default for dependencies.  The options are
 # '>=', '~=', and '=='.  The default currently is '>='.  This affects the behavior
 # of `rye add`.
