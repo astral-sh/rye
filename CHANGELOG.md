@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- Added a new config key `default.author` to configure the default author
+  that should be set.  This overrides the default author that is normally
+  loaded from the git config.  #377
+
 - When importing with `rye init` and no `src` folder exists, it will not be
   crated.  #375
 

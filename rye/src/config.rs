@@ -3,7 +3,9 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex};
 
 use anyhow::{Context, Error};
+use once_cell::sync::Lazy;
 use pep440_rs::Operator;
+use regex::Regex;
 use toml_edit::Document;
 
 use crate::platform::{get_app_dir, get_latest_cpython_version};
@@ -11,6 +13,8 @@ use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
 use crate::sources::PythonVersionRequest;
 
 static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);
+static AUTHOR_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^\s*(.*?)\s*<\s*(.*?)\s*>\s*$").unwrap());
 
 pub fn load() -> Result<(), Error> {
     let cfg_path = get_app_dir().join("config.toml");
@@ -124,6 +128,22 @@ impl Config {
             .and_then(|x| x.get("license"))
             .and_then(|x| x.as_str())
             .map(|x| x.to_string())
+    }
+
+    /// Returns the default author.
+    pub fn default_author(&self) -> (Option<String>, Option<String>) {
+        self.doc
+            .get("default")
+            .and_then(|x| x.get("author"))
+            .and_then(|x| x.as_str())
+            .map(|x| {
+                if let Some(c) = AUTHOR_REGEX.captures(x) {
+                    (Some(c[1].to_string()), Some(c[1].to_string()))
+                } else {
+                    (Some(x.to_string()), None)
+                }
+            })
+            .unwrap_or_default()
     }
 
     /// Should dependencies added by default by pinned with ~= or ==
