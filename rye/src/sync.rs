@@ -143,7 +143,8 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             );
             echo!("Python version: {}", style(&py_ver).cyan());
         }
-        create_virtualenv(output, &self_venv, &py_ver, &venv)
+        let prompt = pyproject.name().unwrap_or("venv");
+        create_virtualenv(output, &self_venv, &py_ver, &venv, prompt)
             .context("failed creating virtualenv ahead of sync")?;
         fs::write(
             venv.join("rye-venv.json"),
@@ -288,6 +289,7 @@ pub fn create_virtualenv(
     self_venv: &Path,
     py_ver: &PythonVersion,
     venv: &Path,
+    prompt: &str,
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
     let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
@@ -300,6 +302,8 @@ pub fn create_virtualenv(
     venv_cmd.arg("-p");
     venv_cmd.arg(&py_bin);
     venv_cmd.arg("--no-seed");
+    venv_cmd.arg("--prompt");
+    venv_cmd.arg(prompt);
     venv_cmd.arg("--");
     venv_cmd.arg(venv);
     let status = venv_cmd
