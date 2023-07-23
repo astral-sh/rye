@@ -187,7 +187,7 @@ fn prompt_for_token() -> Result<String, Error> {
 fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, Error> {
     let phrase = if !yes {
         dialoguer::Password::new()
-            .with_prompt("Enter a passphrase (optional)")
+            .with_prompt("Encrypt with passphrase (optional)")
             .allow_empty_password(true)
             .report(false)
             .interact()
@@ -215,7 +215,7 @@ fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, 
 fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, Error> {
     let phrase = if !yes {
         dialoguer::Password::new()
-            .with_prompt("Enter a passphrase (optional)")
+            .with_prompt("Decrypt with passphrase (optional)")
             .allow_empty_password(true)
             .report(false)
             .interact()
