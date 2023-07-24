@@ -37,7 +37,7 @@
     ```bash
     gunzip rye-aarch64-macos.gz
     chmod +x ./rye-aarch64-macos
-    ./rye-arch64-macos
+    ./rye-aarch64-macos
     ```
 
 === "Windows"
