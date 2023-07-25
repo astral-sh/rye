@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed an issue where the author email was incorrectly detected. #382
+
 <!-- released start -->
 
 ## 0.11.0
