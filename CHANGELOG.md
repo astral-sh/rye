@@ -9,6 +9,8 @@ _Unreleased_
 
 - Fixed an issue where the author email was incorrectly detected. #382
 
+- The prompt of new virtualenvs is now set to the project name. #383
+
 <!-- released start -->
 
 ## 0.11.0
