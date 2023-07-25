@@ -138,7 +138,7 @@ impl Config {
             .and_then(|x| x.as_str())
             .map(|x| {
                 if let Some(c) = AUTHOR_REGEX.captures(x) {
-                    (Some(c[1].to_string()), Some(c[1].to_string()))
+                    (Some(c[1].to_string()), Some(c[2].to_string()))
                 } else {
                     (Some(x.to_string()), None)
                 }
