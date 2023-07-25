@@ -97,7 +97,13 @@ pub fn install(
     // make sure we have a compatible python version
     let py_ver = fetch(py_ver, output)?;
 
-    create_virtualenv(output, &self_venv, &py_ver, &target_venv_path)?;
+    create_virtualenv(
+        output,
+        &self_venv,
+        &py_ver,
+        &target_venv_path,
+        requirement.name.as_str(),
+    )?;
 
     let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
     cmd.arg("--python")
