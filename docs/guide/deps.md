@@ -49,6 +49,12 @@ rye add --dev black
 These dependencies are stored in the non-standard
 [`tool.rye.dev-dependencies`](pyproject.md#toolryedev-dependencies) key.
 
+To run tools added this way without enabling the virtualenv use `rye run`:
+
+```
+rye run black
+```
+
 ## Git / Local Dependencies
 
 To add a local or git dependency, you can pass additional parameters like `--path`
