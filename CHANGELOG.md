@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- The rye installer now detects `NOEXEC` temporary folders and prints out
+  a more helpful error message. #394
+
 - Fixed an issue where the author email was incorrectly detected. #382
 
 - The prompt of new virtualenvs is now set to the project name. #383
