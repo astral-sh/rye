@@ -68,6 +68,15 @@ fi
 rm -f "$TEMP_FILE"
 gunzip "$TEMP_FILE_GZ" 
 chmod +x "$TEMP_FILE"
+
+# Detect when the file cannot be executed due to NOEXEC /tmp.  Taken from rustup
+# https://github.com/rust-lang/rustup/blob/87fa15d13e3778733d5d66058e5de4309c27317b/rustup-init.sh#L158-L159
+if [ ! -x "$TEMP_FILE" ]; then
+  printf '%s\n' "Cannot execute $TEMP_FILE (likely because of mounting /tmp as noexec)." 1>&2
+  printf '%s\n' "Please copy the file to a location where you can execute binaries and run it manually." 1>&2
+  exit 1
+fi
+
 "$TEMP_FILE" self install $INSTALL_OPTION
 
 }; __wrap__
