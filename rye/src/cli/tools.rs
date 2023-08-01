@@ -17,6 +17,9 @@ pub struct ListCommand {
     /// Also how all the scripts installed by the tools.
     #[arg(short, long)]
     include_scripts: bool,
+    /// Show the version of tools.
+    #[arg(short, long)]
+    version_show: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -39,11 +42,15 @@ fn list_tools(cmd: ListCommand) -> Result<(), Error> {
     let mut tools = list_installed_tools()?.into_iter().collect::<Vec<_>>();
     tools.sort();
 
-    for (tool, mut scripts) in tools {
-        echo!("{}", style(tool).cyan());
+    for (tool, mut info) in tools {
+        if cmd.version_show {
+            echo!("{} {}", style(tool).cyan(), style(info.version).cyan());
+        } else {
+            echo!("{}", style(tool).cyan());
+        }
         if cmd.include_scripts {
-            scripts.sort();
-            for script in scripts {
+            info.scripts.sort();
+            for script in info.scripts {
                 echo!("  {}", script);
             }
         }
