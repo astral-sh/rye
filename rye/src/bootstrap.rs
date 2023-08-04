@@ -33,7 +33,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 4;
+const SELF_VERSION: u64 = 5;
 
 const SELF_REQUIREMENTS: &str = r#"
 black==23.7.0
