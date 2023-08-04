@@ -36,6 +36,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
 const SELF_VERSION: u64 = 4;
 
 const SELF_REQUIREMENTS: &str = r#"
+black==23.7.0
 build==0.10.0
 certifi==2022.12.7
 charset-normalizer==3.1.0
@@ -43,7 +44,9 @@ click==8.1.3
 distlib==0.3.6
 filelock==3.12.0
 idna==3.4
+mypy-extensions==1.0.0
 packaging==23.1
+pathspec==0.11.2
 pip-tools==6.13.0
 platformdirs==3.4.0
 pyproject_hooks==1.0.0

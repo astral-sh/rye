@@ -23,6 +23,7 @@ nav:
       - Portable CPython: guide/toolchains/cpython.md
       - PyPy: guide/toolchains/pypy.md
     - Tools: guide/tools.md
+    - Reformatting: guide/reformat.md
     - FAQ: guide/faq.md
   - Community: community.md
   - Changelog: changelog.md

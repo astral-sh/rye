@@ -187,7 +187,7 @@ match on different platforms.
 
 However this is a solvable problem with sufficient caching, and with the right design for
 the cache, this cache could be shared.  It might even be quite interesting for PyPI to
-serve up "fake" metadata records for popular sdist only packages to help resolvers. 
+serve up "fake" metadata records for popular sdist only packages to help resolvers.
 This might go a long way in improving the quality of the developer experience.
 
 **What needs to be done:**
@@ -315,7 +315,6 @@ should be a much stronger push towards encouraging common standards:
 
 **What needs to be done:**
 
-* Rye shall ship with the one true formatter
 * Rye shall ship with the one true linter
 * Rye shall always create a preferred folder structure for new projects
 * Rye shall loudly warn if `package-foo` does not provide a `package_foo` module

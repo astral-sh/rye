@@ -7,6 +7,7 @@ mod add;
 mod build;
 mod config;
 mod fetch;
+mod fmt;
 mod init;
 mod install;
 mod lock;
@@ -49,6 +50,7 @@ enum Command {
     Build(build::Args),
     Config(config::Args),
     Fetch(fetch::Args),
+    Fmt(fmt::Args),
     Init(init::Args),
     Install(install::Args),
     Lock(lock::Args),
@@ -97,6 +99,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Build(cmd) => build::execute(cmd),
         Command::Config(cmd) => config::execute(cmd),
         Command::Fetch(cmd) => fetch::execute(cmd),
+        Command::Fmt(cmd) => fmt::execute(cmd),
         Command::Init(cmd) => init::execute(cmd),
         Command::Install(cmd) => install::execute(cmd),
         Command::Lock(cmd) => lock::execute(cmd),
