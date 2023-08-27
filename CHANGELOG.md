@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Improve handling of the pth files for TCL on pypy. #409
+
 - The `rye tools list` command now accepts `-v` to also print out the
   versions of the installed tools. #396
 
