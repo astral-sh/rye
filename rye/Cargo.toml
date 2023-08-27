@@ -1,6 +1,6 @@
 [package]
 name = "rye"
-version = "0.12.0"
+version = "0.13.0"
 edition = "2021"
 license = "MIT"
 
@@ -9,11 +9,19 @@ license = "MIT"
 [dependencies]
 age = "0.9.1"
 anyhow = { version = "1.0.70", features = ["backtrace"] }
-clap = { version = "4.3.5", default-features = false, features = ["derive", "usage", "wrap_help", "std"] }
+clap = { version = "4.3.5", default-features = false, features = [
+    "derive",
+    "usage",
+    "wrap_help",
+    "std",
+] }
 clap_complete = "4.2.1"
 console = "0.15.7"
 curl = { version = "0.4.44", features = ["ssl", "static-curl", "static-ssl"] }
-decompress = { version = "0.6.0", default-features = false, features = ["tarzst", "targz"] }
+decompress = { version = "0.6.0", default-features = false, features = [
+    "tarzst",
+    "targz",
+] }
 flate2 = "1.0.25"
 git-testament = "0.2.4"
 globset = "0.4.10"
