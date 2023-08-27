@@ -194,7 +194,10 @@ pub fn get_default_author_with_fallback() -> Option<(String, String)> {
         }
     }
 
-    Some((name?, email.unwrap_or_else(|| "".into())))
+    Some((
+        name?,
+        email.unwrap_or_else(|| "unknown@domain.invalid".into()),
+    ))
 }
 
 /// Reads the current `.python-version` file.
