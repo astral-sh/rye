@@ -161,6 +161,28 @@ for py_ver, choices in results.items():
 
 # These are manually maintained for now
 PYPY_DOWNLOADS = {
+    (3, 10, 12): {
+        (
+            "x86_64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-linux64.tar.bz2",
+        (
+            "aarch64",
+            "linux",
+        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-aarch64.tar.bz2",
+        (
+            "x86_64",
+            "macos",
+        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_x86_64.tar.bz2",
+        (
+            "aarch64",
+            "macos",
+        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_arm64.tar.bz2",
+        (
+            "x86_64",
+            "windows",
+        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-win64.zip",
+    },
     (3, 9, 16): {
         (
             "x86_64",
