@@ -7,6 +7,16 @@ that were not yet released.
 
 _Unreleased_
 
+- The `rye tools list` command now accepts `-v` to also print out the
+  versions of the installed tools. #396
+
+- Fixed parsing of versions by `rye version`. #397
+
+- Improved the help message for `rye init`. #401
+
+- The email address now defaults to a syntactically valid email address
+  if not known to prevent errors with some build tools.
+
 - Added new Python versions.
 
 - The rye installer now detects `NOEXEC` temporary folders and prints out
