@@ -1,6 +1,11 @@
 // generated code, do not edit
 use std::borrow::Cow;
 pub const PYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str, Option<&str>)] = &[
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 10, patch: 12, suffix: None }, "aarch64", "linux", "https://downloads.python.org/pypy/pypy3.10-v7.3.12-aarch64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 10, patch: 12, suffix: None }, "aarch64", "macos", "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_arm64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 10, patch: 12, suffix: None }, "x86_64", "linux", "https://downloads.python.org/pypy/pypy3.10-v7.3.12-linux64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 10, patch: 12, suffix: None }, "x86_64", "macos", "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_x86_64.tar.bz2", None),
+    (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 10, patch: 12, suffix: None }, "x86_64", "windows", "https://downloads.python.org/pypy/pypy3.10-v7.3.12-win64.zip", None),
     (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "aarch64", "linux", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-aarch64.tar.bz2", None),
     (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "aarch64", "macos", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_arm64.tar.bz2", None),
     (PythonVersion { kind: Cow::Borrowed("pypy"), major: 3, minor: 9, patch: 16, suffix: None }, "x86_64", "linux", "https://downloads.python.org/pypy/pypy3.9-v7.3.11-linux64.tar.bz2", None),
