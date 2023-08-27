@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Added new Python versions.
+
 - The rye installer now detects `NOEXEC` temporary folders and prints out
   a more helpful error message. #394
 
