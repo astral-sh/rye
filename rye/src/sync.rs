@@ -318,14 +318,14 @@ pub fn create_virtualenv(
     // the tcl config that comes from the standalone python builds.
     #[cfg(unix)]
     {
-        inject_tcl_config(venv, &py_bin, py_ver)?;
+        inject_tcl_config(venv, &py_bin)?;
     }
 
     Ok(())
 }
 
 #[cfg(unix)]
-fn inject_tcl_config(venv: &Path, py_bin: &Path, py_ver: &PythonVersion) -> Result<(), Error> {
+fn inject_tcl_config(venv: &Path, py_bin: &Path) -> Result<(), Error> {
     let lib_path = match py_bin
         .parent()
         .and_then(|x| x.parent())
@@ -359,29 +359,41 @@ fn inject_tcl_config(venv: &Path, py_bin: &Path, py_ver: &PythonVersion) -> Resu
         }
     }
 
-    let site_packages = venv
-        .join("lib")
-        .join(format!("python{}.{}", py_ver.major, py_ver.minor))
-        .join("site-packages");
-
     if tk_lib.is_none() && tcl_lib.is_none() {
         return Ok(());
     }
 
-    fs::write(
-        site_packages.join("_tcl-init.pth"),
-        minijinja::render!(
-            r#"import os, sys;
-{%- if tcl_lib -%}
-os.environ.setdefault('TCL_LIBRARY', sys.base_prefix + '/lib/{{ tcl_lib }}');
-{%- endif -%}
-{%- if tk_lib -%}
-os.environ.setdefault('TK_LIBRARY', sys.base_prefix + '/lib/{{ tk_lib }}');
-{%- endif -%}"#,
-            tcl_lib,
-            tk_lib,
-        ),
-    )?;
+    if let Some(site_packages) = get_site_packages(venv.join("lib"))? {
+        fs::write(
+            site_packages.join("_tcl-init.pth"),
+            minijinja::render!(
+                r#"import os, sys;
+                {%- if tcl_lib -%}
+                os.environ.setdefault('TCL_LIBRARY', sys.base_prefix + '/lib/{{ tcl_lib }}');
+                {%- endif -%}
+                {%- if tk_lib -%}
+                os.environ.setdefault('TK_LIBRARY', sys.base_prefix + '/lib/{{ tk_lib }}');
+                {%- endif -%}"#,
+                tcl_lib,
+                tk_lib,
+            ),
+        )?;
+    }
 
     Ok(())
+}
+
+// There is only one folder in the venv/lib folder. But in practice, only pypy will use this method in linux
+fn get_site_packages(lib_dir: PathBuf) -> Result<Option<PathBuf>, Error> {
+    let entries = fs::read_dir(&lib_dir).context("read venv/lib/ path is fail")?;
+
+    for entry in entries {
+        let entry = entry?;
+        let metadata = entry.metadata()?;
+
+        if metadata.is_dir() {
+            return Ok(Some(entry.path().join("site-packages")));
+        }
+    }
+    Ok(None)
 }
