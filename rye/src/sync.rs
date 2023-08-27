@@ -384,6 +384,7 @@ fn inject_tcl_config(venv: &Path, py_bin: &Path) -> Result<(), Error> {
 }
 
 // There is only one folder in the venv/lib folder. But in practice, only pypy will use this method in linux
+#[cfg(unix)]
 fn get_site_packages(lib_dir: PathBuf) -> Result<Option<PathBuf>, Error> {
     let entries = fs::read_dir(&lib_dir).context("read venv/lib/ path is fail")?;
 
