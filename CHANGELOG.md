@@ -32,6 +32,8 @@ _Unreleased_
 
 Released on 2023-07-18
 
+- Added new Python versions.
+
 - Added a new config key `default.author` to configure the default author
   that should be set.  This overrides the default author that is normally
   loaded from the git config.  #377
