@@ -66,6 +66,26 @@ print(json.dumps(result))
 static SUCCESSFULLY_DOWNLOADED_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new("(?m)^Successfully downloaded (.*?)$").unwrap());
 
+#[derive(Ord, PartialOrd, Eq, PartialEq)]
+pub struct ToolInfo {
+    pub version: String,
+    pub scripts: Vec<String>,
+}
+
+impl ToolInfo {
+    pub fn new(version: String, scripts: Vec<String>) -> Self {
+        Self { version, scripts }
+    }
+}
+
+const TOOL_VERSION_SCRIPT: &str = r#"
+import sys
+from importlib.metadata import version
+
+tool_name = sys.argv[1]
+print(version(tool_name))
+"#;
+
 pub fn install(
     requirement: Requirement,
     py_ver: &PythonVersionRequest,
@@ -275,7 +295,7 @@ pub fn uninstall(package: &str, output: CommandOutput) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn list_installed_tools() -> Result<HashMap<String, Vec<String>>, Error> {
+pub fn list_installed_tools() -> Result<HashMap<String, ToolInfo>, Error> {
     let app_dir = get_app_dir();
     let shim_dir = app_dir.join("shims");
     let tool_dir = app_dir.join("tools");
@@ -293,7 +313,7 @@ pub fn list_installed_tools() -> Result<HashMap<String, Vec<String>>, Error> {
         let target_venv_bin_path = folder.path().join(VENV_BIN);
         let mut scripts = Vec::new();
 
-        for script in fs::read_dir(target_venv_bin_path)? {
+        for script in fs::read_dir(target_venv_bin_path.clone())? {
             let script = script?;
             let script_path = script.path();
             if let Some(base_name) = script_path.file_name() {
@@ -303,8 +323,17 @@ pub fn list_installed_tools() -> Result<HashMap<String, Vec<String>>, Error> {
                 }
             }
         }
+        let tool_version = Command::new(target_venv_bin_path.join("python"))
+            .arg("-c")
+            .arg(TOOL_VERSION_SCRIPT)
+            .arg(tool_name.clone())
+            .stdout(Stdio::piped())
+            .output()?;
+        let tool_version = String::from_utf8_lossy(&tool_version.stdout)
+            .trim()
+            .to_string();
 
-        rv.insert(tool_name, scripts);
+        rv.insert(tool_name, ToolInfo::new(tool_version, scripts));
     }
 
     Ok(rv)

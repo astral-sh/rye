@@ -29,7 +29,7 @@ use crate::utils::{
     CommandOutput, CopyDirOptions,
 };
 
-/// Creates a new python project.
+/// Initialize a new or existing Python project with Rye.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// Where to place the project (defaults to current path)
