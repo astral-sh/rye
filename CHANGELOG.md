@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.12.0
 
-_Unreleased_
+Released on 2023-08-27
 
 - Improve handling of the pth files for TCL on pypy. #409
 
@@ -27,8 +29,6 @@ _Unreleased_
 - Fixed an issue where the author email was incorrectly detected. #382
 
 - The prompt of new virtualenvs is now set to the project name. #383
-
-<!-- released start -->
 
 ## 0.11.0
 
