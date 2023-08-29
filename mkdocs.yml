@@ -16,6 +16,7 @@ nav:
     - Python Project: guide/pyproject.md
     - Syncing and Locking: guide/sync.md
     - Building and Publishing: guide/publish.md
+    - Rust Modules: guide/rust.md
     - Dependency Sources: guide/sources.md
     - Dependencies: guide/deps.md
     - Toolchains:
