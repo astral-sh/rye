@@ -225,6 +225,11 @@ pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
             fs::hard_link(this, shims.join("python.exe"))
                 .context("tried to symlink python shim")?;
         }
+        fs::remove_file(shims.join("python3.exe")).ok();
+        if symlink_file(this, shims.join("python3.exe")).is_err() {
+            fs::hard_link(this, shims.join("python3.exe"))
+                .context("tried to symlink python shim")?;
+        }
         fs::remove_file(shims.join("pythonw.exe")).ok();
         if symlink_file(this, shims.join("pythonw.exe")).is_err() {
             fs::hard_link(this, shims.join("pythonw.exe"))
