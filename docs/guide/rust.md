@@ -21,6 +21,9 @@ The following structure will be created:
 ├── README.md
 ├── pyproject.toml
 ├── Cargo.toml
+├── python
+    └── my_project
+        └── __init__.py
 └── src
     └── lib.rs
 ``` 

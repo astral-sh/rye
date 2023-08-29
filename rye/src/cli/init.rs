@@ -145,6 +145,8 @@ allow-direct-references = true
 {%- elif build_system == "maturin" %}
 
 [tool.maturin]
+python-source = "python"
+module-name = {{ name_safe ~ "._lowlevel" }}
 features = ["pyo3/extension-module"]
 
 {%- endif %}
@@ -183,21 +185,27 @@ fn hello() -> PyResult<String> {
 
 /// A Python module implemented in Rust.
 #[pymodule]
-fn rustdemo(_py: Python, m: &PyModule) -> PyResult<()> {
+fn _lowlevel(_py: Python, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(hello, m)?)?;
     Ok(())
 }
 "#;
 
+/// Template for the __init__.py
+const RUST_INIT_PY_TEMPLATE: &str = r#"from {{ name_safe }}._lowlevel import hello
+__all__ = ["hello"]
+
+"#;
+
 /// Template for the Cargo.toml
 const CARGO_TOML_TEMPLATE: &str = r#"[package]
-name = "{{ name }}"
+name = {{ name }}
 version = "0.1.0"
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 [lib]
-name = "{{ name }}"
+name = {{ name_safe }}
 crate-type = ["cdylib"]
 
 [dependencies]
@@ -382,12 +390,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     };
 
     let private = cmd.private;
+    let name_safe = metadata.name.as_ref().unwrap().replace('-', "_");
 
     let rv = env.render_named_str(
         "pyproject.json",
         TOML_TEMPLATE,
         context! {
             name => metadata.name,
+            name_safe => name_safe,
             description => metadata.description,
             version => metadata.version,
             author => metadata.author,
@@ -407,10 +417,28 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     if !imported_something && !src_dir.is_dir() {
         let name = metadata.name.expect("project name");
         if is_rust {
+            let project_dir = src_dir.join("python").join(name.replace('-', "_"));
+            fs::create_dir_all(&project_dir).ok();
             let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
             fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
-            let rv = env.render_named_str("Cargo.toml", CARGO_TOML_TEMPLATE, context! { name })?;
+            let rv = env.render_named_str(
+                "Cargo.json",
+                CARGO_TOML_TEMPLATE,
+                context! {
+                    name,
+                    name_safe,
+                },
+            )?;
             fs::write(dir.join("Cargo.toml"), rv).context("failed to write Cargo.toml")?;
+            let rv = env.render_named_str(
+                "__init__.py",
+                RUST_INIT_PY_TEMPLATE,
+                context! {
+                    name_safe
+                },
+            )?;
+            fs::write(project_dir.join("__init__.py"), rv)
+                .context("failed to write __init__.py")?;
         } else {
             let project_dir = src_dir.join(name.replace('-', "_"));
             fs::create_dir_all(&project_dir).ok();

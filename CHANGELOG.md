@@ -3,10 +3,6 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.14.0
-
-_Unreleased_
-
 <!-- released start -->
 
 ## 0.13.0
