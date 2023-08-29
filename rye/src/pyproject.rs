@@ -1267,6 +1267,7 @@ pub enum BuildSystem {
     Setuptools,
     Flit,
     Pdm,
+    Maturin,
 }
 
 impl FromStr for BuildSystem {
@@ -1278,6 +1279,7 @@ impl FromStr for BuildSystem {
             "setuptools" => Ok(BuildSystem::Setuptools),
             "flit" => Ok(BuildSystem::Flit),
             "pdm" => Ok(BuildSystem::Pdm),
+            "maturin" => Ok(BuildSystem::Maturin),
             _ => Err(anyhow!("unknown build system")),
         }
     }

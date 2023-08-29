@@ -121,6 +121,9 @@ build-backend = "flit_core.buildapi"
 {%- elif build_system == "pdm" %}
 requires = ["pdm-backend"]
 build-backend = "pdm.backend"
+{%- elif build_system == "maturin" %}
+requires = ["maturin>=1.2,<2.0"]
+build-backend = "maturin"
 {%- endif %}
 
 [tool.rye]
@@ -139,6 +142,11 @@ dev-dependencies = []
 
 [tool.hatch.metadata]
 allow-direct-references = true
+{%- elif build_system == "maturin" %}
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+
 {%- endif %}
 
 "#;
@@ -164,6 +172,39 @@ const INIT_PY_TEMPLATE: &str = r#"def hello():
 
 "#;
 
+/// Template for the lib.rs
+const LIB_RS_TEMPLATE: &str = r#"use pyo3::prelude::*;
+
+/// Prints a message.
+#[pyfunction]
+fn hello() -> PyResult<String> {
+    Ok("Hello from {{ name }}!".into())
+}
+
+/// A Python module implemented in Rust.
+#[pymodule]
+fn rustdemo(_py: Python, m: &PyModule) -> PyResult<()> {
+    m.add_function(wrap_pyfunction!(hello, m)?)?;
+    Ok(())
+}
+"#;
+
+/// Template for the Cargo.toml
+const CARGO_TOML_TEMPLATE: &str = r#"[package]
+name = "{{ name }}"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[lib]
+name = "{{ name }}"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = "0.19.0"
+
+"#;
+
 /// Template for fresh gitignore files
 const GITIGNORE_TEMPLATE: &str = r#"# python generated files
 __pycache__/
@@ -172,6 +213,11 @@ build/
 dist/
 wheels/
 *.egg-info
+
+{%- if is_rust %}
+# Rust
+target/
+{%- endif %}
 
 # venv
 .venv
@@ -354,15 +400,24 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             private,
         },
     )?;
+    let is_rust = build_system == BuildSystem::Maturin;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;
 
     let src_dir = dir.join("src");
     if !imported_something && !src_dir.is_dir() {
         let name = metadata.name.expect("project name");
-        let project_dir = src_dir.join(name.replace('-', "_"));
-        fs::create_dir_all(&project_dir).ok();
-        let rv = env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
-        fs::write(project_dir.join("__init__.py"), rv).context("failed to write __init__.py")?;
+        if is_rust {
+            let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
+            fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
+            let rv = env.render_named_str("Cargo.toml", CARGO_TOML_TEMPLATE, context! { name })?;
+            fs::write(dir.join("Cargo.toml"), rv).context("failed to write Cargo.toml")?;
+        } else {
+            let project_dir = src_dir.join(name.replace('-', "_"));
+            fs::create_dir_all(&project_dir).ok();
+            let rv = env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
+            fs::write(project_dir.join("__init__.py"), rv)
+                .context("failed to write __init__.py")?;
+        }
     }
 
     // if git init is successful prepare the local git repository
@@ -380,7 +435,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
         // create a .gitignore if one is missing
         if !gitignore.is_file() {
-            let rv = env.render_named_str("gitignore.txt", GITIGNORE_TEMPLATE, ())?;
+            let rv = env.render_named_str(
+                "gitignore.txt",
+                GITIGNORE_TEMPLATE,
+                context! {
+                    is_rust
+                },
+            )?;
             fs::write(&gitignore, rv).context("failed to write .gitignore")?;
         }
     }

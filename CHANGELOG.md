@@ -14,6 +14,8 @@ _Unreleased_
   changed so that trying to launch `python3` will fall back to `python`.
   This makes it possible to run `maturin build`.
 
+- Add `maturin` build command to start a new maturin PyO3 project.
+
 <!-- released start -->
 
 ## 0.12.0
