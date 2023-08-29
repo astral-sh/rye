@@ -107,9 +107,22 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
 
         let mut args = args.to_vec();
         let folder = pyproject.venv_path().join(VENV_BIN);
-        if let Some(m) = which_in_global(target, Some(folder))?.next() {
+        if let Some(m) = which_in_global(target, Some(&folder))?.next() {
             args[0] = m.into();
             return Ok(Some(args));
+        }
+
+        // on windows a virtualenv does not contain a python3 executable normally.  In that
+        // case however we want to ensure that we do not shadow out to the global python3
+        // executable which might be from the python store.
+        #[cfg(windows)]
+        {
+            if matches_shim(target, "python3") {
+                if let Some(m) = which_in_global("python", Some(folder))?.next() {
+                    args[0] = m.into();
+                    return Ok(Some(args));
+                }
+            }
         }
 
         // secret pip shims

@@ -7,6 +7,13 @@ that were not yet released.
 
 _Unreleased_
 
+- Add a `python3` shim on windows.  Previously entering `python3` in the
+  command line would always bring up the windows store python proxy even
+  when global shims were enabled.  As virtualenvs do not support the
+  `python3` executable on windows, the internal shim handling is now also
+  changed so that trying to launch `python3` will fall back to `python`.
+  This makes it possible to run `maturin build`.
+
 <!-- released start -->
 
 ## 0.12.0
