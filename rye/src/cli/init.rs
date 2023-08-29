@@ -417,7 +417,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     if !imported_something && !src_dir.is_dir() {
         let name = metadata.name.expect("project name");
         if is_rust {
-            let project_dir = src_dir.join("python").join(name.replace('-', "_"));
+            fs::create_dir_all(&src_dir).ok();
+            let project_dir = dir.join("python").join(name.replace('-', "_"));
             fs::create_dir_all(&project_dir).ok();
             let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
             fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
