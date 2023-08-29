@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.13.0
 
-_Unreleased_
+Released on 2023-08-29
 
 - Add a `python3` shim on windows.  Previously entering `python3` in the
   command line would always bring up the windows store python proxy even
@@ -15,8 +17,6 @@ _Unreleased_
   This makes it possible to run `maturin build`.
 
 - Add `maturin` build command to start a new maturin PyO3 project.
-
-<!-- released start -->
 
 ## 0.12.0
 
