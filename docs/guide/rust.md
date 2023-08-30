@@ -28,11 +28,11 @@ The following structure will be created:
     └── lib.rs
 ``` 
 
-## Working with Maturin
+## Iterating
 
 When you use maturin as a build system then `rye sync` will automatically build the rust
 extension module into your venv.  Likewise `rye build` will us maturin to trigger a
-wheel build.
+wheel build.  For faster iteration it's recommended to use `maturin` directly.
 
 If you want to use other maturin commands such as `maturin develop` you can install
 it as a global tool:
@@ -41,10 +41,17 @@ it as a global tool:
 rye install maturin
 ```
 
-Note that `maturin develop`` requires `pip` to be installed into the virtualenv.  Before
+Note that `maturin develop` requires `pip` to be installed into the virtualenv.  Before
 you can use it you need to add it:
 
 ```
 rye add --dev pip
 rye sync
+```
+
+Rye recommends mixed python/rust modules.  In that case you can save some valuable
+iteration time by running `maturin develop --skip-install`:
+
+```
+maturin develop --skip-install
 ```
