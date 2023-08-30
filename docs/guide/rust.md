@@ -31,7 +31,7 @@ The following structure will be created:
 ## Iterating
 
 When you use maturin as a build system then `rye sync` will automatically build the rust
-extension module into your venv.  Likewise `rye build` will us maturin to trigger a
+extension module into your venv.  Likewise `rye build` will use maturin to trigger a
 wheel build.  For faster iteration it's recommended to use `maturin` directly.
 
 If you want to use other maturin commands such as `maturin develop` you can install
