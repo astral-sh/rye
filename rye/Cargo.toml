@@ -60,5 +60,8 @@ monotrail-utils = { git = "https://github.com/konstin/poc-monotrail", version = 
 python-pkginfo = { version = "0.5.6", features = ["serde"] }
 sysinfo = { version = "0.29.4", default-features = false, features = [] }
 
+[target."cfg(unix)".dependencies]
+whattheshell = "1.0.1"
+
 [target."cfg(windows)".dependencies]
 winapi = { version = "0.3.9", default-features = false, features = [] }

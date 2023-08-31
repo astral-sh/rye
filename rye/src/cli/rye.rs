@@ -328,6 +328,12 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     Ok(())
 }
 
+#[cfg(unix)]
+fn is_fish() -> bool {
+    use whattheshell::Shell;
+    Shell::infer().map_or(false, |x| matches!(x, Shell::Fish))
+}
+
 fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(), Error> {
     let exe = env::current_exe()?;
     let app_dir = get_app_dir();
@@ -445,6 +451,12 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
             echo!();
             echo!("    source \"{}/env\"", rye_home);
             echo!();
+            if is_fish() {
+                echo!("To make it work with fish, run this once instead:");
+                echo!();
+                echo!("    set -Ua fish_user_paths \"{}/shims\"", rye_home);
+                echo!();
+            }
             echo!("Note: after adding rye to your path, restart your shell for it to take effect.");
         }
     } else if cfg!(windows) {

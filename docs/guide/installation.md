@@ -71,6 +71,16 @@ interpreter.
     echo 'source "$HOME/.rye/env"' >> ~/.zshrc
     ```
 
+=== "Fish"
+
+    Since fish does not support `env`` files, you instead need to add
+    the shims directly.  This can be accomplished by running this
+    command once:
+
+    ```bash
+    set -Ua fish_user_paths "$HOME/.rye/shims"
+    ```
+
 === "Unix Shells"
 
     Rye ships an `env` file which should be sourced to update `PATH` automatically.

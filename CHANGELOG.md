@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- The installer now detects `fish` and will spit out additional instructions
+  for configuring the shell.
+
 <!-- released start -->
 
 ## 0.13.0
