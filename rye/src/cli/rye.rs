@@ -10,7 +10,6 @@ use clap::{CommandFactory, Parser};
 use clap_complete::Shell;
 use console::style;
 use minijinja::render;
-use same_file::is_same_file;
 use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
@@ -436,9 +435,10 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         style(self_path.display()).cyan()
     );
 
-    if cfg!(unix) {
+    #[cfg(unix)]
+    {
         if !env::split_paths(&env::var_os("PATH").unwrap())
-            .any(|x| is_same_file(x, &shims).unwrap_or(false))
+            .any(|x| same_file::is_same_file(x, &shims).unwrap_or(false))
         {
             echo!();
             echo!(
@@ -459,7 +459,9 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
             }
             echo!("Note: after adding rye to your path, restart your shell for it to take effect.");
         }
-    } else if cfg!(windows) {
+    }
+    #[cfg(windows)]
+    {
         echo!();
         echo!("Note: You need to manually add {DEFAULT_HOME} to your PATH.");
     }
