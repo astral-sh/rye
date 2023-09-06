@@ -92,3 +92,22 @@ resolve to a different Python installation on the search path when invoked in a
 folder that contains a non Rye managed project.
 
 As such the answer is a clear **yes!**
+
+## Wheels Appar to be Missing Files
+
+You might be encountering missing files in wheels when running `rye build` and you
+are using hatchling.  The reason for this is that `rye build` uses
+"[build](https://pypi.org/project/build/)" behind the scenes to build wheels.  There
+are two build modes and in some cases the wheel is first built from an sdist.  So
+if your sdists does not include the necessary data files, the resulting wheel will
+also be incorrect.
+
+This can be corrected by adding the files to the `include` in the hatch config
+for sdists.  For instance the following lines added to `pyproject.toml` will add
+the data files in `my_package` and all the tests to the sdist from which the
+wheel is built:
+
+```toml
+[tool.hatch.build.targets.sdist]
+include = ["src/my_package", "tests"]
+```
