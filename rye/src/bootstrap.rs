@@ -205,13 +205,26 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
 pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
     #[cfg(unix)]
     {
-        let use_softlinks = !cfg!(target_os = "linux");
-        fs::remove_file(shims.join("python")).ok();
-        if use_softlinks || fs::hard_link(this, shims.join("python")).is_err() {
-            symlink_file(this, shims.join("python")).context("tried to symlink python shim")?;
+        // on linux we cannot symlink at all, as this will misreport.  We will try to do
+        // hardlinks and if that fails, we fall back to copying the entire file over.  This
+        // for instance is needed when the rye executable is placed on a different volume
+        // than ~/.rye/shims
+        #[cfg(target_os = "linux")]
+        {
+            if fs::hard_link(this, shims.join("python")).is_err() {
+                fs::copy(this, shims.join("python")).context("tried to copy python shim")?;
+            }
+            fs::remove_file(shims.join("python3")).ok();
+            if fs::hard_link(this, shims.join("python3")).is_err() {
+                fs::copy(this, shims.join("python2")).context("tried to copy python3 shim")?;
+            }
         }
-        fs::remove_file(shims.join("python3")).ok();
-        if use_softlinks || fs::hard_link(this, shims.join("python3")).is_err() {
+        // on other unices we always use symlinks
+        #[cfg(not(target_os = "linux"))]
+        {
+            let use_softlinks = !cfg!(target_os = "linux");
+            fs::remove_file(shims.join("python")).ok();
+            symlink_file(this, shims.join("python")).context("tried to symlink python shim")?;
             symlink_file(this, shims.join("python3")).context("tried to symlink python3 shim")?;
         }
     }

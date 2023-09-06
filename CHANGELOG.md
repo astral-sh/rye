@@ -7,6 +7,12 @@ that were not yet released.
 
 _Unreleased_
 
+- The linux shim installer code will no longer fall back to symlinks when a
+  hardlink cannot be created.  This is done as a symlinked shim will not
+  ever function correctly on Linux.  This prevents the shim executables like
+  `python` to instead act as if they are `rye`.  The fallback behavior is now
+  to copy the executable instead.
+
 - The installer now detects `fish` and will spit out additional instructions
   for configuring the shell.
 
