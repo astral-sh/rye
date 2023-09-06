@@ -209,8 +209,7 @@ pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
         // hardlinks and if that fails, we fall back to copying the entire file over.  This
         // for instance is needed when the rye executable is placed on a different volume
         // than ~/.rye/shims
-        #[cfg(target_os = "linux")]
-        {
+        if cfg!(target_os = "linux") {
             if fs::hard_link(this, shims.join("python")).is_err() {
                 fs::copy(this, shims.join("python")).context("tried to copy python shim")?;
             }
@@ -218,10 +217,9 @@ pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
             if fs::hard_link(this, shims.join("python3")).is_err() {
                 fs::copy(this, shims.join("python2")).context("tried to copy python3 shim")?;
             }
-        }
+
         // on other unices we always use symlinks
-        #[cfg(not(target_os = "linux"))]
-        {
+        } else {
             let use_softlinks = !cfg!(target_os = "linux");
             fs::remove_file(shims.join("python")).ok();
             symlink_file(this, shims.join("python")).context("tried to symlink python shim")?;
