@@ -171,12 +171,13 @@ pub fn list_known_toolchains() -> Result<Vec<(PythonVersion, PathBuf)>, Error> {
 }
 
 /// Returns the default author from git or the config.
-pub fn get_default_author_with_fallback() -> Option<(String, String)> {
+pub fn get_default_author_with_fallback(dir: &PathBuf) -> Option<(String, String)> {
     let (mut name, mut email) = Config::current().default_author();
 
     if let Ok(rv) = Command::new("git")
         .arg("config")
         .arg("--get-regexp")
+        .current_dir(dir)
         .arg("^user.(name|email)$")
         .stdout(Stdio::piped())
         .output()

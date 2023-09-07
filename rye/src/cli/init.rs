@@ -298,7 +298,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .unwrap_or_else(|| "unknown".into())
     }));
     let version = "0.1.0";
-    let author = get_default_author_with_fallback();
+    let author = get_default_author_with_fallback(&dir);
     let license = match cmd.license {
         Some(license) => Some(license),
         None => cfg.default_license(),
@@ -336,6 +336,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     let imported_something = metadata.name.is_some() || metadata.dependencies.is_some();
+    let mut is_metadata_author_none = false;
 
     // if we're missing metadata after the import we update it with what's found from normal initialization.
     if metadata.name.is_none() {
@@ -348,7 +349,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         metadata.description = Some("Add your description here".to_string())
     }
     if metadata.author.is_none() {
-        metadata.author = author;
+        is_metadata_author_none = true;
+        metadata.author = author.clone();
     }
     if metadata.requires_python.is_none() {
         metadata.requires_python = Some(requires_python);
@@ -391,6 +393,39 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     let private = cmd.private;
     let name_safe = metadata.name.as_ref().unwrap().replace('-', "_");
+    let is_rust = build_system == BuildSystem::Maturin;
+
+    // if git init is successful prepare the local git repository
+    if !is_inside_git_work_tree(&dir)
+        && Command::new("git")
+            .arg("init")
+            .current_dir(&dir)
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .map(|status| status.success())
+            .unwrap_or(false)
+    {
+        let gitignore = dir.join(".gitignore");
+
+        // create a .gitignore if one is missing
+        if !gitignore.is_file() {
+            let rv = env.render_named_str(
+                "gitignore.txt",
+                GITIGNORE_TEMPLATE,
+                context! {
+                    is_rust
+                },
+            )?;
+            fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+        }
+        if is_metadata_author_none {
+            let new_author = get_default_author_with_fallback(&dir);
+            if author != new_author {
+                metadata.author = new_author;
+            }
+        }
+    }
 
     let rv = env.render_named_str(
         "pyproject.json",
@@ -410,7 +445,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             private,
         },
     )?;
-    let is_rust = build_system == BuildSystem::Maturin;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;
 
     let src_dir = dir.join("src");
@@ -449,31 +483,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    // if git init is successful prepare the local git repository
-    if !is_inside_git_work_tree(&dir)
-        && Command::new("git")
-            .arg("init")
-            .current_dir(&dir)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .map(|status| status.success())
-            .unwrap_or(false)
-    {
-        let gitignore = dir.join(".gitignore");
-
-        // create a .gitignore if one is missing
-        if !gitignore.is_file() {
-            let rv = env.render_named_str(
-                "gitignore.txt",
-                GITIGNORE_TEMPLATE,
-                context! {
-                    is_rust
-                },
-            )?;
-            fs::write(&gitignore, rv).context("failed to write .gitignore")?;
-        }
-    }
 
     echo!(
         "{} Initialized project in {}",
