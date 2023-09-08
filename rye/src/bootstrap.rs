@@ -220,7 +220,6 @@ pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
 
         // on other unices we always use symlinks
         } else {
-            let use_softlinks = !cfg!(target_os = "linux");
             fs::remove_file(shims.join("python")).ok();
             symlink_file(this, shims.join("python")).context("tried to symlink python shim")?;
             symlink_file(this, shims.join("python3")).context("tried to symlink python3 shim")?;
