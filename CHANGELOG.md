@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- The order of git submodule initialization was changed.  This improves the
+  automatic author detection when `includeIf` is used.  #443
+
 - The linux shim installer code will no longer fall back to symlinks when a
   hardlink cannot be created.  This is done as a symlinked shim will not
   ever function correctly on Linux.  This prevents the shim executables like
