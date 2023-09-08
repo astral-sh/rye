@@ -171,22 +171,25 @@ pub fn list_known_toolchains() -> Result<Vec<(PythonVersion, PathBuf)>, Error> {
 }
 
 /// Returns the default author from git or the config.
-pub fn get_default_author_with_fallback() -> Option<(String, String)> {
+pub fn get_default_author_with_fallback(dir: &PathBuf) -> Option<(String, String)> {
     let (mut name, mut email) = Config::current().default_author();
+    let is_name_none = name.is_none();
+    let is_email_none = email.is_none();
 
     if let Ok(rv) = Command::new("git")
         .arg("config")
         .arg("--get-regexp")
+        .current_dir(dir)
         .arg("^user.(name|email)$")
         .stdout(Stdio::piped())
         .output()
     {
         for line in std::str::from_utf8(&rv.stdout).ok()?.lines() {
             match line.split_once(' ') {
-                Some((key, value)) if key == "user.email" && email.is_none() => {
+                Some((key, value)) if key == "user.email" && is_email_none => {
                     email = Some(value.to_string());
                 }
-                Some((key, value)) if key == "user.name" && name.is_none() => {
+                Some((key, value)) if key == "user.name" && is_name_none => {
                     name = Some(value.to_string());
                 }
                 _ => {}
