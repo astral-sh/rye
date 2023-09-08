@@ -93,7 +93,7 @@ folder that contains a non Rye managed project.
 
 As such the answer is a clear **yes!**
 
-## Wheels Appar to be Missing Files
+## Wheels Appear to be Missing Files
 
 You might be encountering missing files in wheels when running `rye build` and you
 are using hatchling.  The reason for this is that `rye build` uses
