@@ -483,7 +483,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-
     echo!(
         "{} Initialized project in {}",
         style("success:").green(),
