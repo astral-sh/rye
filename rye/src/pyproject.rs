@@ -3,7 +3,6 @@ use core::fmt;
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::env;
-use std::env::consts::{ARCH, OS};
 use std::ffi::OsStr;
 use std::ffi::OsString;
 use std::fs;
@@ -1044,7 +1043,7 @@ pub fn latest_available_python_version(
         Vec::new()
     };
 
-    if let Some((latest, _, _)) = get_download_url(requested_version, OS, ARCH) {
+    if let Some((latest, _, _)) = get_download_url(requested_version) {
         all.push(latest);
     };
 

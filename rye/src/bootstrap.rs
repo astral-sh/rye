@@ -1,5 +1,5 @@
 use std::borrow::Cow;
-use std::env::consts::{ARCH, EXE_EXTENSION, OS};
+use std::env::consts::EXE_EXTENSION;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -26,7 +26,9 @@ use crate::utils::{
 
 /// this is the target version that we want to fetch
 pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionRequest {
-    kind: Some(Cow::Borrowed("cpython")),
+    name: Some(Cow::Borrowed("cpython")),
+    arch: None,
+    os: None,
     major: 3,
     minor: Some(11),
     patch: None,
@@ -298,7 +300,7 @@ pub fn get_pip_module(venv: &Path) -> Result<PathBuf, Error> {
 
 /// we only support cpython 3.9 to 3.11
 pub fn is_self_compatible_toolchain(version: &PythonVersion) -> bool {
-    version.kind == "cpython" && version.major == 3 && version.minor >= 9 && version.minor < 12
+    version.name == "cpython" && version.major == 3 && version.minor >= 9 && version.minor < 12
 }
 
 fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> {
@@ -333,7 +335,7 @@ pub fn fetch(
         }
     }
 
-    let (version, url, sha256) = match get_download_url(version, OS, ARCH) {
+    let (version, url, sha256) = match get_download_url(version) {
         Some(result) => result,
         None => bail!("unknown version {}", version),
     };

@@ -251,7 +251,7 @@ PYPY_DOWNLOADS = {
 print("// generated code, do not edit")
 print("use std::borrow::Cow;")
 print(
-    "pub const PYTHON_VERSIONS: &[(PythonVersion, &str, &str, &str, Option<&str>)] = &["
+    "pub const PYTHON_VERSIONS: &[(PythonVersion, &str, Option<&str>)] = &["
 )
 for interpreter, py_ver, choices in sorted(
     chain(
@@ -265,7 +265,7 @@ for interpreter, py_ver, choices in sorted(
         sha256 = read_sha256(url)
         sha256 = 'Some("%s")' % sha256 if sha256 else "None"
         print(
-            '    (PythonVersion { kind: Cow::Borrowed("%s"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", "%s", "%s", %s),'
-            % ((interpreter,) + py_ver + (arch, platform, url, sha256))
+            '    (PythonVersion { name: Cow::Borrowed("%s"), arch: Cow::Borrowed("%s"), os: Cow::Borrowed("%s"), major: %d, minor: %d, patch: %d, suffix: None }, "%s", %s),'
+            % ((interpreter, arch, platform) + py_ver + (url, sha256))
         )
 print("];")

@@ -229,7 +229,9 @@ pub fn get_python_version_request_from_pyenv_pin(root: &Path) -> Option<PythonVe
 /// Returns the most recent cpython release.
 pub fn get_latest_cpython_version() -> Result<PythonVersion, Error> {
     latest_available_python_version(&PythonVersionRequest {
-        kind: None,
+        name: None,
+        arch: None,
+        os: None,
         major: 3,
         minor: None,
         patch: None,

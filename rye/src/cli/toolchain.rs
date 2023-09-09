@@ -129,6 +129,15 @@ struct ListVersion {
     downloadable: Option<bool>,
 }
 
+fn secondary_architectures() -> &'static [&'static str] {
+    match (OS, ARCH) {
+        ("windows", "x86_64") => &["x86"],
+        ("windows", "aarch64") => &["x86_64", "x86"],
+        ("macos", "aarch64") => &["x86_64"],
+        _ => &[],
+    }
+}
+
 fn list(cmd: ListCommand) -> Result<(), Error> {
     let mut toolchains = list_known_toolchains()?
         .into_iter()
@@ -139,10 +148,15 @@ fn list(cmd: ListCommand) -> Result<(), Error> {
         for version in iter_downloadable(OS, ARCH) {
             toolchains.entry(version).or_insert(None);
         }
+        for secondary_arch in secondary_architectures() {
+            for version in iter_downloadable(OS, secondary_arch) {
+                toolchains.entry(version).or_insert(None);
+            }
+        }
     }
 
     let mut versions = toolchains.into_iter().collect::<Vec<_>>();
-    versions.sort_by_cached_key(|a| (a.1.is_none(), a.0.kind.to_string(), Reverse(a.clone())));
+    versions.sort_by_cached_key(|a| (a.1.is_none(), a.0.name.to_string(), Reverse(a.clone())));
 
     if let Some(Format::Json) = cmd.format {
         let json_versions = versions
