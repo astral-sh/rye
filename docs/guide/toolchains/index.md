@@ -37,6 +37,24 @@ available compatible version for the virtual environment.
 
     Relaxed pinning with `rye pin --relaxed` was added.
 
+## Non Native Architectures
+
++++ 0.14.0
+
+    Support for fetching and pinning of non-native architectures was added.
+
+By default the pin is for the architecture of the running machine.  This means that
+if you pin `cpython@3.11` on a mac with aarch64 architecture, you will use a cpython
+interpreter of that CPU architecture.  A different architecture can be selected by
+adding `-{arch}` to the python family name.  So for instance to force a `x86_64` version
+you need to pin like this:
+
+```
+rye pin cpython-x86_64@3.11
+```
+
+Note that such custom pins are not reflected in `pyproject.toml` but only `.python-version`.
+
 ## Listing Toolchains
 
 To see which toolchains are installed, `rye toolchain list` prints a list:
