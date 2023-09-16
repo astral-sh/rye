@@ -81,7 +81,7 @@ This lets you use indexes other than PyPI.  These sources can also be configured
 main `config.toml` config file with the same syntax.
 
 ```toml
-[[sources]]
+[[tool.rye.sources]]
 name = "default"
 url = "http://pypi.org/simple/"
 ```
