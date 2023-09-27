@@ -65,6 +65,9 @@ fn bump_version(version: &mut Version, bump: Bump, pyproject: &mut PyProject) ->
             version.release.resize(index + 1, 0);
         }
         version.release[index] += 1;
+        for i in index + 1..version.release.len() {
+            version.release[i] = 0;
+        }
     }
 
     pyproject.set_version(version);
