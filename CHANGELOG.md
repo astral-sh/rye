@@ -21,7 +21,7 @@ _Unreleased_
 - The installer now detects `fish` and will spit out additional instructions
   for configuring the shell.
 
-- Fix the wrong behavior when bump version.
+- Fix the wrong behavior when bump version.  #454
 
 <!-- released start -->
 
