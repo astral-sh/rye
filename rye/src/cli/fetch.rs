@@ -9,6 +9,11 @@ use crate::utils::CommandOutput;
 pub struct Args {
     /// The version of Python to fetch.
     version: String,
+    /// Overrides the architecture to fetch.
+    ///
+    /// When a non native architecture is fetched, the toolchain is
+    /// installed under an alias.
+    arch: Option<String>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,

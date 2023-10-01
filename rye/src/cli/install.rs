@@ -54,7 +54,9 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
     let py_ver: PythonVersionRequest = match cmd.python {
         Some(ref py) => py.parse()?,
         None => PythonVersionRequest {
-            kind: None,
+            name: None,
+            arch: None,
+            os: None,
             major: 3,
             minor: None,
             patch: None,

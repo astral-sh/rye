@@ -415,8 +415,8 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
             style(toolchain_path.display()).cyan()
         );
         let version = register_toolchain(toolchain_path, None, |ver| {
-            if ver.kind != "cpython" {
-                bail!("Only cpython toolchains are allowed, got '{}'", ver.kind);
+            if ver.name != "cpython" {
+                bail!("Only cpython toolchains are allowed, got '{}'", ver.name);
             } else if !is_self_compatible_toolchain(ver) {
                 bail!(
                     "Toolchain {} is not version compatible for internal use.",

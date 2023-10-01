@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Add support for fetching alternative CPU architectures.  #447
+
 - The order of git submodule initialization was changed.  This improves the
   automatic author detection when `includeIf` is used.  #443
 
