@@ -7,7 +7,7 @@ that were not yet released.
 
 _Unreleased_
 
-- Added support for Python 3.12.
+- Added support for Python 3.12.  #462
 
 <!-- released start -->
 
