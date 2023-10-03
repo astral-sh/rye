@@ -3,13 +3,13 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.15.0
 
-_Unreleased_
+Released on 2023-10-03
 
 - Added support for Python 3.12.  #462
-
-<!-- released start -->
 
 ## 0.14.0
 
