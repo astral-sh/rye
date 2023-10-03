@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.16.0
+## 0.15.1
 
-_Unreleased_
+Released on 2023-10-03
+
+- Fixed the updater not replacing the python3 shim correctly.
 
 <!-- released start -->
 
