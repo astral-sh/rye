@@ -3,11 +3,13 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.16.0
-
-_Unreleased_
-
 <!-- released start -->
+
+## 0.15.2
+
+Released on 2023-10-04
+
+- Fixed the updater not replacing the python shim correctly on Linux.
 
 ## 0.15.1
 

@@ -212,6 +212,7 @@ pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
         // for instance is needed when the rye executable is placed on a different volume
         // than ~/.rye/shims
         if cfg!(target_os = "linux") {
+            fs::remove_file(shims.join("python")).ok();
             if fs::hard_link(this, shims.join("python")).is_err() {
                 fs::copy(this, shims.join("python")).context("tried to copy python shim")?;
             }
