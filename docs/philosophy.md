@@ -113,7 +113,7 @@ what a potential tool like rye could be.  It might as well be that one of the ma
 tools that exist today, turn into that very tool that is described here.
 
 My sentiment is that unless "the one tool" can emerge in the Python world, the
-introduction of yet another tool might be a neg-negative to the ecosystem.  Plenty of
+introduction of yet another tool might be a net-negative to the ecosystem.  Plenty of
 tools have been created over the years, and unfortunately it hasn't been able to
 rally the majority of the Python community behind any tool.  I do however believe it is
 possible.
@@ -148,7 +148,7 @@ the existing ones.  Here is what I believe a resolver needs to be able to accomp
 
 * **Allow resolving across markers:** most resolvers in the Python ecosystem today can only
   resolve for the current interpreter and platform (eg: pip, pip-tools).  This means it cannot
-  create a resolution that is equally valid for a different platform.  In parts this is
+  create a resolution that is equally valid for a different platform.  In part this is
   a problem because of how environment markers in Python are defined.  They allow a level of
   expressiveness that cannot be reflected by most tools, however a subset could be supported.
 
@@ -283,7 +283,7 @@ invalid dependency references.  If no valid reference remains, the package will 
 
 #### Every Project in a Virtualenv
 
-While virtualenv is not by favorite tool, it's the closest we have to a standard.  I proposed
+While virtualenv is not my favorite tool, it's the closest we have to a standard.  I proposed
 that there is always one path for a virtualenv `.venv` and when Rye manages it, users should
 not interact with it manually.  It's at that point rye's responsibility to manage it, and it
 shall manage it as if it was a throw-away, always re-creatable scratch-pad for dependencies.
