@@ -21,7 +21,7 @@ but feedback and suggestions are greatly appreciated.
   <a class="github-button" href="https://github.com/sponsors/mitsuhiko" data-size="large" data-icon="octicon-heart" data-color-scheme="light" aria-label="Sponsor @mitsuhiko on GitHub">Sponsor</a>
 </p>
 
-??? abstract "Installation Instructions"
+!!! abstract "Installation Instructions"
 
     {% include-markdown ".includes/quick-install.md" %}
 
