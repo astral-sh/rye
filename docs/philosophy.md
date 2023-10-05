@@ -113,7 +113,7 @@ what a potential tool like rye could be.  It might as well be that one of the ma
 tools that exist today, turn into that very tool that is described here.
 
 My sentiment is that unless "the one tool" can emerge in the Python world, the
-introduction of yet another tool might be a neg-negative to the ecosystem.  Plenty of
+introduction of yet another tool might be a net-negative to the ecosystem.  Plenty of
 tools have been created over the years, and unfortunately it hasn't been able to
 rally the majority of the Python community behind any tool.  I do however believe it is
 possible.
