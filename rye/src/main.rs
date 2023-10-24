@@ -18,6 +18,7 @@ mod pyproject;
 mod sources;
 mod sync;
 mod utils;
+mod windows;
 
 static SHOW_CONTINUE_PROMPT: AtomicBool = AtomicBool::new(false);
 

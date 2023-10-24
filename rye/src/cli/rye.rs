@@ -20,6 +20,9 @@ use crate::bootstrap::{
 use crate::cli::toolchain::register_toolchain;
 use crate::platform::{get_app_dir, symlinks_supported};
 use crate::utils::{check_checksum, CommandOutput, QuietExit};
+use crate::windows::{
+    do_add_to_path, do_remove_from_path, do_add_to_programs, do_remove_from_programs
+};
 
 #[cfg(windows)]
 const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
@@ -318,10 +321,8 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
             Path::new(&rye_home as &str).join("env").display()
         );
     } else {
-        echo!(
-            "Don't forget to remove {} from your PATH",
-            Path::new(&rye_home as &str).join("shims").display()
-        )
+        do_remove_from_path()?;
+        do_remove_from_programs()?;
     }
 
     Ok(())
@@ -462,8 +463,8 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     }
     #[cfg(windows)]
     {
-        echo!();
-        echo!("Note: You need to manually add {DEFAULT_HOME} to your PATH.");
+        do_add_to_programs()?;
+        do_add_to_path()?;
     }
 
     echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
