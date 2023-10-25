@@ -52,7 +52,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => project.workspace_path().join("dist"),
     };
 
-    if cmd.clean {
+    if out.exists() && cmd.clean {
         for entry in fs::read_dir(&out)? {
             let path = entry?.path();
             if path.is_file() {
