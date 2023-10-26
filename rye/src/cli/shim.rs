@@ -6,7 +6,6 @@ use std::str::FromStr;
 use anyhow::{anyhow, bail, Context, Error};
 use same_file::is_same_file;
 use std::process::Command;
-use which::which_in_global;
 
 use crate::bootstrap::{ensure_self_venv, get_pip_runner};
 use crate::config::Config;
@@ -75,28 +74,121 @@ fn get_pip_shim(
 /// placed in the virtualenv.
 fn find_shadowed_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsString>>, Error> {
     let exe = env::current_exe()?;
+
     for bin in which::which_all(target)? {
         if is_same_file(&bin, &exe).unwrap_or(false) {
             continue;
         }
+
+        // on windows we also want to filter out the windows store python
+        #[cfg(windows)]
+        {
+            if is_pointless_windows_store_applink(&bin) {
+                continue;
+            }
+        }
+
         let mut args = args.to_vec();
         args[0] = bin.into();
         return Ok(Some(args));
     }
+
     Ok(None)
 }
 
+/// On windows we might encounter the windows store proxy shim.  This requires
+/// quite a bit of custom logic to figure out what this thing does.
+///
+/// This is a pretty dumb way.  We know how to parse this reparse point, but Microsoft
+/// does not want us to do this as the format is unstable.  So this is a best effort way.
+/// we just hope that the reparse point has the python redirector in it, when it's not
+/// pointing to a valid Python.
+#[cfg(windows)]
+fn is_pointless_windows_store_applink(path: &std::path::Path) -> bool {
+    use std::os::windows::fs::MetadataExt;
+    use std::os::windows::prelude::OsStrExt;
+    use winapi::um::fileapi::{CreateFileW, OPEN_EXISTING};
+    use winapi::um::handleapi::{CloseHandle, INVALID_HANDLE_VALUE};
+    use winapi::um::ioapiset::DeviceIoControl;
+    use winapi::um::winbase::{FILE_FLAG_BACKUP_SEMANTICS, FILE_FLAG_OPEN_REPARSE_POINT};
+    use winapi::um::winioctl::FSCTL_GET_REPARSE_POINT;
+    use winapi::um::winnt::{FILE_ATTRIBUTE_REPARSE_POINT, MAXIMUM_REPARSE_DATA_BUFFER_SIZE};
+
+    // only if we are in the special WindowsApps folder and we are called
+    // python, we can be a relevant store proxy
+    if !path.as_os_str().to_str().map_or(false, |x| {
+        x.contains("Local\\Microsoft\\WindowsApps\\python")
+    }) {
+        return false;
+    }
+
+    // only if the file is a reparse point, is it relevant.
+    let md = match std::fs::symlink_metadata(path) {
+        Ok(md) => md,
+        Err(_) => return false,
+    };
+    if md.file_attributes() & FILE_ATTRIBUTE_REPARSE_POINT == 0 {
+        return false;
+    }
+
+    let mut path_encoded = path.as_os_str().encode_wide().collect::<Vec<_>>();
+    let reparse_handle = unsafe {
+        CreateFileW(
+            path_encoded.as_mut_ptr(),
+            0,
+            0,
+            std::ptr::null_mut(),
+            OPEN_EXISTING,
+            FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+            std::ptr::null_mut(),
+        )
+    };
+
+    if reparse_handle == INVALID_HANDLE_VALUE {
+        return false;
+    }
+
+    let mut buf = [0u16; MAXIMUM_REPARSE_DATA_BUFFER_SIZE as usize];
+    let mut bytes_returned = 0;
+    let success = unsafe {
+        DeviceIoControl(
+            reparse_handle,
+            FSCTL_GET_REPARSE_POINT,
+            std::ptr::null_mut(),
+            0,
+            buf.as_mut_ptr() as *mut _,
+            buf.len() as u32 * 2,
+            &mut bytes_returned,
+            std::ptr::null_mut(),
+        ) != 0
+    };
+
+    unsafe {
+        CloseHandle(reparse_handle);
+    }
+
+    success && String::from_utf16_lossy(&buf).contains("\\AppInstallerPythonRedirector.exe")
+}
+
+fn is_python_shim(target: &str) -> bool {
+    matches_shim(target, "python") || matches_shim(target, "python3")
+}
+
 /// Figures out where a shim should point to.
-fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsString>>, Error> {
+fn get_shim_target(
+    target: &str,
+    args: &[OsString],
+    pyproject: Option<&PyProject>,
+) -> Result<Option<Vec<OsString>>, Error> {
     // if we can find a project, we always look for a local virtualenv first for shims.
-    if let Ok(pyproject) = PyProject::discover() {
+    if let Some(pyproject) = pyproject {
         // However we only allow automatic synching, if we are rye managed.
         if pyproject.rye_managed() {
             let _guard = redirect_to_stderr(true);
             sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
         }
 
-        if (matches_shim(target, "python") || matches_shim(target, "python3"))
+        if is_python_shim(target)
             && args
                 .get(1)
                 .and_then(|x| x.as_os_str().to_str())
@@ -107,7 +199,7 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
 
         let mut args = args.to_vec();
         let folder = pyproject.venv_path().join(VENV_BIN);
-        if let Some(m) = which_in_global(target, Some(&folder))?.next() {
+        if let Some(m) = which::which_in_global(target, Some(&folder))?.next() {
             args[0] = m.into();
             return Ok(Some(args));
         }
@@ -118,7 +210,7 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
         #[cfg(windows)]
         {
             if matches_shim(target, "python3") {
-                if let Some(m) = which_in_global("python", Some(folder))?.next() {
+                if let Some(m) = which::which_in_global("python", Some(folder))?.next() {
                     args[0] = m.into();
                     return Ok(Some(args));
                 }
@@ -131,7 +223,7 @@ fn get_shim_target(target: &str, args: &[OsString]) -> Result<Option<Vec<OsStrin
         }
 
     // Global shims (either implicit or requested)
-    } else if matches_shim(target, "python") || matches_shim(target, "python3") {
+    } else if is_python_shim(target) {
         let config = Config::current();
         let mut remove1 = false;
 
@@ -211,10 +303,17 @@ fn matches_shim(s: &str, reference: &str) -> bool {
 /// executable is invoked as a shim executable.
 pub fn execute_shim(args: &[OsString]) -> Result<(), Error> {
     if let Some(shim_name) = detect_shim(args) {
-        if let Some(args) = get_shim_target(&shim_name, args)? {
+        let pyproject = PyProject::discover().ok();
+        if let Some(args) = get_shim_target(&shim_name, args, pyproject.as_ref())? {
             match spawn_shim(args)? {}
+        } else if is_python_shim(&shim_name) {
+            if pyproject.is_some() {
+                bail!("target python binary '{}' not found in project. Most likely running 'rye sync' will resolve this.", shim_name);
+            } else {
+                bail!("target python binary '{}' not found. You're outside of a project, consider enabling global shims: https://rye-up.com/guide/shims/#global-shims", shim_name);
+            }
         } else {
-            bail!("target shim binary not found");
+            bail!("target shim binary '{}' not found", shim_name);
         }
     }
     Ok(())
