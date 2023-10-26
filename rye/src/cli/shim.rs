@@ -219,7 +219,7 @@ fn get_shim_target(
 
         // secret pip shims
         if matches_shim(target, "pip") || matches_shim(target, "pip3") {
-            return Ok(Some(get_pip_shim(&pyproject, args, CommandOutput::Normal)?));
+            return Ok(Some(get_pip_shim(pyproject, args, CommandOutput::Normal)?));
         }
 
     // Global shims (either implicit or requested)
