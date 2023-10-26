@@ -107,6 +107,54 @@ interpreter.
 There is a quite a bit to shims and their behavior.  Make sure to [read up on shims](shims.md)
 to learn more.
 
+## Shell Completion
+
+Rye supports generating completion scripts for Bash, Zsh, Fish or Powershell. Here are some common locations for each shell:
+
+=== "Bash"
+
+    ```bash
+    mkdir -p ~/.local/share/bash-completion/completions
+    rye self completion > ~/.local/share/bash-completion/completions/rye.bash
+    ```
+
+=== "Zsh"
+
+    ```bash
+    # Make sure ~/.zfunc is added to fpath, before compinit.
+    rye self completion -s zsh > ~/.zfunc/_rye
+    ```
+
+    Oh-My-Zsh:
+
+    ```bash
+    mkdir $ZSH_CUSTOM/plugins/rye
+    rye self completion -s zsh > $ZSH_CUSTOM/plugins/rye/_rye
+    ```
+
+    Then make sure rye plugin is enabled in ~/.zshrc
+
+=== "Fish"
+
+    ```bash
+    rye self completion -s fish > ~/.config/fish/completions/rye.fish
+    ```
+
+=== "Powershell"
+
+    ```ps1
+    # Create a directory to store completion scripts
+    mkdir $PROFILE\..\Completions
+    echo @'
+    Get-ChildItem "$PROFILE\..\Completions\" | ForEach-Object {
+        . $_.FullName
+    }
+    '@ | Out-File -Append -Encoding utf8 $PROFILE
+    # Generate script
+    Set-ExecutionPolicy Unrestricted -Scope CurrentUser
+    rye self completion -s powershell | Out-File -Encoding utf8 $PROFILE\..\Completions\rye_completion.ps1
+    ```
+
 ## Updating Rye
 
 To update rye to the latest version you can use `rye` itself:
