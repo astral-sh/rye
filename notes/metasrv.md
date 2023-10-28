@@ -94,7 +94,7 @@ What all of these have in common are the following two aspects:
 I'm not sure what the right way is to approach this, but maybe the reality is that a meta server
 might just have to roll with it and serve up different "understandings".  Maybe the most trivial
 way would be that the meta server proxies more than one git repository that acts as the truth of
-these patched mata data infos and users opt-into these via their installers.  Over time maybe some
+these patched meta data infos and users opt-into these via their installers.  Over time maybe some
 understanding emerges which overrides are more appropriate.
 
 So workflow wise the meta server might not directly accept writes, but it might become an arbiter
