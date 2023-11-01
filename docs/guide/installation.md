@@ -73,7 +73,7 @@ interpreter.
 
 === "Fish"
 
-    Since fish does not support `env`` files, you instead need to add
+    Since fish does not support `env` files, you instead need to add
     the shims directly.  This can be accomplished by running this
     command once:
 
