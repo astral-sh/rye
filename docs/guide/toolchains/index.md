@@ -1,6 +1,6 @@
 # Toolchain Management
 
-Rye is unique in that it does not use system Python installations.  Instead if downloads
+Rye is unique in that it does not use system Python installations.  Instead it downloads
 and manages Python installations itself (called toolchains).  Today there are
 three types of toolchains supported by Rye and they require some understanding:
 
@@ -9,7 +9,7 @@ three types of toolchains supported by Rye and they require some understanding:
   [indygreg/python-build-standalone](https://github.com/indygreg/python-build-standalone)
 * [**Official PyPy Builds**](pypy.md): PyPy is supported from the official release builds.
 * [**Custom Local Toolchains**](#registering-toolchains): locally installed Python interpreters can be
-  registered with Rye.  Afterwards they can be used with any Rye managed project.
+  registered with Rye.  Afterwards, they can be used with any Rye managed project.
 
 ## Pinning Toolchains
 
@@ -22,7 +22,7 @@ rye pin cpython@3.11.4
 ```
 
 Pinning a downloadable version means that Rye will automatically fetch it when necessary.
-By default toolchains are pinned to a precise version.  This means that even if you
+By default, toolchains are pinned to a precise version.  This means that even if you
 write `rye pin cpython@3.11`, a very specific version of cpython is written into the
 `.python-version` file.  With Rye 0.5.0 onwards it's possible to perform "relaxed" pins:
 
@@ -43,7 +43,7 @@ available compatible version for the virtual environment.
 
     Support for fetching and pinning of non-native architectures was added.
 
-By default the pin is for the architecture of the running machine.  This means that
+By default, the pin is for the architecture of the running machine.  This means that
 if you pin `cpython@3.11` on a mac with aarch64 architecture, you will use a cpython
 interpreter of that CPU architecture.  A different architecture can be selected by
 adding `-{arch}` to the python family name.  So for instance to force a `x86_64` version
@@ -89,7 +89,7 @@ Toolchains are fetched from two sources:
 
 ## Registering Toolchains
 
-Additionally it's possible to register an external toolchain with the `rye toolchain register`
+Additionally, it's possible to register an external toolchain with the `rye toolchain register`
 command.
 
 ```
