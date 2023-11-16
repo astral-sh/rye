@@ -158,4 +158,30 @@ $ pycowsay Wow
 
 To uninstall run `rye uninstall pycowsay` again.
 
+
+## Badges
+
+If you're using Rye, consider adding the Rye badge to project's `README.md`:
+
+```md
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
+```
+
+...or `README.rst`:
+
+```rst
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json
+    :target: https://rye-up.com
+    :alt: Rye
+```
+
+...or, as HTML:
+
+```html
+<a href="https://rye-up.com"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json" alt="Rye" style="max-width:100%;"></a>
+```
+
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
+
+
 License: MIT
