@@ -10,7 +10,7 @@ version changed or the operating system is a different one.
 ## General Challenges
 
 There are a handful of basic challenges with portable lock files.  These are largely independent of
-the "marker problem" that this document describes, but they are important to understand nontheless
+the "marker problem" that this document describes, but they are important to understand nonetheless
 
 * source distributions can have unstable dependencies.  This means that for instance running `setup.py`
   on one machine might produce dramatically different version dependencies than running this on another
@@ -75,7 +75,7 @@ three goals:
 
 The third point probably requires a bit of explanation: today many packages are only installable by
 lying about version constraints somewhere.  In parts that's because packages define upper bounds of
-dependencies in anticipation of future incompatiblity that might not even exist.
+dependencies in anticipation of future incompatibility that might not even exist.
 
 ### Reducing The Problem Space
 
