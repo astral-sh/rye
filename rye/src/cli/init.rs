@@ -108,6 +108,9 @@ license = { text = {{ license }} }
 classifiers = ["Private :: Do Not Upload"]
 {%- endif %}
 
+[project.scripts]
+hello = {{ name~":hello"}}
+
 [build-system]
 {%- if build_system == "hatchling" %}
 requires = ["hatchling"]
