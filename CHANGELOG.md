@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Rye now configures hatchling better in `rye init` so that it works with
+  hatchling 1.19 and later.  #521
+
 - Rye now detects the dummy Python shim that starts the windows store and
   refuses to consider it.  #486
 

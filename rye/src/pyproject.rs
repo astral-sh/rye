@@ -818,7 +818,7 @@ impl PyProject {
             Some(tbl) => tbl.iter().map(|x| x.0.to_string()).collect(),
             None => HashSet::new(),
         };
-        for entry in fs::read_dir(&self.venv_bin_path())
+        for entry in fs::read_dir(self.venv_bin_path())
             .ok()
             .into_iter()
             .flatten()
