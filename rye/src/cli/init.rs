@@ -145,6 +145,9 @@ dev-dependencies = []
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = [{{ "src/" ~ name_safe }}]
 {%- elif build_system == "maturin" %}
 
 [tool.maturin]

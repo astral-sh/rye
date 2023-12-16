@@ -1,7 +1,7 @@
 # Installation
 
 Rye is built in Rust.  It can either be manually compiled and installed or it can
-be installed from a binary distribution yet.  It has support for Linux, macOS and
+be installed from a binary distribution.  It has support for Linux, macOS and
 Windows.
 
 ## Installing Rye

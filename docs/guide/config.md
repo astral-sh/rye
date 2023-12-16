@@ -97,7 +97,7 @@ keys are in dotted notation.  `--get` reads a key, `--set`, `--set-int`,
 
 ```bash
 rye config --set proxy.http=http://127.0.0.1:4000
-rye config --set-bool behavior.rye-force-managed=true
+rye config --set-bool behavior.force-rye-managed=true
 rye config --get default.requires-python
 ```
 
