@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.16.0
 
-_Unreleased_
+Released on 2023-12-17
 
 - By default a script with the name of the project is now also configured.  #519
 
@@ -14,8 +16,6 @@ _Unreleased_
 
 - Rye now detects the dummy Python shim that starts the windows store and
   refuses to consider it.  #486
-
-<!-- released start -->
 
 ## 0.15.2
 
