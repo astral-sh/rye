@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- By default a script with the name of the project is now also configured.  #519
+
 - Rye now configures hatchling better in `rye init` so that it works with
   hatchling 1.19 and later.  #521
 
