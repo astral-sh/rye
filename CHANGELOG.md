@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed default generated script reference.  #527
+
 <!-- released start -->
 
 ## 0.16.0
