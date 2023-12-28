@@ -109,7 +109,7 @@ classifiers = ["Private :: Do Not Upload"]
 {%- endif %}
 
 [project.scripts]
-hello = {{ name ~ ":hello"}}
+hello = {{ name_safe ~ ":hello"}}
 
 [build-system]
 {%- if build_system == "hatchling" %}
