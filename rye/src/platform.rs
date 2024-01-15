@@ -15,22 +15,9 @@ pub fn init() -> Result<(), Error> {
     let home = if let Some(rye_home) = env::var_os("RYE_HOME") {
         PathBuf::from(rye_home)
     } else {
-        {
-            // ironically the deprecated home dir implementation is
-            // still the only one that falls back to getpwuid.
-            // Fixes https://github.com/mitsuhiko/rye/issues/532
-            #[cfg(unix)]
-            {
-                #[allow(deprecated)]
-                std::env::home_dir()
-            }
-            #[cfg(not(unix))]
-            {
-                simple_home_dir::home_dir()
-            }
-        }
-        .map(|x| x.join(".rye"))
-        .ok_or_else(|| anyhow!("could not determine home folder"))?
+        home::home_dir()
+            .map(|x| x.join(".rye"))
+            .ok_or_else(|| anyhow!("could not determine home folder"))?
     };
     *APP_DIR.lock().unwrap() = Some(Box::leak(Box::new(home)));
     Ok(())
