@@ -9,6 +9,8 @@ _Unreleased_
 
 - Fixed default generated script reference.  #527
 
+- Correctly fall back to home folder if HOME is unset.  #533 
+
 <!-- released start -->
 
 ## 0.16.0
