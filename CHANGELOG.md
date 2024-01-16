@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Incorporate new Python builds.  #535
+
 <!-- released start -->
 
 ## 0.17.0
