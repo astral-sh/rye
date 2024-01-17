@@ -8,6 +8,7 @@ use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
 use console::style;
+use curl::easy::SslOpt;
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
 use tempfile::NamedTempFile;
@@ -408,6 +409,14 @@ pub fn download_url_ignore_404(url: &str, output: CommandOutput) -> Result<Optio
     // we only do https requests here, so we always set an https proxy
     if let Some(proxy) = config.https_proxy_url() {
         handle.proxy(&proxy)?;
+    }
+
+    // on windows we want to disable revocation checks.  The reason is that MITM proxies
+    // will otherwise not work.  This is a schannel specific behavior anyways.
+    // for more information see https://github.com/curl/curl/issues/264
+    #[cfg(windows)]
+    {
+        handle.ssl_options(SslOpt::new().no_revoke(true))?;
     }
 
     let write_archive = &mut archive_buffer;
