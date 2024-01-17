@@ -410,6 +410,14 @@ pub fn download_url_ignore_404(url: &str, output: CommandOutput) -> Result<Optio
         handle.proxy(&proxy)?;
     }
 
+    // on windows we want to disable revocation checks.  The reason is that MITM proxies
+    // will otherwise not work.  This is a schannel specific behavior anyways.
+    // for more information see https://github.com/curl/curl/issues/264
+    #[cfg(windows)]
+    {
+        handle.ssl_options(curl::easy::SslOpt::new().no_revoke(true))?;
+    }
+
     let write_archive = &mut archive_buffer;
     {
         let mut transfer = handle.transfer();

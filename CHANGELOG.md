@@ -9,6 +9,8 @@ _Unreleased_
 
 - Incorporate new Python builds.  #535
 
+- Disable revocation checks on windows to support corporate MITM proxies.  #537
+
 <!-- released start -->
 
 ## 0.17.0
