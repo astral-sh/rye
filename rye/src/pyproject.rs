@@ -1015,11 +1015,14 @@ fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement>
     }
 }
 
-pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion> {
+pub fn read_venv_marker(venv_path: &Path) -> Option<VenvMarker> {
     let marker_file = venv_path.join("rye-venv.json");
     let contents = fs::read(marker_file).ok()?;
-    let marker: VenvMarker = serde_json::from_slice(&contents).ok()?;
-    Some(marker.python)
+    serde_json::from_slice(&contents).ok()
+}
+
+pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion> {
+    read_venv_marker(venv_path).map(|x| x.python)
 }
 
 /// Give a given python version request, returns the latest available version.

@@ -4,6 +4,7 @@ use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
 use console::style;
+use same_file::is_same_file;
 use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
@@ -15,7 +16,7 @@ use crate::lock::{
 };
 use crate::piptools::get_pip_sync;
 use crate::platform::get_toolchain_python_bin;
-use crate::pyproject::{get_current_venv_python_version, ExpandedSources, PyProject};
+use crate::pyproject::{read_venv_marker, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
 use crate::utils::{get_venv_python_bin, set_proxy_variables, symlink_dir, CommandOutput};
 
@@ -71,6 +72,7 @@ impl SyncOptions {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VenvMarker {
     pub python: PythonVersion,
+    pub venv_path: Option<PathBuf>,
 }
 
 /// Synchronizes a project's virtualenv.
@@ -95,16 +97,30 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
 
     let mut recreate = cmd.mode == SyncMode::Full;
     if venv.is_dir() {
-        if let Some(marker_python) = get_current_venv_python_version(&venv) {
-            if marker_python != py_ver {
+        if let Some(marker) = read_venv_marker(&venv) {
+            if marker.python != py_ver {
                 if cmd.output != CommandOutput::Quiet {
                     echo!(
                         "Python version mismatch (found {}, expect {}), recreating.",
-                        marker_python,
+                        marker.python,
                         py_ver
                     );
                 }
                 recreate = true;
+            } else if let Some(ref venv_path) = marker.venv_path {
+                // for virtualenvs that have a location identifier, check if we need to
+                // recreate it.  On IO error we know that one of the paths is gone, so
+                // something needs recreation.
+                if !is_same_file(&venv, venv_path).unwrap_or(false) {
+                    if cmd.output != CommandOutput::Quiet {
+                        echo!(
+                            "Detected relocated virtualenv ({} => {}), recreating.",
+                            venv_path.display(),
+                            venv.display(),
+                        );
+                    }
+                    recreate = true;
+                }
             }
         } else if cmd.force {
             if cmd.output != CommandOutput::Quiet {
@@ -150,6 +166,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             venv.join("rye-venv.json"),
             serde_json::to_string_pretty(&VenvMarker {
                 python: py_ver.clone(),
+                venv_path: Some(venv.clone().into()),
             })?,
         )
         .context("failed writing venv marker file")?;
