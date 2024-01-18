@@ -11,7 +11,7 @@ _Unreleased_
 
 - Disable revocation checks on windows to support corporate MITM proxies.  #537
 
-- Detect when a virtualenv relocates and automatically re-create it on sync.
+- Detect when a virtualenv relocates and automatically re-create it on sync.  #538
 
 <!-- released start -->
 
