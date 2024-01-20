@@ -236,7 +236,7 @@ fn get_shim_target(
             PythonVersionRequest::from_str(rest)
                 .context("invalid python version requested from command line")?
         } else if config.global_python() {
-            match get_python_version_request_from_pyenv_pin(&std::env::current_exe()?) {
+            match get_python_version_request_from_pyenv_pin(&std::env::current_dir()?) {
                 Some(version_request) => version_request,
                 None => config.default_toolchain()?,
             }
