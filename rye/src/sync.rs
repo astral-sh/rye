@@ -76,7 +76,7 @@ pub struct VenvMarker {
 }
 
 /// Synchronizes a project's virtualenv.
-pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
+pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
     let lockfile = pyproject.workspace_path().join("requirements.lock");
     let dev_lockfile = pyproject.workspace_path().join("requirements-dev.lock");
@@ -90,6 +90,11 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
     {
         // pip-tools will search for pyproject.toml
         bail!("cannot sync or generate lockfile: package needs 'pyproject.toml'");
+    }
+
+    // Turn on locking with sources if the project demands it.
+    if pyproject.lock_with_sources() {
+        cmd.lock_options.with_sources = true;
     }
 
     // ensure we are bootstrapped
@@ -260,15 +265,6 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
 
             sources.add_as_pip_args(&mut pip_sync_cmd);
-
-            for (idx, url) in sources.index_urls.iter().enumerate() {
-                if idx == 0 {
-                    pip_sync_cmd.arg("--index-url");
-                } else {
-                    pip_sync_cmd.arg("--extra-index-url");
-                }
-                pip_sync_cmd.arg(&url.to_string());
-            }
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);

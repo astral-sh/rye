@@ -13,6 +13,10 @@ _Unreleased_
 
 - Detect when a virtualenv relocates and automatically re-create it on sync.  #538
 
+- Added `lock --with-sources`, `sync --with-sources` and the new `rye.tool.lock-with-sources`
+  config.  Passing this will ensure that source references are included in the
+  lock files.  #540
+
 <!-- released start -->
 
 ## 0.17.0
