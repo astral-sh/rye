@@ -7,6 +7,13 @@ that were not yet released.
 
 _Unreleased_
 
+- Improved the behavior of `rye fetch`.  When invoked without arguments it will now try to
+  fetch the version of the requested Python interpreter.  Specifically this combining
+  `pin` and `fetch` work in a much simplified manner.  #545
+
+- Fixed an issue where `rye init` would pin a much too specific version in the `.python-version`
+  file that is generated.  #545
+
 <!-- released start -->
 
 ## 0.18.0
