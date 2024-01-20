@@ -19,7 +19,8 @@ a specific version download a binary directly
 ## Customized Installation
 
 On some platforms there is some limited support for customizing the installation
-experience.
+experience.  This for instance can be necessary on certain Linux environments such
+as Alpine where the Rye provided Python interpreter is not supported.
 
 === "Linux"
 

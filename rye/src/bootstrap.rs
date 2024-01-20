@@ -122,9 +122,14 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     venv_cmd.arg(&venv_dir);
     set_proxy_variables(&mut venv_cmd);
 
-    let status = venv_cmd
-        .status()
-        .with_context(|| format!("unable to create self venv using {}", py_bin.display()))?;
+    let status = venv_cmd.status().with_context(|| {
+        format!(
+            "unable to create self venv using {}. It might be that \
+             the used Python build is incompatible with this machine. \
+             For more information see https://rye-up.com/guide/installation/",
+            py_bin.display()
+        )
+    })?;
     if !status.success() {
         bail!("failed to initialize virtualenv in {}", venv_dir.display());
     }
