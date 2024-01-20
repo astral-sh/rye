@@ -55,6 +55,20 @@ do want to include those, pass `--pre`
 rye lock Flask --pre
 ```
 
+### `--with-sources`
+
+By default (unless the `tool.rye.lock-with-sources` config key is set to `true` in the
+`pyproject.toml`) lock files are not generated with source references.  This means that
+if custom sources are used the lock file cannot be installed via `pip` unless also
+`--find-links` and other parameters are manually passed.
+
+When this flag is passed then the lock file is generated with references to `--index-url`,
+`--extra-index-url` or `--find-links`.
+
+```
+rye lock --with-sources
+```
+
 ## Sync
 
 Syncing takes the same parameters as `lock` and then some.  Sync will usually first do what
