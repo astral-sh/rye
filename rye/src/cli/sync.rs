@@ -40,6 +40,9 @@ pub struct Args {
     /// Enables all features.
     #[arg(long)]
     all_features: bool,
+    /// Set to true to lock with sources in the lockfile.
+    #[arg(long)]
+    with_sources: bool,
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
@@ -63,6 +66,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             pre: cmd.pre,
             features: cmd.features,
             all_features: cmd.all_features,
+            with_sources: cmd.with_sources,
         },
         pyproject: cmd.pyproject,
     })?;

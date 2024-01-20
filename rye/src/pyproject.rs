@@ -494,6 +494,11 @@ impl Workspace {
     pub fn rye_managed(&self) -> bool {
         is_rye_managed(&self.doc)
     }
+
+    /// Should requirements.txt based locking include a find-links reference?
+    pub fn lock_with_sources(&self) -> bool {
+        lock_with_sources(&self.doc)
+    }
 }
 
 /// Check if recurse should be skipped into directory with this name
@@ -947,6 +952,14 @@ impl PyProject {
         }
     }
 
+    /// Should requirements.txt based locking include a find-links reference?
+    pub fn lock_with_sources(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.lock_with_sources(),
+            None => lock_with_sources(&self.doc),
+        }
+    }
+
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
         fs::write(self.toml_path(), self.doc.to_string()).with_context(|| {
@@ -1194,6 +1207,14 @@ fn is_rye_managed(doc: &Document) -> bool {
         .unwrap_or(false)
 }
 
+fn lock_with_sources(doc: &Document) -> bool {
+    doc.get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("lock-with-sources"))
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false)
+}
+
 fn get_project_metadata(path: &Path) -> Result<Metadata, Error> {
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
     let mut metadata = Command::new(self_venv.join(VENV_BIN).join("python"));
@@ -1208,7 +1229,7 @@ fn get_project_metadata(path: &Path) -> Result<Metadata, Error> {
 /// Represents expanded sources.
 #[derive(Debug, Clone, Serialize)]
 pub struct ExpandedSources {
-    pub index_urls: Vec<Url>,
+    pub index_urls: Vec<(Url, bool)>,
     pub find_links: Vec<Url>,
     pub trusted_hosts: HashSet<String>,
 }
@@ -1228,7 +1249,7 @@ impl ExpandedSources {
                 }
             }
             match source.ty {
-                SourceRefType::Index => index_urls.push(url),
+                SourceRefType::Index => index_urls.push((url, source.name == "default")),
                 SourceRefType::FindLinks => find_links.push(url),
             }
         }
@@ -1242,8 +1263,8 @@ impl ExpandedSources {
 
     /// Attach common pip args to a command.
     pub fn add_as_pip_args(&self, cmd: &mut Command) {
-        for (idx, url) in self.index_urls.iter().enumerate() {
-            if idx == 0 {
+        for (url, default) in self.index_urls.iter() {
+            if *default {
                 cmd.arg("--index-url");
             } else {
                 cmd.arg("--extra-index-url");
@@ -1258,6 +1279,24 @@ impl ExpandedSources {
             cmd.arg("--trusted-host");
             cmd.arg(host);
         }
+    }
+
+    /// Write the sources to a lockfile.
+    pub fn add_to_lockfile(&self, out: &mut dyn std::io::Write) -> std::io::Result<()> {
+        for (url, default) in self.index_urls.iter() {
+            if *default {
+                writeln!(out, "--index-url {}", url)?;
+            } else {
+                writeln!(out, "--extra-index-url {}", url)?;
+            }
+        }
+        for link in &self.find_links {
+            writeln!(out, "--find-links {}", link)?;
+        }
+        for host in &self.trusted_hosts {
+            writeln!(out, "--trusted-host {}", host)?;
+        }
+        Ok(())
     }
 }
 
