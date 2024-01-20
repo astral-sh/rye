@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.18.0
 
-_Unreleased_
+Released on 2024-01-20
 
 - Incorporate new Python builds.  #535
 
@@ -19,8 +21,6 @@ _Unreleased_
 
 - When using global python shims, the `.python-version` file is now correctly
   picked up in all cases.  #541
-
-<!-- released start -->
 
 ## 0.17.0
 
