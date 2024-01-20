@@ -25,6 +25,10 @@ _Unreleased_
   out the dependencies.  Today the only option is the `--installed-deps` option on
   the `show` command which spits out dependencies in the format of the lockfile.  #543
 
+- The installer will no longer attempt to symlink targets which are not valid
+  executables on the platform.  This works around some issues with Packages that
+  would prevent to install such as `changedetection.io`.  #542
+
 <!-- released start -->
 
 ## 0.17.0
