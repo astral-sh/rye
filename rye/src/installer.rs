@@ -18,7 +18,9 @@ use crate::platform::get_app_dir;
 use crate::pyproject::{normalize_package_name, ExpandedSources};
 use crate::sources::PythonVersionRequest;
 use crate::sync::create_virtualenv;
-use crate::utils::{get_short_executable_name, get_venv_python_bin, symlink_file, CommandOutput};
+use crate::utils::{
+    get_short_executable_name, get_venv_python_bin, is_executable, symlink_file, CommandOutput,
+};
 
 const FIND_SCRIPT_SCRIPT: &str = r#"
 import os
@@ -253,6 +255,18 @@ fn install_scripts(
     let mut rv = Vec::new();
     for file in files {
         if let Ok(rest) = file.strip_prefix(target_venv_bin_path) {
+            // In some cases we are given paths here which point to sub-folders of the
+            // script/bin folder.  For instance in some cases it has been shown that
+            // __pycache__/something.pyc shows up there.  These are obviously not good
+            // targets to link as they would never show up via PATH discovery.  Skip
+            // over these.
+            //
+            // Also do not try to link things which are not considered executables on
+            // this operating system.
+            if !rest.parent().map_or(true, |x| x == Path::new("")) || !is_executable(file) {
+                continue;
+            }
+
             let shim_target = shim_dir.join(rest);
 
             // on windows we want to fall back to hardlinks.  That might be problematic in

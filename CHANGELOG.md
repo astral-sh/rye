@@ -20,6 +20,10 @@ _Unreleased_
 - When using global python shims, the `.python-version` file is now correctly
   picked up in all cases.  #541
 
+- The installer will no longer attempt to symlink targets which are not valid
+  executables on the platform.  This works around some issues with Packages that
+  would prevent to install such as `changedetection.io`.  #542
+
 <!-- released start -->
 
 ## 0.17.0
