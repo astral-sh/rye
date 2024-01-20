@@ -20,6 +20,11 @@ _Unreleased_
 - When using global python shims, the `.python-version` file is now correctly
   picked up in all cases.  #541
 
+- Added a helpful message if someone attempts to run the non existing `rye list`
+  command.  At a later point there should be a real listing command that can print
+  out the dependencies.  Today the only option is the `--installed-deps` option on
+  the `show` command which spits out dependencies in the format of the lockfile.  #543
+
 <!-- released start -->
 
 ## 0.17.0
