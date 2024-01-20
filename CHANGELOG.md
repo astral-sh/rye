@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.18.0
 
-_Unreleased_
+Released on 2024-01-20
 
 - Incorporate new Python builds.  #535
 
@@ -28,8 +30,6 @@ _Unreleased_
 - The installer will no longer attempt to symlink targets which are not valid
   executables on the platform.  This works around some issues with Packages that
   would prevent to install such as `changedetection.io`.  #542
-
-<!-- released start -->
 
 ## 0.17.0
 
