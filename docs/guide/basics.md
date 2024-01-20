@@ -97,7 +97,8 @@ rye sync
 rye run black
 ```
 
-To activate the virtualenv, use the standard methods:
+If you want to have the commands available directly you will need to activate the
+virtualenv like you do normally.  To activate the virtualenv, use the standard methods:
 
 === "Unix"
 
