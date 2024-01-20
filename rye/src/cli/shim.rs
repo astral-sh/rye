@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::convert::Infallible;
 use std::env;
 use std::ffi::{OsStr, OsString};
@@ -227,19 +228,25 @@ fn get_shim_target(
         let config = Config::current();
         let mut remove1 = false;
 
-        let version_request = if let Some(rest) = args
+        let (version_request, implicit_request) = if let Some(rest) = args
             .get(1)
             .and_then(|x| x.as_os_str().to_str())
             .and_then(|x| x.strip_prefix('+'))
         {
             remove1 = true;
-            PythonVersionRequest::from_str(rest)
-                .context("invalid python version requested from command line")?
+            (
+                PythonVersionRequest::from_str(rest)
+                    .context("invalid python version requested from command line")?,
+                false,
+            )
         } else if config.global_python() {
-            match get_python_version_request_from_pyenv_pin(&std::env::current_dir()?) {
-                Some(version_request) => version_request,
-                None => config.default_toolchain()?,
-            }
+            (
+                match get_python_version_request_from_pyenv_pin(&std::env::current_dir()?) {
+                    Some(version_request) => version_request,
+                    None => config.default_toolchain()?,
+                },
+                true,
+            )
         } else {
             // if neither requested explicitly, nor global-python is enabled, we fall
             // back to the next shadowed target
@@ -253,10 +260,15 @@ fn get_shim_target(
         };
         let py = get_toolchain_python_bin(&py_ver)?;
         if !py.is_file() {
+            let hint = if implicit_request {
+                Cow::Borrowed("rye fetch")
+            } else {
+                Cow::Owned(format!("rye fetch {}", py_ver))
+            };
             bail!(
-                "Requested Python version ({}) is not installed. Install with `rye fetch {}`",
+                "Requested Python version ({}) is not installed. Install with `{}`",
                 py_ver,
-                py_ver
+                hint
             );
         }
 
