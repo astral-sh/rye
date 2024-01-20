@@ -17,6 +17,9 @@ _Unreleased_
   config.  Passing this will ensure that source references are included in the
   lock files.  #540
 
+- When using global python shims, the `.python-version` file is now correctly
+  picked up in all cases.  #541
+
 <!-- released start -->
 
 ## 0.17.0
