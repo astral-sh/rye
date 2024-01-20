@@ -82,6 +82,14 @@ with `rye toolchain fetch` (also aliased to `rye fetch`):
 rye toolchain fetch cpython@3.8.5
 ```
 
+Starting with Rye 0.19.0 the argument to `fetch` is inferred from the current pin.  This means
+you can also fetch as follows:
+
+```
+rye pin 3.10
+rye fetch
+```
+
 Toolchains are fetched from two sources:
 
 * [Indygreg's Portable Python Builds](https://github.com/indygreg/python-build-standalone) for CPython
