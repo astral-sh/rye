@@ -19,7 +19,7 @@ use tempfile::tempdir;
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::platform::{
-    get_default_author_with_fallback, get_latest_cpython_version,
+    get_default_author_with_fallback, get_latest_cpython_version, get_pinnable_version,
     get_python_version_request_from_pyenv_pin,
 };
 use crate::pyproject::BuildSystem;
@@ -370,7 +370,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     // write .python-version
     if !cmd.no_pin && !python_version_file.is_file() {
-        fs::write(python_version_file, format!("{}\n", py))
+        // get_pinnable_version ideally doesn't fail, but if it does we fall back to
+        // the full version request.  This has the disadvantage that we might end up
+        // pinning to an architecture specific version.
+        let to_write = get_pinnable_version(&py, false).unwrap_or_else(|| py.to_string());
+        fs::write(python_version_file, format!("{}\n", to_write))
             .context("could not write .python-version file")?;
     }
 
