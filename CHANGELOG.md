@@ -10,6 +10,9 @@ _Unreleased_
 - Improved the error message when an update could not be performed because files
   are in use.  #550
 
+- Rye now supports virtual projects.  These are themselves not installed into the
+  virtualenv but their dependencies are.  #551
+
 <!-- released start -->
 
 ## 0.19.0
