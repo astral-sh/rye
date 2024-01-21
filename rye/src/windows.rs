@@ -1,28 +1,55 @@
 use std::env;
-use std::ffi::{OsString};
+use std::ffi::OsString;
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
-use std::path::PathBuf;
-use anyhow::{anyhow, Context, Result};
+use std::path::{Path, PathBuf};
+
+use anyhow::{anyhow, Context, Error};
 use winreg::enums::{RegType, HKEY_CURRENT_USER, KEY_READ, KEY_WRITE};
 use winreg::{RegKey, RegValue};
 
 const RYE_UNINSTALL_ENTRY: &str = r"Software\Microsoft\Windows\CurrentVersion\Uninstall\Rye";
 
-pub(crate) fn do_add_to_path() -> Result<()> {
-    let new_path = _with_path_rye_shims(_add_to_path)?;
-    _apply_new_path(new_path)
+pub(crate) fn add_to_path(rye_home: &Path) -> Result<(), Error> {
+    let target_path = reverse_resolve_user_profile(rye_home.join("shims"));
+    if let Some(old_path) = get_windows_path_var()? {
+        if let Some(new_path) =
+            append_entry_to_path(old_path, target_path.as_os_str().encode_wide().collect())
+        {
+            apply_new_path(new_path)?;
+        }
+    }
+    Ok(())
 }
 
-fn _apply_new_path(new_path: Option<Vec<u16>>) -> Result<()> {
+pub(crate) fn remove_from_path(rye_home: &Path) -> Result<(), Error> {
+    let target_path = reverse_resolve_user_profile(rye_home.join("shims"));
+    if let Some(old_path) = get_windows_path_var()? {
+        if let Some(new_path) =
+            remove_entry_from_path(old_path, target_path.as_os_str().encode_wide().collect())
+        {
+            apply_new_path(new_path)?;
+        }
+    }
+    Ok(())
+}
+
+/// If the target path is under the user profile, replace it with %USERPROFILE%.  The
+/// motivation here is that this was the path we documented originally so someone updating
+/// Rye does not end up with two competing paths in the list for no reason.
+fn reverse_resolve_user_profile(path: PathBuf) -> PathBuf {
+    if let Some(user_profile) = env::var_os("USERPROFILE").map(PathBuf::from) {
+        if let Ok(rest) = path.strip_prefix(&user_profile) {
+            return Path::new("%USERPROFILE%").join(rest);
+        }
+    }
+    path
+}
+
+fn apply_new_path(new_path: Vec<u16>) -> Result<(), Error> {
     use std::ptr;
     use winapi::shared::minwindef::*;
     use winapi::um::winuser::{
         SendMessageTimeoutA, HWND_BROADCAST, SMTO_ABORTIFHUNG, WM_SETTINGCHANGE,
-    };
-
-    let new_path = match new_path {
-        Some(new_path) => new_path,
-        None => return Ok(()), // No need to set the path
     };
 
     let root = RegKey::predef(HKEY_CURRENT_USER);
@@ -55,10 +82,10 @@ fn _apply_new_path(new_path: Option<Vec<u16>>) -> Result<()> {
     Ok(())
 }
 
-// Get the windows PATH variable out of the registry as a String. If
-// this returns None then the PATH variable is not a string and we
-// should not mess with it.
-fn get_windows_path_var() -> Result<Option<Vec<u16>>> {
+/// Get the windows PATH variable out of the registry as a String. If
+/// this returns None then the PATH variable is not a string and we
+/// should not mess with it.
+fn get_windows_path_var() -> Result<Option<Vec<u16>>, Error> {
     use std::io;
 
     let root = RegKey::predef(HKEY_CURRENT_USER);
@@ -80,13 +107,13 @@ fn get_windows_path_var() -> Result<Option<Vec<u16>>> {
             }
         }
         Err(ref e) if e.kind() == io::ErrorKind::NotFound => Ok(Some(Vec::new())),
-        Err(e) => Err(e).context("failure during windows uninstall"),
+        Err(e) => Err(e).context("failure during windows path manipulation"),
     }
 }
 
-// Returns None if the existing old_path does not need changing, otherwise
-// prepends the path_str to old_path, handling empty old_path appropriately.
-fn _add_to_path(old_path: Vec<u16>, path_str: Vec<u16>) -> Option<Vec<u16>> {
+/// Returns None if the existing old_path does not need changing, otherwise
+/// prepends the path_str to old_path, handling empty old_path appropriately.
+fn append_entry_to_path(old_path: Vec<u16>, path_str: Vec<u16>) -> Option<Vec<u16>> {
     if old_path.is_empty() {
         Some(path_str)
     } else if old_path
@@ -102,8 +129,8 @@ fn _add_to_path(old_path: Vec<u16>, path_str: Vec<u16>) -> Option<Vec<u16>> {
     }
 }
 
-// Returns None if the existing old_path does not need changing
-fn _remove_from_path(old_path: Vec<u16>, path_str: Vec<u16>) -> Option<Vec<u16>> {
+/// Returns None if the existing old_path does not need changing
+fn remove_entry_from_path(old_path: Vec<u16>, path_str: Vec<u16>) -> Option<Vec<u16>> {
     let idx = old_path
         .windows(path_str.len())
         .position(|path| path == path_str)?;
@@ -126,24 +153,8 @@ fn _remove_from_path(old_path: Vec<u16>, path_str: Vec<u16>) -> Option<Vec<u16>>
     Some(new_path)
 }
 
-fn _with_path_rye_shims<F>(f: F) -> Result<Option<Vec<u16>>>
-    where
-        F: FnOnce(Vec<u16>, Vec<u16>) -> Option<Vec<u16>>,
-{
-    let windows_path = get_windows_path_var()?;
-    let mut path_str = PathBuf::new();
-    path_str.push(env::var("USERPROFILE").unwrap());
-    path_str.push(".rye\\shims");
-    Ok(windows_path
-        .and_then(|old_path| f(old_path, OsString::from(path_str).encode_wide().collect())))
-}
-
-pub(crate) fn do_remove_from_path() -> Result<()> {
-    let new_path = _with_path_rye_shims(_remove_from_path)?;
-    _apply_new_path(new_path)
-}
-
-pub(crate) fn do_add_to_programs() -> Result<()> {
+/// Registers rye as installed program.
+pub(crate) fn add_to_programs(rye_home: &Path) -> Result<(), Error> {
     let key = RegKey::predef(HKEY_CURRENT_USER)
         .create_subkey(RYE_UNINSTALL_ENTRY)
         .context("Failed creating uninstall key")?
@@ -161,11 +172,8 @@ pub(crate) fn do_add_to_programs() -> Result<()> {
         }
     }
 
-    let mut path = PathBuf::new();
-    path.push(env::var("USERPROFILE").unwrap());
-    path.push(".rye\\shims\\rye.exe");
     let mut uninstall_cmd = OsString::from("\"");
-    uninstall_cmd.push(path);
+    uninstall_cmd.push(rye_home);
     uninstall_cmd.push("\" self uninstall");
 
     let reg_value = RegValue {
@@ -177,8 +185,11 @@ pub(crate) fn do_add_to_programs() -> Result<()> {
 
     key.set_raw_value("UninstallString", &reg_value)
         .context("Failed to set uninstall string")?;
-    key.set_value("DisplayName", &"Rye: An Experimental Package Management Solution for Python")
-        .context("Failed to set display name")?;
+    key.set_value(
+        "DisplayName",
+        &"Rye: An Experimental Package Management Solution for Python",
+    )
+    .context("Failed to set display name")?;
     key.set_value("DisplayVersion", &current_version)
         .context("Failed to set display version")?;
     key.set_value("Publisher", &"Rye")
@@ -187,7 +198,8 @@ pub(crate) fn do_add_to_programs() -> Result<()> {
     Ok(())
 }
 
-pub(crate) fn do_remove_from_programs() -> Result<()> {
+/// Removes the entry on uninstall from the program list.
+pub(crate) fn remove_from_programs() -> Result<(), Error> {
     match RegKey::predef(HKEY_CURRENT_USER).delete_subkey_all(RYE_UNINSTALL_ENTRY) {
         Ok(()) => Ok(()),
         Err(ref e) if e.kind() == std::io::ErrorKind::NotFound => Ok(()),

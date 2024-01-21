@@ -20,9 +20,6 @@ use crate::bootstrap::{
 use crate::cli::toolchain::register_toolchain;
 use crate::platform::{get_app_dir, symlinks_supported};
 use crate::utils::{check_checksum, CommandOutput, QuietExit};
-use crate::windows::{
-    do_add_to_path, do_remove_from_path, do_add_to_programs, do_remove_from_programs
-};
 
 #[cfg(windows)]
 const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
@@ -318,11 +315,11 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     if cfg!(unix) {
         echo!(
             "Don't forget to remove the sourcing of {} from your shell config.",
-            Path::new(&rye_home as &str).join("env").display()
+            Path::new(&*rye_home).join("env").display()
         );
     } else {
-        do_remove_from_path()?;
-        do_remove_from_programs()?;
+        crate::windows::remove_from_path(Path::new(&*rye_home))?;
+        crate::windows::remove_from_programs()?;
     }
 
     Ok(())
@@ -463,8 +460,9 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     }
     #[cfg(windows)]
     {
-        do_add_to_programs()?;
-        do_add_to_path()?;
+        let rye_home = Path::new(&*rye_home);
+        crate::windows::add_to_programs(rye_home)?;
+        crate::windows::add_to_path(rye_home)?;
     }
 
     echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
