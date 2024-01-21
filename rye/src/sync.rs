@@ -14,7 +14,7 @@ use crate::lock::{
     make_project_root_fragment, update_single_project_lockfile, update_workspace_lockfile,
     LockMode, LockOptions,
 };
-use crate::piptools::get_pip_sync;
+use crate::piptools::{get_pip_sync, get_pip_tools_venv};
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{read_venv_marker, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
@@ -106,7 +106,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             if marker.python != py_ver {
                 if cmd.output != CommandOutput::Quiet {
                     echo!(
-                        "Python version mismatch (found {}, expect {}), recreating.",
+                        "Python version mismatch (found {}, expected {}), recreating.",
                         marker.python,
                         py_ver
                     );
@@ -145,8 +145,8 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         fetch(&py_ver.into(), output).context("failed fetching toolchain ahead of sync")?;
 
     // kill the virtualenv if it's there and we need to get rid of it.
-    if recreate {
-        fs::remove_dir_all(&venv).ok();
+    if recreate && venv.is_dir() {
+        fs::remove_dir_all(&venv).context("failed to delete existing virtualenv")?;
     }
 
     if venv.is_dir() {
@@ -244,7 +244,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             }
             let tempdir = tempdir()?;
             symlink_dir(
-                get_pip_module(&self_venv).context("could not locate pip")?,
+                get_pip_module(&get_pip_tools_venv(&py_ver)).context("could not locate pip")?,
                 tempdir.path().join("pip"),
             )
             .context("failed linking pip module into for pip-sync")?;
@@ -260,9 +260,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 .arg("--python-executable")
                 .arg(&py_path)
                 .arg("--pip-args")
-                // note that the double quotes are necessary to properly handle
-                // spaces in paths
-                .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
+                .arg("--no-deps");
 
             sources.add_as_pip_args(&mut pip_sync_cmd);
 

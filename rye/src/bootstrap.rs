@@ -14,6 +14,7 @@ use tempfile::NamedTempFile;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
+use crate::piptools::LATEST_PIP;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
     symlinks_supported,
@@ -35,7 +36,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 6;
+const SELF_VERSION: u64 = 7;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.0.3
@@ -151,9 +152,11 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     pip_install_cmd.arg("-mpip");
     pip_install_cmd.arg("install");
     pip_install_cmd.arg("--upgrade");
-    // pin to a specific pip version to work around a bug with pip-tools.  Fix this
-    // once 7.0.0 is stable.  https://github.com/mitsuhiko/rye/issues/368
-    pip_install_cmd.arg("pip==23.1");
+
+    // This pip is only used for shim usage and is known to not support 3.7.  pip-tools
+    // use their own local pip versions that are compatible.
+    pip_install_cmd.arg(LATEST_PIP);
+
     if output == CommandOutput::Verbose {
         pip_install_cmd.arg("--verbose");
     } else {
