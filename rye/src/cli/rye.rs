@@ -465,6 +465,7 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
                 echo!();
             }
             echo!("Note: after adding rye to your path, restart your shell for it to take effect.");
+            echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
         }
     }
     #[cfg(windows)]
@@ -473,8 +474,6 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         crate::utils::windows::add_to_programs(rye_home)?;
         crate::utils::windows::add_to_path(rye_home)?;
     }
-
-    echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
 
     echo!();
     echo!("{}", style("All done!").green());
