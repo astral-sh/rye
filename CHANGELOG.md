@@ -13,7 +13,7 @@ _Unreleased_
 - Update the Python internals (python external dependencies) to new versions.  #553
 
 - Update to newer versions of pip tools.  For Python 3.7 `6.14.0` is used, for
-  new Python versions `7.3.0` is used.
+  new Python versions `7.3.0` is used.  #554
 
 <!-- released start -->
 
