@@ -5,14 +5,16 @@ hide:
 
 # Rye: An Experimental Package Management Solution for Python
 
-Rye is [Armin's](https://github.com/mitsuhiko) personal one-stop-shop for all
-his Python needs.  It installs and manages Python installations, helps working with
-`pyproject.toml` files, installs and uninstalls dependencies, creates and updates
-virtualenvs behind the scenes.  It supports monorepos and global tool installations.
+Rye is a project and package management solution for Python, created by
+[Armin](https://github.com/mitsuhiko/).  It came out of his desire to create a
+one-stop-shop for all Python needs. It installs and manages Python
+installations, manages `pyproject.toml` files, installs and uninstalls
+dependencies, manages virtualenvs behind the scenes. It supports monorepos and
+global tool installations.
 
 Rye is an experimental endeavour to build a new type of packaging experience to
-Python inspired by `rustup` and `cargo` from Rust.  It's **not yet production ready**
-but feedback and suggestions are greatly appreciated.
+Python inspired by `rustup` and `cargo` from Rust.  Please give it a try.
+Feedback and suggestions are greatly appreciated.
 
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <p align="center">

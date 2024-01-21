@@ -6,18 +6,20 @@
 ----
 <div align="center">
 
-[![](https://dcbadge.vercel.app/api/server/drbkcdtSbg)](https://discord.gg/drbkcdtSbg)
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
+[![](https://dcbadge.vercel.app/api/server/drbkcdtSbg?style=flat)](https://discord.gg/drbkcdtSbg)
 
 </div>
 
-Rye is [Armin's](https://github.com/mitsuhiko/) personal one-stop-shop for all
-his Python needs. It installs and manages Python installations, manages
-`pyproject.toml` files, installs and uninstalls dependencies, manages
-virtualenvs behind the scenes. It supports monorepos and global tool
-installations.
+Rye is a project and package management solution for Python, created by
+[Armin](https://github.com/mitsuhiko/).  It came out of his desire to create a
+one-stop-shop for all Python needs. It installs and manages Python
+installations, manages `pyproject.toml` files, installs and uninstalls
+dependencies, manages virtualenvs behind the scenes. It supports monorepos and
+global tool installations.
 
-It is a wish of what Python was, with no guarantee to work for anyone else. It's
-an exploration, and it's far from perfect. Thus also the question:
+It is a wish of what Python was, an exploration of what is possible. It's far
+from perfect, but always improving.  It also asks the question:
 **[Should it exist?](https://github.com/mitsuhiko/rye/discussions/6)**
 
 <div align="center">
@@ -102,12 +104,12 @@ $ rye sync
 
 To understand why things are the way they are:
 
-- **Virtualenvs:** while I personally do not like virtualenvs that much, they are
-  so widespread and have reasonable tooling support, so I chose this over
-  `__pypackages__`.
+- **Virtualenvs:** they are not pefect, but they are widespread.
+  Because they have reasonable tooling support, the decision was made to
+  leverage them over `__pypackages__`.
 
 - **No Default Dependencies:** the virtualenvs when they come up are completely void
-  of dependencies. Not even `pip` or `setuptools` are installed into it. Rye
+  of dependencies.  Not even `pip` or `setuptools` are installed into it.  Rye
   manages the virtualenv from outside the virtualenv.
 
 - **No Core Non Standard Stuff:** Rye (with the exception of it's own `tool` section
@@ -118,9 +120,9 @@ To understand why things are the way they are:
 - **No Pip:** Rye uses pip, but it does not expose it. It manage dependencies in
   `pyproject.toml` only.
 
-- **No System Python:** I can't deal with any more linux distribution weird Python
-  installations or whatever mess there is on macOS. I used to build my own Pythons
-  that are the same everywhere, now I use [indygreg's Python builds](https://github.com/indygreg/python-build-standalone).
+- **No System Python:** To simplify the experience for users across operating systems,
+  Rye manages Python installations for you, bypassing the system one by default in
+  favor of [indygreg's Python builds](https://github.com/indygreg/python-build-standalone).
   Rye will automatically download and manage Python builds from there. No compiling,
   no divergence.
 
@@ -158,30 +160,11 @@ $ pycowsay Wow
 
 To uninstall run `rye uninstall pycowsay` again.
 
+## More
 
-## Badges
-
-If you're using Rye, consider adding the Rye badge to project's `README.md`:
-
-```md
-[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
-```
-
-...or `README.rst`:
-
-```rst
-.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json
-    :target: https://rye-up.com
-    :alt: Rye
-```
-
-...or, as HTML:
-
-```html
-<a href="https://rye-up.com"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json" alt="Rye" style="max-width:100%;"></a>
-```
-
-[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
-
-
-License: MIT
+* [Discussion Forum](https://github.com/mitsuhiko/rye/discussions), to discuss the project
+  on GitHub
+* [Discord](https://discord.gg/drbkcdtSbg), for conversations with other developers in text form
+* [Issue Tracker](https://github.com/mitsuhiko/rye/issues), if you run into bugs or have suggestions
+* [Badges](https://rye-up.com/community/#badges), if you want to show that you use Rye
+* License: MIT

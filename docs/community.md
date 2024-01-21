@@ -16,3 +16,27 @@ the developer or other members of the community:
 
 You can also reach out [via Twitter](https://twitter.com/mitsuhiko) or
 [Bluesky](https://bsky.app/profile/mitsuhiko.at).
+
+## Badges
+
+Want to show that you are using Rye?  Why not throw a badge into your project's `README.md`:
+
+```md
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
+```
+
+... or `README.rst`:
+
+```rst
+.. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json
+    :target: https://rye-up.com
+    :alt: Rye
+```
+
+... or, as HTML:
+
+```html
+<a href="https://rye-up.com"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json" alt="Rye" style="max-width:100%;"></a>
+```
+
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
