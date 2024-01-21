@@ -62,6 +62,12 @@ pub struct Args {
     /// Don't import from setup.cfg, setup.py, or requirements files.
     #[arg(long)]
     no_import: bool,
+    /// Initialize this as a virtual package.
+    ///
+    /// A virtual package can have dependencies but is itself not installed as a
+    /// Python package.  It also cannot be published.
+    #[arg(long = "virtual")]
+    is_virtual: bool,
     /// Requirements files to initialize pyproject.toml with.
     #[arg(short, long, name = "REQUIREMENTS_FILE", conflicts_with = "no_import")]
     requirements: Option<Vec<PathBuf>>,
@@ -111,6 +117,8 @@ classifiers = ["Private :: Do Not Upload"]
 [project.scripts]
 hello = {{ name_safe ~ ":hello"}}
 
+{%- if not is_virtual %}
+
 [build-system]
 {%- if build_system == "hatchling" %}
 requires = ["hatchling"]
@@ -128,9 +136,13 @@ build-backend = "pdm.backend"
 requires = ["maturin>=1.2,<2.0"]
 build-backend = "maturin"
 {%- endif %}
+{%- endif %}
 
 [tool.rye]
 managed = true
+{%- if is_virtual %}
+virtual = true
+{%- endif %}
 {%- if dev_dependencies %}
 dev-dependencies = [
 {%- for dependency in dev_dependencies %}
@@ -141,6 +153,7 @@ dev-dependencies = [
 dev-dependencies = []
 {%- endif %}
 
+{%- if not is_virtual %}
 {%- if build_system == "hatchling" %}
 
 [tool.hatch.metadata]
@@ -154,7 +167,7 @@ packages = [{{ "src/" ~ name_safe }}]
 python-source = "python"
 module-name = {{ name_safe ~ "._lowlevel" }}
 features = ["pyo3/extension-module"]
-
+{%- endif %}
 {%- endif %}
 
 "#;
@@ -265,6 +278,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let readme = dir.join("README.md");
     let license_file = dir.join("LICENSE.txt");
     let python_version_file = dir.join(".python-version");
+    let is_virtual = cmd.is_virtual;
 
     if toml.is_file() {
         bail!("pyproject.toml already exists");
@@ -450,6 +464,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             license => metadata.license,
             dependencies => metadata.dependencies,
             dev_dependencies => metadata.dev_dependencies,
+            is_virtual,
             with_readme,
             build_system,
             private,
@@ -457,45 +472,49 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     )?;
     fs::write(&toml, rv).context("failed to write pyproject.toml")?;
 
-    let src_dir = dir.join("src");
-    if !imported_something && !src_dir.is_dir() {
-        let name = metadata.name.expect("project name");
-        if is_rust {
-            fs::create_dir_all(&src_dir).ok();
-            let project_dir = dir.join("python").join(name.replace('-', "_"));
-            fs::create_dir_all(&project_dir).ok();
-            let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
-            fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
-            let rv = env.render_named_str(
-                "Cargo.json",
-                CARGO_TOML_TEMPLATE,
-                context! {
-                    name,
-                    name_safe,
-                },
-            )?;
-            fs::write(dir.join("Cargo.toml"), rv).context("failed to write Cargo.toml")?;
-            let rv = env.render_named_str(
-                "__init__.py",
-                RUST_INIT_PY_TEMPLATE,
-                context! {
-                    name_safe
-                },
-            )?;
-            fs::write(project_dir.join("__init__.py"), rv)
-                .context("failed to write __init__.py")?;
-        } else {
-            let project_dir = src_dir.join(name.replace('-', "_"));
-            fs::create_dir_all(&project_dir).ok();
-            let rv = env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
-            fs::write(project_dir.join("__init__.py"), rv)
-                .context("failed to write __init__.py")?;
+    if !is_virtual {
+        let src_dir = dir.join("src");
+        if !imported_something && !src_dir.is_dir() {
+            let name = metadata.name.expect("project name");
+            if is_rust {
+                fs::create_dir_all(&src_dir).ok();
+                let project_dir = dir.join("python").join(name.replace('-', "_"));
+                fs::create_dir_all(&project_dir).ok();
+                let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
+                fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
+                let rv = env.render_named_str(
+                    "Cargo.json",
+                    CARGO_TOML_TEMPLATE,
+                    context! {
+                        name,
+                        name_safe,
+                    },
+                )?;
+                fs::write(dir.join("Cargo.toml"), rv).context("failed to write Cargo.toml")?;
+                let rv = env.render_named_str(
+                    "__init__.py",
+                    RUST_INIT_PY_TEMPLATE,
+                    context! {
+                        name_safe
+                    },
+                )?;
+                fs::write(project_dir.join("__init__.py"), rv)
+                    .context("failed to write __init__.py")?;
+            } else {
+                let project_dir = src_dir.join(name.replace('-', "_"));
+                fs::create_dir_all(&project_dir).ok();
+                let rv =
+                    env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
+                fs::write(project_dir.join("__init__.py"), rv)
+                    .context("failed to write __init__.py")?;
+            }
         }
     }
 
     echo!(
-        "{} Initialized project in {}",
+        "{} Initialized {}project in {}",
         style("success:").green(),
+        if is_virtual { "virtual " } else { "" },
         dir.display()
     );
     echo!("  Run `rye sync` to get started");

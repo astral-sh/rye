@@ -88,6 +88,23 @@ can be forced enabled in the global config.
 managed = true
 ```
 
+## `tool.rye.virtual`
+
++++ 0.20.0
+
+If this key is set to `true` the project is declared as a virtual project.  This is a special
+mode in which the package itself is not installed, but only the dependencies are.  This is
+for instance useful if you are not creating a Python project, but you are depending on Python
+software.  As an example you can use this to install software written in Python.  This key is
+set to true when `rye init` is invoked with the `--virtual` flag.
+
+```toml
+[tool.rye]
+virtual = true
+```
+
+For more information consult the [Virtual Project Guide](../virtual/).
+
 ## `tool.rye.sources`
 
 This is an array of tables with sources that should be used for locating dependencies.
@@ -174,13 +191,15 @@ hello-world = { call = "builtins:print('Hello World!')" }
 
 ## `tool.rye.workspace`
 
-When a table with that key is stored, then a project is declared to be a workspace root.  By
-default all Python projects discovered in sub folders will then become members of this workspace
-and share a virtualenv.  Optionally the `members` key (an array) can be used to restrict these
-members.  In that list globs can be used.  The root project itself is always a member.
+When a table with that key is stored, then a project is declared to be a
+[workspace](../workspaces/) root.  By default all Python projects discovered in
+sub folders will then become members of this workspace and share a virtualenv.
+Optionally the `members` key (an array) can be used to restrict these members.
+In that list globs can be used.  The root project itself is always a member.
 
 ```toml
 [tool.rye.workspace]
 members = ["mylib-*"]
 ```
 
+For more information consult the [Workspaces Guide](../workspaces/).

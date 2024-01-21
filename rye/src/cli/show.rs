@@ -46,6 +46,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             }
         }
     }
+    echo!("virtual: {}", style(project.is_virtual()).cyan());
 
     if let Some(workspace) = project.workspace() {
         echo!(

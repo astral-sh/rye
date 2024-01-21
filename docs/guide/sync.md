@@ -33,7 +33,7 @@ rye add --optional=web flask
 rye lock --features=web
 ```
 
-When working with workspaces, the package name needs to be prefixed with a slash:
+When working with [workspaces](../workspaces/), the package name needs to be prefixed with a slash:
 
 ```
 rye lock --features=package-name/feature-name

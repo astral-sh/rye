@@ -10,6 +10,9 @@ _Unreleased_
 - Improved the error message when an update could not be performed because files
   are in use.  #550
 
+- Rye now supports virtual projects.  These are themselves not installed into the
+  virtualenv but their dependencies are.  #551
+
 - Update the Python internals (python external dependencies) to new versions.  #553
 
 - Update to newer versions of pip tools.  For Python 3.7 `6.14.0` is used, for
