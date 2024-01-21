@@ -29,7 +29,7 @@ sources = json.loads(sys.argv[3])
 pre = len(sys.argv) > 4 and sys.argv[4] == "--pre"
 
 finder = PackageFinder(
-    index_urls=sources["index_urls"],
+    index_urls=[x[0] for x in sources["index_urls"]],
     find_links=sources["find_links"],
     trusted_hosts=sources["trusted_hosts"],
 )
