@@ -178,7 +178,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
                 .join("bin")
                 .join("rye")
                 .with_extension(EXE_EXTENSION),
-        )?;
+        )
     } else {
         let version = args.version.as_deref().unwrap_or("latest");
         echo!("Updating to {version}");
@@ -216,8 +216,12 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         {
             fs::write(tmp.path(), bytes)?;
         }
-        update_exe_and_shims(tmp.path())?;
+        update_exe_and_shims(tmp.path())
     }
+    .context(
+        "Unable to perform update. This can happen because files are in use. \
+         Please stop running Python interpreters and retry the update.",
+    )?;
 
     echo!("Updated!");
     echo!();
