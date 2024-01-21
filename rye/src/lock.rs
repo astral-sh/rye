@@ -94,7 +94,12 @@ pub fn update_workspace_lockfile(
         let pyproject = pyproject_result?;
         let rel_url = make_relative_url(&pyproject.root_path(), &workspace.path())?;
         let applicable_extras = format_project_extras(features_by_project.as_ref(), &pyproject)?;
-        writeln!(local_req_file, "-e {}{}", rel_url, applicable_extras)?;
+
+        // virtual packages are not installed
+        if !pyproject.is_virtual() {
+            writeln!(local_req_file, "-e {}{}", rel_url, applicable_extras)?;
+        }
+
         local_projects.insert(pyproject.normalized_name()?, rel_url);
         projects.push(pyproject);
     }
@@ -263,15 +268,20 @@ pub fn update_single_project_lockfile(
         echo!("Generating {} lockfile: {}", lock_mode, lockfile.display());
     }
 
-    let features_by_project = collect_workspace_features(lock_options);
-    let applicable_extras = format_project_extras(features_by_project.as_ref(), pyproject)?;
     let mut req_file = NamedTempFile::new()?;
-    writeln!(
-        req_file,
-        "-e {}{}",
-        make_relative_url(&pyproject.root_path(), &pyproject.workspace_path())?,
-        applicable_extras
-    )?;
+
+    // virtual packages are themselves not installed
+    if !pyproject.is_virtual() {
+        let features_by_project = collect_workspace_features(lock_options);
+        let applicable_extras = format_project_extras(features_by_project.as_ref(), pyproject)?;
+        writeln!(
+            req_file,
+            "-e {}{}",
+            make_relative_url(&pyproject.root_path(), &pyproject.workspace_path())?,
+            applicable_extras
+        )?;
+    }
+
     for dep in pyproject.iter_dependencies(DependencyKind::Normal) {
         writeln!(req_file, "{}", dep)?;
     }

@@ -19,6 +19,8 @@ nav:
     - Rust Modules: guide/rust.md
     - Dependency Sources: guide/sources.md
     - Dependencies: guide/deps.md
+    - Workspaces: guide/workspaces.md
+    - Virtual Projects: guide/virtual.md
     - Toolchains:
       - guide/toolchains/index.md
       - Portable CPython: guide/toolchains/cpython.md

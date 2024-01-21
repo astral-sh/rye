@@ -96,6 +96,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     for project in projects {
+        // skip over virtual packages on build
+        if project.is_virtual() {
+            continue;
+        }
+
         if output != CommandOutput::Quiet {
             echo!("building {}", style(project.normalized_name()?).cyan());
         }

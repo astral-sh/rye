@@ -952,6 +952,16 @@ impl PyProject {
         }
     }
 
+    /// Is this a virtual package (does not build)
+    pub fn is_virtual(&self) -> bool {
+        self.doc
+            .get("tool")
+            .and_then(|x| x.get("rye"))
+            .and_then(|x| x.get("virtual"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(false)
+    }
+
     /// Should requirements.txt based locking include a find-links reference?
     pub fn lock_with_sources(&self) -> bool {
         match self.workspace {

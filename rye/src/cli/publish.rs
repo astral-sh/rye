@@ -58,6 +58,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let venv = ensure_self_venv(output)?;
     let project = PyProject::discover()?;
 
+    if project.is_virtual() {
+        bail!("virtual packages cannot be published");
+    }
+
     // Get the files to publish.
     let files = match cmd.dist {
         Some(paths) => paths,
