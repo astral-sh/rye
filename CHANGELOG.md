@@ -17,6 +17,8 @@ _Unreleased_
 - On Windows the `PATH` is now automatically adjusted on install and uninstall.  This means that
   manually adding the rye folder to the search path is no longer necessary.  #483
 
+- Fixed a regression in 0.18 that caused the `add` command to fail.  #547
+
 <!-- released start -->
 
 ## 0.18.0
