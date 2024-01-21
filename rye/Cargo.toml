@@ -65,3 +65,4 @@ whattheshell = "1.0.1"
 
 [target."cfg(windows)".dependencies]
 winapi = { version = "0.3.9", default-features = false, features = [] }
+winreg = "0.51"

@@ -312,16 +312,19 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     let rye_home = env::var("RYE_HOME")
         .map(Cow::Owned)
         .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
-    if cfg!(unix) {
+
+    #[cfg(unix)]
+    {
         echo!(
             "Don't forget to remove the sourcing of {} from your shell config.",
-            Path::new(&rye_home as &str).join("env").display()
+            Path::new(&*rye_home).join("env").display()
         );
-    } else {
-        echo!(
-            "Don't forget to remove {} from your PATH",
-            Path::new(&rye_home as &str).join("shims").display()
-        )
+    }
+
+    #[cfg(windows)]
+    {
+        crate::utils::windows::remove_from_path(Path::new(&*rye_home))?;
+        crate::utils::windows::remove_from_programs()?;
     }
 
     Ok(())
@@ -462,8 +465,9 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     }
     #[cfg(windows)]
     {
-        echo!();
-        echo!("Note: You need to manually add {DEFAULT_HOME} to your PATH.");
+        let rye_home = Path::new(&*rye_home);
+        crate::utils::windows::add_to_programs(rye_home)?;
+        crate::utils::windows::add_to_path(rye_home)?;
     }
 
     echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");

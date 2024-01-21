@@ -173,7 +173,8 @@ rye self uninstall
 ```
 
 Additionally you should delete the remaining `.rye` folder from your home directory and
-remove `.rye/shims` from the `PATH` again.  Rye itself does not place any data
+remove `.rye/shims` from the `PATH` again (usually by removing the code that sources
+the `env` file from the installation step).  Rye itself does not place any data
 in other locations.  Note though that virtual environments created by rye will
 no longer function after Rye was uninstalled.
 

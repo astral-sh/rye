@@ -14,6 +14,9 @@ _Unreleased_
 - Fixed an issue where `rye init` would pin a much too specific version in the `.python-version`
   file that is generated.  #545
 
+- On Windows the `PATH` is now automatically adjusted on install and uninstall.  This means that
+  manually adding the rye folder to the search path is no longer necessary.  #483
+
 <!-- released start -->
 
 ## 0.18.0

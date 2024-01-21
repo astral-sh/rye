@@ -23,6 +23,9 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 
 #[cfg(windows)]
+pub(crate) mod windows;
+
+#[cfg(windows)]
 pub fn symlink_dir<P, Q>(original: P, link: Q) -> Result<(), std::io::Error>
 where
     P: AsRef<Path>,
