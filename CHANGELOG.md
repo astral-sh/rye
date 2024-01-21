@@ -10,6 +10,8 @@ _Unreleased_
 - Improved the error message when an update could not be performed because files
   are in use.  #550
 
+- Update the Python internals (python external dependencies) to new versions.  #553
+
 <!-- released start -->
 
 ## 0.19.0
