@@ -8,7 +8,7 @@ with `rye init`.
 
 ```
 rye init my-project --build-system maturin
-cd maturin
+cd my-project
 ```
 
 The following structure will be created:

@@ -15,7 +15,7 @@ pub fn init() -> Result<(), Error> {
     let home = if let Some(rye_home) = env::var_os("RYE_HOME") {
         PathBuf::from(rye_home)
     } else {
-        simple_home_dir::home_dir()
+        home::home_dir()
             .map(|x| x.join(".rye"))
             .ok_or_else(|| anyhow!("could not determine home folder"))?
     };

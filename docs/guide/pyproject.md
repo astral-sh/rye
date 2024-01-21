@@ -60,6 +60,20 @@ pulled in as indirect dependencies.  These are added here automatically with `ry
 excluded-dependencies = ["cffi"]
 ```
 
+## `tool.rye.lock-with-sources`
+
++++ 0.18.0
+
+When this flag is enabled all `lock` and `sync` operations in the project or workspace
+operate as if `--with-sources` is passed.  This means that all lock files contain the
+full source references.  Note that this can create lock files that contain credentials
+if the sources have credentials included in the URL.
+
+```toml
+[tool.rye]
+lock-with-sources = true
+```
+
 ## `tool.rye.managed`
 
 +++ 0.3.0

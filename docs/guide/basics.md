@@ -97,7 +97,8 @@ rye sync
 rye run black
 ```
 
-To activate the virtualenv, use the standard methods:
+If you want to have the commands available directly you will need to activate the
+virtualenv like you do normally.  To activate the virtualenv, use the standard methods:
 
 === "Unix"
 
@@ -115,4 +116,16 @@ To deactivate it again run `deactivate`:
 
 ```
 deactivate
+```
+
+## Inspecting the Project
+
+The `rye show` command can print out information about the project's state.  By
+just running `rye show` you can see which Python version is used, where the
+virtualenv is located and more.  You can also invoke `rye show --installed-deps`
+to get a dump of all installed dependencies.
+
+```
+rye show
+rye show --installed-deps
 ```

@@ -1,6 +1,6 @@
 [package]
 name = "rye"
-version = "0.15.2"
+version = "0.19.0"
 edition = "2021"
 license = "MIT"
 
@@ -39,7 +39,6 @@ same-file = "1.0.6"
 serde = { version = "1.0.160", features = ["derive"] }
 serde_json = "1.0.94"
 shlex = "1.1.0"
-simple-home-dir = "0.1.2"
 slug = "0.1.4"
 tar = "0.4.38"
 tempfile = "3.5.0"
@@ -59,6 +58,7 @@ configparser = "3.0.2"
 monotrail-utils = { git = "https://github.com/konstin/poc-monotrail", version = "0.0.1" }
 python-pkginfo = { version = "0.5.6", features = ["serde"] }
 sysinfo = { version = "0.29.4", default-features = false, features = [] }
+home = "0.5.9"
 
 [target."cfg(unix)".dependencies]
 whattheshell = "1.0.1"

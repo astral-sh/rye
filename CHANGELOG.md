@@ -3,7 +3,64 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+## 0.19.0
+
+_Unreleased_
+
+- Improved the behavior of `rye fetch`.  When invoked without arguments it will now try to
+  fetch the version of the requested Python interpreter.  Specifically this combining
+  `pin` and `fetch` work in a much simplified manner.  #545
+
+- Fixed an issue where `rye init` would pin a much too specific version in the `.python-version`
+  file that is generated.  #545
+
 <!-- released start -->
+
+## 0.18.0
+
+Released on 2024-01-20
+
+- Incorporate new Python builds.  #535
+
+- Disable revocation checks on windows to support corporate MITM proxies.  #537
+
+- Detect when a virtualenv relocates and automatically re-create it on sync.  #538
+
+- Added `lock --with-sources`, `sync --with-sources` and the new `rye.tool.lock-with-sources`
+  config.  Passing this will ensure that source references are included in the
+  lock files.  #540
+
+- When using global python shims, the `.python-version` file is now correctly
+  picked up in all cases.  #541
+
+- Added a helpful message if someone attempts to run the non existing `rye list`
+  command.  At a later point there should be a real listing command that can print
+  out the dependencies.  Today the only option is the `--installed-deps` option on
+  the `show` command which spits out dependencies in the format of the lockfile.  #543
+
+- The installer will no longer attempt to symlink targets which are not valid
+  executables on the platform.  This works around some issues with Packages that
+  would prevent to install such as `changedetection.io`.  #542
+
+## 0.17.0
+
+Released on 2024-01-15
+
+- Fixed default generated script reference.  #527
+
+- Correctly fall back to home folder if HOME is unset.  #533 
+
+## 0.16.0
+
+Released on 2023-12-17
+
+- By default a script with the name of the project is now also configured.  #519
+
+- Rye now configures hatchling better in `rye init` so that it works with
+  hatchling 1.19 and later.  #521
+
+- Rye now detects the dummy Python shim that starts the windows store and
+  refuses to consider it.  #486
 
 ## 0.15.2
 

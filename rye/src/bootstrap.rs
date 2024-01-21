@@ -122,9 +122,14 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     venv_cmd.arg(&venv_dir);
     set_proxy_variables(&mut venv_cmd);
 
-    let status = venv_cmd
-        .status()
-        .with_context(|| format!("unable to create self venv using {}", py_bin.display()))?;
+    let status = venv_cmd.status().with_context(|| {
+        format!(
+            "unable to create self venv using {}. It might be that \
+             the used Python build is incompatible with this machine. \
+             For more information see https://rye-up.com/guide/installation/",
+            py_bin.display()
+        )
+    })?;
     if !status.success() {
         bail!("failed to initialize virtualenv in {}", venv_dir.display());
     }
@@ -408,6 +413,14 @@ pub fn download_url_ignore_404(url: &str, output: CommandOutput) -> Result<Optio
     // we only do https requests here, so we always set an https proxy
     if let Some(proxy) = config.https_proxy_url() {
         handle.proxy(&proxy)?;
+    }
+
+    // on windows we want to disable revocation checks.  The reason is that MITM proxies
+    // will otherwise not work.  This is a schannel specific behavior anyways.
+    // for more information see https://github.com/curl/curl/issues/264
+    #[cfg(windows)]
+    {
+        handle.ssl_options(curl::easy::SslOpt::new().no_revoke(true))?;
     }
 
     let write_archive = &mut archive_buffer;

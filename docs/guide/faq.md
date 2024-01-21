@@ -93,6 +93,16 @@ folder that contains a non Rye managed project.
 
 As such the answer is a clear **yes!**
 
+## Musl/Alpine Support
+
+When bootstrapping it can happen that you are running into a confusing error like
+"No such file or directory (os error 2)".  This can happen on MUSL based Linux
+systems like Alpine.  The reason for this is that Rye downloads distribution
+independent Python interpreters which are not compatible with Linux systems that
+do not use glibc.  The solution today is to install Python via other means and
+to install Rye with a custom `RYE_TOOLCHAIN`.  For more information see
+[Customized Installation](/guide/installation/#customized-installation)
+
 ## Wheels Appear to be Missing Files
 
 You might be encountering missing files in wheels when running `rye build` and you

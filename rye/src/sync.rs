@@ -4,6 +4,7 @@ use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
 use console::style;
+use same_file::is_same_file;
 use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
@@ -15,7 +16,7 @@ use crate::lock::{
 };
 use crate::piptools::get_pip_sync;
 use crate::platform::get_toolchain_python_bin;
-use crate::pyproject::{get_current_venv_python_version, ExpandedSources, PyProject};
+use crate::pyproject::{read_venv_marker, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
 use crate::utils::{get_venv_python_bin, set_proxy_variables, symlink_dir, CommandOutput};
 
@@ -71,10 +72,11 @@ impl SyncOptions {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct VenvMarker {
     pub python: PythonVersion,
+    pub venv_path: Option<PathBuf>,
 }
 
 /// Synchronizes a project's virtualenv.
-pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
+pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
     let lockfile = pyproject.workspace_path().join("requirements.lock");
     let dev_lockfile = pyproject.workspace_path().join("requirements-dev.lock");
@@ -90,21 +92,40 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
         bail!("cannot sync or generate lockfile: package needs 'pyproject.toml'");
     }
 
+    // Turn on locking with sources if the project demands it.
+    if pyproject.lock_with_sources() {
+        cmd.lock_options.with_sources = true;
+    }
+
     // ensure we are bootstrapped
     let self_venv = ensure_self_venv(output).context("could not sync because bootstrap failed")?;
 
     let mut recreate = cmd.mode == SyncMode::Full;
     if venv.is_dir() {
-        if let Some(marker_python) = get_current_venv_python_version(&venv) {
-            if marker_python != py_ver {
+        if let Some(marker) = read_venv_marker(&venv) {
+            if marker.python != py_ver {
                 if cmd.output != CommandOutput::Quiet {
                     echo!(
                         "Python version mismatch (found {}, expect {}), recreating.",
-                        marker_python,
+                        marker.python,
                         py_ver
                     );
                 }
                 recreate = true;
+            } else if let Some(ref venv_path) = marker.venv_path {
+                // for virtualenvs that have a location identifier, check if we need to
+                // recreate it.  On IO error we know that one of the paths is gone, so
+                // something needs recreation.
+                if !is_same_file(&venv, venv_path).unwrap_or(false) {
+                    if cmd.output != CommandOutput::Quiet {
+                        echo!(
+                            "Detected relocated virtualenv ({} => {}), recreating.",
+                            venv_path.display(),
+                            venv.display(),
+                        );
+                    }
+                    recreate = true;
+                }
             }
         } else if cmd.force {
             if cmd.output != CommandOutput::Quiet {
@@ -150,6 +171,7 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
             venv.join("rye-venv.json"),
             serde_json::to_string_pretty(&VenvMarker {
                 python: py_ver.clone(),
+                venv_path: Some(venv.clone().into()),
             })?,
         )
         .context("failed writing venv marker file")?;
@@ -243,15 +265,6 @@ pub fn sync(cmd: SyncOptions) -> Result<(), Error> {
                 .arg(format!("--python=\"{}\" --no-deps", py_path.display()));
 
             sources.add_as_pip_args(&mut pip_sync_cmd);
-
-            for (idx, url) in sources.index_urls.iter().enumerate() {
-                if idx == 0 {
-                    pip_sync_cmd.arg("--index-url");
-                } else {
-                    pip_sync_cmd.arg("--extra-index-url");
-                }
-                pip_sync_cmd.arg(&url.to_string());
-            }
 
             if cmd.dev && dev_lockfile.is_file() {
                 pip_sync_cmd.arg(&dev_lockfile);
@@ -386,7 +399,7 @@ fn inject_tcl_config(venv: &Path, py_bin: &Path) -> Result<(), Error> {
 // There is only one folder in the venv/lib folder. But in practice, only pypy will use this method in linux
 #[cfg(unix)]
 fn get_site_packages(lib_dir: PathBuf) -> Result<Option<PathBuf>, Error> {
-    let entries = fs::read_dir(&lib_dir).context("read venv/lib/ path is fail")?;
+    let entries = fs::read_dir(lib_dir).context("read venv/lib/ path is fail")?;
 
     for entry in entries {
         let entry = entry?;

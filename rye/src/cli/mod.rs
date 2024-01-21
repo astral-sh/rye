@@ -1,6 +1,6 @@
 use std::env;
 
-use anyhow::Error;
+use anyhow::{bail, Error};
 use clap::Parser;
 
 mod add;
@@ -66,6 +66,16 @@ enum Command {
     Rye(rye::Args),
     Uninstall(uninstall::Args),
     Version(version::Args),
+    #[command(hide = true)]
+    List(list::Args),
+}
+
+pub mod list {
+    /// There is no real list command yet.
+    ///
+    /// Use rye show --installed-deps instead
+    #[derive(clap::Parser, Debug)]
+    pub struct Args {}
 }
 
 pub fn execute() -> Result<(), Error> {
@@ -113,6 +123,11 @@ pub fn execute() -> Result<(), Error> {
         Command::Rye(cmd) => rye::execute(cmd),
         Command::Uninstall(cmd) => uninstall::execute(cmd),
         Command::Version(cmd) => version::execute(cmd),
+        Command::List(..) => {
+            // until we have a proper list command, make it error with what the
+            // user should be using instead.
+            bail!("unknown command. Maybe you mean rye show --installed-deps");
+        }
     }
 }
 
