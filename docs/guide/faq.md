@@ -3,6 +3,34 @@
 This section should cover some commonly asked questions.  If you do not find an answer
 here, consider reaching out to the [community](../community.md).
 
+## How Do I Install PyTorch?
+
+PyTorch requires setting up manual [sources](../sources) as it's not installed via
+PyPI.  These sources can be set up in [`pyproject.toml`](../pyproject/) for a
+simple project or globally in the [config](../config/).
+
+* **Option 1:** `pyproject.toml`
+
+    ```toml
+    [[tool.rye.sources]]
+    name = "pytorch"
+    url = "https://download.pytorch.org/whl/cpu"
+    ```
+
+* **Option 2:** `~/.rye/config.toml`
+
+    ```toml
+    [[sources]]
+    name = "pytorch"
+    url = "https://download.pytorch.org/whl/cpu"
+    ```
+
+Afterwards you can add pytorch as you would expect:
+
+```
+rye add torch torchvision torchaudio
+```
+
 ## Windows Developer Mode
 
 Rye does not require symlinks but it works significantly better with them.  On Windows

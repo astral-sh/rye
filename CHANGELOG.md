@@ -13,6 +13,8 @@ _Unreleased_
 - Rye now supports virtual projects.  These are themselves not installed into the
   virtualenv but their dependencies are.  #551
 
+- Update the Python internals (python external dependencies) to new versions.  #553
+
 <!-- released start -->
 
 ## 0.19.0
