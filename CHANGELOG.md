@@ -5,7 +5,7 @@ that were not yet released.
 
 ## 0.19.0
 
-_Unreleased_
+Released on 2024-01-21
 
 - Improved the behavior of `rye fetch`.  When invoked without arguments it will now try to
   fetch the version of the requested Python interpreter.  Specifically this combining
