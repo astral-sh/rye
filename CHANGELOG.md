@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Improved the error message when an update could not be performed because files
+  are in use.  #550
+
 <!-- released start -->
 
 ## 0.19.0
