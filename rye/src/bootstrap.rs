@@ -35,26 +35,25 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 5;
+const SELF_VERSION: u64 = 6;
 
 const SELF_REQUIREMENTS: &str = r#"
-build==0.10.0
-certifi==2022.12.7
-charset-normalizer==3.1.0
-click==8.1.3
-distlib==0.3.6
-filelock==3.12.0
+build==1.0.3
+certifi==2023.11.17
+charset-normalizer==3.3.2
+click==8.1.7
+distlib==0.3.8
+filelock==3.12.2
 idna==3.4
 packaging==23.1
-pip-tools==6.13.0
-platformdirs==3.4.0
+platformdirs==4.0.0
 pyproject_hooks==1.0.0
-requests==2.29.0
+requests==2.31.0
 tomli==2.0.1
 twine==4.0.2
 unearth==0.12.1
-urllib3==1.26.15
-virtualenv==20.22.0
+urllib3==2.0.7
+virtualenv==20.25.0
 "#;
 
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
