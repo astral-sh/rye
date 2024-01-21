@@ -92,8 +92,10 @@ interpreter.
 
 === "Windows"
 
-    To modify the Windows PATH environment variable
-    
+    The windows installer normally will automatically register the rye path in the
+    `PATH` environment variable.  If this does not work you will need to manually
+    perform the following steps:
+
     1. Press ++windows+r++, enter `sysdm.cpl` and hit ++enter++.
     2. In the "System Properties" dialog, click the "Advanced" tab.
     3. Click on "Environment Variables".
