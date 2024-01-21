@@ -3,6 +3,12 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+## 0.20.0
+
+_Unreleased_
+
+<!-- released start -->
+
 ## 0.19.0
 
 Released on 2024-01-21
@@ -18,8 +24,6 @@ Released on 2024-01-21
   manually adding the rye folder to the search path is no longer necessary.  #483
 
 - Fixed a regression in 0.18 that caused the `add` command to fail.  #547
-
-<!-- released start -->
 
 ## 0.18.0
 
