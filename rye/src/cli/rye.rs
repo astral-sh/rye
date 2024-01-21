@@ -323,8 +323,8 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
 
     #[cfg(windows)]
     {
-        crate::windows::remove_from_path(Path::new(&*rye_home))?;
-        crate::windows::remove_from_programs()?;
+        crate::utils::windows::remove_from_path(Path::new(&*rye_home))?;
+        crate::utils::windows::remove_from_programs()?;
     }
 
     Ok(())
@@ -466,8 +466,8 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     #[cfg(windows)]
     {
         let rye_home = Path::new(&*rye_home);
-        crate::windows::add_to_programs(rye_home)?;
-        crate::windows::add_to_path(rye_home)?;
+        crate::utils::windows::add_to_programs(rye_home)?;
+        crate::utils::windows::add_to_path(rye_home)?;
     }
 
     echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
