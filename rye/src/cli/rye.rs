@@ -312,12 +312,17 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     let rye_home = env::var("RYE_HOME")
         .map(Cow::Owned)
         .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
-    if cfg!(unix) {
+
+    #[cfg(unix)]
+    {
         echo!(
             "Don't forget to remove the sourcing of {} from your shell config.",
             Path::new(&*rye_home).join("env").display()
         );
-    } else {
+    }
+
+    #[cfg(windows)]
+    {
         crate::windows::remove_from_path(Path::new(&*rye_home))?;
         crate::windows::remove_from_programs()?;
     }
