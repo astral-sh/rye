@@ -5,8 +5,8 @@ tools like `black` or `ruff` globally.
 
 ## Installing Tools
 
-Use the `rye tools install` (aliased to `rye install`) command to install a tool
-globally with a shim:
+Use the [`rye tools install`](commands/tools/install.md) (aliased to [`rye
+install`](commands/install.md)) command to install a tool globally with a shim:
 
 ```bash
 rye install ruff

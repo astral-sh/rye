@@ -59,8 +59,8 @@ pub struct CompletionCommand {
 
 /// Performs an update of rye.
 ///
-/// This currently just is an alias to running cargo install again with the
-/// right arguments.
+/// This can install updates from the latest release binaries or trigger a manual
+/// compilation of Rye if Rust is installed.
 #[derive(Parser, Debug)]
 pub struct UpdateCommand {
     /// Update to a specific version.

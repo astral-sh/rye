@@ -15,7 +15,7 @@ use crate::utils::{CommandOutput, QuietExit};
 /// This invokes ruff in lint mode.
 #[derive(Parser, Debug)]
 pub struct Args {
-    /// Linter all packages
+    /// Lint all packages
     #[arg(short, long)]
     all: bool,
     /// Lint a specific package
