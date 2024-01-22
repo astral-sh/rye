@@ -101,6 +101,8 @@ rye config --set-bool behavior.force-rye-managed=true
 rye config --get default.requires-python
 ```
 
+For more information see [`config`](commands/config.md).
+
 ## Per Project Config
 
 For the project specific `pyproject.toml` config see [pyproject.toml](pyproject.md).

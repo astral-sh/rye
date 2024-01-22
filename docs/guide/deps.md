@@ -1,12 +1,12 @@
 # Dependencies
 
 Dependencies are declared in [pyproject.toml](pyproject.md) however adding them can be
-simplified with the `rye add` command.  In the most simple invocation it adds a regular
+simplified with the [`rye add`](commands/add.md) command.  In the most simple invocation it adds a regular
 dependency, but it can be customized.
 
 ## Adding Basic Dependency
 
-To add a regular dependency just invoke `rye add` with the name of the Python package:
+To add a regular dependency just invoke [`rye add`](commands/add.md) with the name of the Python package:
 
 ```
 rye add Flask
@@ -49,7 +49,7 @@ rye add --dev black
 These dependencies are stored in the non-standard
 [`tool.rye.dev-dependencies`](pyproject.md#toolryedev-dependencies) key.
 
-To run tools added this way without enabling the virtualenv use `rye run`:
+To run tools added this way without enabling the virtualenv use [`rye run`](commands/run.md):
 
 ```
 rye run black
