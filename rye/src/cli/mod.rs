@@ -56,6 +56,7 @@ enum Command {
     Init(init::Args),
     Install(install::Args),
     Lock(lock::Args),
+    #[command(alias = "check")]
     Lint(lint::Args),
     MakeReq(make_req::Args),
     Pin(pin::Args),
