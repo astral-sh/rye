@@ -127,14 +127,24 @@ pub fn install(
         requirement.name.as_str(),
     )?;
 
-    let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
-    cmd.arg("--python")
-        .arg(&py)
-        .arg("install")
-        .env("PYTHONWARNINGS", "ignore")
-        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
-    sources.add_as_pip_args(&mut cmd);
+    let mut cmd = if Config::current().use_puffin() {
+        let mut cmd = Command::new("puffin");
+        cmd.arg("pip")
+            .arg("install")
+            .env("VIRTUAL_ENV", &target_venv_path)
+            .env("PYTHONWARNINGS", "ignore");
+        cmd
+    } else {
+        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
+        cmd.arg("--python")
+            .arg(&py)
+            .arg("install")
+            .env("PYTHONWARNINGS", "ignore")
+            .env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
+        cmd
+    };
 
+    sources.add_as_pip_args(&mut cmd);
     if output == CommandOutput::Verbose {
         cmd.arg("--verbose");
     } else {

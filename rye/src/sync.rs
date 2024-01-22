@@ -343,6 +343,7 @@ pub fn create_virtualenv(
     prompt: &str,
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
+    dbg!(&py_bin);
 
     let mut venv_cmd = if Config::current().use_puffin() {
         // TODO(puffin): ensure puffin is installed
