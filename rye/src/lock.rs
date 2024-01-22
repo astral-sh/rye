@@ -337,6 +337,11 @@ fn generate_lockfile(
             "--python-version={}.{}",
             py_ver.major, py_ver.minor
         ));
+        if output == CommandOutput::Verbose {
+            cmd.arg("--verbose");
+        } else if output == CommandOutput::Quiet {
+            cmd.arg("-q");
+        }
         cmd
     } else {
         let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
@@ -352,7 +357,12 @@ fn generate_lockfile(
             .arg(format!(
                 "--python-version=\"{}.{}\"",
                 py_ver.major, py_ver.minor
-            ));
+            ))
+            .arg(if output == CommandOutput::Verbose {
+                "--verbose"
+            } else {
+                "-q"
+            });
         cmd
     };
 
@@ -363,11 +373,6 @@ fn generate_lockfile(
         .env("PYTHONWARNINGS", "ignore")
         .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
 
-    if output == CommandOutput::Verbose {
-        cmd.arg("--verbose");
-    } else {
-        cmd.arg("-q");
-    }
     for pkg in &lock_options.update {
         cmd.arg("--upgrade-package");
         cmd.arg(pkg);
