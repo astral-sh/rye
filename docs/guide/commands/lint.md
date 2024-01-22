@@ -5,6 +5,9 @@
 Run the linter on the project.  This command is aliased to `check`.  At the moment
 this always runs `ruff` in lint mode.
 
+For more information about how to configure Ruff, have a look at the
+[Ruff Configuration Documentation](https://docs.astral.sh/ruff/configuration/).
+
 ## Example
 
 Run the linter:

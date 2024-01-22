@@ -4,6 +4,9 @@
 
 Run the code formatter on the project.  This command is aliased to `format`.
 
+For more information about how to configure Ruff, have a look at the
+[Ruff Configuration Documentation](https://docs.astral.sh/ruff/configuration/).
+
 ## Example
 
 To format the code and write back to the files:
