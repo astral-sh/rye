@@ -15,6 +15,7 @@ use serde::Serialize;
 use tempfile::NamedTempFile;
 use url::Url;
 
+use crate::config::Config;
 use crate::piptools::{get_pip_compile, get_pip_tools_version, PipToolsVersion};
 use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
@@ -327,24 +328,34 @@ fn generate_lockfile(
         fs::write(&requirements_file, b"")?;
     }
 
-    let pip_compile = get_pip_compile(py_ver, output)?;
-    let mut cmd = Command::new(pip_compile);
-
-    // legacy pip tools requires some extra parameters
-    if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {
-        cmd.arg("--resolver=backtracking");
-    }
-
-    cmd.arg("--no-annotate")
-        .arg("--strip-extras")
-        .arg("--allow-unsafe")
-        .arg("--no-header")
-        .arg("--pip-args")
-        .arg(format!(
-            "--python-version=\"{}.{}\"",
+    let mut cmd = if Config::current().use_puffin() {
+        let mut cmd = Command::new("puffin");
+        cmd.arg("pip");
+        cmd.arg("compile");
+        cmd.arg(format!(
+            "--python-version={}.{}",
             py_ver.major, py_ver.minor
-        ))
-        .arg("-o")
+        ));
+        cmd
+    } else {
+        let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
+        // legacy pip tools requires some extra parameters
+        if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {
+            cmd.arg("--resolver=backtracking");
+        }
+        cmd.arg("--no-annotate")
+            .arg("--strip-extras")
+            .arg("--allow-unsafe")
+            .arg("--no-header")
+            .arg("--pip-args")
+            .arg(format!(
+                "--python-version=\"{}.{}\"",
+                py_ver.major, py_ver.minor
+            ));
+        cmd
+    };
+
+    cmd.arg("-o")
         .arg(&requirements_file)
         .arg(requirements_file_in)
         .current_dir(workspace_path)

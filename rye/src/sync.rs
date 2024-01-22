@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
 use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::lock::{
     make_project_root_fragment, update_single_project_lockfile, update_workspace_lockfile,
@@ -242,48 +243,85 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             if output != CommandOutput::Quiet {
                 echo!("Installing dependencies");
             }
-            let tempdir = tempdir()?;
-            symlink_dir(
-                get_pip_module(&get_pip_tools_venv(&py_ver)).context("could not locate pip")?,
-                tempdir.path().join("pip"),
-            )
-            .context("failed linking pip module into for pip-sync")?;
-            let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
-            let root = pyproject.workspace_path();
 
-            let py_path = get_venv_python_bin(&venv);
-
-            pip_sync_cmd
-                .env("PROJECT_ROOT", make_project_root_fragment(&root))
-                .env("PYTHONPATH", tempdir.path())
-                .current_dir(&root)
-                .arg("--python-executable")
-                .arg(&py_path)
-                .arg("--pip-args")
-                .arg("--no-deps");
-
-            sources.add_as_pip_args(&mut pip_sync_cmd);
-
-            if cmd.dev && dev_lockfile.is_file() {
-                pip_sync_cmd.arg(&dev_lockfile);
-            } else {
-                pip_sync_cmd.arg(&lockfile);
-            }
-
-            if output == CommandOutput::Verbose {
-                pip_sync_cmd.arg("--verbose");
-                if env::var("PIP_VERBOSE").is_err() {
-                    pip_sync_cmd.env("PIP_VERBOSE", "2");
+            if Config::current().use_puffin() {
+                if output != CommandOutput::Quiet {
+                    echo!("{}", style("Using experimental puffin support.").yellow());
                 }
-            } else if output != CommandOutput::Quiet {
-                pip_sync_cmd.env("PYTHONWARNINGS", "ignore");
+                let mut puffin_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
+                let root = pyproject.workspace_path();
+
+                puffin_sync_cmd
+                    .env("PROJECT_ROOT", make_project_root_fragment(&root))
+                    .env("VIRTUAL_ENV", pyproject.venv_path().as_os_str())
+                    .current_dir(&root);
+
+                sources.add_as_pip_args(&mut puffin_sync_cmd);
+
+                if cmd.dev && dev_lockfile.is_file() {
+                    puffin_sync_cmd.arg(&dev_lockfile);
+                } else {
+                    puffin_sync_cmd.arg(&lockfile);
+                }
+
+                if output == CommandOutput::Verbose {
+                    puffin_sync_cmd.arg("--verbose");
+                } else if output != CommandOutput::Quiet {
+                    puffin_sync_cmd.env("PYTHONWARNINGS", "ignore");
+                } else {
+                    puffin_sync_cmd.arg("-q");
+                }
+                set_proxy_variables(&mut puffin_sync_cmd);
+                let status = puffin_sync_cmd
+                    .status()
+                    .context("unable to run puffin pip sync")?;
+                if !status.success() {
+                    bail!("Installation of dependencies failed");
+                }
             } else {
-                pip_sync_cmd.arg("-q");
-            }
-            set_proxy_variables(&mut pip_sync_cmd);
-            let status = pip_sync_cmd.status().context("unable to run pip-sync")?;
-            if !status.success() {
-                bail!("Installation of dependencies failed");
+                let tempdir = tempdir()?;
+                symlink_dir(
+                    get_pip_module(&get_pip_tools_venv(&py_ver)).context("could not locate pip")?,
+                    tempdir.path().join("pip"),
+                )
+                .context("failed linking pip module into for pip-sync")?;
+                let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
+                let root = pyproject.workspace_path();
+
+                let py_path = get_venv_python_bin(&venv);
+
+                pip_sync_cmd
+                    .env("PROJECT_ROOT", make_project_root_fragment(&root))
+                    .env("PYTHONPATH", tempdir.path())
+                    .current_dir(&root)
+                    .arg("--python-executable")
+                    .arg(&py_path)
+                    .arg("--pip-args")
+                    .arg("--no-deps");
+
+                sources.add_as_pip_args(&mut pip_sync_cmd);
+
+                if cmd.dev && dev_lockfile.is_file() {
+                    pip_sync_cmd.arg(&dev_lockfile);
+                } else {
+                    pip_sync_cmd.arg(&lockfile);
+                }
+
+                if output == CommandOutput::Verbose {
+                    pip_sync_cmd.arg("--verbose");
+                    if env::var("PIP_VERBOSE").is_err() {
+                        pip_sync_cmd.env("PIP_VERBOSE", "2");
+                    }
+                } else if output != CommandOutput::Quiet {
+                    pip_sync_cmd.env("PYTHONWARNINGS", "ignore");
+                } else {
+                    pip_sync_cmd.arg("-q");
+                }
+                set_proxy_variables(&mut pip_sync_cmd);
+                let status = pip_sync_cmd.status().context("unable to run pip-sync")?;
+                if !status.success() {
+                    bail!("Installation of dependencies failed");
+                }
             }
         }
     }
@@ -303,19 +341,37 @@ pub fn create_virtualenv(
     prompt: &str,
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
-    let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
-    if output == CommandOutput::Verbose {
-        venv_cmd.arg("--verbose");
+
+    let mut venv_cmd = if Config::current().use_puffin() {
+        // TODO(puffin): ensure puffin is installed
+        let mut venv_cmd = Command::new("puffin");
+        venv_cmd.arg("venv");
+        if output == CommandOutput::Verbose {
+            venv_cmd.arg("--verbose");
+        } else {
+            venv_cmd.arg("-q");
+        }
+        venv_cmd.arg("-p");
+        venv_cmd.arg(&py_bin);
+        venv_cmd.arg("--");
+        venv_cmd
     } else {
-        venv_cmd.arg("-q");
-        venv_cmd.env("PYTHONWARNINGS", "ignore");
-    }
-    venv_cmd.arg("-p");
-    venv_cmd.arg(&py_bin);
-    venv_cmd.arg("--no-seed");
-    venv_cmd.arg("--prompt");
-    venv_cmd.arg(prompt);
-    venv_cmd.arg("--");
+        let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
+        if output == CommandOutput::Verbose {
+            venv_cmd.arg("--verbose");
+        } else {
+            venv_cmd.arg("-q");
+            venv_cmd.env("PYTHONWARNINGS", "ignore");
+        }
+        venv_cmd.arg("-p");
+        venv_cmd.arg(&py_bin);
+        venv_cmd.arg("--no-seed");
+        venv_cmd.arg("--prompt");
+        venv_cmd.arg(prompt);
+        venv_cmd.arg("--");
+        venv_cmd
+    };
+
     venv_cmd.arg(venv);
     let status = venv_cmd
         .status()
