@@ -2,7 +2,7 @@
 
 Uninstalls Rye again.
 
-For more information see [Uninstalling](../install.md#uninstalling)
+For more information see [Uninstalling](/guide/installation/#uninstalling).
 
 ## Example
 
