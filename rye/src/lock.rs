@@ -329,6 +329,7 @@ fn generate_lockfile(
     }
 
     let mut cmd = if Config::current().use_puffin() {
+        // TODO(puffin): change location of command
         let mut cmd = Command::new("puffin");
         cmd.arg("pip");
         cmd.arg("compile");
