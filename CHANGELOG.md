@@ -18,6 +18,9 @@ _Unreleased_
 - Update to newer versions of pip tools.  For Python 3.7 `6.14.0` is used, for
   new Python versions `7.3.0` is used.  #554
 
+- Added `rye fmt` and `rye lint` commands to format and lint with
+  the help of Ruff.  #555
+
 <!-- released start -->
 
 ## 0.19.0
