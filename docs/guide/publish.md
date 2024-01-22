@@ -4,7 +4,7 @@ Rye currently uses [build](https://github.com/pypa/build) to build the package a
 
 ## Build
 
-By default, `rye` will build the both sdist and wheel target in the `dist` directory.
+By default, `rye` will build the both sdist and wheel target in the `dist` directory.   The command for this is called [`build`](commands/build.md).
 
 ```
 rye build

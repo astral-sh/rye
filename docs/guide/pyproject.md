@@ -30,7 +30,7 @@ my-hello-script = 'hello:main'
 This configuration will generate a script `my-hello-script` that will call the `main` function of the
 `hello` module.
 
-Scripts can be installed using `rye sync` and run using `rye run`:
+Scripts can be installed using [`rye sync`](commands/sync.md) and run using [`rye run`](commands/run.md):
 
 ```bash
 $ rye sync

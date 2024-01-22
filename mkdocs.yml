@@ -12,15 +12,51 @@ nav:
     - Installation: guide/installation.md
     - Basics: guide/basics.md
     - Configuration: guide/config.md
-    - Shims: guide/shims.md
     - Python Project: guide/pyproject.md
     - Syncing and Locking: guide/sync.md
+    - Shims: guide/shims.md
     - Building and Publishing: guide/publish.md
     - Rust Modules: guide/rust.md
     - Dependency Sources: guide/sources.md
     - Dependencies: guide/deps.md
     - Workspaces: guide/workspaces.md
     - Virtual Projects: guide/virtual.md
+    - Commands:
+      - Overview: guide/commands/index.md
+      - add: guide/commands/add.md
+      - build: guide/commands/build.md
+      - config: guide/commands/config.md
+      - fetch: guide/commands/fetch.md
+      - fmt: guide/commands/fmt.md
+      - init: guide/commands/init.md
+      - install: guide/commands/install.md
+      - lock: guide/commands/lock.md
+      - lint: guide/commands/lint.md
+      - make-req: guide/commands/make-req.md
+      - pin: guide/commands/pin.md
+      - publish: guide/commands/publish.md
+      - remove: guide/commands/remove.md
+      - run: guide/commands/run.md
+      - shell: guide/commands/shell.md
+      - show: guide/commands/show.md
+      - sync: guide/commands/sync.md
+      - toolchain:
+        - Overview: guide/commands/toolchain/index.md
+        - fetch: guide/commands/toolchain/fetch.md
+        - list: guide/commands/toolchain/list.md
+        - register: guide/commands/toolchain/register.md
+        - remove: guide/commands/toolchain/remove.md
+      - tools:
+        - Overview: guide/commands/tools/index.md
+        - install: guide/commands/tools/install.md
+        - uninstall: guide/commands/tools/uninstall.md
+      - self:
+        - Overview: guide/commands/self/index.md
+        - completion: guide/commands/self/completion.md
+        - update: guide/commands/self/update.md
+        - uninstall: guide/commands/self/uninstall.md
+      - uninstall: guide/commands/uninstall.md
+      - version: guide/commands/version.md
     - Toolchains:
       - guide/toolchains/index.md
       - Portable CPython: guide/toolchains/cpython.md

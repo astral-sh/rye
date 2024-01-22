@@ -1,7 +1,7 @@
 # Basics
 
 To use Rye you need to have a `pyproject.toml` based Python project.  For this guide you can
-create one with `rye init` which will create a new folder with a new project inside:
+create one with [`rye init`](commands/init.md) which will create a new folder with a new project inside:
 
 ```shell
 rye init my-project

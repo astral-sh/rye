@@ -1,6 +1,6 @@
 [project]
 name = "rye-dev"
-version = "0.1.0"
+version = "1.0.0"
 description = "Workspace for rye development"
 authors = [{ name = "Armin Ronacher", email = "armin.ronacher@active-4.com" }]
 dependencies = [
