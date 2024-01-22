@@ -3,18 +3,27 @@ hide:
   - navigation
 ---
 
-# Rye: An Experimental Package Management Solution for Python
+# Rye: A New Kind Of Package Management Solution for Python
 
 Rye is a project and package management solution for Python, created by
 [Armin](https://github.com/mitsuhiko/).  It came out of his desire to create a
-one-stop-shop for all Python needs. It installs and manages Python
+one-stop-shop for all Python needs.  It installs and manages Python
 installations, manages `pyproject.toml` files, installs and uninstalls
-dependencies, manages virtualenvs behind the scenes. It supports monorepos and
+dependencies, manages virtualenvs behind the scenes.  It supports monorepos,
 global tool installations.
 
 Rye is an experimental endeavour to build a new type of packaging experience to
 Python inspired by `rustup` and `cargo` from Rust.  Please give it a try.
 Feedback and suggestions are greatly appreciated.
+
+**What it does:**
+
+* Download and manage Python interpreters
+* Manage Projects
+* Manage your dependencies via [pip-tools](https://github.com/jazzband/pip-tools)
+* [Manage your virtualenvs](guide/sync.md)
+* Simple way to [invoke scripts](guide/pyproject.md#toolryescripts)
+* Lint and format via [Ruff](https://astral.sh/ruff)
 
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <p align="center">
