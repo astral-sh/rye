@@ -7,8 +7,10 @@ mod add;
 mod build;
 mod config;
 mod fetch;
+mod fmt;
 mod init;
 mod install;
+mod lint;
 mod lock;
 mod make_req;
 mod pin;
@@ -49,9 +51,12 @@ enum Command {
     Build(build::Args),
     Config(config::Args),
     Fetch(fetch::Args),
+    #[command(alias = "format")]
+    Fmt(fmt::Args),
     Init(init::Args),
     Install(install::Args),
     Lock(lock::Args),
+    Lint(lint::Args),
     MakeReq(make_req::Args),
     Pin(pin::Args),
     Publish(publish::Args),
@@ -107,9 +112,11 @@ pub fn execute() -> Result<(), Error> {
         Command::Build(cmd) => build::execute(cmd),
         Command::Config(cmd) => config::execute(cmd),
         Command::Fetch(cmd) => fetch::execute(cmd),
+        Command::Fmt(cmd) => fmt::execute(cmd),
         Command::Init(cmd) => init::execute(cmd),
         Command::Install(cmd) => install::execute(cmd),
         Command::Lock(cmd) => lock::execute(cmd),
+        Command::Lint(cmd) => lint::execute(cmd),
         Command::MakeReq(cmd) => make_req::execute(cmd),
         Command::Pin(cmd) => pin::execute(cmd),
         Command::Publish(cmd) => publish::execute(cmd),

@@ -1335,3 +1335,44 @@ impl FromStr for BuildSystem {
         }
     }
 }
+
+/// Utility to locate projects
+pub fn locate_projects(
+    base_project: PyProject,
+    all: bool,
+    packages: &[String],
+) -> Result<Vec<PyProject>, Error> {
+    let mut projects = Vec::new();
+    if all {
+        match base_project.workspace() {
+            Some(workspace) => {
+                for project in workspace.iter_projects() {
+                    projects.push(project?);
+                }
+            }
+            None => {
+                projects.push(base_project);
+            }
+        }
+    } else if packages.is_empty() {
+        projects.push(base_project);
+    } else {
+        for package_name in packages {
+            match base_project.workspace() {
+                Some(workspace) => {
+                    if let Some(project) = workspace.get_project(package_name)? {
+                        projects.push(project);
+                    } else {
+                        bail!("unknown project '{}'", package_name);
+                    }
+                }
+                None => {
+                    if base_project.normalized_name()? != normalize_package_name(package_name) {
+                        bail!("unknown project '{}'", package_name);
+                    }
+                }
+            }
+        }
+    }
+    Ok(projects)
+}

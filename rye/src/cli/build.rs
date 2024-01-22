@@ -7,7 +7,7 @@ use clap::Parser;
 use console::style;
 
 use crate::bootstrap::ensure_self_venv;
-use crate::pyproject::{normalize_package_name, PyProject};
+use crate::pyproject::{locate_projects, PyProject};
 use crate::utils::{get_venv_python_bin, CommandOutput};
 
 /// Builds a package for distribution.
@@ -61,39 +61,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    let mut projects = Vec::new();
-
-    if cmd.all {
-        match project.workspace() {
-            Some(workspace) => {
-                for project in workspace.iter_projects() {
-                    projects.push(project?);
-                }
-            }
-            None => {
-                projects.push(project);
-            }
-        }
-    } else if cmd.package.is_empty() {
-        projects.push(project);
-    } else {
-        for package_name in cmd.package {
-            match project.workspace() {
-                Some(workspace) => {
-                    if let Some(project) = workspace.get_project(&package_name)? {
-                        projects.push(project);
-                    } else {
-                        bail!("unknown project '{}'", package_name);
-                    }
-                }
-                None => {
-                    if project.normalized_name()? != normalize_package_name(&package_name) {
-                        bail!("unknown project '{}'", package_name);
-                    }
-                }
-            }
-        }
-    }
+    let projects = locate_projects(project, cmd.all, &cmd.package[..])?;
 
     for project in projects {
         // skip over virtual packages on build
