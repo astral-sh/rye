@@ -248,7 +248,9 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 if output != CommandOutput::Quiet {
                     echo!("{}", style("Using experimental puffin support.").yellow());
                 }
-                let mut puffin_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
+                // TODO(puffin): change location of command
+                let mut puffin_sync_cmd = Command::new("puffin");
+                puffin_sync_cmd.arg("pip").arg("sync");
                 let root = pyproject.workspace_path();
 
                 puffin_sync_cmd
