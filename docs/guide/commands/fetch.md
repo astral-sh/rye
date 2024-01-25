@@ -14,7 +14,7 @@ Checking checksum
 success: Downloaded cpython@3.8.13
 ```
 
-To fetch the pinned verison of Python you can leave out the argument:
+To fetch the pinned version of Python you can leave out the argument:
 
 ```
 $ rye fetch
