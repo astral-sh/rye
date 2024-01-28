@@ -21,6 +21,9 @@ _Unreleased_
 - Added `rye fmt` and `rye lint` commands to format and lint with
   the help of Ruff.  #555
 
+- Restore cursor state on Ctrl-C.  This fixes some issues where in rare cases the
+  cursor would disappear even after shutting down rye.  #564
+
 <!-- released start -->
 
 ## 0.19.0
