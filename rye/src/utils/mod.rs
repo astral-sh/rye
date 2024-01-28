@@ -262,6 +262,9 @@ pub fn unpack_archive(contents: &[u8], dst: &Path, strip_components: usize) -> R
 
 /// Spawns a command exec style.
 pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
+    // this is technically only necessary on windows
+    crate::disable_ctrlc_handler();
+
     #[cfg(unix)]
     {
         use std::os::unix::process::CommandExt;
@@ -270,19 +273,6 @@ pub fn exec_spawn(cmd: &mut Command) -> Result<Infallible, Error> {
     }
     #[cfg(windows)]
     {
-        use winapi::shared::minwindef::{BOOL, DWORD, FALSE, TRUE};
-        use winapi::um::consoleapi::SetConsoleCtrlHandler;
-
-        unsafe extern "system" fn ctrlc_handler(_: DWORD) -> BOOL {
-            // Do nothing. Let the child process handle it.
-            TRUE
-        }
-        unsafe {
-            if SetConsoleCtrlHandler(Some(ctrlc_handler), TRUE) == FALSE {
-                return Err(anyhow!("unable to set console handler"));
-            }
-        }
-
         cmd.stdin(Stdio::inherit());
         let status = cmd.status()?;
         std::process::exit(status.code().unwrap())
