@@ -271,18 +271,28 @@ impl Script {
     }
 }
 
+/// Unsafe form of [`shlex::try_quote`] for display only.
+fn shlex_quote_unsafe(s: &str) -> Cow<'_, str> {
+    shlex::Quoter::new().allow_nul(true).quote(s).unwrap()
+}
+
 impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Script::Call(entry, env) => {
-                write!(f, "{}", shlex::quote(entry))?;
+                write!(f, "{}", shlex_quote_unsafe(entry))?;
                 if !env.is_empty() {
                     write!(f, " (env: ")?;
                     for (idx, (key, value)) in env.iter().enumerate() {
                         if idx > 0 {
                             write!(f, " ")?;
                         }
-                        write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                        write!(
+                            f,
+                            "{}={}",
+                            shlex_quote_unsafe(key),
+                            shlex_quote_unsafe(value)
+                        )?;
                     }
                     write!(f, ")")?;
                 }
@@ -294,14 +304,19 @@ impl fmt::Display for Script {
                     if need_space {
                         write!(f, " ")?;
                     }
-                    write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                    write!(
+                        f,
+                        "{}={}",
+                        shlex_quote_unsafe(key),
+                        shlex_quote_unsafe(value)
+                    )?;
                     need_space = true;
                 }
                 for arg in args.iter() {
                     if need_space {
                         write!(f, " ")?;
                     }
-                    write!(f, "{}", shlex::quote(arg))?;
+                    write!(f, "{}", shlex_quote_unsafe(arg))?;
                     need_space = true;
                 }
                 Ok(())
@@ -317,7 +332,7 @@ impl fmt::Display for Script {
                         if idx > 0 {
                             write!(f, " ")?;
                         }
-                        write!(f, "{}", shlex::quote(arg))?;
+                        write!(f, "{}", shlex_quote_unsafe(arg))?;
                     }
                     write!(f, "]")?;
                 }
