@@ -6,6 +6,7 @@ use std::process::{Command, ExitStatus, Stdio};
 use std::{fmt, fs};
 
 use anyhow::{anyhow, bail, Error};
+use dialoguer::theme::{ColorfulTheme, Theme};
 use once_cell::sync::Lazy;
 use pep508_rs::{Requirement, VersionOrUrl};
 use regex::{Captures, Regex};
@@ -21,6 +22,12 @@ pub use std::os::windows::fs::symlink_file;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
+
+/// Returns the preferred theme for dialoguer
+pub fn tui_theme() -> &'static dyn Theme {
+    static THEME: Lazy<ColorfulTheme> = Lazy::new(ColorfulTheme::default);
+    Lazy::force(&THEME) as &dyn Theme
+}
 
 #[cfg(windows)]
 pub(crate) mod windows;

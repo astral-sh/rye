@@ -3,6 +3,7 @@ use std::env::consts::{ARCH, EXE_EXTENSION, OS};
 use std::env::{join_paths, split_paths};
 use std::path::{Path, PathBuf};
 use std::process::Command;
+use std::sync::Arc;
 use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
@@ -18,8 +19,9 @@ use crate::bootstrap::{
     update_core_shims,
 };
 use crate::cli::toolchain::register_toolchain;
+use crate::config::Config;
 use crate::platform::{get_app_dir, symlinks_supported};
-use crate::utils::{check_checksum, CommandOutput, QuietExit};
+use crate::utils::{check_checksum, tui_theme, CommandOutput, QuietExit};
 
 #[cfg(windows)]
 const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
@@ -268,7 +270,7 @@ fn remove_dir_all_if_exists(path: &Path) -> Result<(), Error> {
 
 fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     if !args.yes
-        && !dialoguer::Confirm::new()
+        && !dialoguer::Confirm::with_theme(tui_theme())
             .with_prompt("Do you want to uninstall rye?")
             .interact()?
     {
@@ -341,6 +343,8 @@ fn is_fish() -> bool {
 }
 
 fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(), Error> {
+    let mut config = Config::current();
+    let config_doc = Arc::make_mut(&mut config).doc_mut();
     let exe = env::current_exe()?;
     let app_dir = get_app_dir();
     let shims = app_dir.join("shims");
@@ -386,7 +390,7 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
 
     echo!();
     if !matches!(mode, InstallMode::NoPrompts)
-        && !dialoguer::Confirm::new()
+        && !dialoguer::Confirm::with_theme(tui_theme())
             .with_prompt("Continue?")
             .interact()?
     {
@@ -442,6 +446,24 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         style(self_path.display()).cyan()
     );
 
+    // If the global-python flag is not in the settings, ask the user if they want to turn
+    // on global shims upon installation.
+    if config_doc
+        .get("behavior")
+        .and_then(|x| x.get("global-python"))
+        .is_none()
+        && (matches!(mode, InstallMode::NoPrompts)
+            || dialoguer::Select::with_theme(tui_theme())
+                .with_prompt("Determine Rye's python Shim behavior outside of Rye managed projects")
+                .item("Make Rye's own Python distribution available")
+                .item("Transparently pass through to non Rye (system, pyenv, etc.) Python")
+                .default(0)
+                .interact()?
+                == 0)
+    {
+        config_doc.as_item_mut()["behavior"]["global-python"] = toml_edit::value(true);
+    }
+
     #[cfg(unix)]
     {
         if !env::split_paths(&env::var_os("PATH").unwrap())
@@ -477,6 +499,8 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
 
     echo!();
     echo!("{}", style("All done!").green());
+
+    config.save()?;
 
     Ok(())
 }
