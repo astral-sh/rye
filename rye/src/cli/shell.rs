@@ -8,6 +8,7 @@ use clap::Parser;
 use console::style;
 use sysinfo::{Pid, PidExt, ProcessExt, System, SystemExt};
 
+use crate::consts;
 use crate::pyproject::PyProject;
 use crate::sync::{sync, SyncOptions};
 use crate::tui::redirect_to_stderr;
@@ -68,11 +69,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .context("failed to sync ahead of shell")?;
 
     let venv_path = pyproject.venv_path();
-    let venv_bin = if env::consts::OS == "windows" {
-        venv_path.join("Scripts")
-    } else {
-        venv_path.join("bin")
-    };
+    let venv_bin = venv_path.join(consts::VENV_BIN);
 
     let s = get_shell()?;
     let sep = if is_ms_shells(s.as_str()) { ";" } else { ":" };
