@@ -398,6 +398,24 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         return Err(QuietExit(1).into());
     }
 
+    // If the global-python flag is not in the settings, ask the user if they want to turn
+    // on global shims upon installation.
+    if config_doc
+        .get("behavior")
+        .and_then(|x| x.get("global-python"))
+        .is_none()
+        && (matches!(mode, InstallMode::NoPrompts)
+            || dialoguer::Select::with_theme(tui_theme())
+                .with_prompt("Determine Rye's python Shim behavior outside of Rye managed projects")
+                .item("Make Rye's own Python distribution available")
+                .item("Transparently pass through to non Rye (system, pyenv, etc.) Python")
+                .default(0)
+                .interact()?
+                == 0)
+    {
+        config_doc.as_item_mut()["behavior"]["global-python"] = toml_edit::value(true);
+    }
+
     // place executable in rye home folder
     fs::create_dir_all(&shims).ok();
     if target.is_file() {
@@ -445,24 +463,6 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         "Updated self-python installation at {}",
         style(self_path.display()).cyan()
     );
-
-    // If the global-python flag is not in the settings, ask the user if they want to turn
-    // on global shims upon installation.
-    if config_doc
-        .get("behavior")
-        .and_then(|x| x.get("global-python"))
-        .is_none()
-        && (matches!(mode, InstallMode::NoPrompts)
-            || dialoguer::Select::with_theme(tui_theme())
-                .with_prompt("Determine Rye's python Shim behavior outside of Rye managed projects")
-                .item("Make Rye's own Python distribution available")
-                .item("Transparently pass through to non Rye (system, pyenv, etc.) Python")
-                .default(0)
-                .interact()?
-                == 0)
-    {
-        config_doc.as_item_mut()["behavior"]["global-python"] = toml_edit::value(true);
-    }
 
     #[cfg(unix)]
     {
