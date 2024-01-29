@@ -26,6 +26,9 @@ _Unreleased_
 
 - Upon installation Rye now prompts if global shims should be enabled.  #566
 
+- Add a warning about bugs to the `shell` command until the behavior has been
+  fixed.  #567
+
 <!-- released start -->
 
 ## 0.19.0
