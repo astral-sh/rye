@@ -14,7 +14,7 @@ use url::Url;
 use crate::bootstrap::ensure_self_venv;
 use crate::platform::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
-use crate::utils::{escape_string, get_venv_python_bin, CommandOutput};
+use crate::utils::{escape_string, get_venv_python_bin, tui_theme, CommandOutput};
 
 /// Publish packages to a package repository.
 #[derive(Parser, Debug)]
@@ -190,7 +190,7 @@ fn prompt_for_token() -> Result<String, Error> {
 
 fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, Error> {
     let phrase = if !yes {
-        dialoguer::Password::new()
+        dialoguer::Password::with_theme(tui_theme())
             .with_prompt("Encrypt with passphrase (optional)")
             .allow_empty_password(true)
             .report(false)
@@ -218,7 +218,7 @@ fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, 
 
 fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, Error> {
     let phrase = if !yes {
-        dialoguer::Password::new()
+        dialoguer::Password::with_theme(tui_theme())
             .with_prompt("Decrypt with passphrase (optional)")
             .allow_empty_password(true)
             .report(false)
