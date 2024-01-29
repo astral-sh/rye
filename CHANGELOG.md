@@ -24,6 +24,8 @@ _Unreleased_
 - Restore cursor state on Ctrl-C.  This fixes some issues where in rare cases the
   cursor would disappear even after shutting down rye.  #564
 
+- Upon installation Rye now prompts if global shims should be enabled.  #566
+
 <!-- released start -->
 
 ## 0.19.0
