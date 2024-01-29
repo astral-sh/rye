@@ -62,6 +62,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         bail!("cannot invoke recursive rye shell");
     }
 
+    warn!("this command is quite buggy and recommended against. Please activate the virtualenv instead.");
+
     let _guard = redirect_to_stderr(true);
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
     sync(SyncOptions::python_only().pyproject(cmd.pyproject))
