@@ -1,7 +1,8 @@
-use anyhow::{anyhow, Context, Error};
+use anyhow::{Context, Error};
 use clap::Parser;
 
 use crate::bootstrap::fetch;
+use crate::config::Config;
 use crate::platform::get_python_version_request_from_pyenv_pin;
 use crate::pyproject::PyProject;
 use crate::sources::PythonVersionRequest;
@@ -36,9 +37,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             if let Ok(pyproject) = PyProject::discover() {
                 pyproject.venv_python_version()?.into()
             } else {
-                get_python_version_request_from_pyenv_pin(&std::env::current_dir()?).ok_or_else(
-                    || anyhow!("not sure what to fetch, please provide an explicit version"),
-                )?
+                match get_python_version_request_from_pyenv_pin(&std::env::current_dir()?) {
+                    Some(version) => version,
+                    None => Config::current().default_toolchain()?,
+                }
             }
         }
     };
