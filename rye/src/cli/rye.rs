@@ -6,7 +6,7 @@ use std::process::Command;
 use std::sync::Arc;
 use std::{env, fs};
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::{CommandFactory, Parser};
 use clap_complete::Shell;
 use console::style;
@@ -16,12 +16,13 @@ use tempfile::tempdir;
 
 use crate::bootstrap::{
     download_url, download_url_ignore_404, ensure_self_venv, is_self_compatible_toolchain,
-    update_core_shims,
+    update_core_shims, SELF_PYTHON_TARGET_VERSION,
 };
 use crate::cli::toolchain::register_toolchain;
 use crate::config::Config;
 use crate::platform::{get_app_dir, symlinks_supported};
-use crate::utils::{check_checksum, tui_theme, CommandOutput, QuietExit};
+use crate::sources::{get_download_url, PythonVersionRequest};
+use crate::utils::{check_checksum, ensure_toml_table, tui_theme, CommandOutput, QuietExit};
 
 #[cfg(windows)]
 const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
@@ -344,11 +345,13 @@ fn is_fish() -> bool {
 
 fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(), Error> {
     let mut config = Config::current();
+    let mut registered_toolchain: Option<PythonVersionRequest> = None;
     let config_doc = Arc::make_mut(&mut config).doc_mut();
     let exe = env::current_exe()?;
     let app_dir = get_app_dir();
     let shims = app_dir.join("shims");
     let target = shims.join("rye").with_extension(EXE_EXTENSION);
+    let mut prompt_for_toolchain_later = false;
 
     echo!("{}", style("Welcome to Rye!").bold());
 
@@ -413,7 +416,18 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
                 .interact()?
                 == 0)
     {
-        config_doc.as_item_mut()["behavior"]["global-python"] = toml_edit::value(true);
+        ensure_toml_table(config_doc, "behavior")["global-python"] = toml_edit::value(true);
+
+        // configure the default toolchain.  If we are not using a pre-configured toolchain we
+        // can ask now, otherwise we need to wait for the toolchain to be available before we
+        // can fill in the default.
+        if !matches!(mode, InstallMode::NoPrompts) {
+            if toolchain_path.is_none() {
+                prompt_for_default_toolchain(SELF_PYTHON_TARGET_VERSION, config_doc)?;
+            } else {
+                prompt_for_toolchain_later = true;
+            }
+        }
     }
 
     // place executable in rye home folder
@@ -454,7 +468,8 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
             }
             Ok(())
         })?;
-        echo!("Registered toolchain as {}", style(version).cyan());
+        echo!("Registered toolchain as {}", style(&version).cyan());
+        registered_toolchain = Some(version.into());
     }
 
     // Ensure internals next
@@ -463,6 +478,11 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         "Updated self-python installation at {}",
         style(self_path.display()).cyan()
     );
+
+    // now that the registered toolchain is available, prompt now.
+    if prompt_for_toolchain_later {
+        prompt_for_default_toolchain(registered_toolchain.unwrap(), config_doc)?;
+    }
 
     #[cfg(unix)]
     {
@@ -502,6 +522,28 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
 
     config.save()?;
 
+    Ok(())
+}
+
+fn prompt_for_default_toolchain(
+    default_toolchain: PythonVersionRequest,
+    config_doc: &mut toml_edit::Document,
+) -> Result<(), Error> {
+    let choice = dialoguer::Input::with_theme(tui_theme())
+        .with_prompt("Which version of Python should be used as default toolchain?")
+        .default(default_toolchain.clone())
+        .validate_with(move |version: &PythonVersionRequest| {
+            // this is for ensuring that if a toolchain was registered manually we can
+            // accept it, even if it's not downloadable
+            if version == &default_toolchain {
+                return Ok(());
+            }
+            get_download_url(version)
+                .map(|_| ())
+                .ok_or_else(|| anyhow!("Unavailable version '{}'", version))
+        })
+        .interact_text()?;
+    ensure_toml_table(config_doc, "default")["toolchain"] = toml_edit::value(choice.to_string());
     Ok(())
 }
 
