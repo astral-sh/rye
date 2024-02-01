@@ -40,9 +40,17 @@ $ rye fmt -- --diff
 1 file would be reformatted, 231 files already formatted
 ```
 
+Format a specific file:
+
+```
+rye fmt src/foo.py
+```
+
 ## Arguments
 
-* `[EXTRA_ARGS]` Extra arguments to the formatter.
+* `[PATHS]...` List of files or directories to lint.  If not supplied all files are formatted.
+
+* `[EXTRA_ARGS]...` Extra arguments to the formatter.
 
     These arguments are forwarded directly to the underlying formatter (currently
     always `ruff`).  Note that extra arguments must be separated from other arguments

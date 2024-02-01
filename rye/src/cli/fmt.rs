@@ -15,6 +15,8 @@ use crate::utils::{CommandOutput, QuietExit};
 /// This invokes ruff in format mode.
 #[derive(Parser, Debug)]
 pub struct Args {
+    /// List of files or directories to format
+    paths: Vec<PathBuf>,
     /// Format all packages
     #[arg(short, long)]
     all: bool,
@@ -34,7 +36,7 @@ pub struct Args {
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
     /// Extra arguments to the formatter
-    #[arg(trailing_var_arg = true)]
+    #[arg(last = true)]
     extra_args: Vec<OsString>,
 }
 
@@ -62,9 +64,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     ruff_cmd.args(cmd.extra_args);
 
     ruff_cmd.arg("--");
-    let projects = locate_projects(project, cmd.all, &cmd.package[..])?;
-    for project in projects {
-        ruff_cmd.arg(project.root_path().as_os_str());
+    if cmd.paths.is_empty() {
+        let projects = locate_projects(project, cmd.all, &cmd.package[..])?;
+        for project in projects {
+            ruff_cmd.arg(project.root_path().as_os_str());
+        }
+    } else {
+        for file in cmd.paths {
+            ruff_cmd.arg(file.as_os_str());
+        }
     }
 
     let status = ruff_cmd.status()?;
