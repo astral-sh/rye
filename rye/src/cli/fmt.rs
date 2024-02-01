@@ -16,8 +16,7 @@ use crate::utils::{CommandOutput, QuietExit};
 #[derive(Parser, Debug)]
 pub struct Args {
     /// List of files or directories to format
-    #[clap()]
-    pub files: Vec<PathBuf>,
+    paths: Vec<PathBuf>,
     /// Format all packages
     #[arg(short, long)]
     all: bool,
@@ -65,13 +64,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     ruff_cmd.args(cmd.extra_args);
 
     ruff_cmd.arg("--");
-    if cmd.files.is_empty() {
+    if cmd.paths.is_empty() {
         let projects = locate_projects(project, cmd.all, &cmd.package[..])?;
         for project in projects {
             ruff_cmd.arg(project.root_path().as_os_str());
         }
     } else {
-        for file in cmd.files {
+        for file in cmd.paths {
             ruff_cmd.arg(file.as_os_str());
         }
     }

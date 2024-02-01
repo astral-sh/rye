@@ -32,9 +32,17 @@ To pass extra arguments:
 $ rye lint -- --watch
 ```
 
+Lint a specific file:
+
+```
+rye lint src/foo.py
+```
+
 ## Arguments
 
-* `[EXTRA_ARGS]` Extra arguments to the linter.
+* `[PATHS]...` List of files or directories to lint.  If not supplied all files are linted.
+
+* `[EXTRA_ARGS]...` Extra arguments to the linter.
 
     These arguments are forwarded directly to the underlying linter (currently
     always `ruff`).  Note that extra arguments must be separated from other arguments
