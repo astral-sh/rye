@@ -31,12 +31,12 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     arch: None,
     os: None,
     major: 3,
-    minor: Some(11),
+    minor: Some(12),
     patch: None,
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 8;
+const SELF_VERSION: u64 = 9;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.0.3

@@ -11,6 +11,11 @@ _Unreleased_
   global shims were not properly defaulted which required the user to be explicit
   with the fetch request.  #574
 
+- The rye installer now prompts for the default toolchain version if global shims
+  are enabled.  #576
+
+- The internal Python version was bumped to 3.12.  #576
+
 <!-- released start -->
 
 ## 0.20.0

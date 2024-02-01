@@ -387,6 +387,21 @@ pub fn reformat_toml_array_multiline(deps: &mut Array) {
     deps.set_trailing_comma(true);
 }
 
+/// Given a toml document, ensures that a given named table exists toplevel.
+///
+/// The table is created as a non inline table which is the preferred style.
+pub fn ensure_toml_table<'a>(
+    doc: &'a mut toml_edit::Document,
+    name: &str,
+) -> &'a mut toml_edit::Item {
+    if doc.as_item().get(name).is_none() {
+        let mut tbl = toml_edit::Table::new();
+        tbl.set_implicit(true);
+        doc.as_item_mut()[name] = toml_edit::Item::Table(tbl);
+    }
+    &mut doc.as_item_mut()[name]
+}
+
 pub fn escape_string(s: String) -> String {
     s.trim().replace(['\\', '"'], "")
 }
