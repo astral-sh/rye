@@ -3,27 +3,19 @@ hide:
   - navigation
 ---
 
-# Rye: A New Kind Of Package Management Solution for Python
+<div style="text-align: center">
+  <img src="static/logo.svg" style="width: 64px; margin-bottom: 10px">
+  <h1><strong>Rye:</strong> a Hassle-Free Python Experience</h1>
+</div>
 
-Rye is a project and package management solution for Python, created by
-[Armin](https://github.com/mitsuhiko/).  It came out of his desire to create a
-one-stop-shop for all Python needs.  It installs and manages Python
-installations, manages `pyproject.toml` files, installs and uninstalls
-dependencies, manages virtualenvs behind the scenes.  It supports monorepos,
-global tool installations.
+Rye is a comprehensive project and package management solution for Python.
+Born from [its creators](https://github.com/mitsuhiko) desire to establish a
+one-stop-shop for all Python users, Rye provides a unified experience to install and manages Python
+installations, `pyproject.toml` based projects, dependencies and virtualenvs
+seamlessly.  It's designed to accomodate complex projects, monorepos and to
+facilitate global tool installations.
 
-Rye is an experimental endeavour to build a new type of packaging experience to
-Python inspired by `rustup` and `cargo` from Rust.  Please give it a try.
-Feedback and suggestions are greatly appreciated.
-
-**What it does:**
-
-* Download and manage Python interpreters
-* Manage Projects
-* Manage your dependencies via [pip-tools](https://github.com/jazzband/pip-tools)
-* [Manage your virtualenvs](guide/sync.md)
-* Simple way to [invoke scripts](guide/pyproject.md#toolryescripts)
-* Lint and format via [Ruff](https://astral.sh/ruff)
+A hassle-free experience for Python developers at every level.
 
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <p align="center">
