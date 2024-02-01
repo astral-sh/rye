@@ -7,6 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- `rye fetch` now is able to fetch impliciit version in all cases.  Previously
+  global shims were not properly defaulted which required the user to be explicit
+  with the fetch request.  #574
+
 <!-- released start -->
 
 ## 0.20.0
