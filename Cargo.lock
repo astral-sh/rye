@@ -1219,7 +1219,7 @@ dependencies = [
 [[package]]
 name = "monotrail-utils"
 version = "0.0.1"
-source = "git+https://github.com/konstin/poc-monotrail#9d3892a57ecc117d35f084870e5d4e74fc39a240"
+source = "git+https://github.com/konstin/poc-monotrail?rev=136807e1fe87e9319e0223f76b602ba5db881322#136807e1fe87e9319e0223f76b602ba5db881322"
 dependencies = [
  "anyhow",
  "cpufeatures",
@@ -1237,7 +1237,7 @@ dependencies = [
  "tracing",
  "unscanny",
  "ureq",
- "zstd 0.12.4",
+ "zstd 0.13.0",
 ]
 
 [[package]]
