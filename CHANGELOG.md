@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.20.0
 
-_Unreleased_
+Released on 2024-02-01
 
 - Improved the error message when an update could not be performed because files
   are in use.  #550
@@ -28,8 +30,6 @@ _Unreleased_
 
 - Add a warning about bugs to the `shell` command until the behavior has been
   fixed.  #567
-
-<!-- released start -->
 
 ## 0.19.0
 
