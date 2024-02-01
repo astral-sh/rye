@@ -55,7 +55,7 @@ bzip2 = "0.4.4"
 zip = { version = "0.6.5", features = ["deflate"], default-features = false }
 self-replace = "1.3.5"
 configparser = "3.0.2"
-monotrail-utils = { git = "https://github.com/konstin/poc-monotrail", version = "0.0.1" }
+monotrail-utils = { git = "https://github.com/konstin/poc-monotrail", rev = "136807e1fe87e9319e0223f76b602ba5db881322" }
 python-pkginfo = { version = "0.6.0", features = ["serde"] }
 sysinfo = { version = "0.29.4", default-features = false, features = [] }
 home = "0.5.9"
