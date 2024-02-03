@@ -308,9 +308,9 @@ pub fn get_pip_module(venv: &Path) -> Result<PathBuf, Error> {
     Ok(rv)
 }
 
-/// we only support cpython 3.9 to 3.11
+/// we only support cpython 3.9 to 3.12
 pub fn is_self_compatible_toolchain(version: &PythonVersion) -> bool {
-    version.name == "cpython" && version.major == 3 && version.minor >= 9 && version.minor < 12
+    version.name == "cpython" && version.major == 3 && version.minor >= 9 && version.minor <= 12
 }
 
 fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> {
