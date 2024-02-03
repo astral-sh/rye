@@ -16,6 +16,8 @@ _Unreleased_
 
 - The internal Python version was bumped to 3.12.  #576
 
+- The installer now can automatically add Rye to `PATH` on most UNIX environments.  #580
+
 <!-- released start -->
 
 ## 0.20.0
