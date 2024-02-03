@@ -23,8 +23,8 @@ from perfect, but always improving.  It also asks the question:
 **[Should it exist?](https://github.com/mitsuhiko/rye/discussions/6)**
 
 <div align="center">
-  <a href="https://youtu.be/CyI8TBuKPF0">
-    <img src="https://img.youtube.com/vi/CyI8TBuKPF0/sddefault.jpg" alt="Watch the instruction" width="40%">
+  <a href="https://youtu.be/q99TYA7LnuA">
+    <img src="https://img.youtube.com/vi/q99TYA7nuA/sddefault.jpg" alt="Watch the instruction" width="40%">
   </a>
   <p><em>Click on the thumbnail to watch a 9 minute introduction video</em></p>
 </div>
