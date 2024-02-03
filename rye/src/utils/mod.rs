@@ -32,6 +32,9 @@ pub fn tui_theme() -> &'static dyn Theme {
 #[cfg(windows)]
 pub(crate) mod windows;
 
+#[cfg(unix)]
+pub(crate) mod unix;
+
 #[cfg(windows)]
 pub fn symlink_dir<P, Q>(original: P, link: Q) -> Result<(), std::io::Error>
 where

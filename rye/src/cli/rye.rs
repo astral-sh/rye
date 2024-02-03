@@ -484,6 +484,7 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
         prompt_for_default_toolchain(registered_toolchain.unwrap(), config_doc)?;
     }
 
+    let rye_home = Path::new(&*rye_home);
     #[cfg(unix)]
     {
         if !env::split_paths(&env::var_os("PATH").unwrap())
@@ -496,23 +497,45 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
                 style("PATH").cyan()
             );
             echo!("It is highly recommended that you add it.");
-            echo!("Add this at the end of your .profile, .zprofile or similar:");
+
+            if matches!(mode, InstallMode::NoPrompts)
+                || dialoguer::Confirm::with_theme(tui_theme())
+                    .with_prompt(format!(
+                        "Should the installer add Rye to {} via .profile?",
+                        style("PATH").cyan()
+                    ))
+                    .interact()?
+            {
+                crate::utils::unix::add_to_path(rye_home)?;
+                echo!("Added to {}.", style("PATH").cyan());
+                echo!(
+                    "{}: for this to take effect you will need to restart your shell or run this manually:",
+                    style("note").cyan()
+                );
+            } else {
+                echo!(
+                    "{}: did not manipulate the path. To make it work, add this to your .profile manually:",
+                    style("note").cyan()
+                );
+            }
+
             echo!();
-            echo!("    source \"{}/env\"", rye_home);
+            echo!("    source \"{}/env\"", rye_home.display());
             echo!();
             if is_fish() {
                 echo!("To make it work with fish, run this once instead:");
                 echo!();
-                echo!("    set -Ua fish_user_paths \"{}/shims\"", rye_home);
+                echo!(
+                    "    set -Ua fish_user_paths \"{}/shims\"",
+                    rye_home.display()
+                );
                 echo!();
             }
-            echo!("Note: after adding rye to your path, restart your shell for it to take effect.");
             echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
         }
     }
     #[cfg(windows)]
     {
-        let rye_home = Path::new(&*rye_home);
         crate::utils::windows::add_to_programs(rye_home)?;
         crate::utils::windows::add_to_path(rye_home)?;
     }
