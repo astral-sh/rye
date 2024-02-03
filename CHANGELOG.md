@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.21.0
 
-_Unreleased_
+Released on 2024-02-03
 
 - `rye fetch` now is able to fetch impliciit version in all cases.  Previously
   global shims were not properly defaulted which required the user to be explicit
@@ -17,8 +19,6 @@ _Unreleased_
 - The internal Python version was bumped to 3.12.  #576
 
 - The installer now can automatically add Rye to `PATH` on most UNIX environments.  #580
-
-<!-- released start -->
 
 ## 0.20.0
 
