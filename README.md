@@ -26,7 +26,7 @@ from perfect, but always improving.  It also asks the question:
   <a href="https://youtu.be/q99TYA7LnuA">
     <img src="https://img.youtube.com/vi/q99TYA7LnuA/hqdefault.jpg" alt="Watch the instruction" width="40%">
   </a>
-  <p><em>Click on the thumbnail to watch a 9 minute introduction video</em></p>
+  <p><em>Click on the thumbnail to watch a 16 minute introduction video</em></p>
 </div>
 
 Learn more:
