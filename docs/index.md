@@ -9,7 +9,7 @@ hide:
 </div>
 
 Rye is a comprehensive project and package management solution for Python.
-Born from [its creators](https://github.com/mitsuhiko) desire to establish a
+Born from [its creator's](https://github.com/mitsuhiko) desire to establish a
 one-stop-shop for all Python users, Rye provides a unified experience to install and manages Python
 installations, `pyproject.toml` based projects, dependencies and virtualenvs
 seamlessly.  It's designed to accommodate complex projects, monorepos and to
