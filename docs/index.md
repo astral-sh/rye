@@ -4,7 +4,7 @@ hide:
 ---
 
 <div style="text-align: center">
-  <img src="static/logo.svg" style="width: 64px; margin-bottom: 10px">
+  <img src="static/logo-auto.svg" style="width: 64px; margin-bottom: 10px">
   <h1><strong>Rye:</strong> a Hassle-Free Python Experience</h1>
 </div>
 
