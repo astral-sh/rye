@@ -11,16 +11,14 @@
 
 </div>
 
-Rye is a project and package management solution for Python, created by
-[Armin](https://github.com/mitsuhiko/).  It came out of his desire to create a
-one-stop-shop for all Python needs. It installs and manages Python
-installations, manages `pyproject.toml` files, installs and uninstalls
-dependencies, manages virtualenvs behind the scenes. It supports monorepos and
-global tool installations.
+Rye is a comprehensive project and package management solution for Python.
+Born from [its creator's](https://github.com/mitsuhiko) desire to establish a
+one-stop-shop for all Python users, Rye provides a unified experience to install and manages Python
+installations, `pyproject.toml` based projects, dependencies and virtualenvs
+seamlessly.  It's designed to accommodate complex projects, monorepos and to
+facilitate global tool installations.  Curious? [Watch an introduction](https://youtu.be/q99TYA7LnuA).
 
-It is a wish of what Python was, an exploration of what is possible. It's far
-from perfect, but always improving.  It also asks the question:
-**[Should it exist?](https://github.com/mitsuhiko/rye/discussions/6)**
+A hassle-free experience for Python developers at every level.
 
 <div align="center">
   <a href="https://youtu.be/q99TYA7LnuA">
