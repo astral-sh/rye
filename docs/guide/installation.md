@@ -7,7 +7,7 @@ Windows.
 ## Installing Rye
 
 Rye is installed per-user and self manages itself.  It will install itself into
-a folder in your home directory and mange itself there.
+a folder in your home directory and manage itself there.
 
 {% include-markdown "../.includes/quick-install.md" %}
 
