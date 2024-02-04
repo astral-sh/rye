@@ -1,6 +1,6 @@
 <div align="center">
   <img src="docs/static/favicon.svg" width="100">
-  <p><strong>Rye:</strong> An Experimental Package Management Solution for Python</p>
+  <p><strong>Rye:</strong> a Hassle-Free Python Experience</p>
 </div>
 
 ----
