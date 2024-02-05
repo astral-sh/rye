@@ -34,7 +34,7 @@ impl PipToolsVersion {
 
 fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<PathBuf, Error> {
     let self_venv = ensure_self_venv(output)?;
-    let venv = get_pip_tools_venv(py_ver);
+    let venv = get_pip_tools_venv_path(py_ver);
 
     let py = get_venv_python_bin(&venv);
     let version = get_pip_tools_version(py_ver);
@@ -77,7 +77,7 @@ pub fn get_pip_tools_version(py_ver: &PythonVersion) -> PipToolsVersion {
     }
 }
 
-pub fn get_pip_tools_venv(py_ver: &PythonVersion) -> PathBuf {
+pub fn get_pip_tools_venv_path(py_ver: &PythonVersion) -> PathBuf {
     let key = format!("{}@{}.{}", py_ver.name, py_ver.major, py_ver.minor);
     get_app_dir().join("pip-tools").join(key)
 }
