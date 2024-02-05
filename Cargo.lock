@@ -1840,6 +1840,7 @@ dependencies = [
  "which",
  "winapi",
  "winreg",
+ "xattr",
  "zip",
  "zstd 0.13.0",
 ]

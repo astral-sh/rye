@@ -52,6 +52,36 @@ where
     }
 }
 
+/// Given the path to a folder this adds or removes a cloud sync flag
+/// on the folder.
+///
+/// Today this only supports dropbox and apple icloud.
+pub fn mark_path_sync_ignore(venv: &Path, mark_ignore: bool) -> Result<(), Error> {
+    #[cfg(unix)]
+    {
+        for flag in ["com.dropbox.ignored", "com.apple.fileprovider.ignore#P"] {
+            if mark_ignore {
+                xattr::set(venv, flag, b"1")?;
+            } else {
+                xattr::remove(venv, flag)?;
+            }
+        }
+    }
+
+    #[cfg(windows)]
+    {
+        let mut stream_path = venv.as_os_str().to_os_string();
+        stream_path.push(":com.dropbox.ignored");
+        if mark_ignore {
+            fs::write(stream_path, b"1")?;
+        } else {
+            fs::remove_file(stream_path).ok();
+        }
+    }
+
+    Ok(())
+}
+
 #[derive(Debug)]
 pub struct QuietExit(pub i32);
 
