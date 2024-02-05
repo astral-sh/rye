@@ -1065,7 +1065,8 @@ pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion
 
 /// Give a given python version request, returns the latest available version.
 ///
-/// This can return a version that requires downloading.
+/// This can return a version that requires downloading but only if no matching
+/// Python version was found locally.
 pub fn latest_available_python_version(
     requested_version: &PythonVersionRequest,
 ) -> Option<PythonVersion> {
@@ -1084,9 +1085,13 @@ pub fn latest_available_python_version(
         Vec::new()
     };
 
-    if let Some((latest, _, _)) = get_download_url(requested_version) {
-        all.push(latest);
-    };
+    // if we don't have a match yet, try to fill it in with the latest
+    // version we are capable of fetching from the internet.
+    if all.is_empty() {
+        if let Some((latest, _, _)) = get_download_url(requested_version) {
+            all.push(latest);
+        };
+    }
 
     all.sort();
     all.into_iter().next_back()

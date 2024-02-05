@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -39,8 +40,17 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
     let py = get_venv_python_bin(&venv);
     let version = get_pip_tools_version(py_ver);
 
+    // if we have a python interpreter in the given path, let's use it
     if venv.join(&py).is_file() {
         return Ok(venv);
+    }
+
+    // if however for some reason the virtualenv itself is already a folder
+    // it usually means that the symlink to the python is bad now.  This can
+    // happen if someone wiped the toolchain of the pip-tools version.  In
+    // that case wipe it first.
+    if venv.is_dir() {
+        fs::remove_dir_all(&venv).context("unable to wipe old virtualenv for pip-tools")?;
     }
 
     if output != CommandOutput::Quiet {
