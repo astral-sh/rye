@@ -9,6 +9,7 @@ use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
 use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::lock::{
     make_project_root_fragment, update_single_project_lockfile, update_workspace_lockfile,
@@ -18,7 +19,9 @@ use crate::piptools::{get_pip_sync, get_pip_tools_venv};
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{read_venv_marker, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
-use crate::utils::{get_venv_python_bin, set_proxy_variables, symlink_dir, CommandOutput};
+use crate::utils::{
+    get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
+};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -302,6 +305,16 @@ pub fn create_virtualenv(
     venv: &Path,
     prompt: &str,
 ) -> Result<(), Error> {
+    // create the venv folder first so we can manipulate some flags on it.
+    fs::create_dir(venv)
+        .with_context(|| format!("unable to create virtualenv folder '{}'", venv.display()))?;
+
+    if let Err(err) = mark_path_sync_ignore(venv, Config::current().venv_mark_sync_ignore()) {
+        if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
+            warn!("unable to mark virtualenv ignored for cloud sync: {}", err);
+        }
+    }
+
     let py_bin = get_toolchain_python_bin(py_ver)?;
     let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
     if output == CommandOutput::Verbose {

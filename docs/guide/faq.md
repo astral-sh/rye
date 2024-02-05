@@ -149,3 +149,19 @@ wheel is built:
 [tool.hatch.build.targets.sdist]
 include = ["src/my_package", "tests"]
 ```
+
+## Can I Relocate Virtualenvs?
+
+Rye very intentionally places the virtualenv (`.venv`) in the root folder of the
+workspace.  Relocations of virtualenvs is not supported.  This is a very intentional
+decision so that tools do not need to deal with various complex alternatives and can
+rely on a simple algorithm to locate it.  This is a form of convention over configuration
+and can also assist editor integrations.
+
+There are some known downsides of this.  For instance if you are placing your projects
+in Dropbox, it would cause this folder to synchronize.  As a way to combat this, Rye
+will automatically mark the virtualenv with the necessary flags to disable cloud sync
+of known supported cloud synchronization systems.
+
+For override this behavior you can set the `behavior.venv-mark-sync-ignore` configuration
+key to `false`.

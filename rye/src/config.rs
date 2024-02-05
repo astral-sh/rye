@@ -186,6 +186,15 @@ impl Config {
             .unwrap_or(false)
     }
 
+    /// Mark the `.venv` to not sync to cloud storage
+    pub fn venv_mark_sync_ignore(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("venv-mark-sync-ignore"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true)
+    }
+
     /// Returns the HTTP proxy that should be used.
     pub fn http_proxy_url(&self) -> Option<String> {
         std::env::var("http_proxy").ok().or_else(|| {
