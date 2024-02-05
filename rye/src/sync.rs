@@ -15,7 +15,7 @@ use crate::lock::{
     make_project_root_fragment, update_single_project_lockfile, update_workspace_lockfile,
     LockMode, LockOptions,
 };
-use crate::piptools::{get_pip_sync, get_pip_tools_venv};
+use crate::piptools::{get_pip_sync, get_pip_tools_venv_path};
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{read_venv_marker, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
@@ -247,15 +247,19 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 echo!("Installing dependencies");
             }
             let tempdir = tempdir()?;
+            let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
+            let root = pyproject.workspace_path();
+            let py_path = get_venv_python_bin(&venv);
+
+            // we need to run this after we have run the `get_pip_sync` command
+            // as this is what bootstraps or updates the pip tools installation.
+            // This is needed as on unix platforms we need to search the module path.
             symlink_dir(
-                get_pip_module(&get_pip_tools_venv(&py_ver)).context("could not locate pip")?,
+                get_pip_module(&get_pip_tools_venv_path(&py_ver))
+                    .context("could not locate pip")?,
                 tempdir.path().join("pip"),
             )
             .context("failed linking pip module into for pip-sync")?;
-            let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
-            let root = pyproject.workspace_path();
-
-            let py_path = get_venv_python_bin(&venv);
 
             pip_sync_cmd
                 .env("PROJECT_ROOT", make_project_root_fragment(&root))
