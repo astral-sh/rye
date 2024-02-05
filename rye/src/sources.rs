@@ -118,11 +118,7 @@ impl From<PythonVersion> for Version {
     fn from(value: PythonVersion) -> Self {
         Version {
             epoch: 0,
-            release: vec![
-                value.major as u64,
-                value.minor as u64,
-                value.patch as u64,
-            ],
+            release: vec![value.major as u64, value.minor as u64, value.patch as u64],
             pre: None,
             post: None,
             dev: None,
