@@ -40,6 +40,12 @@
     ./rye-aarch64-macos
     ```
 
+    Finally, Rye is also available in [Homebrew](https://formulae.brew.sh/formula/rye#default). This install method is *not* maintained by Rye.
+
+    ```bash
+    brew install rye
+    ```
+
 === "Windows"
 
     To install Rye on windows download the latest release and run the binary.  Upon
@@ -51,7 +57,7 @@
     * [rye-x86-windows.exe](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86-windows.exe) for 32bit Intel Windows
 
     !!!Note
-    
+
         Rye does not yet use signed binaries which means that you will need to allow
         the execution of the downloaded executable.  If there is no obvious way to do so, click
         on "More info" on the error message that shows up and then on "Run anyway".
