@@ -32,7 +32,7 @@ minijinja = { version = "1.0.0", features = ["json"] }
 nix = { version = "0.27.1", default-features = false, features = ["process"] }
 once_cell = "1.17.1"
 pathdiff = "0.2.1"
-pep440_rs = "0.3.11"
+pep440_rs = "0.4.0"
 pep508_rs = "0.2.1"
 regex = "1.8.1"
 same-file = "1.0.6"
