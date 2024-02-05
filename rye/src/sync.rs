@@ -159,6 +159,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         {
             echo!("Reusing already existing virtualenv");
         }
+        update_venv_sync_marker(output, &venv);
     } else {
         if output != CommandOutput::Quiet {
             echo!(
@@ -309,11 +310,7 @@ pub fn create_virtualenv(
     fs::create_dir(venv)
         .with_context(|| format!("unable to create virtualenv folder '{}'", venv.display()))?;
 
-    if let Err(err) = mark_path_sync_ignore(venv, Config::current().venv_mark_sync_ignore()) {
-        if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
-            warn!("unable to mark virtualenv ignored for cloud sync: {}", err);
-        }
-    }
+    update_venv_sync_marker(output, venv);
 
     let py_bin = get_toolchain_python_bin(py_ver)?;
     let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
@@ -346,6 +343,16 @@ pub fn create_virtualenv(
     }
 
     Ok(())
+}
+
+/// Update the cloud synchronization marker for the given path
+/// based on the config flag.
+fn update_venv_sync_marker(output: CommandOutput, venv_path: &Path) {
+    if let Err(err) = mark_path_sync_ignore(venv_path, Config::current().venv_mark_sync_ignore()) {
+        if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
+            warn!("unable to mark virtualenv ignored for cloud sync: {}", err);
+        }
+    }
 }
 
 #[cfg(unix)]
