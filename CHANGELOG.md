@@ -10,6 +10,8 @@ _Unreleased_
 - Virtual envs managed by Rye will now by default be marked to not sync to
   known cloud storage systems (Dropbox and iCloud).  #589
 
+- Fixed a bug where pip-tools sometimes did not get initialized.  #596
+
 <!-- released start -->
 
 ## 0.21.0
