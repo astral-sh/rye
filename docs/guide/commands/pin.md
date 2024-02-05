@@ -7,6 +7,12 @@ Additionally it will update `requires-python` in the `pyproject.toml` if it's
 lower than the current version.  This can be disabled by passing
 `--no-update-requires-python`.
 
+Which toolchain Rye prefers depends on the Rye version.  From 0.22 onwards
+the latest compatible installed toolchain is picked, and only if a non
+existing one is found a download will be attempted.  For older versions
+Rye will always attempt to download the latest available if it's not
+installed yet unless a precise pin is selected.
+
 ## Example
 
 Pin a specific version of Python:

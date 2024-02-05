@@ -12,6 +12,9 @@ _Unreleased_
 
 - Fixed a bug where pip-tools sometimes did not get initialized.  #596
 
+- Rye now prefers installed toolchains over newer latest toolchains unless
+  a precise pin is used.  #598
+
 <!-- released start -->
 
 ## 0.21.0
