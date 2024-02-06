@@ -15,6 +15,8 @@ _Unreleased_
 - Rye now prefers installed toolchains over newer latest toolchains unless
   a precise pin is used.  #598
 
+- Removed the non functional `shell` command.  #602
+
 <!-- released start -->
 
 ## 0.21.0
