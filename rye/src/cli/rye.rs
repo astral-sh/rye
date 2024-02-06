@@ -406,6 +406,18 @@ fn perform_install(
     echo!("{}", style("Details:").bold());
     echo!("  Rye Version: {}", style(env!("CARGO_PKG_VERSION")).cyan());
     echo!("  Platform: {} ({})", style(OS).cyan(), style(ARCH).cyan());
+    if let Some(ref toolchain_path) = toolchain_path {
+        echo!(
+            "  Internal Toolchain Path: {}",
+            style(toolchain_path.display()).cyan()
+        );
+    }
+    if let Some(ref toolchain_version_request) = toolchain_version_request {
+        echo!(
+            "  Internal Toolchain Version: {}",
+            style(toolchain_version_request).cyan()
+        );
+    }
 
     if cfg!(windows) && !symlinks_supported() {
         echo!();
@@ -451,7 +463,12 @@ fn perform_install(
         // can fill in the default.
         if !matches!(mode, InstallMode::NoPrompts) {
             if toolchain_path.is_none() {
-                prompt_for_default_toolchain(SELF_PYTHON_TARGET_VERSION, config_doc)?;
+                prompt_for_default_toolchain(
+                    toolchain_version_request
+                        .clone()
+                        .unwrap_or(SELF_PYTHON_TARGET_VERSION),
+                    config_doc,
+                )?;
             } else {
                 prompt_for_toolchain_later = true;
             }
