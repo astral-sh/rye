@@ -15,8 +15,8 @@ use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
 use crate::bootstrap::{
-    download_url, download_url_ignore_404, ensure_self_venv, is_self_compatible_toolchain,
-    update_core_shims, SELF_PYTHON_TARGET_VERSION,
+    download_url, download_url_ignore_404, ensure_self_venv_with_toolchain,
+    is_self_compatible_toolchain, update_core_shims, SELF_PYTHON_TARGET_VERSION,
 };
 use crate::cli::toolchain::register_toolchain;
 use crate::config::Config;
@@ -93,6 +93,9 @@ pub struct InstallCommand {
     /// Register a specific toolchain before bootstrap.
     #[arg(long)]
     toolchain: Option<PathBuf>,
+    /// Use a specific toolchain version.
+    #[arg(long)]
+    toolchain_version: Option<PythonVersionRequest>,
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -259,6 +262,7 @@ fn install(args: InstallCommand) -> Result<(), Error> {
             InstallMode::Default
         },
         args.toolchain.as_deref(),
+        args.toolchain_version,
     )
 }
 
@@ -343,7 +347,11 @@ fn is_fish() -> bool {
     Shell::infer().map_or(false, |x| matches!(x, Shell::Fish))
 }
 
-fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(), Error> {
+fn perform_install(
+    mode: InstallMode,
+    toolchain_path: Option<&Path>,
+    toolchain_version: Option<PythonVersionRequest>,
+) -> Result<(), Error> {
     let mut config = Config::current();
     let mut registered_toolchain: Option<PythonVersionRequest> = None;
     let config_doc = Arc::make_mut(&mut config).doc_mut();
@@ -352,6 +360,26 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     let shims = app_dir.join("shims");
     let target = shims.join("rye").with_extension(EXE_EXTENSION);
     let mut prompt_for_toolchain_later = false;
+
+    // When we perform an install and a toolchain path has not been passed,
+    // we always also pick up on the RYE_TOOLCHAIN environment variable
+    // as a fallback.
+    let toolchain_path = match toolchain_path {
+        Some(path) => Some(Cow::Borrowed(path)),
+        None => env::var_os("RYE_TOOLCHAIN")
+            .map(PathBuf::from)
+            .map(Cow::Owned),
+    };
+
+    // Also pick up the target version from the RYE_TOOLCHAIN_VERSION
+    // environment variable.
+    let toolchain_version_request = match toolchain_version {
+        Some(version) => Some(version),
+        None => match env::var("RYE_TOOLCHAIN_VERSION") {
+            Ok(val) => Some(val.parse()?),
+            Err(_) => None,
+        },
+    };
 
     echo!("{}", style("Welcome to Rye!").bold());
 
@@ -457,7 +485,7 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
             "Registering toolchain at {}",
             style(toolchain_path.display()).cyan()
         );
-        let version = register_toolchain(toolchain_path, None, |ver| {
+        let version = register_toolchain(&toolchain_path, None, |ver| {
             if ver.name != "cpython" {
                 bail!("Only cpython toolchains are allowed, got '{}'", ver.name);
             } else if !is_self_compatible_toolchain(ver) {
@@ -473,7 +501,8 @@ fn perform_install(mode: InstallMode, toolchain_path: Option<&Path>) -> Result<(
     }
 
     // Ensure internals next
-    let self_path = ensure_self_venv(CommandOutput::Normal)?;
+    let self_path =
+        ensure_self_venv_with_toolchain(CommandOutput::Normal, toolchain_version_request)?;
     echo!(
         "Updated self-python installation at {}",
         style(self_path.display()).cyan()
@@ -576,10 +605,6 @@ pub fn auto_self_install() -> Result<bool, Error> {
         return Ok(false);
     }
 
-    // auto install reads RYE_TOOLCHAIN to pre-register a
-    // regular toolchain.
-    let toolchain_path = env::var_os("RYE_TOOLCHAIN");
-
     let app_dir = get_app_dir();
     let rye_exe = app_dir
         .join("shims")
@@ -597,10 +622,7 @@ pub fn auto_self_install() -> Result<bool, Error> {
             crate::request_continue_prompt();
         }
 
-        perform_install(
-            InstallMode::AutoInstall,
-            toolchain_path.as_ref().map(Path::new),
-        )?;
+        perform_install(InstallMode::AutoInstall, None, None)?;
         Ok(true)
     }
 }
