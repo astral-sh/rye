@@ -16,7 +16,6 @@ This is a list of all the commands that rye provides:
 * [publish](publish.md): Publish packages to a package repository
 * [remove](remove.md): Remove a dependency from this project
 * [run](run.md): Runs a command installed into this package
-* [shell](shell.md): Spawns a shell with the virtualenv activated
 * [show](show.md): Prints the current state of the project
 * [sync](sync.md): Updates the virtualenv based on the pyproject.toml
 * [toolchain](toolchain/index.md): Helper utility to manage Python toolchains
