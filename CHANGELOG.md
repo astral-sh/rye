@@ -20,6 +20,8 @@ _Unreleased_
 - Upgraded internal unearth dependency which resolved an issue where
   `rye add tensorflow` would not work.  #614
 
+- The installer now supports `RYE_TOOLCHAIN_VERSION`.  #606
+
 <!-- released start -->
 
 ## 0.21.0
