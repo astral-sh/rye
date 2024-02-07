@@ -311,7 +311,7 @@ pub fn create_virtualenv(
     prompt: &str,
 ) -> Result<(), Error> {
     // create the venv folder first so we can manipulate some flags on it.
-    fs::create_dir(venv)
+    fs::create_dir_all(venv)
         .with_context(|| format!("unable to create virtualenv folder '{}'", venv.display()))?;
 
     update_venv_sync_marker(output, venv);
