@@ -10,7 +10,7 @@ compilation of Rye if Rust is installed.
 Update to the latest version:
 
 ```
-$ rye self udpate
+$ rye self update
 ```
 
 Update (or downgrade)  to a specific version:
