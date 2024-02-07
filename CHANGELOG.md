@@ -17,6 +17,9 @@ _Unreleased_
 
 - Removed the non functional `shell` command.  #602
 
+- Upgraded internal unearth dependency which resolved an issue where
+  `rye add tensorflow` would not work.  #614
+
 <!-- released start -->
 
 ## 0.21.0
