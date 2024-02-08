@@ -22,6 +22,8 @@ _Unreleased_
 
 - The installer now supports `RYE_TOOLCHAIN_VERSION`.  #606
 
+- `rye init` will no longer create packages with leading digits.  #616
+
 <!-- released start -->
 
 ## 0.21.0
