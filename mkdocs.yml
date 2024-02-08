@@ -37,7 +37,6 @@ nav:
       - publish: guide/commands/publish.md
       - remove: guide/commands/remove.md
       - run: guide/commands/run.md
-      - shell: guide/commands/shell.md
       - show: guide/commands/show.md
       - sync: guide/commands/sync.md
       - toolchain:
