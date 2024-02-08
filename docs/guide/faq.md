@@ -88,7 +88,7 @@ curl -sSf https://rye-up.com/get | bash
 ## References to Build-Time Paths
 
 The prefers using standalone Python builds.  As Python historically is not much
-accomodating to portable builds there are various limitations still with this
+accommodating to portable builds there are various limitations still with this
 approach.  One of them is that built Python distributions capture some absolute
 paths and other build-time configuration.  These file paths are then often used
 by build tools to invoke C compilers.  For instance you might run into a compiler
@@ -96,7 +96,7 @@ error like ``error: stdio.h: No such file or directory`` when building C
 extensions.  There is no known solution to this problem today other than
 [registering a non portable toolchain](toolchains/index.md#registering-toolchains).
 
-This issue is inherited from `python-build-standalone` and more informations can
+This issue is inherited from `python-build-standalone` and more information can
 be found in the documentation: [References to Build-Time Paths](https://gregoryszorc.com/docs/python-build-standalone/main/quirks.html#references-to-build-time-paths).  There is also an open 
 Rye issue for it: [Issue #621](https://github.com/mitsuhiko/rye/issues/621).
 
