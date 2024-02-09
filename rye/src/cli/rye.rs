@@ -22,7 +22,7 @@ use crate::cli::toolchain::register_toolchain;
 use crate::config::Config;
 use crate::platform::{get_app_dir, symlinks_supported};
 use crate::sources::{get_download_url, PythonVersionRequest};
-use crate::utils::{check_checksum, ensure_toml_table, tui_theme, CommandOutput, QuietExit};
+use crate::utils::{check_checksum, toml, tui_theme, CommandOutput, QuietExit};
 
 #[cfg(windows)]
 const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
@@ -456,7 +456,7 @@ fn perform_install(
                 .interact()?
                 == 0)
     {
-        ensure_toml_table(config_doc, "behavior")["global-python"] = toml_edit::value(true);
+        toml::ensure_table(config_doc, "behavior")["global-python"] = toml_edit::value(true);
 
         // configure the default toolchain.  If we are not using a pre-configured toolchain we
         // can ask now, otherwise we need to wait for the toolchain to be available before we
@@ -612,7 +612,7 @@ fn prompt_for_default_toolchain(
                 .ok_or_else(|| anyhow!("Unavailable version '{}'", version))
         })
         .interact_text()?;
-    ensure_toml_table(config_doc, "default")["toolchain"] = toml_edit::value(choice.to_string());
+    toml::ensure_table(config_doc, "default")["toolchain"] = toml_edit::value(choice.to_string());
     Ok(())
 }
 

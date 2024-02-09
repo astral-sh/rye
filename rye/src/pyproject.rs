@@ -20,7 +20,7 @@ use crate::sync::VenvMarker;
 use crate::utils::CommandOutput;
 use crate::utils::{
     escape_string, expand_env_vars, format_requirement, get_short_executable_name, is_executable,
-    reformat_toml_array_multiline,
+    toml,
 };
 use anyhow::{anyhow, bail, Context, Error};
 use globset::GlobBuilder;
@@ -1025,7 +1025,7 @@ fn set_dependency(deps: &mut Array, req: &Requirement) {
     } else {
         deps.push(formatted);
     }
-    reformat_toml_array_multiline(deps);
+    toml::reformat_array_multiline(deps);
 }
 
 fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement> {
@@ -1046,7 +1046,7 @@ fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement>
             .remove(idx)
             .as_str()
             .and_then(|x| Requirement::from_str(x).ok());
-        reformat_toml_array_multiline(deps);
+        toml::reformat_array_multiline(deps);
         rv
     } else {
         None
