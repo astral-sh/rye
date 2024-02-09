@@ -71,6 +71,22 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
+    match project.sources() {
+        Ok(mut sources) => {
+            sources.sort_by_cached_key(|x| (x.name != "default", x.name.to_string()));
+            echo!("configured sources:");
+            for source in sources {
+                echo!(
+                    "  {} ({}: {})",
+                    style(&source.name).cyan(),
+                    style(&source.ty).yellow(),
+                    style(&source.url).dim(),
+                );
+            }
+        }
+        Err(err) => echo!("invalid source config: {}", style(err).red()),
+    }
+
     Ok(())
 }
 

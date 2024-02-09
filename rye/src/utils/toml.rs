@@ -1,4 +1,5 @@
-use toml_edit::{Array, Document, Item, RawString, Table};
+use anyhow::{anyhow, bail, Error};
+use toml_edit::{Array, Document, Item, RawString, Table, TableLike};
 
 /// Given a toml document, ensures that a given named table exists toplevel.
 ///
@@ -51,4 +52,28 @@ pub fn reformat_array_multiline(deps: &mut Array) {
         rv
     });
     deps.set_trailing_comma(true);
+}
+
+/// Iterate over tables in an array.
+///
+/// This helps one iterate over
+pub fn iter_tables<'x>(
+    item: &'x Item,
+) -> Box<dyn Iterator<Item = Result<&'x dyn TableLike, Error>> + 'x> {
+    if let Some(aot) = item.as_array_of_tables() {
+        Box::new(aot.into_iter().map(|x| Ok(x as &dyn TableLike)))
+    } else if let Some(arr) = item.as_array() {
+        Box::new(arr.into_iter().map(|x| match x.as_inline_table() {
+            Some(table) => Ok(table as &dyn TableLike),
+            None => bail!("expected inline table, got {}", x.type_name()),
+        }))
+    } else {
+        Box::new(
+            Some(Err(anyhow!(
+                "expected array of tables, got {}",
+                item.type_name()
+            )))
+            .into_iter(),
+        )
+    }
 }

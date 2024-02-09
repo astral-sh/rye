@@ -116,6 +116,15 @@ impl FromStr for SourceRefType {
     }
 }
 
+impl fmt::Display for SourceRefType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SourceRefType::Index => write!(f, "index"),
+            SourceRefType::FindLinks => write!(f, "find-links"),
+        }
+    }
+}
+
 /// Represents a source.
 pub struct SourceRef {
     pub name: String,
@@ -138,7 +147,7 @@ impl SourceRef {
         }
     }
 
-    pub fn from_toml_table(source: &Table) -> Result<SourceRef, Error> {
+    pub fn from_toml_table(source: &dyn TableLike) -> Result<SourceRef, Error> {
         let name = source
             .get("name")
             .and_then(|x| x.as_str())
@@ -1206,9 +1215,10 @@ fn get_sources(doc: &Document) -> Result<Vec<SourceRef>, Error> {
         .get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("sources"))
-        .and_then(|x| x.as_array_of_tables())
+        .map(|x| toml::iter_tables(x))
     {
         for source in sources {
+            let source = source.context("invalid value for pyproject.toml's tool.rye.sources")?;
             let source_ref = SourceRef::from_toml_table(source)?;
             rv.push(source_ref);
         }
