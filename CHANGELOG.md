@@ -27,6 +27,8 @@ _Unreleased_
 - Rye now statically links `vcruntime` on Windows which no longer requires
   the vs redist to be installed.  #622
 
+- `rye show` now prints out which sources are configured for a project.  #631
+
 <!-- released start -->
 
 ## 0.21.0
