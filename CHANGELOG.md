@@ -24,6 +24,9 @@ _Unreleased_
 
 - `rye init` will no longer create packages with leading digits.  #616
 
+- Rye now statically links `vcruntime` on Windows which no longer requires
+  the vs redist to be installed.  #622
+
 <!-- released start -->
 
 ## 0.21.0
