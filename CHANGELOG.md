@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.22.0
 
-_Unreleased_
+Released on 2024-02-09
 
 - Virtual envs managed by Rye will now by default be marked to not sync to
   known cloud storage systems (Dropbox and iCloud).  #589
@@ -28,8 +30,6 @@ _Unreleased_
   the vs redist to be installed.  #622
 
 - `rye show` now prints out which sources are configured for a project.  #631
-
-<!-- released start -->
 
 ## 0.21.0
 
