@@ -56,6 +56,10 @@
         the execution of the downloaded executable.  If there is no obvious way to do so, click
         on "More info" on the error message that shows up and then on "Run anyway".
 
+        Additionally sometimes a Trojan warning about "Bearfoos" is shown.  This is a false
+        positive.  For more information see the discussion [Windows Bearfoos
+        virus associated with rye](https://github.com/mitsuhiko/rye/issues/468).
+
 === "Compile Yourself"
 
     You need to have Rust and Cargo installed.  If you don't have, you can use

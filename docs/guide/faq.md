@@ -180,3 +180,13 @@ of known supported cloud synchronization systems.
 
 For override this behavior you can set the `behavior.venv-mark-sync-ignore` configuration
 key to `false`.
+
+## Why Does Rye Contain Trojan "Bearfoos"?
+
+Unfortunately Windows likes to complain that Rye contains the trojan "Win32/Bearfoos.A!ml".
+This seems to be something that happens to a few programs written in Rust every once in a
+while because the compiler spits out some bytes that have been associated with Trojans
+written in Rust.
+
+It can be ignored.  For more information see the discussion [Windows Bearfoos
+virus associated with rye](https://github.com/mitsuhiko/rye/issues/468).
