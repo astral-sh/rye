@@ -306,9 +306,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     None => PythonVersionRequest::from(get_latest_cpython_version()?),
                 }
             }
-        },
+        }
     };
-    
     if !cmd.no_pin
         && !VersionSpecifier::from_str(&requires_python)
             .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
