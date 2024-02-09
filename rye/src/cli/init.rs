@@ -297,11 +297,18 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let py = match cmd.py {
         Some(py) => PythonVersionRequest::from_str(&py)
             .map_err(|msg| anyhow!("invalid version: {}", msg))?,
-        None => match get_python_version_request_from_pyenv_pin(&dir) {
-            Some(ver) => ver,
-            None => PythonVersionRequest::from(get_latest_cpython_version()?),
+        None => {
+            if let Ok(default_toolchain) = cfg.default_toolchain() {
+                default_toolchain
+            } else {
+                match get_python_version_request_from_pyenv_pin(&dir) {
+                    Some(ver) => ver,
+                    None => PythonVersionRequest::from(get_latest_cpython_version()?),
+                }
+            }
         },
     };
+    
     if !cmd.no_pin
         && !VersionSpecifier::from_str(&requires_python)
             .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
