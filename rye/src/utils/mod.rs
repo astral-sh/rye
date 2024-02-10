@@ -61,7 +61,14 @@ where
 pub fn mark_path_sync_ignore(venv: &Path, mark_ignore: bool) -> Result<(), Error> {
     #[cfg(unix)]
     {
-        for flag in ["com.dropbox.ignored", "com.apple.fileprovider.ignore#P"] {
+        #[cfg(target_os = "macos")]
+        const ATTRS: &[&str] = &["com.dropbox.ignored", "com.apple.fileprovider.ignore#P"];
+
+        // xattrs need a namespace on Linux, and try this solution on every non-mac cfg(unix) system.
+        #[cfg(not(target_os = "macos"))]
+        const ATTRS: &[&str] = &["user.com.dropbox.ignored"];
+
+        for flag in ATTRS {
             if mark_ignore {
                 xattr::set(venv, flag, b"1")?;
             } else {
