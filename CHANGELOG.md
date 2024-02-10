@@ -10,6 +10,8 @@ _Unreleased_
 - When `behavior.venv-mark-sync-ignore` is set to `false` and the file system
   does not support extended attributes, no longer will a warning be printed.  #633
 
+- Fixed a bug that caused warnings about unsupported operations to be shown on Linux. #634
+
 <!-- released start -->
 
 ## 0.22.0
