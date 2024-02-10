@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- When `behavior.venv-mark-sync-ignore` is set to `false` and the file system
+  does not support extended attributes, no longer will a warning be printed.  #633
+
 <!-- released start -->
 
 ## 0.22.0
