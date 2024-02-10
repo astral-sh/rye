@@ -54,7 +54,8 @@ where
 }
 
 /// Given the path to a folder this adds or removes a cloud sync flag
-/// on the folder.
+/// on the folder.  Adding flags will return an error if it does not work,
+/// removing flags is silently ignored.
 ///
 /// Today this only supports dropbox and apple icloud.
 pub fn mark_path_sync_ignore(venv: &Path, mark_ignore: bool) -> Result<(), Error> {
@@ -64,7 +65,7 @@ pub fn mark_path_sync_ignore(venv: &Path, mark_ignore: bool) -> Result<(), Error
             if mark_ignore {
                 xattr::set(venv, flag, b"1")?;
             } else {
-                xattr::remove(venv, flag)?;
+                xattr::remove(venv, flag).ok();
             }
         }
     }
