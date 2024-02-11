@@ -14,6 +14,8 @@ _Unreleased_
 
 - The venv sync marker is now only updated when a new virtualenv is created.  #638
 
+- Lockfiles now contain annotations.  #643
+
 <!-- released start -->
 
 ## 0.22.0
