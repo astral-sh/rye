@@ -246,6 +246,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 echo!("Installing dependencies");
             }
 
+            let tempdir = tempdir()?;
             let mut sync_cmd = if Config::current().use_puffin() {
                 let mut puffin_sync_cmd = Command::new("puffin");
                 puffin_sync_cmd.arg("pip").arg("sync");
@@ -257,7 +258,6 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                     .current_dir(&root);
                 puffin_sync_cmd
             } else {
-                let tempdir = tempdir()?;
                 let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
                 let root = pyproject.workspace_path();
                 let py_path = get_venv_python_bin(&venv);
