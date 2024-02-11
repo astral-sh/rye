@@ -1,8 +1,6 @@
 # `sync`
 
 Updates the lockfiles and installs the dependencies into the virtualenv.
-Usually one would use the [`sync`](sync.md) command instead which both locks and
-installs dependencies.
 
 For more information see [Synching and Locking](../sync.md).
 

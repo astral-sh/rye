@@ -7,7 +7,7 @@ Windows.
 ## Installing Rye
 
 Rye is installed per-user and self manages itself.  It will install itself into
-a folder in your home directory and mange itself there.
+a folder in your home directory and manage itself there.
 
 {% include-markdown "../.includes/quick-install.md" %}
 
@@ -51,14 +51,22 @@ This folder is a folder that contains "shims" which are executables that
 Rye manages for you as well as the `rye` executable itself.  For instance any
 Python installation managed by Rye will be available via a shim placed there.
 
-On macOS or Linux you can accomplish this by adding it to your `.bashrc`, `.zshrc`
+On macOS or Linux you can accomplish this by adding it to your `.profile` file
 or similar.  This step is technically optional but required if you want to be able to
 just type `python` or `rye` into the shell to pick up the current virtualenv's Python
-interpreter.
+interpreter.  The installer will offer to do this for you automatically.  If you
+opt-out, or you run a custom shell you will need to do this manually.
 
 === "Bash"
 
     Rye ships an `env` file which should be sourced to update `PATH` automatically.
+
+    ```bash
+    echo 'source "$HOME/.rye/env"' >> ~/.profile
+    ```
+
+    In some setups `.profile` is not sourced, in which case you can add it to your
+    `.bashrc` instead:
 
     ```bash
     echo 'source "$HOME/.rye/env"' >> ~/.bashrc
@@ -69,7 +77,14 @@ interpreter.
     Rye ships an `env` file which should be sourced to update `PATH` automatically.
 
     ```bash
-    echo 'source "$HOME/.rye/env"' >> ~/.zshrc
+    echo 'source "$HOME/.rye/env"' >> ~/.profile
+    ```
+
+    In some setups `.profile` is not sourced, in which case you can add it to your
+    `.zprofile` instead:
+
+    ```bash
+    echo 'source "$HOME/.rye/env"' >> ~/.zprofile
     ```
 
 === "Fish"
@@ -80,6 +95,16 @@ interpreter.
 
     ```bash
     set -Ua fish_user_paths "$HOME/.rye/shims"
+    ```
+
+=== "Nushell"
+
+    Since nushell does not support `env` files, you instead need to add
+    the shims directly.  This can be accomplished by adding this to your
+    `env.nu` file:
+
+    ```shell
+    $env.PATH = ($env.PATH | split row (char esep) | append "~/.rye/shims")
     ```
 
 === "Unix Shells"

@@ -11,6 +11,7 @@ use toml_edit::Document;
 use crate::platform::{get_app_dir, get_latest_cpython_version};
 use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
 use crate::sources::PythonVersionRequest;
+use crate::utils::toml;
 
 static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);
 static AUTHOR_REGEX: Lazy<Regex> =
@@ -186,6 +187,15 @@ impl Config {
             .unwrap_or(false)
     }
 
+    /// Mark the `.venv` to not sync to cloud storage
+    pub fn venv_mark_sync_ignore(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("venv-mark-sync-ignore"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true)
+    }
+
     /// Returns the HTTP proxy that should be used.
     pub fn http_proxy_url(&self) -> Option<String> {
         std::env::var("http_proxy").ok().or_else(|| {
@@ -215,8 +225,9 @@ impl Config {
     pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
         let mut rv = Vec::new();
         let mut need_default = true;
-        if let Some(sources) = self.doc.get("sources").and_then(|x| x.as_array_of_tables()) {
+        if let Some(sources) = self.doc.get("sources").map(|x| toml::iter_tables(x)) {
             for source in sources {
+                let source = source.context("invalid value for source in config.toml")?;
                 let source_ref = SourceRef::from_toml_table(source)?;
                 if source_ref.name == "default" {
                     need_default = false;

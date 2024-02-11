@@ -3,9 +3,65 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.20.0
+## 0.23.0
 
 _Unreleased_
+
+- When `behavior.venv-mark-sync-ignore` is set to `false` and the file system
+  does not support extended attributes, no longer will a warning be printed.  #633
+
+- Fixed a bug that caused warnings about unsupported operations to be shown on Linux. #634
+
+- The venv sync marker is now only updated when a new virtualenv is created.  #638
+
+- Lockfiles now contain annotations.  #643
+
+<!-- released start -->
+
+## 0.22.0
+
+Released on 2024-02-09
+
+- Virtual envs managed by Rye will now by default be marked to not sync to
+  known cloud storage systems (Dropbox and iCloud).  #589
+
+- Fixed a bug where pip-tools sometimes did not get initialized.  #596
+
+- Rye now prefers installed toolchains over newer latest toolchains unless
+  a precise pin is used.  #598
+
+- Removed the non functional `shell` command.  #602
+
+- Upgraded internal unearth dependency which resolved an issue where
+  `rye add tensorflow` would not work.  #614
+
+- The installer now supports `RYE_TOOLCHAIN_VERSION`.  #606
+
+- `rye init` will no longer create packages with leading digits.  #616
+
+- Rye now statically links `vcruntime` on Windows which no longer requires
+  the vs redist to be installed.  #622
+
+- `rye show` now prints out which sources are configured for a project.  #631
+
+## 0.21.0
+
+Released on 2024-02-03
+
+- `rye fetch` now is able to fetch impliciit version in all cases.  Previously
+  global shims were not properly defaulted which required the user to be explicit
+  with the fetch request.  #574
+
+- The rye installer now prompts for the default toolchain version if global shims
+  are enabled.  #576
+
+- The internal Python version was bumped to 3.12.  #576
+
+- The installer now can automatically add Rye to `PATH` on most UNIX environments.  #580
+
+## 0.20.0
+
+Released on 2024-02-01
 
 - Improved the error message when an update could not be performed because files
   are in use.  #550
@@ -21,7 +77,13 @@ _Unreleased_
 - Added `rye fmt` and `rye lint` commands to format and lint with
   the help of Ruff.  #555
 
-<!-- released start -->
+- Restore cursor state on Ctrl-C.  This fixes some issues where in rare cases the
+  cursor would disappear even after shutting down rye.  #564
+
+- Upon installation Rye now prompts if global shims should be enabled.  #566
+
+- Add a warning about bugs to the `shell` command until the behavior has been
+  fixed.  #567
 
 ## 0.19.0
 

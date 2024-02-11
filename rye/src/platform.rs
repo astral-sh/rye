@@ -124,6 +124,7 @@ pub fn get_pinnable_version(req: &PythonVersionRequest, relaxed: bool) -> Option
         }
 
         // otherwise, any version we can download is an acceptable version
+        // by try to pin to something we already have.
         if target_version.is_none() {
             if let Some(version) = latest_available_python_version(req) {
                 target_version = Some(version);

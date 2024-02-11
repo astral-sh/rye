@@ -6,7 +6,7 @@ use std::process::Command;
 use std::sync::atomic::{self, AtomicBool};
 use std::{env, fs};
 
-use anyhow::{bail, Context, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
@@ -19,6 +19,7 @@ use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
     symlinks_supported,
 };
+use crate::pyproject::latest_available_python_version;
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{
     check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
@@ -31,12 +32,12 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     arch: None,
     os: None,
     major: 3,
-    minor: Some(11),
+    minor: Some(12),
     patch: None,
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 8;
+const SELF_VERSION: u64 = 10;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.0.3
@@ -52,7 +53,7 @@ pyproject_hooks==1.0.0
 requests==2.31.0
 tomli==2.0.1
 twine==4.0.2
-unearth==0.12.1
+unearth==0.14.0
 urllib3==2.0.7
 virtualenv==20.25.0
 ruff==0.1.14
@@ -71,6 +72,14 @@ fn is_up_to_date() -> bool {
 
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
+    ensure_self_venv_with_toolchain(output, None)
+}
+
+/// Bootstraps the venv for rye itself
+pub fn ensure_self_venv_with_toolchain(
+    output: CommandOutput,
+    toolchain_version_request: Option<PythonVersionRequest>,
+) -> Result<PathBuf, Error> {
     let app_dir = get_app_dir();
     let venv_dir = app_dir.join("self");
     let pip_tools_dir = app_dir.join("pip-tools");
@@ -94,12 +103,22 @@ pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
         echo!("Bootstrapping rye internals");
     }
 
-    let version = ensure_self_toolchain(output).with_context(|| {
-        format!(
-            "failed to fetch internal cpython toolchain {}",
-            SELF_PYTHON_TARGET_VERSION
-        )
-    })?;
+    let version = match toolchain_version_request {
+        Some(ref version_request) => ensure_specific_self_toolchain(output, version_request)
+            .with_context(|| {
+                format!(
+                    "failed to provision internal cpython toolchain {}",
+                    version_request
+                )
+            })?,
+        None => ensure_latest_self_toolchain(output).with_context(|| {
+            format!(
+                "failed to fetch internal cpython toolchain {}",
+                SELF_PYTHON_TARGET_VERSION
+            )
+        })?,
+    };
+
     let py_bin = get_toolchain_python_bin(&version)?;
 
     // linux specific detection of shared libraries.
@@ -308,26 +327,62 @@ pub fn get_pip_module(venv: &Path) -> Result<PathBuf, Error> {
     Ok(rv)
 }
 
-/// we only support cpython 3.9 to 3.11
+/// we only support cpython 3.9 to 3.12
 pub fn is_self_compatible_toolchain(version: &PythonVersion) -> bool {
-    version.name == "cpython" && version.major == 3 && version.minor >= 9 && version.minor < 12
+    version.name == "cpython" && version.major == 3 && version.minor >= 9 && version.minor <= 12
 }
 
-fn ensure_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> {
-    let possible_versions = list_known_toolchains()?
+/// Ensure that the toolchain for the self environment is available.
+fn ensure_latest_self_toolchain(output: CommandOutput) -> Result<PythonVersion, Error> {
+    if let Some(version) = list_known_toolchains()?
         .into_iter()
         .map(|x| x.0)
         .filter(is_self_compatible_toolchain)
-        .collect::<Vec<_>>();
-
-    if let Some(version) = possible_versions.into_iter().max() {
-        echo!(
-            "Found a compatible python version: {}",
-            style(&version).cyan()
-        );
+        .collect::<Vec<_>>()
+        .into_iter()
+        .max()
+    {
+        if output != CommandOutput::Quiet {
+            echo!(
+                "Found a compatible python version: {}",
+                style(&version).cyan()
+            );
+        }
         Ok(version)
     } else {
         fetch(&SELF_PYTHON_TARGET_VERSION, output)
+    }
+}
+
+/// Ensure a specific toolchain is available.
+fn ensure_specific_self_toolchain(
+    output: CommandOutput,
+    toolchain_version_request: &PythonVersionRequest,
+) -> Result<PythonVersion, Error> {
+    let toolchain_version = latest_available_python_version(toolchain_version_request)
+        .ok_or_else(|| anyhow!("requested toolchain version is not available"))?;
+    if !is_self_compatible_toolchain(&toolchain_version) {
+        bail!(
+            "the requested toolchain version ({}) is not supported for rye-internal usage",
+            toolchain_version
+        );
+    }
+    if !get_toolchain_python_bin(&toolchain_version)?.is_file() {
+        if output != CommandOutput::Quiet {
+            echo!(
+                "Fetching requested internal toolchain '{}'",
+                toolchain_version
+            );
+        }
+        fetch(&toolchain_version.into(), output)
+    } else {
+        if output != CommandOutput::Quiet {
+            echo!(
+                "Found a compatible python version: {}",
+                style(&toolchain_version).cyan()
+            );
+        }
+        Ok(toolchain_version)
     }
 }
 /// Fetches a version if missing.

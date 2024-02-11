@@ -15,11 +15,13 @@ use crate::lock::{
     make_project_root_fragment, update_single_project_lockfile, update_workspace_lockfile,
     LockMode, LockOptions,
 };
-use crate::piptools::{get_pip_sync, get_pip_tools_venv};
+use crate::piptools::{get_pip_sync, get_pip_tools_venv_path};
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{read_venv_marker, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
-use crate::utils::{get_venv_python_bin, set_proxy_variables, symlink_dir, CommandOutput};
+use crate::utils::{
+    get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
+};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -244,11 +246,11 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 echo!("Installing dependencies");
             }
 
-            if Config::current().use_puffin() {
+            let status = if Config::current().use_puffin() {
                 if output != CommandOutput::Quiet {
                     echo!("{}", style("Using experimental puffin support.").yellow());
                 }
-                // TODO(puffin): change location of command
+
                 let mut puffin_sync_cmd = Command::new("puffin");
                 puffin_sync_cmd.arg("pip").arg("sync");
                 let root = pyproject.workspace_path();
@@ -268,29 +270,28 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
                 if output == CommandOutput::Verbose {
                     puffin_sync_cmd.arg("--verbose");
-                } else if output != CommandOutput::Quiet {
-                    puffin_sync_cmd.env("PYTHONWARNINGS", "ignore");
                 } else {
                     puffin_sync_cmd.arg("-q");
                 }
                 set_proxy_variables(&mut puffin_sync_cmd);
-                let status = puffin_sync_cmd
+                puffin_sync_cmd
                     .status()
-                    .context("unable to run puffin pip sync")?;
-                if !status.success() {
-                    bail!("Installation of dependencies failed");
-                }
+                    .context("unable to run puffin pip sync")?
             } else {
                 let tempdir = tempdir()?;
+                let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
+                let root = pyproject.workspace_path();
+                let py_path = get_venv_python_bin(&venv);
+
+                // we need to run this after we have run the `get_pip_sync` command
+                // as this is what bootstraps or updates the pip tools installation.
+                // This is needed as on unix platforms we need to search the module path.
                 symlink_dir(
-                    get_pip_module(&get_pip_tools_venv(&py_ver)).context("could not locate pip")?,
+                    get_pip_module(&get_pip_tools_venv_path(&py_ver))
+                        .context("could not locate pip")?,
                     tempdir.path().join("pip"),
                 )
                 .context("failed linking pip module into for pip-sync")?;
-                let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
-                let root = pyproject.workspace_path();
-
-                let py_path = get_venv_python_bin(&venv);
 
                 pip_sync_cmd
                     .env("PROJECT_ROOT", make_project_root_fragment(&root))
@@ -320,10 +321,11 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                     pip_sync_cmd.arg("-q");
                 }
                 set_proxy_variables(&mut pip_sync_cmd);
-                let status = pip_sync_cmd.status().context("unable to run pip-sync")?;
-                if !status.success() {
-                    bail!("Installation of dependencies failed");
-                }
+                pip_sync_cmd.status().context("unable to run pip-sync")?
+            };
+
+            if !status.success() {
+                bail!("Installation of dependencies failed");
             }
         }
     }
@@ -343,6 +345,12 @@ pub fn create_virtualenv(
     prompt: &str,
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
+
+    // create the venv folder first so we can manipulate some flags on it.
+    fs::create_dir_all(venv)
+        .with_context(|| format!("unable to create virtualenv folder '{}'", venv.display()))?;
+
+    update_venv_sync_marker(output, venv);
 
     let mut venv_cmd = if Config::current().use_puffin() {
         // TODO(puffin): ensure puffin is installed
@@ -371,10 +379,10 @@ pub fn create_virtualenv(
         venv_cmd.arg("--prompt");
         venv_cmd.arg(prompt);
         venv_cmd.arg("--");
+        venv_cmd.arg(venv);
         venv_cmd
     };
 
-    venv_cmd.arg(venv);
     let status = venv_cmd
         .status()
         .context("unable to invoke virtualenv command")?;
@@ -391,6 +399,16 @@ pub fn create_virtualenv(
     }
 
     Ok(())
+}
+
+/// Update the cloud synchronization marker for the given path
+/// based on the config flag.
+fn update_venv_sync_marker(output: CommandOutput, venv_path: &Path) {
+    if let Err(err) = mark_path_sync_ignore(venv_path, Config::current().venv_mark_sync_ignore()) {
+        if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
+            warn!("unable to mark virtualenv ignored for cloud sync: {}", err);
+        }
+    }
 }
 
 #[cfg(unix)]

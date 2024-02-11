@@ -20,7 +20,7 @@ use crate::sync::VenvMarker;
 use crate::utils::CommandOutput;
 use crate::utils::{
     escape_string, expand_env_vars, format_requirement, get_short_executable_name, is_executable,
-    reformat_toml_array_multiline,
+    toml,
 };
 use anyhow::{anyhow, bail, Context, Error};
 use globset::GlobBuilder;
@@ -116,6 +116,15 @@ impl FromStr for SourceRefType {
     }
 }
 
+impl fmt::Display for SourceRefType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            SourceRefType::Index => write!(f, "index"),
+            SourceRefType::FindLinks => write!(f, "find-links"),
+        }
+    }
+}
+
 /// Represents a source.
 pub struct SourceRef {
     pub name: String,
@@ -138,7 +147,7 @@ impl SourceRef {
         }
     }
 
-    pub fn from_toml_table(source: &Table) -> Result<SourceRef, Error> {
+    pub fn from_toml_table(source: &dyn TableLike) -> Result<SourceRef, Error> {
         let name = source
             .get("name")
             .and_then(|x| x.as_str())
@@ -271,18 +280,28 @@ impl Script {
     }
 }
 
+/// Unsafe form of [`shlex::try_quote`] for display only.
+fn shlex_quote_unsafe(s: &str) -> Cow<'_, str> {
+    shlex::Quoter::new().allow_nul(true).quote(s).unwrap()
+}
+
 impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Script::Call(entry, env) => {
-                write!(f, "{}", shlex::quote(entry))?;
+                write!(f, "{}", shlex_quote_unsafe(entry))?;
                 if !env.is_empty() {
                     write!(f, " (env: ")?;
                     for (idx, (key, value)) in env.iter().enumerate() {
                         if idx > 0 {
                             write!(f, " ")?;
                         }
-                        write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                        write!(
+                            f,
+                            "{}={}",
+                            shlex_quote_unsafe(key),
+                            shlex_quote_unsafe(value)
+                        )?;
                     }
                     write!(f, ")")?;
                 }
@@ -294,14 +313,19 @@ impl fmt::Display for Script {
                     if need_space {
                         write!(f, " ")?;
                     }
-                    write!(f, "{}={}", shlex::quote(key), shlex::quote(value))?;
+                    write!(
+                        f,
+                        "{}={}",
+                        shlex_quote_unsafe(key),
+                        shlex_quote_unsafe(value)
+                    )?;
                     need_space = true;
                 }
                 for arg in args.iter() {
                     if need_space {
                         write!(f, " ")?;
                     }
-                    write!(f, "{}", shlex::quote(arg))?;
+                    write!(f, "{}", shlex_quote_unsafe(arg))?;
                     need_space = true;
                 }
                 Ok(())
@@ -317,7 +341,7 @@ impl fmt::Display for Script {
                         if idx > 0 {
                             write!(f, " ")?;
                         }
-                        write!(f, "{}", shlex::quote(arg))?;
+                        write!(f, "{}", shlex_quote_unsafe(arg))?;
                     }
                     write!(f, "]")?;
                 }
@@ -1010,7 +1034,7 @@ fn set_dependency(deps: &mut Array, req: &Requirement) {
     } else {
         deps.push(formatted);
     }
-    reformat_toml_array_multiline(deps);
+    toml::reformat_array_multiline(deps);
 }
 
 fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement> {
@@ -1031,7 +1055,7 @@ fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement>
             .remove(idx)
             .as_str()
             .and_then(|x| Requirement::from_str(x).ok());
-        reformat_toml_array_multiline(deps);
+        toml::reformat_array_multiline(deps);
         rv
     } else {
         None
@@ -1050,7 +1074,8 @@ pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion
 
 /// Give a given python version request, returns the latest available version.
 ///
-/// This can return a version that requires downloading.
+/// This can return a version that requires downloading but only if no matching
+/// Python version was found locally.
 pub fn latest_available_python_version(
     requested_version: &PythonVersionRequest,
 ) -> Option<PythonVersion> {
@@ -1069,9 +1094,13 @@ pub fn latest_available_python_version(
         Vec::new()
     };
 
-    if let Some((latest, _, _)) = get_download_url(requested_version) {
-        all.push(latest);
-    };
+    // if we don't have a match yet, try to fill it in with the latest
+    // version we are capable of fetching from the internet.
+    if all.is_empty() {
+        if let Some((latest, _, _)) = get_download_url(requested_version) {
+            all.push(latest);
+        };
+    }
 
     all.sort();
     all.into_iter().next_back()
@@ -1186,9 +1215,10 @@ fn get_sources(doc: &Document) -> Result<Vec<SourceRef>, Error> {
         .get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("sources"))
-        .and_then(|x| x.as_array_of_tables())
+        .map(|x| toml::iter_tables(x))
     {
         for source in sources {
+            let source = source.context("invalid value for pyproject.toml's tool.rye.sources")?;
             let source_ref = SourceRef::from_toml_table(source)?;
             rv.push(source_ref);
         }

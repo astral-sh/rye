@@ -18,7 +18,6 @@ mod publish;
 mod remove;
 mod run;
 mod rye;
-mod shell;
 mod shim;
 mod show;
 mod sync;
@@ -63,7 +62,6 @@ enum Command {
     Publish(publish::Args),
     Remove(remove::Args),
     Run(run::Args),
-    Shell(shell::Args),
     Show(show::Args),
     Sync(sync::Args),
     Toolchain(toolchain::Args),
@@ -74,12 +72,20 @@ enum Command {
     Version(version::Args),
     #[command(hide = true)]
     List(list::Args),
+    #[command(hide = true)]
+    Shell(shell::Args),
 }
 
 pub mod list {
     /// There is no real list command yet.
     ///
     /// Use rye show --installed-deps instead
+    #[derive(clap::Parser, Debug)]
+    pub struct Args {}
+}
+
+pub mod shell {
+    /// The shell command was removed.
     #[derive(clap::Parser, Debug)]
     pub struct Args {}
 }
@@ -123,7 +129,6 @@ pub fn execute() -> Result<(), Error> {
         Command::Publish(cmd) => publish::execute(cmd),
         Command::Remove(cmd) => remove::execute(cmd),
         Command::Run(cmd) => run::execute(cmd),
-        Command::Shell(cmd) => shell::execute(cmd),
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
         Command::Toolchain(cmd) => toolchain::execute(cmd),
@@ -135,6 +140,16 @@ pub fn execute() -> Result<(), Error> {
             // until we have a proper list command, make it error with what the
             // user should be using instead.
             bail!("unknown command. Maybe you mean rye show --installed-deps");
+        }
+        Command::Shell(..) => {
+            bail!(
+                "unknown command. The shell command was removed. Activate the virtualenv instead with '{}' instead.",
+                if cfg!(windows) {
+                    ".venv\\Scripts\\activate"
+                } else {
+                    ". .venv/bin/activate"
+                }
+            );
         }
     }
 }

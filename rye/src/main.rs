@@ -20,13 +20,33 @@ mod sync;
 mod utils;
 
 static SHOW_CONTINUE_PROMPT: AtomicBool = AtomicBool::new(false);
+static DISABLE_CTRLC_HANDLER: AtomicBool = AtomicBool::new(false);
 
 /// Changes the shutdown behavior to request a continue prompt.
 pub fn request_continue_prompt() {
     SHOW_CONTINUE_PROMPT.store(true, Ordering::Relaxed);
 }
 
+/// Disables the ctrl-c handler
+pub fn disable_ctrlc_handler() {
+    DISABLE_CTRLC_HANDLER.store(true, Ordering::Relaxed);
+}
+
 pub fn main() {
+    ctrlc::set_handler(move || {
+        if !DISABLE_CTRLC_HANDLER.load(Ordering::Relaxed) {
+            let term = console::Term::stderr();
+            term.show_cursor().ok();
+            term.flush().ok();
+            std::process::exit(if cfg!(windows) {
+                0xC000013Au32 as i32
+            } else {
+                130
+            });
+        }
+    })
+    .unwrap();
+
     let result = cli::execute();
     let status = match result {
         Ok(()) => 0,

@@ -317,6 +317,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .map(|x| x.to_string_lossy().into_owned())
             .unwrap_or_else(|| "unknown".into())
     }));
+
     let version = "0.1.0";
     let author = get_default_author_with_fallback(&dir);
     let license = match cmd.license {
@@ -416,7 +417,19 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     };
 
     let private = cmd.private;
-    let name_safe = metadata.name.as_ref().unwrap().replace('-', "_");
+
+    // crate a python module safe name.  This is the name on the metadata with
+    // underscores instead of dashes to form a valid python package name and in
+    // case it starts with a digit, an underscore is prepended.
+    let mut name_safe = metadata.name.as_ref().unwrap().replace('-', "_");
+    if name_safe
+        .chars()
+        .next()
+        .map_or(true, |c| c.is_ascii_digit())
+    {
+        name_safe.insert(0, '_');
+    }
+
     let is_rust = build_system == BuildSystem::Maturin;
 
     // if git init is successful prepare the local git repository
@@ -478,7 +491,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             let name = metadata.name.expect("project name");
             if is_rust {
                 fs::create_dir_all(&src_dir).ok();
-                let project_dir = dir.join("python").join(name.replace('-', "_"));
+                let project_dir = dir.join("python").join(&name_safe);
                 fs::create_dir_all(&project_dir).ok();
                 let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
                 fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
@@ -501,7 +514,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 fs::write(project_dir.join("__init__.py"), rv)
                     .context("failed to write __init__.py")?;
             } else {
-                let project_dir = src_dir.join(name.replace('-', "_"));
+                let project_dir = src_dir.join(&name_safe);
                 fs::create_dir_all(&project_dir).ok();
                 let rv =
                     env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
