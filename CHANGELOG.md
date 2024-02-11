@@ -12,6 +12,8 @@ _Unreleased_
 
 - Fixed a bug that caused warnings about unsupported operations to be shown on Linux. #634
 
+- The venv sync marker is now only updated when a new virtualenv is created.  #638
+
 <!-- released start -->
 
 ## 0.22.0
