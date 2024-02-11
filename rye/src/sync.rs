@@ -331,13 +331,10 @@ pub fn create_virtualenv(
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
 
-    // create the venv folder first so we can manipulate some flags on it.
-    fs::create_dir_all(venv)
-        .with_context(|| format!("unable to create virtualenv folder '{}'", venv.display()))?;
-
-    update_venv_sync_marker(output, venv);
-
     let mut venv_cmd = if Config::current().use_puffin() {
+        // try to kill the empty venv if there is one as puffin can't work otherwise.
+        fs::remove_dir(&venv).ok();
+
         // TODO(puffin): ensure puffin is installed
         let mut venv_cmd = Command::new("puffin");
         venv_cmd.arg("venv");
@@ -351,6 +348,11 @@ pub fn create_virtualenv(
         venv_cmd.arg("--");
         venv_cmd
     } else {
+        // create the venv folder first so we can manipulate some flags on it.
+        fs::create_dir_all(venv)
+            .with_context(|| format!("unable to create virtualenv folder '{}'", venv.display()))?;
+
+        update_venv_sync_marker(output, venv);
         let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
         if output == CommandOutput::Verbose {
             venv_cmd.arg("--verbose");
@@ -373,6 +375,11 @@ pub fn create_virtualenv(
         .context("unable to invoke virtualenv command")?;
     if !status.success() {
         bail!("failed to initialize virtualenv");
+    }
+
+    // puffin can only do it now
+    if Config::current().use_puffin() {
+        update_venv_sync_marker(output, venv);
     }
 
     // On UNIX systems Python is unable to find the tcl config that is placed
