@@ -135,7 +135,7 @@ pub fn update_workspace_lockfile(
         sources,
         lock_options,
         &exclusions,
-        &["--pip-args=--no-deps"],
+        true,
     )?;
 
     Ok(())
@@ -288,7 +288,7 @@ pub fn update_single_project_lockfile(
         sources,
         lock_options,
         &exclusions,
-        &[],
+        false,
     )?;
 
     Ok(())
@@ -304,7 +304,7 @@ fn generate_lockfile(
     sources: &ExpandedSources,
     lock_options: &LockOptions,
     exclusions: &HashSet<Requirement>,
-    extra_args: &[&str],
+    no_deps: bool,
 ) -> Result<(), Error> {
     let scratch = tempfile::tempdir()?;
     let requirements_file = scratch.path().join("requirements.txt");
@@ -342,14 +342,17 @@ fn generate_lockfile(
             .arg("--annotate")
             .arg("--pip-args")
             .arg(format!(
-                "--python-version=\"{}.{}\"",
-                py_ver.major, py_ver.minor
+                "--python-version=\"{}.{}\"{}",
+                py_ver.major,
+                py_ver.minor,
+                if no_deps { " --no-deps" } else { "" }
             ))
             .arg(if output == CommandOutput::Verbose {
                 "--verbose"
             } else {
                 "-q"
             });
+        if no_deps {}
         cmd
     };
 
@@ -371,7 +374,6 @@ fn generate_lockfile(
         cmd.arg("--pre");
     }
     sources.add_as_pip_args(&mut cmd);
-    cmd.args(extra_args);
     set_proxy_variables(&mut cmd);
     let status = cmd.status().context("unable to run pip-compile")?;
     if !status.success() {
@@ -443,6 +445,8 @@ fn finalize_lockfile(
                     writeln!(rv, "    # via {}", dep)?;
                 }
             };
+            continue;
+        } else if line.starts_with('#') {
             continue;
         }
         writeln!(rv, "{}", line)?;
