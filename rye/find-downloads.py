@@ -49,7 +49,7 @@ SPECIAL_TRIPLES = {
     "linux64": "x86_64-unknown-linux-gnu",
     "windows-amd64": "x86_64-pc-windows-msvc",
     "windows-x86-shared-pgo": "i686-pc-windows-msvc-shared-pgo",
-    "windows-amd64-shared-pgo": "x86_64 -pc-windows-msvc-shared-pgo",
+    "windows-amd64-shared-pgo": "x86_64-pc-windows-msvc-shared-pgo",
     "windows-x86": "i686-pc-windows-msvc",
     "linux64-musl": "x86_64-unknown-linux-musl",
 }
