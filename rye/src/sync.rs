@@ -159,7 +159,6 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         {
             echo!("Reusing already existing virtualenv");
         }
-        update_venv_sync_marker(output, &venv);
     } else {
         if output != CommandOutput::Quiet {
             echo!(
