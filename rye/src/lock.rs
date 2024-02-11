@@ -88,7 +88,6 @@ pub fn update_workspace_lockfile(
 
     let features_by_project = collect_workspace_features(lock_options);
     let mut req_file = NamedTempFile::new()?;
-    let mut local_req_file = NamedTempFile::new()?;
 
     let mut local_projects = HashMap::new();
     let mut projects = Vec::new();
@@ -99,7 +98,7 @@ pub fn update_workspace_lockfile(
 
         // virtual packages are not installed
         if !pyproject.is_virtual() {
-            writeln!(local_req_file, "-e {}{}", rel_url, applicable_extras)?;
+            writeln!(req_file, "-e {}{}", rel_url, applicable_extras)?;
         }
 
         local_projects.insert(pyproject.normalized_name()?, rel_url);
@@ -120,14 +119,10 @@ pub fn update_workspace_lockfile(
                 req_file.as_file_mut(),
                 DependencyKind::Dev,
             )?;
-            dump_dependencies(
-                pyproject,
-                &local_projects,
-                local_req_file.as_file_mut(),
-                DependencyKind::Dev,
-            )?;
         }
     }
+
+    req_file.flush()?;
 
     let exclusions = find_exclusions(&projects)?;
     generate_lockfile(
@@ -135,17 +130,6 @@ pub fn update_workspace_lockfile(
         py_ver,
         &workspace.path(),
         req_file.path(),
-        lockfile,
-        sources,
-        lock_options,
-        &exclusions,
-        &[],
-    )?;
-    generate_lockfile(
-        output,
-        py_ver,
-        &workspace.path(),
-        local_req_file.path(),
         lockfile,
         sources,
         lock_options,
@@ -430,14 +414,15 @@ fn finalize_lockfile(
                     && (x.version_or_url.is_none() || x.version_or_url == req.version_or_url)
             }) {
                 // skip exclusions
-                writeln!(rv, "# excluded {}", line)?;
+                writeln!(rv, "# {} (excluded)", line)?;
                 continue;
             }
         } else if let Some(m) = DEP_COMMENT_RE.captures(line) {
             if let Some(dep) = m.get(2).or_else(|| m.get(3)).map(|x| x.as_str()) {
-                if dep.starts_with("-r ") {
-                    writeln!(rv, "    # project dependency")?;
-                } else {
+                if !dep.starts_with("-r ") {
+                    // we cannot tell today based on the output where this comes from.  This
+                    // can show up because it's a root dependency, because it's a dev dependency
+                    // or in some cases just because we declared it as a duplicate.
                     writeln!(rv, "    # via {}", dep)?;
                 }
             };
