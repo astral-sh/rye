@@ -26,6 +26,11 @@ When synching the project itself is never installed into the virtualenv as it's 
 considered to be a valid package.  Likewise you cannot publish virtual packages to
 PyPI or another index.
 
+## Limitations
+
+Virtual projects can not have optional dependencies.  These even if declared are not
+installed.
+
 ## Workspaces
 
 If a [workspace](../workspaces/) does not have a toplevel package it's
