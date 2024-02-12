@@ -547,11 +547,26 @@ fn perform_install(
         prompt_for_default_toolchain(registered_toolchain.unwrap(), config_doc)?;
     }
 
+    add_rye_to_path(&mode, shims.as_path())?;
+
+    echo!();
+    echo!("{}", style("All done!").green());
+
+    config.save()?;
+
+    Ok(())
+}
+
+fn add_rye_to_path(mode: &InstallMode, shims: &Path) -> Result<(), Error> {
+    let rye_home = env::var("RYE_HOME")
+        .map(Cow::Owned)
+        .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
+
     let rye_home = Path::new(&*rye_home);
     #[cfg(unix)]
     {
         if !env::split_paths(&env::var_os("PATH").unwrap())
-            .any(|x| same_file::is_same_file(x, &shims).unwrap_or(false))
+            .any(|x| same_file::is_same_file(x, shims).unwrap_or(false))
         {
             echo!();
             echo!(
@@ -602,12 +617,6 @@ fn perform_install(
         crate::utils::windows::add_to_programs(rye_home)?;
         crate::utils::windows::add_to_path(rye_home)?;
     }
-
-    echo!();
-    echo!("{}", style("All done!").green());
-
-    config.save()?;
-
     Ok(())
 }
 
