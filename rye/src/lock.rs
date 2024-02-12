@@ -317,12 +317,13 @@ fn generate_lockfile(
     let mut cmd = if Config::current().use_puffin() {
         // TODO(puffin): change location of command
         let mut cmd = Command::new("puffin");
-        cmd.arg("pip");
-        cmd.arg("compile");
-        cmd.arg(format!(
-            "--python-version={}.{}",
-            py_ver.major, py_ver.minor
-        ));
+        cmd.arg("pip")
+            .arg("compile")
+            .arg("--no-header")
+            .arg(format!(
+                "--python-version={}.{}",
+                py_ver.major, py_ver.minor
+            ));
         if output == CommandOutput::Verbose {
             cmd.arg("--verbose");
         } else if output == CommandOutput::Quiet {
@@ -335,8 +336,7 @@ fn generate_lockfile(
         if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {
             cmd.arg("--resolver=backtracking");
         }
-        cmd.arg("--no-annotate")
-            .arg("--strip-extras")
+        cmd.arg("--strip-extras")
             .arg("--allow-unsafe")
             .arg("--no-header")
             .arg("--annotate")
