@@ -8,7 +8,7 @@
 #   with-sources: false
 
 -e file:.
-    # from workspace
+-e file:rye-devtools
 certifi==2023.5.7
     # via requests
 charset-normalizer==3.1.0
@@ -66,8 +66,9 @@ pyyaml-env-tag==0.1
     # via mkdocs
 regex==2023.5.5
     # via mkdocs-material
-requests==2.30.0
+requests==2.31.0
     # via mkdocs-material
+    # via rye-devtools
 six==1.16.0
     # via python-dateutil
 urllib3==2.0.2
