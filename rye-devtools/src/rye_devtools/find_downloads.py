@@ -6,6 +6,8 @@ links to be included into rye at build time.  In addition it maintains
 a manual list of pypy downloads to be included into rye at build
 time.
 """
+import asyncio
+import itertools
 import re
 import sys
 import time
@@ -17,14 +19,21 @@ from itertools import chain
 from typing import Callable, Optional, Self
 from urllib.parse import unquote
 
-import requests
+import httpx
 
 
 def log(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+def batched(iterable, n):
+    "Batch data into tuples of length n. The last batch may be shorter."
+    # batched('ABCDEFG', 3) --> ABC DEF G
+    if n < 1:
+        raise ValueError('n must be at least one')
+    it = iter(iterable)
+    while batch := tuple(itertools.islice(it, n)):
+        yield batch
 
-SESSION = requests.Session()
 TOKEN = open("token.txt").read().strip()
 RELEASE_URL = "https://api.github.com/repos/indygreg/python-build-standalone/releases"
 HEADERS = {
@@ -175,18 +184,18 @@ class IndygregDownload:
 
         return cls(version, triple, url)
 
-    def sha256(self) -> Optional[str]:
+    async def sha256(self, client: httpx.AsyncClient) -> Optional[str]:
         """We only fetch the sha256 when needed. This generally is AFTER we have
         decided that the download will be part of rye's download set"""
-        resp = fetch(self.url + ".sha256", headers=HEADERS)
-        if not resp.ok:
-            return None
-        return resp.text.strip()
+        resp = await fetch(client, self.url + ".sha256", headers=HEADERS)
+        if 200 <= resp.status_code < 400:
+            return resp.text.strip()
+        return None
 
 
-def fetch(page, headers):
+async def fetch(client: httpx.AsyncClient, page: str, headers: dict[str, str]):
     """Fetch a page from GitHub API with ratelimit awareness."""
-    resp = SESSION.get(page, headers=headers, timeout=90)
+    resp = await client.get(page, headers=headers, timeout=90)
     if (
         resp.status_code in [403, 429]
         and resp.headers.get("x-ratelimit-remaining") == "0"
@@ -196,7 +205,7 @@ def fetch(page, headers):
             log("got retry-after header. retrying in {retry_after} seconds.")
             time.sleep(int(retry_after))
 
-            return fetch(page, headers)
+            return await fetch(client, page, headers)
 
         if (retry_at := resp.headers.get("x-ratelimit-reset")) is not None:
             utc = datetime.now(timezone.utc).timestamp()
@@ -205,15 +214,16 @@ def fetch(page, headers):
             log("got x-ratelimit-reset header. retrying in {retry_after} seconds.")
             time.sleep(max(int(retry_at) - int(utc), 0))
 
-            return fetch(page, headers)
+            return await fetch(client, page, headers)
 
         log("got rate limited but no information how long. waiting for 2 minutes")
         time.sleep(60 * 2)
-        return fetch(page, headers)
+        return await fetch(client, page, headers)
     return resp
 
 
-def fetch_indiygreg_downloads(
+async def fetch_indiygreg_downloads(
+    client: httpx.AsyncClient,
     pages: int = 100,
 ) -> dict[PythonVersion, dict[PlatformTriple, list[IndygregDownload]]]:
     """Fetch all the indygreg downloads from the release API."""
@@ -221,7 +231,7 @@ def fetch_indiygreg_downloads(
 
     for page in range(1, pages):
         log(f"Fetching page {page}")
-        resp = fetch("%s?page=%d" % (RELEASE_URL, page), headers=HEADERS)
+        resp = await fetch(client, "%s?page=%d" % (RELEASE_URL, page), headers=HEADERS)
         rows = resp.json()
         if not rows:
             break
@@ -245,10 +255,30 @@ def pick_best_download(downloads: list[IndygregDownload]) -> Optional[IndygregDo
     downloads.sort(key=preference)
     return downloads[0] if downloads else None
 
+async def fetch_sha256s(
+    client: httpx.AsyncClient,
+    indys: dict[PythonVersion, list[IndygregDownload]],
+    n: int = 10,
+) -> dict[str, str]:
+    # flatten
+    downloads = (download for downloads in indys.values() for download in downloads)
+    length = sum([len(downloads) for downloads in indys.values()])
+
+    completed = 0
+    tasks = []
+    for batch in batched(downloads, n=n):
+        log(f"fetching {n} sha256s: {completed}/{length} completed")
+        async with asyncio.TaskGroup() as tg:
+            for download in batch:
+                task = tg.create_task(download.sha256(client))
+                tasks.append((download.url, task))
+        completed += n
+    return {url: task.result() for url, task in tasks}
 
 def render(
     indys: dict[PythonVersion, list[IndygregDownload]],
     pypy: dict[PythonVersion, dict[PlatformTriple, str]],
+    sha256s: dict[str, str]
 ):
     """Render downloads.inc"""
     log("Generating code and fetching sha256 of all cpython downloads.")
@@ -266,7 +296,7 @@ def render(
 
     for version, downloads in sorted(indys.items(), key=lambda v: v[0], reverse=True):
         for download in sorted(downloads, key=lambda v: v.triple.grouped()):
-            if (sha256 := download.sha256()) is not None:
+            if (sha256 := sha256s.get(download.url)) is not None:
                 sha256_str = f'Some("{sha256}")'
             else:
                 sha256_str = "None"
@@ -276,22 +306,27 @@ def render(
     print("];")
 
 
-def main():
+async def async_main():
     log("Rye download creator started.")
     log("Fetching indygreg downloads...")
 
     indys = {}
     # For every version, pick the best download per triple
     # and store it in the results
-    for version, download_choices in fetch_indiygreg_downloads(100).items():
-        # Create a dict[PlatformTriple, list[IndygregDownload]]]
-        # for each version
-        for triple, choices in download_choices.items():
-            if (best_download := pick_best_download(choices)) is not None:
-                indys.setdefault(version, []).append(best_download)
+    async with httpx.AsyncClient(follow_redirects=True) as client:
+        downloads = await fetch_indiygreg_downloads(client, 100)
+        for version, download_choices in downloads.items():
+            # Create a dict[PlatformTriple, list[IndygregDownload]]]
+            # for each version
+            for triple, choices in download_choices.items():
+                if (best_download := pick_best_download(choices)) is not None:
+                    indys.setdefault(version, []).append(best_download)
 
-    render(indys, PYPY_DOWNLOADS)
+        sha256s = await fetch_sha256s(client, indys, n=25)
+        render(indys, PYPY_DOWNLOADS, sha256s)
 
+def main():
+    asyncio.run(async_main())
 
 # These are manually maintained for now
 PYPY_DOWNLOADS = {
