@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.23.0
 
-_Unreleased_
+Released on 2024-02-13
 
 - When `behavior.venv-mark-sync-ignore` is set to `false` and the file system
   does not support extended attributes, no longer will a warning be printed.  #633
@@ -15,8 +17,6 @@ _Unreleased_
 - The venv sync marker is now only updated when a new virtualenv is created.  #638
 
 - Lockfiles now contain annotations.  #643
-
-<!-- released start -->
 
 ## 0.22.0
 
