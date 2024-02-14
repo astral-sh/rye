@@ -38,11 +38,21 @@ support for symlinks is restricted to privileged accounts.  The reason for this 
 Symlinks were a late addition to Windows and some applications are not developed with
 them in mind which can cause misbehavior or in the worst case security issues in those
 applications.  Symlinks support however is enabled when the "developer mode" is activated
-on modern Windows versions.  Here is how you can enable it:
+on modern Windows versions.  
+
+Enabling "developer mode" has changed in later version of Windows. For older versions:
 
 1. Press ++windows+i++ to open the settings
 2. In the settings dialog click on "Privacy & security"
 3. In the "Security" section click on "For developers"
+4. Enable the toggle "Developer Mode"
+5. In the "Use developer features" dialog confirm by clicking "Yes".
+
+In more modern versions:
+
+1. Press ++windows+i++ to open the settings
+2. In the settings dialog click on "System"
+3. In the "System" section click on "For developers"
 4. Enable the toggle "Developer Mode"
 5. In the "Use developer features" dialog confirm by clicking "Yes".
 
