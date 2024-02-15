@@ -7,6 +7,7 @@ use clap::Parser;
 use console::style;
 
 use crate::bootstrap::ensure_self_venv;
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{get_current_venv_python_version, PyProject};
 use crate::utils::{get_venv_python_bin, CommandOutput};
@@ -97,13 +98,21 @@ fn print_installed_deps(project: &PyProject) -> Result<(), Error> {
     }
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
-    let status = Command::new(self_venv.join(VENV_BIN).join("pip"))
-        .arg("--python")
-        .arg(&python)
-        .arg("freeze")
-        .env("PYTHONWARNINGS", "ignore")
-        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1")
-        .status()?;
+    let status = if Config::current().use_puffin() {
+        Command::new(self_venv.join(VENV_BIN).join("puffin"))
+            .arg("pip")
+            .arg("freeze")
+            .env("VIRTUAL_ENV", project.venv_path().as_os_str())
+            .status()?
+    } else {
+        Command::new(self_venv.join(VENV_BIN).join("pip"))
+            .arg("--python")
+            .arg(&python)
+            .arg("freeze")
+            .env("PYTHONWARNINGS", "ignore")
+            .env("PIP_DISABLE_PIP_VERSION_CHECK", "1")
+            .status()?
+    };
 
     if !status.success() {
         bail!("failed to print dependencies via pip");

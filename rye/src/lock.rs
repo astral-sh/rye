@@ -15,7 +15,9 @@ use serde::Serialize;
 use tempfile::NamedTempFile;
 use url::Url;
 
+use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
+use crate::consts::VENV_BIN;
 use crate::piptools::{get_pip_compile, get_pip_tools_version, PipToolsVersion};
 use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
@@ -315,8 +317,8 @@ fn generate_lockfile(
     }
 
     let mut cmd = if Config::current().use_puffin() {
-        // TODO(puffin): change location of command
-        let mut cmd = Command::new("puffin");
+        let self_venv = ensure_self_venv(output)?;
+        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("puffin"));
         cmd.arg("pip")
             .arg("compile")
             .arg("--no-header")

@@ -128,7 +128,7 @@ pub fn install(
     )?;
 
     let mut cmd = if Config::current().use_puffin() {
-        let mut cmd = Command::new("puffin");
+        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("puffin"));
         cmd.arg("pip")
             .arg("install")
             .env("VIRTUAL_ENV", &target_venv_path)

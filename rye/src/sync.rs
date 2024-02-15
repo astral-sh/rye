@@ -248,7 +248,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
             let tempdir = tempdir()?;
             let mut sync_cmd = if Config::current().use_puffin() {
-                let mut puffin_sync_cmd = Command::new("puffin");
+                let mut puffin_sync_cmd = Command::new(self_venv.join(VENV_BIN).join("puffin"));
                 puffin_sync_cmd.arg("pip").arg("sync");
                 let root = pyproject.workspace_path();
 
@@ -329,10 +329,8 @@ pub fn create_virtualenv(
 
     let mut venv_cmd = if Config::current().use_puffin() {
         // try to kill the empty venv if there is one as puffin can't work otherwise.
-        fs::remove_dir(&venv).ok();
-
-        // TODO(puffin): ensure puffin is installed
-        let mut venv_cmd = Command::new("puffin");
+        fs::remove_dir(venv).ok();
+        let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("puffin"));
         venv_cmd.arg("venv");
         if output == CommandOutput::Verbose {
             venv_cmd.arg("--verbose");
