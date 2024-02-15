@@ -246,4 +246,20 @@ impl Config {
 
         Ok(rv)
     }
+
+    /// Indicates if the experimental uv support should be used.
+    pub fn use_uf(&self) -> bool {
+        let yes = self
+            .doc
+            .get("behavior")
+            .and_then(|x| x.get("use-uv"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(false);
+        if yes && cfg!(windows) {
+            warn!("uv enabled in config but not supported on windows");
+            false
+        } else {
+            yes
+        }
+    }
 }

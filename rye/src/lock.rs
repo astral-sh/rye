@@ -15,6 +15,9 @@ use serde::Serialize;
 use tempfile::NamedTempFile;
 use url::Url;
 
+use crate::bootstrap::ensure_self_venv;
+use crate::config::Config;
+use crate::consts::VENV_BIN;
 use crate::piptools::{get_pip_compile, get_pip_tools_version, PipToolsVersion};
 use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
@@ -134,7 +137,7 @@ pub fn update_workspace_lockfile(
         sources,
         lock_options,
         &exclusions,
-        &["--pip-args=--no-deps"],
+        true,
     )?;
 
     Ok(())
@@ -287,7 +290,7 @@ pub fn update_single_project_lockfile(
         sources,
         lock_options,
         &exclusions,
-        &[],
+        false,
     )?;
 
     Ok(())
@@ -303,7 +306,7 @@ fn generate_lockfile(
     sources: &ExpandedSources,
     lock_options: &LockOptions,
     exclusions: &HashSet<Requirement>,
-    extra_args: &[&str],
+    no_deps: bool,
 ) -> Result<(), Error> {
     let scratch = tempfile::tempdir()?;
     let requirements_file = scratch.path().join("requirements.txt");
@@ -313,36 +316,55 @@ fn generate_lockfile(
         fs::write(&requirements_file, b"")?;
     }
 
-    let pip_compile = get_pip_compile(py_ver, output)?;
-    let mut cmd = Command::new(pip_compile);
+    let mut cmd = if Config::current().use_uf() {
+        let self_venv = ensure_self_venv(output)?;
+        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+        cmd.arg("pip")
+            .arg("compile")
+            .arg("--no-header")
+            .arg(format!(
+                "--python-version={}.{}.{}",
+                py_ver.major, py_ver.minor, py_ver.patch
+            ));
+        if output == CommandOutput::Verbose {
+            cmd.arg("--verbose");
+        } else if output == CommandOutput::Quiet {
+            cmd.arg("-q");
+        }
+        cmd
+    } else {
+        let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
+        // legacy pip tools requires some extra parameters
+        if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {
+            cmd.arg("--resolver=backtracking");
+        }
+        cmd.arg("--strip-extras")
+            .arg("--allow-unsafe")
+            .arg("--no-header")
+            .arg("--annotate")
+            .arg("--pip-args")
+            .arg(format!(
+                "--python-version=\"{}.{}.{}\"{}",
+                py_ver.major,
+                py_ver.minor,
+                py_ver.patch,
+                if no_deps { " --no-deps" } else { "" }
+            ))
+            .arg(if output == CommandOutput::Verbose {
+                "--verbose"
+            } else {
+                "-q"
+            });
+        cmd
+    };
 
-    // legacy pip tools requires some extra parameters
-    if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {
-        cmd.arg("--resolver=backtracking");
-    }
-
-    cmd.arg("--no-annotate")
-        .arg("--strip-extras")
-        .arg("--allow-unsafe")
-        .arg("--no-header")
-        .arg("--annotate")
-        .arg("--pip-args")
-        .arg(format!(
-            "--python-version=\"{}.{}\"",
-            py_ver.major, py_ver.minor
-        ))
-        .arg("-o")
+    cmd.arg("-o")
         .arg(&requirements_file)
         .arg(requirements_file_in)
         .current_dir(workspace_path)
         .env("PYTHONWARNINGS", "ignore")
         .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
 
-    if output == CommandOutput::Verbose {
-        cmd.arg("--verbose");
-    } else {
-        cmd.arg("-q");
-    }
     for pkg in &lock_options.update {
         cmd.arg("--upgrade-package");
         cmd.arg(pkg);
@@ -354,7 +376,6 @@ fn generate_lockfile(
         cmd.arg("--pre");
     }
     sources.add_as_pip_args(&mut cmd);
-    cmd.args(extra_args);
     set_proxy_variables(&mut cmd);
     let status = cmd.status().context("unable to run pip-compile")?;
     if !status.success() {
@@ -426,6 +447,8 @@ fn finalize_lockfile(
                     writeln!(rv, "    # via {}", dep)?;
                 }
             };
+            continue;
+        } else if line.starts_with('#') {
             continue;
         }
         writeln!(rv, "{}", line)?;

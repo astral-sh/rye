@@ -9,6 +9,8 @@ _Unreleased_
 
 - Added new `rye list` command and deprecated `rye show --installed-deps` which it replaces.  #656
 
+- Added experimental support for `uv`.
+
 <!-- released start -->
 
 ## 0.23.0
