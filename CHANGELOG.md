@@ -3,15 +3,15 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.24.0
 
-_Unreleased_
+Released on 2024-02-15
 
 - Added new `rye list` command and deprecated `rye show --installed-deps` which it replaces.  #656
 
-- Added experimental support for `uv`.
-
-<!-- released start -->
+- Added experimental support for `uv`.  #657
 
 ## 0.23.0
 
