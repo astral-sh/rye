@@ -247,16 +247,16 @@ impl Config {
         Ok(rv)
     }
 
-    /// Indicates if the experimental puffin support should be used.
-    pub fn use_puffin(&self) -> bool {
+    /// Indicates if the experimental uv support should be used.
+    pub fn use_uf(&self) -> bool {
         let yes = self
             .doc
             .get("behavior")
-            .and_then(|x| x.get("use-puffin"))
+            .and_then(|x| x.get("use-uv"))
             .and_then(|x| x.as_bool())
             .unwrap_or(false);
         if yes && cfg!(windows) {
-            warn!("puffin enabled in config but not supported on windows");
+            warn!("uv enabled in config but not supported on windows");
             false
         } else {
             yes

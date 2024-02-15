@@ -247,16 +247,16 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             }
 
             let tempdir = tempdir()?;
-            let mut sync_cmd = if Config::current().use_puffin() {
-                let mut puffin_sync_cmd = Command::new(self_venv.join(VENV_BIN).join("puffin"));
-                puffin_sync_cmd.arg("pip").arg("sync");
+            let mut sync_cmd = if Config::current().use_uf() {
+                let mut uv_sync_cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+                uv_sync_cmd.arg("pip").arg("sync");
                 let root = pyproject.workspace_path();
 
-                puffin_sync_cmd
+                uv_sync_cmd
                     .env("PROJECT_ROOT", make_project_root_fragment(&root))
                     .env("VIRTUAL_ENV", pyproject.venv_path().as_os_str())
                     .current_dir(&root);
-                puffin_sync_cmd
+                uv_sync_cmd
             } else {
                 let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
                 let root = pyproject.workspace_path();
@@ -327,10 +327,10 @@ pub fn create_virtualenv(
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
 
-    let mut venv_cmd = if Config::current().use_puffin() {
-        // try to kill the empty venv if there is one as puffin can't work otherwise.
+    let mut venv_cmd = if Config::current().use_uf() {
+        // try to kill the empty venv if there is one as uv can't work otherwise.
         fs::remove_dir(venv).ok();
-        let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("puffin"));
+        let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
         venv_cmd.arg("venv");
         if output == CommandOutput::Verbose {
             venv_cmd.arg("--verbose");
@@ -370,8 +370,8 @@ pub fn create_virtualenv(
         bail!("failed to initialize virtualenv");
     }
 
-    // puffin can only do it now
-    if Config::current().use_puffin() {
+    // uv can only do it now
+    if Config::current().use_uf() {
         update_venv_sync_marker(output, venv);
     }
 

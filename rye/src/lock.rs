@@ -316,9 +316,9 @@ fn generate_lockfile(
         fs::write(&requirements_file, b"")?;
     }
 
-    let mut cmd = if Config::current().use_puffin() {
+    let mut cmd = if Config::current().use_uf() {
         let self_venv = ensure_self_venv(output)?;
-        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("puffin"));
+        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
         cmd.arg("pip")
             .arg("compile")
             .arg("--no-header")

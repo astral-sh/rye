@@ -26,8 +26,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
-    let status = if Config::current().use_puffin() {
-        Command::new(self_venv.join(VENV_BIN).join("puffin"))
+    let status = if Config::current().use_uf() {
+        Command::new(self_venv.join(VENV_BIN).join("uv"))
             .arg("pip")
             .arg("freeze")
             .env("VIRTUAL_ENV", project.venv_path().as_os_str())

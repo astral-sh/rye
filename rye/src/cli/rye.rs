@@ -441,21 +441,21 @@ fn perform_install(
         return Err(QuietExit(1).into());
     }
 
-    // Use puffin?
+    // Use uv?
     if config_doc
         .get("behavior")
-        .and_then(|x| x.get("use-puffin"))
+        .and_then(|x| x.get("use-uv"))
         .is_none()
         && (matches!(mode, InstallMode::NoPrompts)
             || dialoguer::Select::with_theme(tui_theme())
                 .with_prompt("Select the preferred package installer")
                 .item("pip-tools (slow but stable)")
-                .item("puffin (quick but experimental)")
+                .item("uv (quick but experimental)")
                 .default(0)
                 .interact()?
                 == 1)
     {
-        toml::ensure_table(config_doc, "behavior")["use-puffin"] = toml_edit::value(true);
+        toml::ensure_table(config_doc, "behavior")["use-uv"] = toml_edit::value(true);
     }
 
     // If the global-python flag is not in the settings, ask the user if they want to turn
