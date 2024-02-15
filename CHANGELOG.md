@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Added new `rye list` command and deprecated `rye show --installed-deps` which it replaces.  #656
+
 <!-- released start -->
 
 ## 0.23.0
