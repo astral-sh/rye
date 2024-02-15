@@ -17,27 +17,15 @@ venv python: cpython@3.9.18
 virtual: false
 ```
 
-To print out the list of installed dependencies:
-
-```
-$ rye show --installed-deps
-asgiref==3.7.2
-blinker==1.7.0
-click==8.1.7
-Flask @ git+https://github.com/pallets/flask@4df377cfbfc1d15e962a61c18920b22aebc9aa41
-itsdangerous==2.1.2
-Jinja2==3.1.3
-MarkupSafe==2.1.4
-Werkzeug==3.0.1
-```
-
 ## Arguments
 
 *no arguments*
 
 ## Options
 
-* `--installed-deps`: Print the currently installed dependencies
+* `--installed-deps`: Print the currently installed dependencies.
+
+    This option is being replaced with [`rye list`](list.md)
 
 * `--pyproject`: Use this `pyproject.toml` file
 
