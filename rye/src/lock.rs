@@ -323,8 +323,8 @@ fn generate_lockfile(
             .arg("compile")
             .arg("--no-header")
             .arg(format!(
-                "--python-version={}.{}",
-                py_ver.major, py_ver.minor
+                "--python-version={}.{}.{}",
+                py_ver.major, py_ver.minor, py_ver.patch
             ));
         if output == CommandOutput::Verbose {
             cmd.arg("--verbose");
@@ -344,9 +344,10 @@ fn generate_lockfile(
             .arg("--annotate")
             .arg("--pip-args")
             .arg(format!(
-                "--python-version=\"{}.{}\"{}",
+                "--python-version=\"{}.{}.{}\"{}",
                 py_ver.major,
                 py_ver.minor,
+                py_ver.patch,
                 if no_deps { " --no-deps" } else { "" }
             ))
             .arg(if output == CommandOutput::Verbose {
@@ -354,7 +355,6 @@ fn generate_lockfile(
             } else {
                 "-q"
             });
-        if no_deps {}
         cmd
     };
 
