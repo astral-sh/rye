@@ -339,7 +339,6 @@ pub fn create_virtualenv(
         }
         venv_cmd.arg("-p");
         venv_cmd.arg(&py_bin);
-        venv_cmd.arg("--");
         venv_cmd
     } else {
         // create the venv folder first so we can manipulate some flags on it.
@@ -359,10 +358,10 @@ pub fn create_virtualenv(
         venv_cmd.arg("--no-seed");
         venv_cmd.arg("--prompt");
         venv_cmd.arg(prompt);
-        venv_cmd.arg("--");
-        venv_cmd.arg(venv);
         venv_cmd
     };
+
+    venv_cmd.arg("--").arg(venv);
 
     let status = venv_cmd
         .status()
@@ -392,7 +391,11 @@ pub fn create_virtualenv(
 fn update_venv_sync_marker(output: CommandOutput, venv_path: &Path) {
     if let Err(err) = mark_path_sync_ignore(venv_path, Config::current().venv_mark_sync_ignore()) {
         if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
-            warn!("unable to mark virtualenv ignored for cloud sync: {}", err);
+            warn!(
+                "unable to mark virtualenv {} ignored for cloud sync: {}",
+                venv_path.display(),
+                err
+            );
         }
     }
 }
