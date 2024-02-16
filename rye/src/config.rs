@@ -248,7 +248,7 @@ impl Config {
     }
 
     /// Indicates if the experimental uv support should be used.
-    pub fn use_uf(&self) -> bool {
+    pub fn use_uv(&self) -> bool {
         let yes = self
             .doc
             .get("behavior")

@@ -26,7 +26,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
-    let status = if Config::current().use_uf() {
+    let status = if Config::current().use_uv() {
         Command::new(self_venv.join(VENV_BIN).join("uv"))
             .arg("pip")
             .arg("freeze")

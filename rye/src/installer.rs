@@ -127,7 +127,7 @@ pub fn install(
         requirement.name.as_str(),
     )?;
 
-    let mut cmd = if Config::current().use_uf() {
+    let mut cmd = if Config::current().use_uv() {
         let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
         cmd.arg("pip")
             .arg("install")
