@@ -221,7 +221,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let self_venv = ensure_self_venv(output).context("error bootstrapping venv")?;
     let python_path = self_venv.join(VENV_BIN).join("python");
-    let mut added = Vec::new();
 
     let mut pyproject_toml = PyProject::discover()?;
     let py_ver = pyproject_toml.venv_python_version()?;
@@ -243,44 +242,47 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         bail!("path/url/git/features is not compatible with passing multiple requirements: expected one requirement.")
     }
 
-    for str_requirement in cmd.requirements {
-        let mut requirement = Requirement::from_str(&str_requirement)?;
+    let mut requirements = Vec::new();
+    for str_requirement in &cmd.requirements {
+        let mut requirement = Requirement::from_str(str_requirement)?;
         cmd.req_extras.apply_to_requirement(&mut requirement)?;
+        requirements.push(requirement);
+    }
 
-        // if we are excluding, we do not want a specific dependency version
-        // stored, so we just skip the unearth step
-        if !cmd.excluded {
-            if Config::current().use_uv() {
-                resolve_requirements_with_uv(
-                    &pyproject_toml,
-                    &self_venv,
-                    &py_ver,
-                    &mut requirement,
-                    cmd.pre,
-                    output,
-                    &default_operator,
-                )?;
-            } else {
+    if !cmd.excluded {
+        if Config::current().use_uv() {
+            resolve_requirements_with_uv(
+                &pyproject_toml,
+                &self_venv,
+                &py_ver,
+                &mut requirements,
+                cmd.pre,
+                output,
+                &default_operator,
+            )?;
+        } else {
+            for requirement in &mut requirements {
                 resolve_requirements_with_unearth(
                     &pyproject_toml,
                     &python_path,
                     &py_ver,
-                    &mut requirement,
+                    requirement,
                     cmd.pre,
                     output,
                     &default_operator,
                 )?;
             }
         }
+    }
 
-        pyproject_toml.add_dependency(&requirement, &dep_kind)?;
-        added.push(requirement);
+    for requirement in &requirements {
+        pyproject_toml.add_dependency(requirement, &dep_kind)?;
     }
 
     pyproject_toml.save()?;
 
     if output != CommandOutput::Quiet {
-        for ref requirement in added {
+        for ref requirement in requirements {
             echo!(
                 "Added {} as {} dependency",
                 format_requirement(requirement),
@@ -428,7 +430,7 @@ fn resolve_requirements_with_uv(
     pyproject_toml: &PyProject,
     self_venv: &Path,
     py_ver: &PythonVersion,
-    requirement: &mut Requirement,
+    requirements: &mut [Requirement],
     pre: bool,
     output: CommandOutput,
     default_operator: &Operator,
@@ -450,58 +452,43 @@ fn resolve_requirements_with_uv(
     }
     let mut child = cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).spawn()?;
     let child_stdin = child.stdin.as_mut().unwrap();
-    writeln!(child_stdin, "{}", requirement)?;
+    for requirement in &*requirements {
+        writeln!(child_stdin, "{}", requirement)?;
+    }
 
     let rv = child.wait_with_output()?;
     if !rv.status.success() {
         let log = String::from_utf8_lossy(&rv.stderr);
-        bail!(
-            "failed to resolve package {}\n{}",
-            format_requirement(requirement),
-            log
-        );
+        bail!("failed to resolve packages:\n{}", log);
     }
 
-    let mut new_req: Requirement = String::from_utf8_lossy(&rv.stdout).parse()?;
-
-    if let Some(ref mut version_or_url) = new_req.version_or_url {
-        if let VersionOrUrl::VersionSpecifier(ref mut specs) = version_or_url {
-            *version_or_url = VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter({
-                let mut new_specs = Vec::new();
-                for spec in specs.iter() {
-                    let op = match *default_operator {
-                        _ if spec.version().is_local() => Operator::Equal,
-                        Operator::TildeEqual if spec.version().release.len() < 2 => {
-                            Operator::GreaterThanEqual
-                        }
-                        ref other => other.clone(),
-                    };
-                    new_specs.push(
-                        VersionSpecifier::new(op, spec.version().clone(), false)
-                            .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
-                    );
-                }
-                new_specs
-                /*
-                VersionSpecifier::new(
-                    // local versions or versions with only one component cannot
-                    // use ~= but need to use ==.
-                    match *default_operator {
-                        _ if version.is_local() => Operator::Equal,
-                        Operator::TildeEqual if version.release.len() < 2 => Operator::GreaterThanEqual,
-                        ref other => other.clone(),
-                    },
-                    Version::from_str(m.version.as_ref().unwrap())
-                        .map_err(|msg| anyhow!("invalid version: {}", msg))?,
-                    false,
-                )
-                .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
-                */
-            }));
+    for (line, req) in String::from_utf8_lossy(&rv.stdout)
+        .lines()
+        .zip(requirements)
+    {
+        *req = line.parse()?;
+        if let Some(ref mut version_or_url) = req.version_or_url {
+            if let VersionOrUrl::VersionSpecifier(ref mut specs) = version_or_url {
+                *version_or_url = VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter({
+                    let mut new_specs = Vec::new();
+                    for spec in specs.iter() {
+                        let op = match *default_operator {
+                            _ if spec.version().is_local() => Operator::Equal,
+                            Operator::TildeEqual if spec.version().release.len() < 2 => {
+                                Operator::GreaterThanEqual
+                            }
+                            ref other => other.clone(),
+                        };
+                        new_specs.push(
+                            VersionSpecifier::new(op, spec.version().clone(), false)
+                                .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
+                        );
+                    }
+                    new_specs
+                }));
+            }
         }
     }
-
-    *requirement = new_req;
 
     Ok(())
 }
