@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Improved the error message if `config` is invoked without arguments.  #660
+
 <!-- released start -->
 
 ## 0.24.0
