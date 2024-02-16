@@ -144,6 +144,17 @@ impl From<PythonVersionRequest> for Version {
     }
 }
 
+impl PythonVersion {
+    /// Returns a simplified format of the version request.
+    pub fn format_simple(&self) -> String {
+        use std::fmt::Write;
+        let mut rv = format!("{}", self.major);
+        write!(rv, ".{}", self.minor).unwrap();
+        write!(rv, ".{}", self.patch).unwrap();
+        rv
+    }
+}
+
 /// Internal descriptor for a python version request.
 #[derive(PartialEq, Eq, PartialOrd, Ord, Hash, Debug, Clone)]
 pub struct PythonVersionRequest {

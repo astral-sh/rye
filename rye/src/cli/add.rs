@@ -1,4 +1,5 @@
 use std::env;
+use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
@@ -14,6 +15,7 @@ use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
+use crate::sources::PythonVersion;
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
@@ -217,16 +219,12 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let mut python_path = ensure_self_venv(output).context("error bootstrapping venv")?;
+    let self_venv = ensure_self_venv(output).context("error bootstrapping venv")?;
+    let python_path = self_venv.join(VENV_BIN).join("python");
     let mut added = Vec::new();
-    python_path.push(VENV_BIN);
-    python_path.push("python");
 
     let mut pyproject_toml = PyProject::discover()?;
-    let py_ver = match pyproject_toml.target_python_version() {
-        Some(ver) => ver.format_simple(),
-        None => "".to_string(),
-    };
+    let py_ver = pyproject_toml.venv_python_version()?;
     let dep_kind = if cmd.dev {
         DependencyKind::Dev
     } else if cmd.excluded {
@@ -252,94 +250,27 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         // if we are excluding, we do not want a specific dependency version
         // stored, so we just skip the unearth step
         if !cmd.excluded {
-            let matches = find_best_matches(
-                &pyproject_toml,
-                &python_path,
-                Some(&py_ver),
-                &requirement,
-                cmd.pre,
-            )?;
-            if matches.is_empty() {
-                let all_matches =
-                    find_best_matches(&pyproject_toml, &python_path, None, &requirement, cmd.pre)
-                        .unwrap_or_default();
-                if all_matches.is_empty() {
-                    // if we did not consider pre-releases, maybe we could find it by doing so.  In
-                    // that case give the user a helpful warning before erroring.
-                    if !cmd.pre {
-                        let all_pre_matches = find_best_matches(
-                            &pyproject_toml,
-                            &python_path,
-                            None,
-                            &requirement,
-                            true,
-                        )
-                        .unwrap_or_default();
-                        if let Some(pre) = all_pre_matches.into_iter().next() {
-                            warn!(
-                                "{} ({}) was found considering pre-releases.  Pass --pre to allow use.",
-                                pre.name,
-                                pre.version.unwrap_or_default()
-                            );
-                        }
-                        bail!(
-                            "did not find package '{}' without using pre-releases.",
-                            format_requirement(&requirement)
-                        );
-                    } else {
-                        bail!(
-                            "did not find package '{}'",
-                            format_requirement(&requirement)
-                        );
-                    }
-                } else {
-                    if output != CommandOutput::Quiet {
-                        echo!("Available package versions:");
-                        for pkg in all_matches {
-                            echo!(
-                                "  {} ({}) requires Python {}",
-                                pkg.name,
-                                pkg.version.unwrap_or_default(),
-                                pkg.link
-                                    .as_ref()
-                                    .and_then(|x| x.requires_python.as_ref())
-                                    .map_or("unknown", |x| x as &str)
-                            );
-                        }
-                        echo!("A possible solution is to raise the version in `requires-python` in `pyproject.toml`.");
-                    }
-                    bail!(
-                        "did not find a version of package '{}' compatible with this version of Python.",
-                        format_requirement(&requirement)
-                    );
-                }
+            if Config::current().use_uv() {
+                resolve_requirements_with_uv(
+                    &pyproject_toml,
+                    &self_venv,
+                    &py_ver,
+                    &mut requirement,
+                    cmd.pre,
+                    output,
+                    &default_operator,
+                )?;
+            } else {
+                resolve_requirements_with_unearth(
+                    &pyproject_toml,
+                    &python_path,
+                    &py_ver,
+                    &mut requirement,
+                    cmd.pre,
+                    output,
+                    &default_operator,
+                )?;
             }
-
-            let m = matches.into_iter().next().unwrap();
-            if m.version.is_some() && requirement.version_or_url.is_none() {
-                let version = Version::from_str(m.version.as_ref().unwrap())
-                    .map_err(|msg| anyhow!("invalid version: {}", msg))?;
-                requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
-                    VersionSpecifiers::from_iter(Some(
-                        VersionSpecifier::new(
-                            // local versions or versions with only one component cannot
-                            // use ~= but need to use ==.
-                            match default_operator {
-                                _ if version.is_local() => Operator::Equal,
-                                Operator::TildeEqual if version.release.len() < 2 => {
-                                    Operator::GreaterThanEqual
-                                }
-                                ref other => other.clone(),
-                            },
-                            Version::from_str(m.version.as_ref().unwrap())
-                                .map_err(|msg| anyhow!("invalid version: {}", msg))?,
-                            false,
-                        )
-                        .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
-                    )),
-                ));
-            }
-            requirement.name = m.name;
         }
 
         pyproject_toml.add_dependency(&requirement, &dep_kind)?;
@@ -361,10 +292,106 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     Ok(())
 }
 
-fn find_best_matches(
+fn resolve_requirements_with_unearth(
+    pyproject_toml: &PyProject,
+    python_path: &PathBuf,
+    py_ver: &PythonVersion,
+    requirement: &mut Requirement,
+    pre: bool,
+    output: CommandOutput,
+    default_operator: &Operator,
+) -> Result<(), Error> {
+    let matches = find_best_matches_with_unearth(
+        pyproject_toml,
+        python_path,
+        Some(py_ver),
+        requirement,
+        pre,
+    )?;
+    if matches.is_empty() {
+        let all_matches =
+            find_best_matches_with_unearth(pyproject_toml, python_path, None, requirement, pre)
+                .unwrap_or_default();
+        if all_matches.is_empty() {
+            // if we did not consider pre-releases, maybe we could find it by doing so.  In
+            // that case give the user a helpful warning before erroring.
+            if !pre {
+                let all_pre_matches = find_best_matches_with_unearth(
+                    pyproject_toml,
+                    python_path,
+                    None,
+                    requirement,
+                    true,
+                )
+                .unwrap_or_default();
+                if let Some(pre) = all_pre_matches.into_iter().next() {
+                    warn!(
+                        "{} ({}) was found considering pre-releases.  Pass --pre to allow use.",
+                        pre.name,
+                        pre.version.unwrap_or_default()
+                    );
+                }
+                bail!(
+                    "did not find package '{}' without using pre-releases.",
+                    format_requirement(requirement)
+                );
+            } else {
+                bail!("did not find package '{}'", format_requirement(requirement));
+            }
+        } else {
+            if output != CommandOutput::Quiet {
+                echo!("Available package versions:");
+                for pkg in all_matches {
+                    echo!(
+                        "  {} ({}) requires Python {}",
+                        pkg.name,
+                        pkg.version.unwrap_or_default(),
+                        pkg.link
+                            .as_ref()
+                            .and_then(|x| x.requires_python.as_ref())
+                            .map_or("unknown", |x| x as &str)
+                    );
+                }
+                echo!("A possible solution is to raise the version in `requires-python` in `pyproject.toml`.");
+            }
+            bail!(
+                "did not find a version of package '{}' compatible with this version of Python.",
+                format_requirement(requirement)
+            );
+        }
+    }
+    let m = matches.into_iter().next().unwrap();
+    if m.version.is_some() && requirement.version_or_url.is_none() {
+        let version = Version::from_str(m.version.as_ref().unwrap())
+            .map_err(|msg| anyhow!("invalid version: {}", msg))?;
+        requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
+            VersionSpecifiers::from_iter(Some(
+                VersionSpecifier::new(
+                    // local versions or versions with only one component cannot
+                    // use ~= but need to use ==.
+                    match *default_operator {
+                        _ if version.is_local() => Operator::Equal,
+                        Operator::TildeEqual if version.release.len() < 2 => {
+                            Operator::GreaterThanEqual
+                        }
+                        ref other => other.clone(),
+                    },
+                    Version::from_str(m.version.as_ref().unwrap())
+                        .map_err(|msg| anyhow!("invalid version: {}", msg))?,
+                    false,
+                )
+                .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
+            )),
+        ));
+    }
+    requirement.name = m.name;
+    Ok(())
+}
+
+fn find_best_matches_with_unearth(
     pyproject: &PyProject,
     python_path: &PathBuf,
-    py_ver: Option<&str>,
+    py_ver: Option<&PythonVersion>,
     requirement: &Requirement,
     pre: bool,
 ) -> Result<Vec<Match>, Error> {
@@ -374,7 +401,10 @@ fn find_best_matches(
     unearth
         .arg("-c")
         .arg(PACKAGE_FINDER_SCRIPT)
-        .arg(py_ver.unwrap_or(""))
+        .arg(match py_ver {
+            Some(ver) => ver.format_simple(),
+            None => "".into(),
+        })
         .arg(&format_requirement(requirement).to_string())
         .arg(serde_json::to_string(&sources)?);
     if pre {
@@ -392,4 +422,86 @@ fn find_best_matches(
             log
         );
     }
+}
+
+fn resolve_requirements_with_uv(
+    pyproject_toml: &PyProject,
+    self_venv: &Path,
+    py_ver: &PythonVersion,
+    requirement: &mut Requirement,
+    pre: bool,
+    output: CommandOutput,
+    default_operator: &Operator,
+) -> Result<(), Error> {
+    let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+    cmd.arg("pip")
+        .arg("compile")
+        .arg("--python-version")
+        .arg(py_ver.format_simple())
+        .arg("--no-deps")
+        .arg("--no-header")
+        .arg("-")
+        .env("VIRTUAL_ENV", pyproject_toml.venv_path().as_os_str());
+    if pre {
+        cmd.arg("--prerelease=allow");
+    }
+    if output == CommandOutput::Quiet {
+        cmd.arg("-q");
+    }
+    let mut child = cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).spawn()?;
+    let child_stdin = child.stdin.as_mut().unwrap();
+    writeln!(child_stdin, "{}", requirement)?;
+
+    let rv = child.wait_with_output()?;
+    if !rv.status.success() {
+        let log = String::from_utf8_lossy(&rv.stderr);
+        bail!(
+            "failed to resolve package {}\n{}",
+            format_requirement(requirement),
+            log
+        );
+    }
+
+    let mut new_req: Requirement = String::from_utf8_lossy(&rv.stdout).parse()?;
+
+    if let Some(ref mut version_or_url) = new_req.version_or_url {
+        if let VersionOrUrl::VersionSpecifier(ref mut specs) = version_or_url {
+            *version_or_url = VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter({
+                let mut new_specs = Vec::new();
+                for spec in specs.iter() {
+                    let op = match *default_operator {
+                        _ if spec.version().is_local() => Operator::Equal,
+                        Operator::TildeEqual if spec.version().release.len() < 2 => {
+                            Operator::GreaterThanEqual
+                        }
+                        ref other => other.clone(),
+                    };
+                    new_specs.push(
+                        VersionSpecifier::new(op, spec.version().clone(), false)
+                            .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
+                    );
+                }
+                new_specs
+                /*
+                VersionSpecifier::new(
+                    // local versions or versions with only one component cannot
+                    // use ~= but need to use ==.
+                    match *default_operator {
+                        _ if version.is_local() => Operator::Equal,
+                        Operator::TildeEqual if version.release.len() < 2 => Operator::GreaterThanEqual,
+                        ref other => other.clone(),
+                    },
+                    Version::from_str(m.version.as_ref().unwrap())
+                        .map_err(|msg| anyhow!("invalid version: {}", msg))?,
+                    false,
+                )
+                .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
+                */
+            }));
+        }
+    }
+
+    *requirement = new_req;
+
+    Ok(())
 }
