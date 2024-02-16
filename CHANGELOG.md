@@ -9,6 +9,8 @@ _Unreleased_
 
 - Improved the error message if `config` is invoked without arguments.  #660
 
+- Bump `uv` to 0.1.2.  #665
+
 <!-- released start -->
 
 ## 0.24.0
