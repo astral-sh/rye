@@ -316,7 +316,7 @@ fn generate_lockfile(
         fs::write(&requirements_file, b"")?;
     }
 
-    let mut cmd = if Config::current().use_uf() {
+    let mut cmd = if Config::current().use_uv() {
         let self_venv = ensure_self_venv(output)?;
         let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
         cmd.arg("pip")
