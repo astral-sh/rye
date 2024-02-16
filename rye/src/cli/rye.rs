@@ -557,12 +557,16 @@ fn perform_install(
     Ok(())
 }
 
+/// Add rye to the users path.
 fn add_rye_to_path(mode: &InstallMode, shims: &Path) -> Result<(), Error> {
     let rye_home = env::var("RYE_HOME")
         .map(Cow::Owned)
         .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
 
     let rye_home = Path::new(&*rye_home);
+    // For unices, we ask the user if they want rye to be added to PATH.
+    // If they choose to do so, we add the "env" script to .profile.
+    // See [`crate::utils::unix::add_to_path`].
     #[cfg(unix)]
     {
         if !env::split_paths(&env::var_os("PATH").unwrap())
@@ -612,6 +616,7 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path) -> Result<(), Error> {
             echo!("For more information read https://rye-up.com/guide/installation/");
         }
     }
+    // On Windows, we add the rye directory to the user's PATH unconditionally.
     #[cfg(windows)]
     {
         crate::utils::windows::add_to_programs(rye_home)?;
