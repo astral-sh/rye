@@ -11,6 +11,8 @@ _Unreleased_
 
 - Bump `uv` to 0.1.2.  #665
 
+- Use default toolchain to install tools.  #666
+
 <!-- released start -->
 
 ## 0.24.0
