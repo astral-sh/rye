@@ -450,7 +450,11 @@ fn resolve_requirements_with_uv(
     if output == CommandOutput::Quiet {
         cmd.arg("-q");
     }
-    let mut child = cmd.stdin(Stdio::piped()).stdout(Stdio::piped()).spawn()?;
+    let mut child = cmd
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()?;
     let child_stdin = child.stdin.as_mut().unwrap();
     for requirement in &*requirements {
         writeln!(child_stdin, "{}", requirement)?;
