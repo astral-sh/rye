@@ -345,7 +345,7 @@ fn ensure_latest_self_toolchain(output: CommandOutput) -> Result<PythonVersion, 
     {
         if output != CommandOutput::Quiet {
             echo!(
-                "Found a compatible python version: {}",
+                "Found a compatible Python version: {}",
                 style(&version).cyan()
             );
         }
@@ -379,7 +379,7 @@ fn ensure_specific_self_toolchain(
     } else {
         if output != CommandOutput::Quiet {
             echo!(
-                "Found a compatible python version: {}",
+                "Found a compatible Python version: {}",
                 style(&toolchain_version).cyan()
             );
         }

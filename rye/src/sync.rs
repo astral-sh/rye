@@ -132,7 +132,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             }
         } else if cmd.force {
             if cmd.output != CommandOutput::Quiet {
-                echo!("Forcing re-creation of non rye managed virtualenv");
+                echo!("Forcing re-creation of non-rye managed virtualenv");
             }
             recreate = true;
         } else if cmd.mode == SyncMode::PythonOnly {
