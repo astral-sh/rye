@@ -29,3 +29,4 @@ managed = true
 serve-docs = "mkdocs serve"
 
 [tool.rye.workspace]
+members = ["rye-devtools"]

@@ -1,0 +1,28 @@
+[project]
+name = "rye-devtools"
+version = "1.0.0"
+description = "Development tools for rye"
+authors = [{ name = "Armin Ronacher", email = "armin.ronacher@active-4.com" }]
+dependencies = [
+    "httpx>=0.26.0",
+]
+requires-python = ">= 3.11"
+
+[project.scripts]
+find-downloads = "rye_devtools.find_downloads:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.rye]
+managed = true
+dev-dependencies = [
+    "isort>=5.13.2",
+]
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/rye_devtools"]
