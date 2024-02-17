@@ -386,7 +386,7 @@ fn perform_install(
     if matches!(mode, InstallMode::AutoInstall) {
         echo!();
         echo!("Rye has detected that it's not installed on this computer yet and");
-        echo!("automatically started the installer for you.  For more information");
+        echo!("automatically started the installer for you. For more information");
         echo!(
             "read {}",
             style("https://rye-up.com/guide/installation/").yellow()
@@ -424,7 +424,7 @@ fn perform_install(
         warn!("your Windows configuration does not support symlinks.");
         echo!();
         echo!("It's strongly recommended that you enable developer mode in Windows to");
-        echo!("enable symlinks.  You need to enable this before continuing the setup.");
+        echo!("enable symlinks. You need to enable this before continuing the setup.");
         echo!(
             "Learn more at {}",
             style("https://rye-up.com/guide/faq/#windows-developer-mode").yellow()
@@ -594,7 +594,7 @@ fn perform_install(
                 );
                 echo!();
             }
-            echo!("For more information read https://mitsuhiko.github.io/rye/guide/installation");
+            echo!("For more information read https://rye-up.com/guide/installation/");
         }
     }
     #[cfg(windows)]

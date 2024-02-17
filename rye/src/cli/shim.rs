@@ -236,7 +236,7 @@ fn get_shim_target(
             remove1 = true;
             (
                 PythonVersionRequest::from_str(rest)
-                    .context("invalid python version requested from command line")?,
+                    .context("invalid Python version requested from command line")?,
                 false,
             )
         } else if config.global_python() {
@@ -317,9 +317,14 @@ pub fn execute_shim(args: &[OsString]) -> Result<(), Error> {
             match spawn_shim(args)? {}
         } else if is_python_shim(&shim_name) {
             if pyproject.is_some() {
-                bail!("target python binary '{}' not found in project. Most likely running 'rye sync' will resolve this.", shim_name);
+                bail!("Target Python binary '{}' not found in project. Most likely running 'rye sync' will resolve this.", shim_name);
             } else {
-                bail!("target python binary '{}' not found. You're outside of a project, consider enabling global shims: https://rye-up.com/guide/shims/#global-shims", shim_name);
+                bail!(
+                    "Target Python binary '{}' not found.\nYou are currently outside of a project. \
+                    To resolve this, consider enabling global shims. \
+                    Global shims allow for a Rye-managed Python installation.\n\
+                    For more information: https://rye-up.com/guide/shims/#global-shims", shim_name
+                );
             }
         } else {
             bail!("target shim binary '{}' not found", shim_name);
