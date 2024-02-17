@@ -11,6 +11,9 @@ _Unreleased_
 
 - Bump `uv` to 0.1.2.  #665
 
+- When `uv` is enabled, `rye add` now uses `uv` instead of `unearth`
+  internally.  #667
+
 <!-- released start -->
 
 ## 0.24.0
