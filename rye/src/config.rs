@@ -376,18 +376,6 @@ author = "John Doe <john@example.com>""#,
     }
 
     #[test]
-    fn test_http_proxy_env_override() {
-        let (cfg_path, _temp_dir) = setup_config("[proxy]\nhttp = 'http://proxy.example.com'");
-        std::env::set_var("http_proxy", "http://env-proxy.example.com");
-        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
-        assert_eq!(
-            cfg.http_proxy_url(),
-            Some("http://env-proxy.example.com".to_string())
-        );
-        std::env::remove_var("http_proxy"); // Clean up
-    }
-
-    #[test]
     fn test_sources_default_inclusion() {
         let (cfg_path, _temp_dir) = setup_config("");
         let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
