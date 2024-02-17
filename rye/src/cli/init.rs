@@ -307,7 +307,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?
             .contains(&py.clone().into())
     {
-        warn!("conflicted python version with project's requires-python, will auto fix it.");
+        warn!("conflicted Python version with project's requires-python, will auto fix it.");
         requires_python = format!(">= {}.{}", py.major, py.minor.unwrap_or_default());
     }
 

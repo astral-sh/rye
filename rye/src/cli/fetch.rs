@@ -45,6 +45,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
 
-    fetch(&version, output).context("error while fetching python installation")?;
+    fetch(&version, output).context("error while fetching Python installation")?;
     Ok(())
 }

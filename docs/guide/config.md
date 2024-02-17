@@ -81,6 +81,10 @@ force-rye-managed = false
 # virtual environments.
 global-python = false
 
+# When set to `true` enables experimental support of uv as a replacement
+# for pip-tools. Learn more about uv here: https://github.com/astral-sh/uv
+use-uv = false
+
 # Marks the managed .venv in a way that cloud based synchronization systems
 # like Dropbox and iCloud Files will not upload it.  This defaults to true
 # as a .venv in cloud storage typically does not make sense.  Set this to

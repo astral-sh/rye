@@ -57,7 +57,7 @@ unearth==0.14.0
 urllib3==2.0.7
 virtualenv==20.25.0
 ruff==0.1.14
-uv==0.1.2
+uv==0.1.3
 "#;
 
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
@@ -345,7 +345,7 @@ fn ensure_latest_self_toolchain(output: CommandOutput) -> Result<PythonVersion, 
     {
         if output != CommandOutput::Quiet {
             echo!(
-                "Found a compatible python version: {}",
+                "Found a compatible Python version: {}",
                 style(&version).cyan()
             );
         }
@@ -379,7 +379,7 @@ fn ensure_specific_self_toolchain(
     } else {
         if output != CommandOutput::Quiet {
             echo!(
-                "Found a compatible python version: {}",
+                "Found a compatible Python version: {}",
                 style(&toolchain_version).cyan()
             );
         }
