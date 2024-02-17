@@ -318,6 +318,11 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     Ok(())
 }
 
+/// Performs an autosync
+pub fn autosync(output: CommandOutput) -> Result<(), Error> {
+    Ok(())
+}
+
 pub fn create_virtualenv(
     output: CommandOutput,
     self_venv: &Path,

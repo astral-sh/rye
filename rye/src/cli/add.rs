@@ -16,6 +16,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
+use crate::sync::autosync;
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
@@ -221,6 +222,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let self_venv = ensure_self_venv(output).context("error bootstrapping venv")?;
     let python_path = self_venv.join(VENV_BIN).join("python");
+    let cfg = Config::current();
 
     let mut pyproject_toml = PyProject::discover()?;
     let py_ver = pyproject_toml.venv_python_version()?;
@@ -250,7 +252,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if !cmd.excluded {
-        if Config::current().use_uv() {
+        if cfg.use_uv() {
             resolve_requirements_with_uv(
                 &pyproject_toml,
                 &self_venv,
@@ -289,6 +291,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 &dep_kind
             );
         }
+    }
+
+    if cfg.autosync() {
+        autosync(output)?;
     }
 
     Ok(())
