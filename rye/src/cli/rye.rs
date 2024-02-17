@@ -617,6 +617,7 @@ fn perform_install(
 }
 
 /// Add rye to the users path.
+#[cfg_attr(windows, allow(unused_variables))]
 fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Error> {
     let rye_home = env::var("RYE_HOME")
         .map(Cow::Owned)
