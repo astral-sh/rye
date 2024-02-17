@@ -96,6 +96,50 @@ pub struct InstallCommand {
     /// Use a specific toolchain version.
     #[arg(long)]
     toolchain_version: Option<PythonVersionRequest>,
+
+    #[command(flatten)]
+    mp: ModifyPath,
+}
+
+#[derive(Parser, Debug)]
+#[group(required = false, multiple = false)]
+pub struct ModifyPath {
+    /// Always modify without asking the PATH environment variable.
+    #[arg(long)]
+    modify_path: bool,
+    /// Do not modify the PATH environment variable.
+    #[arg(long)]
+    no_modify_path: bool,
+}
+
+#[derive(Debug, Copy, Clone)]
+enum YesNoArg {
+    Yes,
+    No,
+    Ask,
+}
+
+impl YesNoArg {
+    fn with_yes(&self, yes: bool) -> Self {
+        match (yes, self) {
+            (true, Self::Ask) => Self::Yes,
+            _ => *self,
+        }
+    }
+}
+impl From<ModifyPath> for YesNoArg {
+    fn from(other: ModifyPath) -> Self {
+        // Argument parsing logic is a bit complex here:
+        match (other.modify_path, other.no_modify_path) {
+            // 1. If --modify-path is set and --no-modify-path is not set, we always modify the path without prompting.
+            (true, false) => YesNoArg::Yes,
+            // 2. If --no-modify-path is set and --modify-path is not set, we never modify the path.
+            (false, true) => YesNoArg::No,
+            // 3. Otherwise we ask the user
+            (false, false) => YesNoArg::Ask,
+            (true, true) => unreachable!(),
+        }
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
@@ -263,6 +307,7 @@ fn install(args: InstallCommand) -> Result<(), Error> {
         },
         args.toolchain.as_deref(),
         args.toolchain_version,
+        YesNoArg::from(args.mp).with_yes(args.yes),
     )
 }
 
@@ -351,6 +396,7 @@ fn perform_install(
     mode: InstallMode,
     toolchain_path: Option<&Path>,
     toolchain_version: Option<PythonVersionRequest>,
+    modify_path: YesNoArg,
 ) -> Result<(), Error> {
     let mut config = Config::current();
     let mut registered_toolchain: Option<PythonVersionRequest> = None;
@@ -547,11 +593,44 @@ fn perform_install(
         prompt_for_default_toolchain(registered_toolchain.unwrap(), config_doc)?;
     }
 
+    match modify_path {
+        YesNoArg::Yes => {
+            add_rye_to_path(&mode, shims.as_path(), false)?;
+        }
+        YesNoArg::No => {
+            echo!(
+                "Skipping PATH modification. You will need to add {} to your PATH manually.",
+                style(shims.display()).cyan()
+            );
+        }
+        YesNoArg::Ask => {
+            add_rye_to_path(&mode, shims.as_path(), true)?;
+        }
+    }
+
+    echo!();
+    echo!("{}", style("All done!").green());
+
+    config.save()?;
+
+    Ok(())
+}
+
+/// Add rye to the users path.
+#[cfg_attr(windows, allow(unused_variables))]
+fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Error> {
+    let rye_home = env::var("RYE_HOME")
+        .map(Cow::Owned)
+        .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
+
     let rye_home = Path::new(&*rye_home);
+    // For unices, we ask the user if they want rye to be added to PATH.
+    // If they choose to do so, we add the "env" script to .profile.
+    // See [`crate::utils::unix::add_to_path`].
     #[cfg(unix)]
     {
         if !env::split_paths(&env::var_os("PATH").unwrap())
-            .any(|x| same_file::is_same_file(x, &shims).unwrap_or(false))
+            .any(|x| same_file::is_same_file(x, shims).unwrap_or(false))
         {
             echo!();
             echo!(
@@ -562,6 +641,7 @@ fn perform_install(
             echo!("It is highly recommended that you add it.");
 
             if matches!(mode, InstallMode::NoPrompts)
+                || !ask
                 || dialoguer::Confirm::with_theme(tui_theme())
                     .with_prompt(format!(
                         "Should the installer add Rye to {} via .profile?",
@@ -597,17 +677,12 @@ fn perform_install(
             echo!("For more information read https://rye-up.com/guide/installation/");
         }
     }
+    // On Windows, we add the rye directory to the user's PATH unconditionally.
     #[cfg(windows)]
     {
         crate::utils::windows::add_to_programs(rye_home)?;
         crate::utils::windows::add_to_path(rye_home)?;
     }
-
-    echo!();
-    echo!("{}", style("All done!").green());
-
-    config.save()?;
-
     Ok(())
 }
 
@@ -656,7 +731,7 @@ pub fn auto_self_install() -> Result<bool, Error> {
             crate::request_continue_prompt();
         }
 
-        perform_install(InstallMode::AutoInstall, None, None)?;
+        perform_install(InstallMode::AutoInstall, None, None, YesNoArg::Yes)?;
         Ok(true)
     }
 }
