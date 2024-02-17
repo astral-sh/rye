@@ -256,7 +256,7 @@ impl Config {
             .and_then(|x| x.as_bool())
             .unwrap_or(false);
         if yes && cfg!(windows) {
-            warn!("uv enabled in config but not supported on windows");
+            warn!("uv is enabled in the configuration, but this feature is not currently supported on Windows");
             false
         } else {
             yes
