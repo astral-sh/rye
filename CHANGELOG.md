@@ -14,6 +14,8 @@ _Unreleased_
 - When `uv` is enabled, `rye add` now uses `uv` instead of `unearth`
   internally.  #667
 
+- The installer now has slightly better wording for what the shims are doing.  #669
+
 <!-- released start -->
 
 ## 0.24.0
