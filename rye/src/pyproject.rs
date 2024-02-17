@@ -1126,7 +1126,7 @@ fn resolve_intended_venv_python_version(
         .or_else(|| Config::current().default_toolchain().ok())
         .ok_or_else(|| {
             anyhow!(
-                "could not determine a target python version.  Define requires-python in \
+                "could not determine a target Python version.  Define requires-python in \
                  pyproject.toml or use a .python-version file"
             )
         })?;
@@ -1139,7 +1139,7 @@ fn resolve_intended_venv_python_version(
         Ok(latest)
     } else {
         Err(anyhow!(
-            "Unable to determine target virtualenv python version"
+            "Unable to determine target virtualenv Python version"
         ))
     }
 }
