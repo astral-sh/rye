@@ -78,6 +78,15 @@ Note that after `add` you need to run `sync` again to actually install it.  If y
 want to add packages from custom indexes, you have to [configure the source](sources.md)
 first.
 
+## Listing Dependencies
+
+You can invoke `rye list` to get a dump of all installed dependencies of your project.
+Note that this only lists dependencies that are actually installed, so make sure to `sync` first.
+
+```
+rye list
+```
+
 ## Remove a Dependency
 
 Use the `remove` command to remove a dependency from the project again.
@@ -122,10 +131,8 @@ deactivate
 
 The `rye show` command can print out information about the project's state.  By
 just running `rye show` you can see which Python version is used, where the
-virtualenv is located and more.  You can also invoke `rye show --installed-deps`
-to get a dump of all installed dependencies.
+virtualenv is located and more.
 
 ```
 rye show
-rye show --installed-deps
 ```
