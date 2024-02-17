@@ -446,14 +446,14 @@ fn perform_install(
         .get("behavior")
         .and_then(|x| x.get("use-uv"))
         .is_none()
-        && (matches!(mode, InstallMode::NoPrompts)
-            || dialoguer::Select::with_theme(tui_theme())
-                .with_prompt("Select the preferred package installer")
-                .item("pip-tools (slow but stable)")
-                .item("uv (quick but experimental)")
-                .default(0)
-                .interact()?
-                == 1)
+        && !matches!(mode, InstallMode::NoPrompts)
+        && dialoguer::Select::with_theme(tui_theme())
+            .with_prompt("Select the preferred package installer")
+            .item("pip-tools (slow but stable)")
+            .item("uv (quick but experimental)")
+            .default(0)
+            .interact()?
+            == 1
     {
         toml::ensure_table(config_doc, "behavior")["use-uv"] = toml_edit::value(true);
     }
