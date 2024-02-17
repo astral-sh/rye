@@ -466,9 +466,9 @@ fn perform_install(
         .is_none()
         && (matches!(mode, InstallMode::NoPrompts)
             || dialoguer::Select::with_theme(tui_theme())
-                .with_prompt("Determine Rye's python Shim behavior outside of Rye managed projects")
-                .item("Make Rye's own Python distribution available")
-                .item("Transparently pass through to non Rye (system, pyenv, etc.) Python")
+                .with_prompt("What should running `python` or `python3` do when you are not inside a Rye managed project?")
+                .item("Run a Python installed and managed by Rye")
+                .item("Run the old default Python (provided by your OS, pyenv, etc.)")
                 .default(0)
                 .interact()?
                 == 0)
