@@ -263,3 +263,152 @@ impl Config {
         }
     }
 }
+
+#[cfg(test)]
+mod config_tests {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+    use tempfile::{tempdir, TempDir};
+
+    fn setup_config(contents: &str) -> (PathBuf, TempDir) {
+        let dir = tempdir().unwrap();
+        let file_path = dir.path().join("config.toml");
+        let mut file = File::create(&file_path).unwrap();
+        writeln!(file, "{}", contents).unwrap();
+        (file_path, dir) // Return the path and the TempDir to keep it alive
+    }
+
+    #[test]
+    fn test_load_config() {
+        let (cfg_path, _temp_dir) = setup_config("[default]\nrequires-python = '>= 3.6'");
+
+        assert!(
+            cfg_path.exists(),
+            "Config file does not exist at {:?}",
+            cfg_path
+        );
+
+        let load_result = Config::from_path(&cfg_path);
+        assert!(
+            load_result.is_ok(),
+            "Failed to load config: {:?}",
+            load_result.err()
+        );
+
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert_eq!(cfg.default_requires_python(), ">= 3.6");
+    }
+
+    #[test]
+    fn test_default_requires_python() {
+        let (cfg_path, _temp_dir) = setup_config("");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert_eq!(cfg.default_requires_python(), ">= 3.8");
+    }
+
+    #[test]
+    fn test_default_toolchain() {
+        let (cfg_path, _temp_dir) = setup_config("[default]\ntoolchain = '3.8'");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        let toolchain = cfg.default_toolchain().unwrap();
+        assert_eq!(toolchain.major, 3);
+        assert_eq!(toolchain.minor.unwrap(), 8);
+    }
+    #[test]
+    fn test_default_build_system() {
+        let (cfg_path, _temp_dir) = setup_config("[default]\nbuild-system = 'setuptools'");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert_eq!(cfg.default_build_system(), Some(BuildSystem::Setuptools));
+    }
+
+    #[test]
+    fn test_default_license() {
+        let (cfg_path, _temp_dir) = setup_config("[default]\nlicense = 'MIT'");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert_eq!(cfg.default_license(), Some("MIT".to_string()));
+    }
+
+    #[test]
+    fn test_default_author() {
+        let (cfg_path, _temp_dir) = setup_config(
+            r#"[default]
+author = "John Doe <john@example.com>""#,
+        );
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        let (name, email) = cfg.default_author();
+        assert_eq!(name, Some("John Doe".to_string()));
+        assert_eq!(email, Some("john@example.com".to_string()));
+    }
+
+    #[test]
+    fn test_global_python() {
+        let (cfg_path, _temp_dir) = setup_config("[behavior]\nglobal-python = true");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert!(cfg.global_python());
+    }
+
+    #[test]
+    fn test_force_rye_managed() {
+        let (cfg_path, _temp_dir) = setup_config("[behavior]\nforce-rye-managed = true");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert!(cfg.force_rye_managed());
+    }
+
+    #[test]
+    fn test_venv_mark_sync_ignore() {
+        let (cfg_path, _temp_dir) = setup_config("[behavior]\nvenv-mark-sync-ignore = false");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert!(!cfg.venv_mark_sync_ignore());
+    }
+
+    #[test]
+    fn test_http_proxy_url() {
+        let (cfg_path, _temp_dir) = setup_config("[proxy]\nhttp = 'http://proxy.example.com'");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert_eq!(
+            cfg.http_proxy_url(),
+            Some("http://proxy.example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_https_proxy_url() {
+        let (cfg_path, _temp_dir) = setup_config("[proxy]\nhttps = 'https://proxy.example.com'");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert_eq!(
+            cfg.https_proxy_url(),
+            Some("https://proxy.example.com".to_string())
+        );
+    }
+
+    #[test]
+    fn test_http_proxy_env_override() {
+        let (cfg_path, _temp_dir) = setup_config("[proxy]\nhttp = 'http://proxy.example.com'");
+        std::env::set_var("http_proxy", "http://env-proxy.example.com");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert_eq!(
+            cfg.http_proxy_url(),
+            Some("http://env-proxy.example.com".to_string())
+        );
+        std::env::remove_var("http_proxy"); // Clean up
+    }
+
+    #[test]
+    fn test_sources_default_inclusion() {
+        let (cfg_path, _temp_dir) = setup_config("");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        let sources = cfg.sources().expect("Failed to get sources");
+        assert!(sources
+            .iter()
+            .any(|src| src.name == "default" && src.url == "https://pypi.org/simple/"));
+    }
+
+    #[test]
+    fn test_use_uv() {
+        let (cfg_path, _temp_dir) = setup_config("[behavior]\nuse-uv = true");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        // Assuming cfg!(windows) is false in this test environment
+        assert!(cfg.use_uv());
+    }
+}
