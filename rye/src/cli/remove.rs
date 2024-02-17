@@ -21,6 +21,9 @@ pub struct Args {
     /// Remove this from an optional dependency group.
     #[arg(long, conflicts_with = "dev")]
     optional: Option<String>,
+    /// Runs `sync` even if auto-sync is disabled.
+    #[arg(long)]
+    sync: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -58,8 +61,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    if Config::current().autosync() {
-        autosync(output)?;
+    if Config::current().autosync() || cmd.sync {
+        autosync(&pyproject_toml, output)?;
     }
 
     Ok(())
