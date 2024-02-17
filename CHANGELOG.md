@@ -9,12 +9,14 @@ _Unreleased_
 
 - Improved the error message if `config` is invoked without arguments.  #660
 
-- Bump `uv` to 0.1.2.  #665
+- Bump `uv` to 0.1.3.  #665, #675
 
 - When `uv` is enabled, `rye add` now uses `uv` instead of `unearth`
   internally.  #667
 
 - The installer now has slightly better wording for what the shims are doing.  #669
+
+- `uv` can now also be enabled on windows.  #675
 
 <!-- released start -->
 
