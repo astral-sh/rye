@@ -16,7 +16,7 @@ _Unreleased_
 
 - The installer now has slightly better wording for what the shims are doing.  #669
 
-- When `uv` is enabled, rye will now automatically sync on `add` and `remove.  #677
+- When `uv` is enabled, rye will now automatically sync on `add` and `remove`.  #677
 
 <!-- released start -->
 
