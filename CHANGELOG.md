@@ -20,6 +20,8 @@ _Unreleased_
 
 - Removed the unsupported and un-used `arch` parameter from `fetch`.  #681
 
+- Fixed the `-q` parameter not working for the `init` command.  #686
+
 <!-- released start -->
 
 ## 0.24.0
