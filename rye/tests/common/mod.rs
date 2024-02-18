@@ -9,7 +9,7 @@ use tempfile::TempDir;
 pub const INSTA_FILTERS: &[(&str, &str)] = &[
     // general temp folders
     (
-        r"(\bA-Z:)?[\\/].*?[\\/]\.rye-tests---[^\\/]+[\\/]",
+        r"(\b[A-Z]:)?[\\/].*?[\\/]\.rye-tests---[^\\/]+[\\/]",
         "[TEMP_PATH]/",
     ),
     // macos temp folder
@@ -17,7 +17,7 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
     // linux temp folders
     (r"/tmp/\.tmp\S+", "[TEMP_FILE]"),
     // windows temp folders
-    (r"\b[A-Z]:/.*/Local/Temp/\S+", "[TEMP_FILE]"),
+    (r"\b[A-Z]:\\.*\\Local\\Temp\\\S+", "[TEMP_FILE]"),
     (r" in (\d+\.)?\d+(ms|s)\b", " in [EXECUTION_TIME]"),
     (r"\\([\w\d.])", "/$1"),
     (r"rye.exe", "rye"),
