@@ -67,10 +67,10 @@ fn test_add_and_sync() {
     Installed 8 packages in [EXECUTION_TIME]
      + blinker==1.7.0
      + click==8.1.7
-     + flask==3.0.2
+     + flask==3.0.0
      + itsdangerous==2.1.2
-     + jinja2==3.1.3
-     + markupsafe==2.1.5
+     + jinja2==3.1.2
+     + markupsafe==2.1.3
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
      + werkzeug==3.0.1
     "###);

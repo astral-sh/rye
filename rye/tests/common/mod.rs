@@ -6,6 +6,9 @@ use std::process::Command;
 use insta_cmd::get_cargo_bin;
 use tempfile::TempDir;
 
+// Exclude any packages uploaded after this date.
+pub static EXCLUDE_NEWER: &str = "2023-11-18T12:00:00Z";
+
 pub const INSTA_FILTERS: &[(&str, &str)] = &[
     // general temp folders
     (
@@ -118,6 +121,7 @@ impl Space {
         let mut rv = Command::new(cmd);
         rv.env("RYE_HOME", self.rye_home().as_os_str());
         rv.env("UV_CACHE_DIR", self.tempdir.path().join("uv-cache"));
+        rv.env("__RYE_UV_EXCLUDE_NEWER", EXCLUDE_NEWER);
         rv.current_dir(self.project_path());
         rv
     }

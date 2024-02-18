@@ -4,7 +4,7 @@ use std::io::{BufWriter, Write};
 use std::path::Path;
 use std::process::Command;
 use std::sync::Arc;
-use std::{fmt, fs};
+use std::{env, fmt, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use minijinja::render;
@@ -330,6 +330,10 @@ fn generate_lockfile(
             cmd.arg("--verbose");
         } else if output == CommandOutput::Quiet {
             cmd.arg("-q");
+        }
+        // this primarily exists for testing
+        if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
+            cmd.arg("--exclude-newer").arg(dt);
         }
         cmd
     } else {
