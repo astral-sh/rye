@@ -7,8 +7,12 @@ use insta_cmd::get_cargo_bin;
 use tempfile::TempDir;
 
 pub const INSTA_FILTERS: &[(&str, &str)] = &[
+    // general test folders
     (r"/.*?/\.rye-tests---[^/]+/", "[TEMP_PATH]/"),
+    // macos test folder
     (r"/var/folders/\S+?/T/\S+", "[TEMP_FILE]"),
+    // linux test folders
+    (r"/tmp/\.tmp\S+", "[TEMP_FILE]"),
     (r" in \d+(ms|s)\b", " in [EXECUTION_TIME]"),
     (r"\\([\w\d])", "/$1"),
     (r"rye.exe", "rye"),
