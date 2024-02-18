@@ -1,6 +1,8 @@
 name: Publish docs via GitHub Pages
 on:
   push:
+    paths:
+      - 'docs/**'
     branches:
       - main
 
@@ -14,6 +16,7 @@ jobs:
 
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
+        if: github.repository == 'mitsuhiko/rye'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONFIG_FILE: mkdocs.yml
