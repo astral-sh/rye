@@ -62,6 +62,8 @@ fn test_add_and_sync() {
     Built 1 editable in [EXECUTION_TIME]
     Resolved 8 packages in [EXECUTION_TIME]
     Built 1 editable in [EXECUTION_TIME]
+    Resolved 7 packages in [EXECUTION_TIME]
+    Downloaded 7 packages in [EXECUTION_TIME]
     Installed 8 packages in [EXECUTION_TIME]
      + blinker==1.7.0
      + click==8.1.7

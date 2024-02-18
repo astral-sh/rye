@@ -18,7 +18,7 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
     (r"/tmp/\.tmp\S+", "[TEMP_FILE]"),
     // windows temp folders
     (r"\b[A-Z]:/.*/Local/Temp/\S+", "[TEMP_FILE]"),
-    (r" in \d+(ms|s)\b", " in [EXECUTION_TIME]"),
+    (r" in (\d+\.)?\d+(ms|s)\b", " in [EXECUTION_TIME]"),
     (r"\\([\w\d.])", "/$1"),
     (r"rye.exe", "rye"),
 ];
@@ -117,6 +117,7 @@ impl Space {
     {
         let mut rv = Command::new(cmd);
         rv.env("RYE_HOME", self.rye_home().as_os_str());
+        rv.env("UV_CACHE_DIR", self.tempdir.path().join("uv-cache"));
         rv.current_dir(self.project_path());
         rv
     }
