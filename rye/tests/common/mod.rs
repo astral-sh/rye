@@ -55,7 +55,7 @@ toolchain = "cpython@3.12.1"
         assert!(status.success());
     }
 
-    // make a dummy project to boostrap it
+    // make a dummy project to bootstrap it
     if !home.join("self").is_dir() {
         let t = marked_tempdir();
         Command::new(get_bin())
