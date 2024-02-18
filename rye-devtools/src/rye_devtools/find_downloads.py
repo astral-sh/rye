@@ -371,7 +371,7 @@ class PyPyFinder(Finder):
             if not version["stable"]:
                 continue
             python_version = PythonVersion.from_str(version["python_version"])
-            if python_version.major < 3:
+            if python_version < (3, 7, 0):
                 continue
             for file in version["files"]:
                 arch = self.ARCH_MAPPING.get(file["arch"])
