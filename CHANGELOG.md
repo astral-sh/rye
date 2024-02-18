@@ -18,6 +18,8 @@ _Unreleased_
 
 - `uv` can now also be enabled on windows.  #675
 
+- Fixed the `-q` parameter not working for the `init` command.  #686
+
 <!-- released start -->
 
 ## 0.24.0
