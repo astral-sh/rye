@@ -12,6 +12,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+      - uses: Swatinem/rust-cache@v2
       - name: Check
         run: make check
       - name: Test
@@ -26,6 +27,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+      - uses: Swatinem/rust-cache@v2
       - name: Check
         run: make check
       - name: Test
@@ -40,6 +42,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: stable
+      - uses: Swatinem/rust-cache@v2
       - name: Check
         run: make check
       - name: Test
