@@ -18,6 +18,8 @@ _Unreleased_
 
 - `uv` can now also be enabled on windows.  #675
 
+- Removed the unsupported and un-used `arch` parameter from `fetch`.  #681
+
 <!-- released start -->
 
 ## 0.24.0
