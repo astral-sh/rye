@@ -341,12 +341,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         fs::write(&license_file, rv)?;
     }
 
+    let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
+
     // initialize with no metadata
     let mut metadata = Metadata::new();
 
     // by default rye attempts to import metadata first.
     if !cmd.no_import {
-        let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
         let options = ImportOptions {
             output,
             requirements: cmd.requirements,
@@ -524,13 +525,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    echo!(
-        "{} Initialized {}project in {}",
-        style("success:").green(),
-        if is_virtual { "virtual " } else { "" },
-        dir.display()
-    );
-    echo!("  Run `rye sync` to get started");
+    if output != CommandOutput::Quiet {
+        echo!(
+            "{} Initialized {}project in {}",
+            style("success:").green(),
+            if is_virtual { "virtual " } else { "" },
+            dir.display()
+        );
+        echo!("  Run `rye sync` to get started");
+    }
 
     Ok(())
 }
