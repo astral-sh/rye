@@ -15,11 +15,6 @@ pub struct Args {
     ///
     /// If no version is provided, the requested version will be fetched.
     version: Option<String>,
-    /// Overrides the architecture to fetch.
-    ///
-    /// When a non native architecture is fetched, the toolchain is
-    /// installed under an alias.
-    arch: Option<String>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
