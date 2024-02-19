@@ -22,6 +22,8 @@ _Unreleased_
 
 - Fixed the `-q` parameter not working for the `init` command.  #686
 
+- `rye tools list` shows broken tools if the toolchain was removed. #692
+
 - Configure the ruff cache directory to be located within the workspace root. #689
 
 <!-- released start -->
