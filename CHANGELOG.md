@@ -22,6 +22,8 @@ _Unreleased_
 
 - Fixed the `-q` parameter not working for the `init` command.  #686
 
+- Configure the ruff cache directory to be located within the workspace root. #689
+
 <!-- released start -->
 
 ## 0.24.0
