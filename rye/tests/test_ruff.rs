@@ -15,7 +15,7 @@ fn test_lint_and_format() {
 def hello():
 
 
-    return "foo";
+    return "Hello World";
 "#,
     );
 
@@ -25,7 +25,7 @@ def hello():
     exit_code: 1
     ----- stdout -----
     src/my_project/__init__.py:1:8: F401 [*] `os` imported but unused
-    src/my_project/__init__.py:6:17: E703 [*] Statement ends with an unnecessary semicolon
+    src/my_project/__init__.py:6:25: E703 [*] Statement ends with an unnecessary semicolon
     Found 2 errors.
     [*] 2 fixable with the `--fix` option.
 
@@ -44,7 +44,7 @@ def hello():
     def hello():
 
 
-        return "foo"
+        return "Hello World"
     "###);
 
     // fmt next
@@ -67,6 +67,6 @@ def hello():
     "###);
     assert_snapshot!(space.read_string("src/my_project/__init__.py"), @r###"
     def hello():
-        return "foo"
+        return "Hello World"
     "###);
 }

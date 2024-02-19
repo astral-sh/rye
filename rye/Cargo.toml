@@ -74,5 +74,5 @@ static_vcruntime = "2.0.0"
 
 [dev-dependencies]
 fslock = "0.2.1"
-insta = { version = "1.35.0", features = ["filters"] }
+insta = { version = "1.35.1", features = ["filters"] }
 insta-cmd = "0.5.0"
