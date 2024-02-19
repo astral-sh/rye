@@ -26,6 +26,8 @@ _Unreleased_
 
 - Configure the ruff cache directory to be located within the workspace root. #689
 
+- Use default toolchain to install tools.  #666
+
 <!-- released start -->
 
 ## 0.24.0

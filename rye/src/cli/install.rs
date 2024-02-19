@@ -5,6 +5,7 @@ use clap::Parser;
 use pep508_rs::Requirement;
 
 use crate::cli::add::ReqExtras;
+use crate::config::Config;
 use crate::installer::{install, resolve_local_requirement};
 use crate::sources::PythonVersionRequest;
 use crate::utils::CommandOutput;
@@ -53,15 +54,17 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
 
     let py_ver: PythonVersionRequest = match cmd.python {
         Some(ref py) => py.parse()?,
-        None => PythonVersionRequest {
-            name: None,
-            arch: None,
-            os: None,
-            major: 3,
-            minor: None,
-            patch: None,
-            suffix: None,
-        },
+        None => Config::current()
+            .default_toolchain()
+            .unwrap_or(PythonVersionRequest {
+                name: None,
+                arch: None,
+                os: None,
+                major: 3,
+                minor: None,
+                patch: None,
+                suffix: None,
+            }),
     };
 
     install(
