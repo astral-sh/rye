@@ -57,7 +57,7 @@ unearth==0.14.0
 urllib3==2.0.7
 virtualenv==20.25.0
 ruff==0.1.14
-uv==0.1.3
+uv==0.1.5
 "#;
 
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
