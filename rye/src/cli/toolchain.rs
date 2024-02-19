@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use crate::installer::list_installed_tools;
+use crate::piptools::get_pip_tools_venv_path;
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
 use clap::ValueEnum;
@@ -112,11 +113,11 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
 fn check_in_use(ver: &PythonVersion) -> Result<(), Error> {
     // Check if used by rye itself.
     let app_dir = get_app_dir();
-    for dir in &["self", "pip-tools"] {
-        let venv_marker = read_venv_marker(&app_dir.join(dir));
+    for venv in &[app_dir.join("self"), get_pip_tools_venv_path(ver)] {
+        let venv_marker = read_venv_marker(venv);
         if let Some(ref venv_marker) = venv_marker {
             if &venv_marker.python == ver {
-                bail!("toolchain {} is still in use by rye itself", &ver);
+                bail!("toolchain {} is still in use by rye itself", ver);
             }
         }
     }
@@ -126,7 +127,7 @@ fn check_in_use(ver: &PythonVersion) -> Result<(), Error> {
     for (tool, info) in &installed_tools {
         if let Some(ref venv_marker) = info.venv_marker {
             if &venv_marker.python == ver {
-                bail!("toolchain {} is still in use by tool {}", &ver, &tool);
+                bail!("toolchain {} is still in use by tool {}", ver, tool);
             }
         }
     }
