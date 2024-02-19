@@ -9,6 +9,8 @@ _Unreleased_
 
 - Bumped `ruff` to 0.2.2.  #700
 
+- Prevent `rye toolchain remove` from removing the currently active toolchain.  #693
+
 <!-- released start -->
 
 ## 0.25.0
