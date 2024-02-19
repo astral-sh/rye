@@ -47,7 +47,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let ruff = venv.join(VENV_BIN).join("ruff");
 
     let mut ruff_cmd = Command::new(ruff);
-    ruff_cmd.env("RUFF_CACHE_DIR", project.workspace_path().join(".ruff_cache").as_os_str());
+    ruff_cmd.env(
+        "RUFF_CACHE_DIR",
+        project.workspace_path().join(".ruff_cache").as_os_str(),
+    );
     ruff_cmd.arg("format");
     match output {
         CommandOutput::Normal => {}
