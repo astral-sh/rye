@@ -22,6 +22,8 @@ _Unreleased_
 
 - Fixed the `-q` parameter not working for the `init` command.  #686
 
+- `rye tools list` shows broken tools if the toolchain was removed. #692
+
 <!-- released start -->
 
 ## 0.24.0
