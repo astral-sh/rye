@@ -1,10 +1,8 @@
 """This script is used to generate rye/src/downloads.inc.
 
-It find the latest python-build-standalone releases, sorts them by
+It finds the latest Python releases, sorts them by
 various factors (arch, platform, flavor) and generates download
-links to be included into rye at build time.  In addition it maintains
-a manual list of pypy downloads to be included into rye at build
-time.
+links to be included into rye at build time.
 """
 import abc
 import asyncio
@@ -31,7 +29,7 @@ def batched(iterable, n):
     "Batch data into tuples of length n. The last batch may be shorter."
     # batched('ABCDEFG', 3) --> ABC DEF G
     if n < 1:
-        raise ValueError('n must be at least one')
+        raise ValueError("n must be at least one")
     it = iter(iterable)
     while batch := tuple(itertools.islice(it, n)):
         yield batch
@@ -70,6 +68,7 @@ class PythonDownload:
     filename: str
     url: str
     sha256: str | None = None
+
 
 async def fetch(client: httpx.AsyncClient, url: str) -> httpx.Response:
     """Fetch from GitHub API with rate limit awareness."""
@@ -334,6 +333,189 @@ class CPythonFinder(Finder):
             download.sha256 = checksums.get(download.filename)
 
 
+class PyPyFinder(Finder):
+    implementation = PythonImplementation.PYPY
+
+    def __init__(self, client: httpx.AsyncClient):
+        self.client = client
+
+    async def find(self) -> list[PythonDownload]:
+        # TODO These are manually maintained for now, fetch them from PyPy website in later PR.
+        return [
+            PythonDownload(
+                version=PythonVersion(3, 10, 12),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.10-v7.3.12-linux64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.10-v7.3.12-linux64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 10, 12),
+                triple=PlatformTriple(
+                    arch="aarch64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.10-v7.3.12-aarch64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.10-v7.3.12-aarch64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 10, 12),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="macos", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.10-v7.3.12-macos_x86_64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_x86_64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 10, 12),
+                triple=PlatformTriple(
+                    arch="aarch64", platform="macos", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.10-v7.3.12-macos_arm64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_arm64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 10, 12),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="windows", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.10-v7.3.12-win64.zip",
+                url="https://downloads.python.org/pypy/pypy3.10-v7.3.12-win64.zip",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 9, 16),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.9-v7.3.11-linux64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.9-v7.3.11-linux64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 9, 16),
+                triple=PlatformTriple(
+                    arch="aarch64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.9-v7.3.11-aarch64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.9-v7.3.11-aarch64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 9, 16),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="macos", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.9-v7.3.11-macos_x86_64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_x86_64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 9, 16),
+                triple=PlatformTriple(
+                    arch="aarch64", platform="macos", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.9-v7.3.11-macos_arm64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_arm64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 9, 16),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="windows", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.9-v7.3.11-win64.zip",
+                url="https://downloads.python.org/pypy/pypy3.9-v7.3.11-win64.zip",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 8, 16),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.8-v7.3.11-linux64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.8-v7.3.11-linux64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 8, 16),
+                triple=PlatformTriple(
+                    arch="aarch64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.8-v7.3.11-aarch64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.8-v7.3.11-aarch64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 8, 16),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="macos", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.8-v7.3.11-macos_x86_64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_x86_64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 8, 16),
+                triple=PlatformTriple(
+                    arch="aarch64", platform="macos", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.8-v7.3.11-macos_arm64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_arm64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 8, 16),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="windows", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.8-v7.3.11-win64.zip",
+                url="https://downloads.python.org/pypy/pypy3.8-v7.3.11-win64.zip",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 7, 13),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.7-v7.3.9-linux64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.7-v7.3.9-linux64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 7, 13),
+                triple=PlatformTriple(
+                    arch="aarch64", platform="linux", environment="gnu", flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.7-v7.3.9-aarch64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.7-v7.3.9-aarch64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 7, 13),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="macos", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.7-v7.3.9-osx64.tar.bz2",
+                url="https://downloads.python.org/pypy/pypy3.7-v7.3.9-osx64.tar.bz2",
+            ),
+            PythonDownload(
+                version=PythonVersion(3, 7, 13),
+                triple=PlatformTriple(
+                    arch="x86_64", platform="windows", environment=None, flavor=None
+                ),
+                implementation=PythonImplementation.PYPY,
+                filename="pypy3.7-v7.3.9-win64.zip",
+                url="https://downloads.python.org/pypy/pypy3.7-v7.3.9-win64.zip",
+            ),
+        ]
+
+
 def render(downloads: list[PythonDownload]):
     """Render downloads.inc."""
 
@@ -376,6 +558,7 @@ async def async_main():
 
     finders = [
         CPythonFinder(client),
+        PyPyFinder(client),
     ]
     downloads = []
 
@@ -391,74 +574,6 @@ async def async_main():
 def main():
     asyncio.run(async_main())
 
-# These are manually maintained for now
-PYPY_DOWNLOADS = {
-    PythonVersion(3, 10, 12): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_x86_64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_arm64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-win64.zip",
-    },
-    PythonVersion(3, 9, 16): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_x86_64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_arm64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-win64.zip",
-    },
-    PythonVersion(3, 8, 16): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_x86_64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_arm64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-win64.zip",
-    },
-    PythonVersion(3, 7, 13): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-osx64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-win64.zip",
-    },
-}
 
 if __name__ == "__main__":
     main()
@@ -480,7 +595,7 @@ class Tests(unittest.TestCase):
             "x86_64-unknown-linux-gnu-debug": PlatformTriple(
                 "x86_64", "linux", "gnu", "debug"
             ),
-            "linux64": PlatformTriple("x86_64", "linux", "gnu", ""),
+            "linux64": PlatformTriple("x86_64", "linux", "gnu", None),
             "ppc64le-unknown-linux-gnu-noopt-full": None,
             "x86_64_v3-unknown-linux-gnu-lto": None,
             "x86_64-pc-windows-msvc-shared-pgo": PlatformTriple(
@@ -489,4 +604,4 @@ class Tests(unittest.TestCase):
         }
 
         for input, expected in expected.items():
-            self.assertEqual(PlatformTriple.from_str(input), expected, input)
+            self.assertEqual(CPythonFinder.parse_triple(input), expected, input)
