@@ -130,6 +130,19 @@ impl Space {
         self.cmd(get_bin())
     }
 
+    #[allow(unused)]
+    pub fn write<P: AsRef<Path>, B: AsRef<[u8]>>(&self, path: P, contents: B) {
+        let p = self.project_path().join(path.as_ref());
+        fs::create_dir_all(p.parent().unwrap()).ok();
+        fs::write(p, contents).unwrap();
+    }
+
+    #[allow(unused)]
+    pub fn read_string<P: AsRef<Path>>(&self, path: P) -> String {
+        let p = self.project_path().join(path.as_ref());
+        fs::read_to_string(p).unwrap()
+    }
+
     pub fn init(&self, name: &str) {
         let status = self
             .cmd(get_bin())
