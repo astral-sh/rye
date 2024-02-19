@@ -44,7 +44,7 @@ fn list_tools(cmd: ListCommand) -> Result<(), Error> {
 
     for (tool, mut info) in tools {
         if !info.valid {
-            echo!("{} ({})", style(tool).red(), style("seems broken").red());
+            echo!("{} {}", style(tool).cyan(), style(info.version).cyan());
             continue;
         }
         if cmd.version_show {
