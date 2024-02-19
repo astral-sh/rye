@@ -28,6 +28,8 @@ _Unreleased_
 
 - Use default toolchain to install tools.  #666
 
+- `rye --version` now shows if `uv` is enabled.
+
 <!-- released start -->
 
 ## 0.24.0
