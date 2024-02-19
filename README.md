@@ -36,7 +36,7 @@ Rye picks and ships the right tools so you can get started in minutes:
 * **Managing Virtualenvs:** it uses the well established virtualenv library under the hood.
 * **Building Wheels:** it delegates that work largely to [build](https://pypi.org/project/build/).
 * **Publishing:** its publish command uses [twine](https://pypi.org/project/twine/) to accomplish this task.
-* **Locking and Dependency Installation:** is today implemented by using [unearth](https://pypi.org/project/unearth/) and [pip-tools](https://github.com/jazzband/pip-tools/).
+* **Locking and Dependency Installation:** is today implemented by using [uv](https://github.com/astral-sh/uv) with a fallback to [unearth](https://pypi.org/project/unearth/) and [pip-tools](https://github.com/jazzband/pip-tools/).
 * **Workspace support:** Rye lets you work with complex projects consisting
   of multiple libraries.
 
