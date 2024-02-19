@@ -3,8 +3,10 @@ on:
   push:
     paths:
       - 'docs/**'
+      - 'CHANGELOG.md'
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
