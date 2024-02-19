@@ -39,13 +39,12 @@ def hello():
 
     ----- stderr -----
     "###);
-    assert_snapshot!(format!("|{}|", space.read_string("src/my_project/__init__.py")), @r###"
-    |
+    assert_snapshot!(space.read_string("src/my_project/__init__.py"), @r###"
+
     def hello():
 
 
         return "foo"
-    |
     "###);
 
     // fmt next
@@ -66,9 +65,8 @@ def hello():
 
     ----- stderr -----
     "###);
-    assert_snapshot!(format!("|{}|", space.read_string("src/my_project/__init__.py")), @r###"
-    |def hello():
+    assert_snapshot!(space.read_string("src/my_project/__init__.py"), @r###"
+    def hello():
         return "foo"
-    |
     "###);
 }
