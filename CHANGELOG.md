@@ -9,7 +9,7 @@ _Unreleased_
 
 - Improved the error message if `config` is invoked without arguments.  #660
 
-- Bump `uv` to 0.1.5.  #665, #675
+- Bump `uv` to 0.1.5.  #665, #675, #698
 
 - When `uv` is enabled, `rye add` now uses `uv` instead of `unearth`
   internally.  #667
