@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Bumped `ruff` to 0.2.2.  #700
+
 <!-- released start -->
 
 ## 0.25.0
