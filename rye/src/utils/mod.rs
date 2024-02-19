@@ -34,6 +34,7 @@ pub(crate) mod windows;
 #[cfg(unix)]
 pub(crate) mod unix;
 
+pub(crate) mod ruff;
 pub(crate) mod toml;
 
 #[cfg(windows)]
