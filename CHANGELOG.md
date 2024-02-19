@@ -9,7 +9,7 @@ _Unreleased_
 
 - Improved the error message if `config` is invoked without arguments.  #660
 
-- Bump `uv` to 0.1.3.  #665, #675
+- Bump `uv` to 0.1.5.  #665, #675, #698
 
 - When `uv` is enabled, `rye add` now uses `uv` instead of `unearth`
   internally.  #667
@@ -164,7 +164,7 @@ Released on 2024-01-15
 
 - Fixed default generated script reference.  #527
 
-- Correctly fall back to home folder if HOME is unset.  #533 
+- Correctly fall back to home folder if HOME is unset.  #533
 
 ## 0.16.0
 
