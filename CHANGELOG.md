@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.25.0
 
-_Unreleased_
+Released on 2024-02-19
 
 - Improved the error message if `config` is invoked without arguments.  #660
 
@@ -29,8 +31,6 @@ _Unreleased_
 - Use default toolchain to install tools.  #666
 
 - `rye --version` now shows if `uv` is enabled.  #699
-
-<!-- released start -->
 
 ## 0.24.0
 
