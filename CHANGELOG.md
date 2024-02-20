@@ -13,6 +13,8 @@ _Unreleased_
 
 - Sync latest PyPy releases. #683
 
+- Fixes an issue where when `uv` is enabled, `add` did not honor custom sources.  #720
+
 - When `uv` is enabled, rye will now automatically sync on `add` and `remove`.  #677
 
 <!-- released start -->
