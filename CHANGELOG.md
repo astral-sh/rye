@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Bumped `uv` to 0.1.6. #719
+
 - Bumped `ruff` to 0.2.2.  #700
 
 - Prevent `rye toolchain remove` from removing the currently active toolchain.  #693
