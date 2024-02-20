@@ -15,4 +15,5 @@ Removed installed toolchain cpython@3.9.5
 
 ## Options
 
+* `-f, --force`: Force removal even if the toolchain is in use
 * `-h, --help`: Print help (see a summary with '-h')

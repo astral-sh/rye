@@ -1068,6 +1068,19 @@ pub fn read_venv_marker(venv_path: &Path) -> Option<VenvMarker> {
     serde_json::from_slice(&contents).ok()
 }
 
+pub fn write_venv_marker(venv_path: &Path, py_ver: &PythonVersion) -> Result<(), Error> {
+    fs::write(
+        venv_path.join("rye-venv.json"),
+        serde_json::to_string_pretty(&VenvMarker {
+            python: py_ver.clone(),
+            venv_path: Some(venv_path.into()),
+        })?,
+    )
+    .context("failed writing venv marker file")?;
+
+    Ok(())
+}
+
 pub fn get_current_venv_python_version(venv_path: &Path) -> Option<PythonVersion> {
     read_venv_marker(venv_path).map(|x| x.python)
 }

@@ -40,7 +40,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
 fn list_tools(cmd: ListCommand) -> Result<(), Error> {
     let mut tools = list_installed_tools()?.into_iter().collect::<Vec<_>>();
-    tools.sort();
+    tools.sort_by_key(|(tool, _)| tool.clone());
 
     for (tool, mut info) in tools {
         if !info.valid {
@@ -48,7 +48,11 @@ fn list_tools(cmd: ListCommand) -> Result<(), Error> {
             continue;
         }
         if cmd.version_show {
-            echo!("{} {}", style(tool).cyan(), style(info.version).cyan());
+            if let Some(ref venv) = info.venv_marker {
+                echo!("{} {} ({})", style(tool).cyan(), info.version, venv.python);
+            } else {
+                echo!("{} {}", style(tool).cyan(), info.version);
+            }
         } else {
             echo!("{}", style(tool).cyan());
         }

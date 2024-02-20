@@ -19,7 +19,7 @@ use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
     symlinks_supported,
 };
-use crate::pyproject::latest_available_python_version;
+use crate::pyproject::{latest_available_python_version, write_venv_marker};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{
     check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
@@ -154,6 +154,8 @@ pub fn ensure_self_venv_with_toolchain(
     if !status.success() {
         bail!("failed to initialize virtualenv in {}", venv_dir.display());
     }
+
+    write_venv_marker(&venv_dir, &version)?;
 
     do_update(output, &venv_dir, app_dir)?;
 
