@@ -132,6 +132,24 @@ impl Space {
     }
 
     #[allow(unused)]
+    pub fn edit_toml<P: AsRef<Path>, R, F: FnOnce(&mut toml_edit::Document) -> R>(
+        &self,
+        path: P,
+        f: F,
+    ) -> R {
+        let p = self.project_path().join(path.as_ref());
+        let mut doc = if p.is_file() {
+            std::fs::read_to_string(&p).unwrap().parse().unwrap()
+        } else {
+            toml_edit::Document::default()
+        };
+        let rv = f(&mut doc);
+        fs::create_dir_all(p.parent().unwrap()).ok();
+        fs::write(p, doc.to_string()).unwrap();
+        rv
+    }
+
+    #[allow(unused)]
     pub fn write<P: AsRef<Path>, B: AsRef<[u8]>>(&self, path: P, contents: B) {
         let p = self.project_path().join(path.as_ref());
         fs::create_dir_all(p.parent().unwrap()).ok();

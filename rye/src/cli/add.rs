@@ -464,6 +464,12 @@ fn resolve_requirements_with_uv(
     if output == CommandOutput::Quiet {
         cmd.arg("-q");
     }
+    // this primarily exists for testing
+    if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
+        cmd.arg("--exclude-newer").arg(dt);
+    }
+    let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
+    sources.add_as_pip_args(&mut cmd);
     let mut child = cmd
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
