@@ -87,7 +87,7 @@ fn test_add_and_sync_no_auto_sync() {
      + werkzeug==3.0.1
     "###);
 
-    rye_cmd_snapshot!(space.rye_cmd().arg("config").arg("--set-bool").arg("behavior.autosync=true"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("config").arg("--unset").arg("behavior.autosync"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
