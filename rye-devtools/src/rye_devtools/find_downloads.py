@@ -337,8 +337,12 @@ class PyPyFinder(Finder):
     implementation = PythonImplementation.PYPY
 
     RELEASE_URL = "https://raw.githubusercontent.com/pypy/pypy/main/pypy/tool/release/versions.json"
-    CHECKSUM_URL = "https://raw.githubusercontent.com/pypy/pypy.org/main/pages/checksums.rst"
-    CHECKSUM_RE = re.compile(r"^\s*(?P<checksum>\w{64})\s+(?P<filename>pypy.+)$", re.MULTILINE)
+    CHECKSUM_URL = (
+        "https://raw.githubusercontent.com/pypy/pypy.org/main/pages/checksums.rst"
+    )
+    CHECKSUM_RE = re.compile(
+        r"^\s*(?P<checksum>\w{64})\s+(?P<filename>pypy.+)$", re.MULTILINE
+    )
 
     ARCH_MAPPING = {
         "x64": "x86_64",
@@ -388,6 +392,7 @@ class PyPyFinder(Finder):
                         flavor=None,
                     ),
                     implementation=PythonImplementation.PYPY,
+                    filename=file["filename"],
                     url=file["download_url"],
                 )
                 # Only keep the latest pypy version of each arch/platform
