@@ -90,12 +90,12 @@ pub fn ensure_self_venv_with_toolchain(
             return Ok(venv_dir);
         } else {
             if output != CommandOutput::Quiet {
-                echo!("Detected outdated rye internals. Refreshing");
+                echo!("detected outdated rye internals. Refreshing");
             }
-            fs::remove_dir_all(&venv_dir).context("Could not remove self-venv for update")?;
+            fs::remove_dir_all(&venv_dir).context("could not remove self-venv for update")?;
             if pip_tools_dir.is_dir() {
                 fs::remove_dir_all(&pip_tools_dir)
-                    .context("Could not remove pip-tools for update")?;
+                    .context("could not remove pip-tools for update")?;
             }
         }
     }
