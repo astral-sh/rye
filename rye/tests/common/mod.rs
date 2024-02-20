@@ -143,6 +143,7 @@ impl Space {
         fs::read_to_string(p).unwrap()
     }
 
+    #[allow(unused)]
     pub fn init(&self, name: &str) {
         let status = self
             .cmd(get_bin())
