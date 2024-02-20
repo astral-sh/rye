@@ -114,6 +114,23 @@ impl Space {
         }
     }
 
+    /// Prevents concurrent access to the space.
+    #[allow(unused)]
+    pub fn exclusive(&self) -> impl Drop {
+        struct Guard(fslock::LockFile);
+        let lock_path = self.rye_home().join("lock");
+        let mut lock = fslock::LockFile::open(&lock_path).unwrap();
+
+        impl Drop for Guard {
+            fn drop(&mut self) {
+                self.0.unlock().ok();
+            }
+        }
+
+        lock.lock().unwrap();
+        Guard(lock)
+    }
+
     pub fn cmd<S>(&self, cmd: S) -> Command
     where
         S: AsRef<OsStr>,
