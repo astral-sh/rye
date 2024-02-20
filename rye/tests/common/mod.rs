@@ -15,6 +15,8 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
         r"(\b[A-Z]:)?[\\/].*?[\\/]\.rye-tests---[^\\/]+[\\/]",
         "[TEMP_PATH]/",
     ),
+    // home
+    (r"(\b[A-Z]:)?[\\/].*?[\\/]rye-test-home", "[RYE_HOME]"),
     // macos temp folder
     (r"/var/folders/\S+?/T/\S+", "[TEMP_FILE]"),
     // linux temp folders
