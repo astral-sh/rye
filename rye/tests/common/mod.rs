@@ -9,6 +9,7 @@ use tempfile::TempDir;
 // Exclude any packages uploaded after this date.
 pub static EXCLUDE_NEWER: &str = "2023-11-18T12:00:00Z";
 
+#[allow(unused)]
 pub const INSTA_FILTERS: &[(&str, &str)] = &[
     // general temp folders
     (
@@ -165,6 +166,7 @@ impl Space {
         &self.project_dir
     }
 
+    #[allow(unused)]
     pub fn lock_rye_home(&self) -> fslock::LockFile {
         let mut lock = fslock::LockFile::open(&self.rye_home().join("lock")).unwrap();
         lock.lock().unwrap();
