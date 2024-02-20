@@ -213,6 +213,9 @@ pub struct Args {
     /// Runs `sync` even if auto-sync is disabled.
     #[arg(long)]
     sync: bool,
+    /// Does not run `sync` even if auto-sync is enabled.
+    #[arg(long, conflicts_with = "sync")]
+    no_sync: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -298,7 +301,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    if cfg.autosync() || cmd.sync {
+    if (cfg.autosync() && !cmd.no_sync) || cmd.sync {
         autosync(&pyproject_toml, output)?;
     }
 

@@ -33,18 +33,10 @@ fn test_empty_sync() {
 #[test]
 fn test_add_and_sync_no_auto_sync() {
     let space = Space::new();
-    let _guard = space.exclusive();
     space.init("my-project");
-    rye_cmd_snapshot!(space.rye_cmd().arg("config").arg("--set-bool").arg("behavior.autosync=false"), @r###"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-
-    ----- stderr -----
-    "###);
 
     // add colorama to ensure we have this as a dependency on all platforms
-    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("flask==3.0.0").arg("colorama"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("flask==3.0.0").arg("colorama").arg("--no-sync"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -85,14 +77,6 @@ fn test_add_and_sync_no_auto_sync() {
      + markupsafe==2.1.3
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
      + werkzeug==3.0.1
-    "###);
-
-    rye_cmd_snapshot!(space.rye_cmd().arg("config").arg("--unset").arg("behavior.autosync"), @r###"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-
-    ----- stderr -----
     "###);
 }
 
