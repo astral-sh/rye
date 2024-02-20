@@ -433,7 +433,7 @@ def render(downloads: list[PythonDownload]):
     print(
         "// To regenerate, run `rye run find-downloads > rye/src/downloads.inc` from the root of the repository."
     )
-    print("use std::borrow::Cow;")
+    print("use std::borrow::Cow::Borrowed;")
     print("pub const PYTHON_VERSIONS: &[(PythonVersion, &str, Option<&str>)] = &[")
 
     for download in downloads:
@@ -441,7 +441,7 @@ def render(downloads: list[PythonDownload]):
         version = download.version
         sha256 = f'Some("{download.sha256}")' if download.sha256 else "None"
         print(
-            f'    (PythonVersion {{ name: Cow::Borrowed("{download.implementation}"), arch: Cow::Borrowed("{triple.arch}"), os: Cow::Borrowed("{triple.platform}"), major: {version.major}, minor: {version.minor}, patch: {version.patch}, suffix: None }}, "{download.url}", {sha256}),'
+            f'    (PythonVersion {{ name: Borrowed("{download.implementation}"), arch: Borrowed("{triple.arch}"), os: Borrowed("{triple.platform}"), major: {version.major}, minor: {version.minor}, patch: {version.patch}, suffix: None }}, "{download.url}", {sha256}),'
         )
 
     print("];")
