@@ -411,8 +411,7 @@ class PyPyFinder(Finder):
             checksums[match.group("filename")] = match.group("checksum")
 
         for download in downloads:
-            filename = download.url.rsplit("/", maxsplit=1)[-1]
-            download.sha256 = checksums.get(filename)
+            download.sha256 = checksums.get(download.filename)
 
 
 def render(downloads: list[PythonDownload]):
