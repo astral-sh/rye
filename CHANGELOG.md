@@ -9,6 +9,8 @@ _Unreleased_
 
 - Bumped `ruff` to 0.2.2.  #700
 
+- Sync latest PyPy releases. #683
+
 <!-- released start -->
 
 ## 0.25.0
