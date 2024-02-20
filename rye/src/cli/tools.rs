@@ -14,7 +14,7 @@ pub struct Args {
 /// List all registered tools
 #[derive(Parser, Debug)]
 pub struct ListCommand {
-    /// Also how all the scripts installed by the tools.
+    /// Also show all the scripts installed by the tools.
     #[arg(short, long)]
     include_scripts: bool,
     /// Show the version of tools.
