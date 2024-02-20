@@ -33,5 +33,5 @@ lint:
 	@rye sync
 
 .PHONY: sync-python-releases
-sync-python-releases:
+sync-python-releases: .venv
 	@rye run find-downloads > rye/src/downloads.inc
