@@ -42,7 +42,7 @@ fn test_config_show_path() {
 }
 
 #[test]
-fn test_config_incomptabile_format_and_show_path() {
+fn test_config_incompatible_format_and_show_path() {
     let space = Space::new();
     rye_cmd_snapshot!(space.rye_cmd().arg("config").arg("--show-path").arg("--format=json"), @r###"
     success: false
