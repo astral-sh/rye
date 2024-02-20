@@ -49,6 +49,7 @@ nav:
         - Overview: guide/commands/tools/index.md
         - install: guide/commands/tools/install.md
         - uninstall: guide/commands/tools/uninstall.md
+        - list: guide/commands/tools/list.md
       - self:
         - Overview: guide/commands/self/index.md
         - completion: guide/commands/self/completion.md
