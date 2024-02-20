@@ -13,6 +13,8 @@ _Unreleased_
 
 - Sync latest PyPy releases. #683
 
+- When `uv` is enabled, rye will now automatically sync on `add` and `remove`.  #677
+
 <!-- released start -->
 
 ## 0.25.0

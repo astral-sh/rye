@@ -46,6 +46,9 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Do not reuse (reset) prior lock options.
+    #[arg(long)]
+    reset: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -67,6 +70,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             features: cmd.features,
             all_features: cmd.all_features,
             with_sources: cmd.with_sources,
+            reset: cmd.reset,
         },
         pyproject: cmd.pyproject,
     })?;
