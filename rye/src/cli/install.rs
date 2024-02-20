@@ -10,7 +10,7 @@ use crate::installer::{install, resolve_local_requirement};
 use crate::sources::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
-/// Installs a package as global tool.
+/// Installs a package as global tool. This is an alias of `rye tools install`.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The name of the package to install.

@@ -11,6 +11,8 @@ _Unreleased_
 
 - Prevent `rye toolchain remove` from removing the currently active toolchain.  #693
 
+- Sync latest PyPy releases. #683
+
 <!-- released start -->
 
 ## 0.25.0
