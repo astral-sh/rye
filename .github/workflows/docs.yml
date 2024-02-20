@@ -10,6 +10,7 @@ on:
 
 jobs:
   build:
+    if: github.repository == 'mitsuhiko/rye'
     name: Deploy docs
     runs-on: ubuntu-latest
     steps:
@@ -18,7 +19,6 @@ jobs:
       - uses: Swatinem/rust-cache@v2
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
-        if: github.repository == 'mitsuhiko/rye'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CONFIG_FILE: mkdocs.yml

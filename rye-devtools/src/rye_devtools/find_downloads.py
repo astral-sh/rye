@@ -7,6 +7,7 @@ links to be included into rye at build time.
 import abc
 import asyncio
 import itertools
+import os
 import re
 import sys
 import time
@@ -549,7 +550,17 @@ def render(downloads: list[PythonDownload]):
 
 
 async def async_main():
-    token = open("token.txt").read().strip()
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        try:
+            token = open("token.txt").read().strip()
+        except Exception:
+            pass
+
+    if not token:
+        log("Please set GITHUB_TOKEN environment variable or create a token.txt file.")
+        sys.exit(1)
+
     headers = {
         "X-GitHub-Api-Version": "2022-11-28",
         "Authorization": "Bearer " + token,
