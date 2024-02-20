@@ -12,5 +12,6 @@ jobs:
         with:
           toolchain: stable
           components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
       - name: Run clippy
         run: make lint

@@ -15,9 +15,9 @@ use crate::bootstrap::{ensure_self_venv, fetch};
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::get_app_dir;
-use crate::pyproject::{normalize_package_name, ExpandedSources};
+use crate::pyproject::{normalize_package_name, read_venv_marker, ExpandedSources};
 use crate::sources::PythonVersionRequest;
-use crate::sync::create_virtualenv;
+use crate::sync::{create_virtualenv, VenvMarker};
 use crate::utils::{
     get_short_executable_name, get_venv_python_bin, is_executable, symlink_file, CommandOutput,
 };
@@ -68,15 +68,27 @@ print(json.dumps(result))
 static SUCCESSFULLY_DOWNLOADED_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new("(?m)^Successfully downloaded (.*?)$").unwrap());
 
-#[derive(Ord, PartialOrd, Eq, PartialEq)]
+#[derive(Eq, PartialEq)]
 pub struct ToolInfo {
     pub version: String,
     pub scripts: Vec<String>,
+    pub venv_marker: Option<VenvMarker>,
+    pub valid: bool,
 }
 
 impl ToolInfo {
-    pub fn new(version: String, scripts: Vec<String>) -> Self {
-        Self { version, scripts }
+    pub fn new(
+        version: String,
+        scripts: Vec<String>,
+        venv_marker: Option<VenvMarker>,
+        valid: bool,
+    ) -> Self {
+        Self {
+            version,
+            scripts,
+            venv_marker,
+            valid,
+        }
     }
 }
 
@@ -335,8 +347,9 @@ pub fn list_installed_tools() -> Result<HashMap<String, ToolInfo>, Error> {
         }
         let tool_name = folder.file_name().to_string_lossy().to_string();
         let target_venv_bin_path = folder.path().join(VENV_BIN);
-        let mut scripts = Vec::new();
+        let venv_marker = read_venv_marker(&folder.path());
 
+        let mut scripts = Vec::new();
         for script in fs::read_dir(target_venv_bin_path.clone())? {
             let script = script?;
             let script_path = script.path();
@@ -347,17 +360,23 @@ pub fn list_installed_tools() -> Result<HashMap<String, ToolInfo>, Error> {
                 }
             }
         }
-        let tool_version = Command::new(target_venv_bin_path.join("python"))
+
+        let output = Command::new(target_venv_bin_path.join("python"))
             .arg("-c")
             .arg(TOOL_VERSION_SCRIPT)
             .arg(tool_name.clone())
             .stdout(Stdio::piped())
-            .output()?;
-        let tool_version = String::from_utf8_lossy(&tool_version.stdout)
-            .trim()
-            .to_string();
+            .output();
+        let valid = output.is_ok();
+        let tool_version = match output {
+            Ok(output) => String::from_utf8_lossy(&output.stdout).trim().to_string(),
+            Err(_) => String::new(),
+        };
 
-        rv.insert(tool_name, ToolInfo::new(tool_version, scripts));
+        rv.insert(
+            tool_name,
+            ToolInfo::new(tool_version, scripts, venv_marker, valid),
+        );
     }
 
     Ok(rv)

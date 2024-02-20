@@ -3,22 +3,47 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.25.0
+## 0.26.0
 
 _Unreleased_
 
+- Bumped `ruff` to 0.2.2.  #700
+
+- Prevent `rye toolchain remove` from removing the currently active toolchain.  #693
+
+- Sync latest PyPy releases. #683
+
+- When `uv` is enabled, rye will now automatically sync on `add` and `remove.  #677
+
+<!-- released start -->
+
+## 0.25.0
+
+Released on 2024-02-19
+
 - Improved the error message if `config` is invoked without arguments.  #660
 
-- Bump `uv` to 0.1.2.  #665
+- Bump `uv` to 0.1.5.  #665, #675, #698
 
 - When `uv` is enabled, `rye add` now uses `uv` instead of `unearth`
   internally.  #667
 
 - The installer now has slightly better wording for what the shims are doing.  #669
 
-- When `uv` is enabled, rye will now automatically sync on `add` and `remove.  #677
+- `uv` can now also be enabled on windows.  #675
 
-<!-- released start -->
+- Removed the unsupported and un-used `arch` parameter from `fetch`.  #681
+
+- Fixed the `-q` parameter not working for the `init` command.  #686
+
+- `rye tools list` shows broken tools if the toolchain was removed. #692
+
+- Configure the ruff cache directory to be located within the workspace root. #689
+
+- Use default toolchain to install tools.  #666
+
+- `rye --version` now shows if `uv` is enabled.  #699
+>>>>>>> main
 
 ## 0.24.0
 
@@ -156,7 +181,7 @@ Released on 2024-01-15
 
 - Fixed default generated script reference.  #527
 
-- Correctly fall back to home folder if HOME is unset.  #533 
+- Correctly fall back to home folder if HOME is unset.  #533
 
 ## 0.16.0
 

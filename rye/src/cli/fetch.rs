@@ -8,18 +8,13 @@ use crate::pyproject::PyProject;
 use crate::sources::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
-/// Fetches a Python interpreter for the local machine.
+/// Fetches a Python interpreter for the local machine. This is an alias of `rye toolchain fetch`.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The version of Python to fetch.
     ///
-    /// If no version is provided, the requested version will be fetched.
+    /// If no version is provided, the requested version from local project or `.python-version` will be fetched.
     version: Option<String>,
-    /// Overrides the architecture to fetch.
-    ///
-    /// When a non native architecture is fetched, the toolchain is
-    /// installed under an alias.
-    arch: Option<String>,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -45,6 +40,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
 
-    fetch(&version, output).context("error while fetching python installation")?;
+    fetch(&version, output).context("error while fetching Python installation")?;
     Ok(())
 }

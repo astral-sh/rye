@@ -17,7 +17,7 @@ use crate::lock::{
 };
 use crate::piptools::{get_pip_sync, get_pip_tools_venv_path};
 use crate::platform::get_toolchain_python_bin;
-use crate::pyproject::{read_venv_marker, ExpandedSources, PyProject};
+use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
 use crate::utils::{
     get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
@@ -72,7 +72,7 @@ impl SyncOptions {
 }
 
 /// Config written into the virtualenv for sync purposes.
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq)]
 pub struct VenvMarker {
     pub python: PythonVersion,
     pub venv_path: Option<PathBuf>,
@@ -132,7 +132,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             }
         } else if cmd.force {
             if cmd.output != CommandOutput::Quiet {
-                echo!("Forcing re-creation of non rye managed virtualenv");
+                echo!("Forcing re-creation of non-rye managed virtualenv");
             }
             recreate = true;
         } else if cmd.mode == SyncMode::PythonOnly {
@@ -170,14 +170,6 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         let prompt = pyproject.name().unwrap_or("venv");
         create_virtualenv(output, &self_venv, &py_ver, &venv, prompt)
             .context("failed creating virtualenv ahead of sync")?;
-        fs::write(
-            venv.join("rye-venv.json"),
-            serde_json::to_string_pretty(&VenvMarker {
-                python: py_ver.clone(),
-                venv_path: Some(venv.clone().into()),
-            })?,
-        )
-        .context("failed writing venv marker file")?;
     }
 
     // prepare necessary utilities for pip-sync.  This is a super crude
@@ -382,6 +374,8 @@ pub fn create_virtualenv(
     if !status.success() {
         bail!("failed to initialize virtualenv");
     }
+
+    write_venv_marker(venv, py_ver)?;
 
     // uv can only do it now
     if Config::current().use_uv() {

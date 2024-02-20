@@ -19,7 +19,7 @@ use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
     symlinks_supported,
 };
-use crate::pyproject::latest_available_python_version;
+use crate::pyproject::{latest_available_python_version, write_venv_marker};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{
     check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
@@ -37,7 +37,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 12;
+const SELF_VERSION: u64 = 13;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.0.3
@@ -56,8 +56,8 @@ twine==4.0.2
 unearth==0.14.0
 urllib3==2.0.7
 virtualenv==20.25.0
-ruff==0.1.14
-uv==0.1.2
+ruff==0.2.2
+uv==0.1.5
 "#;
 
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
@@ -154,6 +154,8 @@ pub fn ensure_self_venv_with_toolchain(
     if !status.success() {
         bail!("failed to initialize virtualenv in {}", venv_dir.display());
     }
+
+    write_venv_marker(&venv_dir, &version)?;
 
     do_update(output, &venv_dir, app_dir)?;
 
@@ -345,7 +347,7 @@ fn ensure_latest_self_toolchain(output: CommandOutput) -> Result<PythonVersion, 
     {
         if output != CommandOutput::Quiet {
             echo!(
-                "Found a compatible python version: {}",
+                "Found a compatible Python version: {}",
                 style(&version).cyan()
             );
         }
@@ -379,7 +381,7 @@ fn ensure_specific_self_toolchain(
     } else {
         if output != CommandOutput::Quiet {
             echo!(
-                "Found a compatible python version: {}",
+                "Found a compatible Python version: {}",
                 style(&toolchain_version).cyan()
             );
         }

@@ -1,144 +1,49 @@
 """This script is used to generate rye/src/downloads.inc.
 
-It find the latest python-build-standalone releases, sorts them by
+It finds the latest Python releases, sorts them by
 various factors (arch, platform, flavor) and generates download
-links to be included into rye at build time.  In addition it maintains
-a manual list of pypy downloads to be included into rye at build
-time.
+links to be included into rye at build time.
 """
+import abc
 import asyncio
 import itertools
+import os
 import re
 import sys
 import time
 import unittest
 from dataclasses import dataclass
 from datetime import datetime, timezone
-from enum import Enum
-from itertools import chain
-from typing import Callable, Optional, Self
+from enum import StrEnum
+from typing import NamedTuple, Self
 from urllib.parse import unquote
 
 import httpx
+from httpx import HTTPStatusError
 
 
 def log(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
+
 def batched(iterable, n):
     "Batch data into tuples of length n. The last batch may be shorter."
     # batched('ABCDEFG', 3) --> ABC DEF G
     if n < 1:
-        raise ValueError('n must be at least one')
+        raise ValueError("n must be at least one")
     it = iter(iterable)
     while batch := tuple(itertools.islice(it, n)):
         yield batch
 
-TOKEN = open("token.txt").read().strip()
-RELEASE_URL = "https://api.github.com/repos/indygreg/python-build-standalone/releases"
-HEADERS = {
-    "X-GitHub-Api-Version": "2022-11-28",
-    "Authorization": "Bearer " + TOKEN,
-}
-FLAVOR_PREFERENCES = [
-    "shared-pgo",
-    "shared-noopt",
-    "shared-noopt",
-    "pgo+lto",
-    "lto",
-    "pgo",
-]
-HIDDEN_FLAVORS = [
-    "debug",
-    "noopt",
-    "install_only",
-]
-SPECIAL_TRIPLES = {
-    "macos": "x86_64-apple-darwin",
-    "linux64": "x86_64-unknown-linux-gnu",
-    "windows-amd64": "x86_64-pc-windows-msvc",
-    "windows-x86-shared-pgo": "i686-pc-windows-msvc-shared-pgo",
-    "windows-amd64-shared-pgo": "x86_64-pc-windows-msvc-shared-pgo",
-    "windows-x86": "i686-pc-windows-msvc",
-    "linux64-musl": "x86_64-unknown-linux-musl",
-}
 
-# matches these: https://doc.rust-lang.org/std/env/consts/constant.ARCH.html
-ARCH_MAPPING = {
-    "x86_64": "x86_64",
-    "x86": "x86",
-    "i686": "x86",
-    "aarch64": "aarch64",
-}
-
-# matches these: https://doc.rust-lang.org/std/env/consts/constant.OS.html
-PLATFORM_MAPPING = {
-    "darwin": "macos",
-    "windows": "windows",
-    "linux": "linux",
-}
-
-ENV_MAPPING = {
-    "gnu": "gnu",
-    # We must ignore musl for now
-    # "musl": "musl",
-}
-
-
-@dataclass(frozen=True)
-class PlatformTriple:
+class PlatformTriple(NamedTuple):
     arch: str
     platform: str
-    environment: Optional[str]
-    flavor: str
-
-    @classmethod
-    def from_str(cls, triple: str) -> Optional[Self]:
-        """Parse a triple into a PlatformTriple object."""
-
-        # The parsing functions are all very similar and we could abstract them into a single function
-        # but I think it's clearer to keep them separate.
-        def match_flavor(triple):
-            for flavor in FLAVOR_PREFERENCES + HIDDEN_FLAVORS:
-                if flavor in triple:
-                    return flavor
-            return ""
-
-        def match_mapping(pieces: list[str], mapping: dict[str, str]):
-            for i in reversed(range(0, len(pieces))):
-                if pieces[i] in mapping:
-                    return mapping[pieces[i]], pieces[:i]
-            return None, pieces
-
-        # We split by '-' and match back to front to extract the flavor, env, platform and archk
-        arch, platform, env, flavor = None, None, None, None
-
-        # Map, old, special triplets to proper triples for parsing, or
-        # return the triple if it's not a special one
-        triple = SPECIAL_TRIPLES.get(triple, triple)
-        pieces = triple.split("-")
-        flavor = match_flavor(triple)
-        env, pieces = match_mapping(pieces, ENV_MAPPING)
-        platform, pieces = match_mapping(pieces, PLATFORM_MAPPING)
-        arch, pieces = match_mapping(pieces, ARCH_MAPPING)
-
-        if flavor is None or arch is None or platform is None:
-            return
-
-        if env is None and platform == "linux":
-            return
-
-        return cls(arch, platform, env, flavor)
-
-    def grouped(self) -> tuple[str, str]:
-        # for now we only group by arch and platform, because rust's PythonVersion doesn't have a notion
-        # of environment. Flavor will never be used to sort download choices and must not be included in grouping.
-        return self.arch, self.platform
-        # return self.arch, self.platform, self.environment or ""
+    environment: str | None
+    flavor: str | None
 
 
-@dataclass(frozen=True, order=True)
-class PythonVersion:
+class PythonVersion(NamedTuple):
     major: int
     minor: int
     patch: int
@@ -147,255 +52,437 @@ class PythonVersion:
     def from_str(cls, version: str) -> Self:
         return cls(*map(int, version.split(".", 3)))
 
+    def __neg__(self) -> Self:
+        return PythonVersion(-self.major, -self.minor, -self.patch)
 
-@dataclass(frozen=True)
-class IndygregDownload:
+
+class PythonImplementation(StrEnum):
+    CPYTHON = "cpython"
+    PYPY = "pypy"
+
+
+@dataclass
+class PythonDownload:
     version: PythonVersion
     triple: PlatformTriple
+    implementation: PythonImplementation
+    filename: str
     url: str
-
-    FILENAME_RE = re.compile(
-        r"""(?x)
-        ^
-            cpython-(?P<ver>\d+\.\d+\.\d+?)
-            (?:\+\d+)?
-            -(?P<triple>.*?)
-            (?:-[\dT]+)?\.tar\.(?:gz|zst)
-        $
-    """
-    )
-
-    @classmethod
-    def from_url(cls, url) -> Optional[Self]:
-        base_name = unquote(url.rsplit("/")[-1])
-        if base_name.endswith(".sha256"):
-            return
-
-        match = cls.FILENAME_RE.match(base_name)
-        if match is None:
-            return
-
-        # Parse version string and triplet string
-        version_str, triple_str = match.groups()
-        version = PythonVersion.from_str(version_str)
-        triple = PlatformTriple.from_str(triple_str)
-        if triple is None:
-            return
-
-        return cls(version, triple, url)
-
-    async def sha256(self, client: httpx.AsyncClient) -> Optional[str]:
-        """We only fetch the sha256 when needed. This generally is AFTER we have
-        decided that the download will be part of rye's download set"""
-        resp = await fetch(client, self.url + ".sha256", headers=HEADERS)
-        if 200 <= resp.status_code < 400:
-            return resp.text.strip()
-        return None
+    sha256: str | None = None
 
 
-async def fetch(client: httpx.AsyncClient, page: str, headers: dict[str, str]):
-    """Fetch a page from GitHub API with ratelimit awareness."""
-    resp = await client.get(page, headers=headers, timeout=90)
+async def fetch(client: httpx.AsyncClient, url: str) -> httpx.Response:
+    """Fetch from GitHub API with rate limit awareness."""
+    resp = await client.get(url, timeout=15)
     if (
         resp.status_code in [403, 429]
         and resp.headers.get("x-ratelimit-remaining") == "0"
     ):
         # See https://docs.github.com/en/rest/using-the-rest-api/troubleshooting-the-rest-api?apiVersion=2022-11-28
         if (retry_after := resp.headers.get("retry-after")) is not None:
-            log("got retry-after header. retrying in {retry_after} seconds.")
+            log(f"Got retry-after header, retry in {retry_after} seconds.")
             time.sleep(int(retry_after))
 
-            return await fetch(client, page, headers)
+            return await fetch(client, url)
 
         if (retry_at := resp.headers.get("x-ratelimit-reset")) is not None:
             utc = datetime.now(timezone.utc).timestamp()
-            retry_after = int(retry_at) - int(utc)
+            retry_after = max(int(retry_at) - int(utc), 0)
 
-            log("got x-ratelimit-reset header. retrying in {retry_after} seconds.")
-            time.sleep(max(int(retry_at) - int(utc), 0))
+            log(f"Got x-ratelimit-reset header, retry in {retry_after} seconds.")
+            time.sleep(retry_after)
 
-            return await fetch(client, page, headers)
+            return await fetch(client, url)
 
-        log("got rate limited but no information how long. waiting for 2 minutes")
+        log("Got rate limited but no information how long, wait for 2 minutes.")
         time.sleep(60 * 2)
-        return await fetch(client, page, headers)
+        return await fetch(client, url)
+
+    resp.raise_for_status()
     return resp
 
 
-async def fetch_indiygreg_downloads(
-    client: httpx.AsyncClient,
-    pages: int = 100,
-) -> dict[PythonVersion, dict[PlatformTriple, list[IndygregDownload]]]:
-    """Fetch all the indygreg downloads from the release API."""
-    results = {}
+class Finder:
+    implementation: PythonImplementation
 
-    for page in range(1, pages):
-        log(f"Fetching page {page}")
-        resp = await fetch(client, "%s?page=%d" % (RELEASE_URL, page), headers=HEADERS)
-        rows = resp.json()
-        if not rows:
-            break
-        for row in rows:
-            for asset in row["assets"]:
-                url = asset["browser_download_url"]
-                if (download := IndygregDownload.from_url(url)) is not None:
-                    results.setdefault(download.version, {}).setdefault(download.triple.grouped(), []).append(download)
-    return results
+    @abc.abstractmethod
+    async def find(self) -> list[PythonDownload]:
+        raise NotImplementedError
 
 
-def pick_best_download(downloads: list[IndygregDownload]) -> Optional[IndygregDownload]:
-    """Pick the best download from the list of downloads."""
+class CPythonFinder(Finder):
+    implementation = PythonImplementation.CPYTHON
 
-    def preference(download: IndygregDownload) -> int:
-        try:
-            return FLAVOR_PREFERENCES.index(download.triple.flavor)
-        except ValueError:
-            return len(FLAVOR_PREFERENCES) + 1
+    RELEASE_URL = (
+        "https://api.github.com/repos/indygreg/python-build-standalone/releases"
+    )
 
-    downloads.sort(key=preference)
-    return downloads[0] if downloads else None
+    FLAVOR_PREFERENCES = [
+        "shared-pgo",
+        "shared-noopt",
+        "shared-noopt",
+        "pgo+lto",
+        "lto",
+        "pgo",
+    ]
+    HIDDEN_FLAVORS = [
+        "debug",
+        "noopt",
+        "install_only",
+    ]
+    SPECIAL_TRIPLES = {
+        "macos": "x86_64-apple-darwin",
+        "linux64": "x86_64-unknown-linux-gnu",
+        "windows-amd64": "x86_64-pc-windows-msvc",
+        "windows-x86-shared-pgo": "i686-pc-windows-msvc-shared-pgo",
+        "windows-amd64-shared-pgo": "x86_64-pc-windows-msvc-shared-pgo",
+        "windows-x86": "i686-pc-windows-msvc",
+        "linux64-musl": "x86_64-unknown-linux-musl",
+    }
 
-async def fetch_sha256s(
-    client: httpx.AsyncClient,
-    indys: dict[PythonVersion, list[IndygregDownload]],
-    n: int = 10,
-) -> dict[str, str]:
-    # flatten
-    downloads = (download for downloads in indys.values() for download in downloads)
-    length = sum([len(downloads) for downloads in indys.values()])
+    # matches these: https://doc.rust-lang.org/std/env/consts/constant.ARCH.html
+    ARCH_MAPPING = {
+        "x86_64": "x86_64",
+        "x86": "x86",
+        "i686": "x86",
+        "aarch64": "aarch64",
+    }
 
-    completed = 0
-    tasks = []
-    for batch in batched(downloads, n=n):
-        log(f"fetching {n} sha256s: {completed}/{length} completed")
-        async with asyncio.TaskGroup() as tg:
-            for download in batch:
-                task = tg.create_task(download.sha256(client))
-                tasks.append((download.url, task))
-        completed += n
-    return {url: task.result() for url, task in tasks}
+    # matches these: https://doc.rust-lang.org/std/env/consts/constant.OS.html
+    PLATFORM_MAPPING = {
+        "darwin": "macos",
+        "windows": "windows",
+        "linux": "linux",
+    }
 
-def render(
-    indys: dict[PythonVersion, list[IndygregDownload]],
-    pypy: dict[PythonVersion, dict[PlatformTriple, str]],
-    sha256s: dict[str, str]
-):
-    """Render downloads.inc"""
-    log("Generating code and fetching sha256 of all cpython downloads.")
-    log("This can be slow......")
+    ENV_MAPPING = {
+        "gnu": "gnu",
+        # We must ignore musl for now
+        # "musl": "musl",
+    }
 
-    print("// generated code, do not edit")
+    FILENAME_RE = re.compile(
+        r"""(?x)
+    ^
+        cpython-(?P<ver>\d+\.\d+\.\d+?)
+        (?:\+\d+)?
+        -(?P<triple>.*?)
+        (?:-[\dT]+)?\.tar\.(?:gz|zst)
+    $
+"""
+    )
+
+    def __init__(self, client: httpx.AsyncClient):
+        self.client = client
+
+    async def find(self) -> list[PythonDownload]:
+        downloads = await self.fetch_indygreg_downloads()
+        await self.fetch_indygreg_checksums(downloads, n=20)
+        return downloads
+
+    async def fetch_indygreg_downloads(self, pages: int = 100) -> list[PythonDownload]:
+        """Fetch all the indygreg downloads from the release API."""
+        results: dict[PythonVersion, dict[tuple[str, str], list[PythonDownload]]] = {}
+
+        for page in range(1, pages):
+            log(f"Fetching indygreg release page {page}")
+            resp = await fetch(self.client, "%s?page=%d" % (self.RELEASE_URL, page))
+            rows = resp.json()
+            if not rows:
+                break
+            for row in rows:
+                for asset in row["assets"]:
+                    url = asset["browser_download_url"]
+                    download = self.parse_download_url(url)
+                    if download is not None:
+                        (
+                            results.setdefault(download.version, {})
+                            # For now, we only group by arch and platform, because Rust's PythonVersion doesn't have a notion
+                            # of environment. Flavor will never be used to sort download choices and must not be included in grouping.
+                            .setdefault(
+                                (download.triple.arch, download.triple.platform), []
+                            )
+                            .append(download)
+                        )
+
+        downloads = []
+        for version, platform_downloads in results.items():
+            for flavors in platform_downloads.values():
+                best = self.pick_best_download(flavors)
+                if best is not None:
+                    downloads.append(best)
+        return downloads
+
+    @classmethod
+    def parse_download_url(cls, url: str) -> PythonDownload | None:
+        """Parse an indygreg download URL into a PythonDownload object."""
+        # The URL looks like this:
+        # https://github.com/indygreg/python-build-standalone/releases/download/20240107/cpython-3.12.1%2B20240107-aarch64-unknown-linux-gnu-lto-full.tar.zst
+        filename = unquote(url.rsplit("/", maxsplit=1)[-1])
+        if filename.endswith(".sha256"):
+            return
+
+        match = cls.FILENAME_RE.match(filename)
+        if match is None:
+            return
+
+        version_str, triple_str = match.groups()
+        version = PythonVersion.from_str(version_str)
+        triple = cls.parse_triple(triple_str)
+        if triple is None:
+            return
+
+        return PythonDownload(
+            version=version,
+            triple=triple,
+            implementation=PythonImplementation.CPYTHON,
+            filename=filename,
+            url=url,
+        )
+
+    @classmethod
+    def parse_triple(cls, triple: str) -> PlatformTriple | None:
+        """Parse a triple into a PlatformTriple object."""
+
+        def match_flavor(triple: str) -> str | None:
+            for flavor in cls.FLAVOR_PREFERENCES + cls.HIDDEN_FLAVORS:
+                if flavor in triple:
+                    return flavor
+            return None
+
+        def match_mapping(
+            pieces: list[str], mapping: dict[str, str]
+        ) -> tuple[str | None, list[str]]:
+            for i in reversed(range(0, len(pieces))):
+                if pieces[i] in mapping:
+                    return mapping[pieces[i]], pieces[:i]
+            return None, pieces
+
+        # Map, old, special triplets to proper triples for parsing, or
+        # return the triple if it's not a special one
+        triple = cls.SPECIAL_TRIPLES.get(triple, triple)
+        pieces = triple.split("-")
+        flavor = match_flavor(triple)
+        env, pieces = match_mapping(pieces, cls.ENV_MAPPING)
+        platform, pieces = match_mapping(pieces, cls.PLATFORM_MAPPING)
+        arch, pieces = match_mapping(pieces, cls.ARCH_MAPPING)
+
+        if arch is None or platform is None:
+            return
+
+        if env is None and platform == "linux":
+            return
+
+        return PlatformTriple(arch, platform, env, flavor)
+
+    @classmethod
+    def pick_best_download(
+        cls, downloads: list[PythonDownload]
+    ) -> PythonDownload | None:
+        """Pick the best download from the list of downloads."""
+
+        def preference(download: PythonDownload) -> int:
+            try:
+                return cls.FLAVOR_PREFERENCES.index(download.triple.flavor)
+            except ValueError:
+                return len(cls.FLAVOR_PREFERENCES) + 1
+
+        downloads.sort(key=preference)
+        return downloads[0] if downloads else None
+
+    async def fetch_indygreg_checksums(
+        self, downloads: list[PythonDownload], n: int = 10
+    ) -> None:
+        """Fetch the checksums for the given downloads."""
+        checksums_url = set()
+        for download in downloads:
+            release_url = download.url.rsplit("/", maxsplit=1)[0]
+            checksum_url = release_url + "/SHA256SUMS"
+            checksums_url.add(checksum_url)
+
+        async def fetch_checksums(url: str):
+            try:
+                resp = await fetch(self.client, url)
+            except HTTPStatusError as e:
+                if e.response.status_code != 404:
+                    raise
+                return None
+            return resp
+
+        completed = 0
+        tasks = []
+        for batch in batched(checksums_url, n):
+            log(f"Fetching indygreg checksums: {completed}/{len(checksums_url)}")
+            async with asyncio.TaskGroup() as tg:
+                for url in batch:
+                    task = tg.create_task(fetch_checksums(url))
+                    tasks.append(task)
+            completed += n
+
+        checksums = {}
+        for task in tasks:
+            resp = task.result()
+            if resp is None:
+                continue
+            lines = resp.text.splitlines()
+            for line in lines:
+                checksum, filename = line.split(" ", maxsplit=1)
+                filename = filename.strip()
+                checksums[filename] = checksum
+
+        for download in downloads:
+            download.sha256 = checksums.get(download.filename)
+
+
+class PyPyFinder(Finder):
+    implementation = PythonImplementation.PYPY
+
+    RELEASE_URL = "https://raw.githubusercontent.com/pypy/pypy/main/pypy/tool/release/versions.json"
+    CHECKSUM_URL = (
+        "https://raw.githubusercontent.com/pypy/pypy.org/main/pages/checksums.rst"
+    )
+    CHECKSUM_RE = re.compile(
+        r"^\s*(?P<checksum>\w{64})\s+(?P<filename>pypy.+)$", re.MULTILINE
+    )
+
+    ARCH_MAPPING = {
+        "x64": "x86_64",
+        "i686": "x86",
+        "aarch64": "aarch64",
+        "arm64": "aarch64",
+    }
+
+    PLATFORM_MAPPING = {
+        "darwin": "macos",
+        "win64": "windows",
+        "linux": "linux",
+    }
+
+    def __init__(self, client: httpx.AsyncClient):
+        self.client = client
+
+    async def find(self) -> list[PythonDownload]:
+        downloads = await self.fetch_downloads()
+        await self.fetch_checksums(downloads)
+        return downloads
+
+    async def fetch_downloads(self) -> list[PythonDownload]:
+        log("Fetching pypy downloads...")
+        resp = await fetch(self.client, self.RELEASE_URL)
+        versions = resp.json()
+
+        results = {}
+        for version in versions:
+            if not version["stable"]:
+                continue
+            python_version = PythonVersion.from_str(version["python_version"])
+            if python_version < (3, 7, 0):
+                continue
+            for file in version["files"]:
+                arch = self.ARCH_MAPPING.get(file["arch"])
+                platform = self.PLATFORM_MAPPING.get(file["platform"])
+                if arch is None or platform is None:
+                    continue
+                environment = "gnu" if platform == "linux" else None
+                download = PythonDownload(
+                    version=python_version,
+                    triple=PlatformTriple(
+                        arch=arch,
+                        platform=platform,
+                        environment=environment,
+                        flavor=None,
+                    ),
+                    implementation=PythonImplementation.PYPY,
+                    filename=file["filename"],
+                    url=file["download_url"],
+                )
+                # Only keep the latest pypy version of each arch/platform
+                if (python_version, arch, platform) not in results:
+                    results[(python_version, arch, platform)] = download
+
+        return list(results.values())
+
+    async def fetch_checksums(self, downloads: list[PythonDownload]) -> None:
+        log("Fetching pypy checksums...")
+        resp = await fetch(self.client, self.CHECKSUM_URL)
+        text = resp.text
+
+        checksums = {}
+        for match in self.CHECKSUM_RE.finditer(text):
+            checksums[match.group("filename")] = match.group("checksum")
+
+        for download in downloads:
+            download.sha256 = checksums.get(download.filename)
+
+
+def render(downloads: list[PythonDownload]):
+    """Render downloads.inc."""
+
+    def sort_key(download: PythonDownload) -> tuple[int, PythonVersion, PlatformTriple]:
+        # Sort by implementation, version (latest first), and then by triple.
+        impl_order = [PythonImplementation.PYPY, PythonImplementation.CPYTHON]
+        return (
+            impl_order.index(download.implementation),
+            -download.version,
+            download.triple,
+        )
+
+    downloads.sort(key=sort_key)
+
+    print("// Generated by rye-devtools. DO NOT EDIT.")
+    print(
+        "// To regenerate, run `rye run find-downloads > rye/src/downloads.inc` from the root of the repository."
+    )
     print("use std::borrow::Cow;")
     print("pub const PYTHON_VERSIONS: &[(PythonVersion, &str, Option<&str>)] = &[")
 
-    for version, downloads in sorted(pypy.items(), key=lambda v: v[0], reverse=True):
-        for triple, url in sorted(downloads.items(), key=lambda v: v[0].grouped()):
-            print(
-                f'    (PythonVersion {{ name: Cow::Borrowed("pypy"), arch: Cow::Borrowed("{triple.arch}"), os: Cow::Borrowed("{triple.platform}"), major: {version.major}, minor: {version.minor}, patch: {version.patch}, suffix: None }}, "{url}", None),'
-            )
+    for download in downloads:
+        triple = download.triple
+        version = download.version
+        sha256 = f'Some("{download.sha256}")' if download.sha256 else "None"
+        print(
+            f'    (PythonVersion {{ name: Cow::Borrowed("{download.implementation}"), arch: Cow::Borrowed("{triple.arch}"), os: Cow::Borrowed("{triple.platform}"), major: {version.major}, minor: {version.minor}, patch: {version.patch}, suffix: None }}, "{download.url}", {sha256}),'
+        )
 
-    for version, downloads in sorted(indys.items(), key=lambda v: v[0], reverse=True):
-        for download in sorted(downloads, key=lambda v: v.triple.grouped()):
-            if (sha256 := sha256s.get(download.url)) is not None:
-                sha256_str = f'Some("{sha256}")'
-            else:
-                sha256_str = "None"
-            print(
-                f'    (PythonVersion {{ name: Cow::Borrowed("cpython"), arch: Cow::Borrowed("{download.triple.arch}"), os: Cow::Borrowed("{download.triple.platform}"), major: {version.major}, minor: {version.minor}, patch: {version.patch}, suffix: None }}, "{download.url}", {sha256_str}),'
-            )
     print("];")
 
 
 async def async_main():
-    log("Rye download creator started.")
-    log("Fetching indygreg downloads...")
+    token = os.environ.get("GITHUB_TOKEN")
+    if not token:
+        try:
+            token = open("token.txt").read().strip()
+        except Exception:
+            pass
 
-    indys = {}
-    # For every version, pick the best download per triple
-    # and store it in the results
-    async with httpx.AsyncClient(follow_redirects=True) as client:
-        downloads = await fetch_indiygreg_downloads(client, 100)
-        for version, download_choices in downloads.items():
-            # Create a dict[PlatformTriple, list[IndygregDownload]]]
-            # for each version
-            for triple, choices in download_choices.items():
-                if (best_download := pick_best_download(choices)) is not None:
-                    indys.setdefault(version, []).append(best_download)
+    if not token:
+        log("Please set GITHUB_TOKEN environment variable or create a token.txt file.")
+        sys.exit(1)
 
-        sha256s = await fetch_sha256s(client, indys, n=25)
-        render(indys, PYPY_DOWNLOADS, sha256s)
+    headers = {
+        "X-GitHub-Api-Version": "2022-11-28",
+        "Authorization": "Bearer " + token,
+    }
+    client = httpx.AsyncClient(follow_redirects=True, headers=headers)
+
+    finders = [
+        CPythonFinder(client),
+        PyPyFinder(client),
+    ]
+    downloads = []
+
+    log("Fetching all Python downloads and generating code.")
+    async with client:
+        for finder in finders:
+            log(f"Finding {finder.implementation} downloads...")
+            downloads.extend(await finder.find())
+
+    render(downloads)
+
 
 def main():
     asyncio.run(async_main())
 
-# These are manually maintained for now
-PYPY_DOWNLOADS = {
-    PythonVersion(3, 10, 12): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_x86_64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-macos_arm64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.10-v7.3.12-win64.zip",
-    },
-    PythonVersion(3, 9, 16): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_x86_64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-macos_arm64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.9-v7.3.11-win64.zip",
-    },
-    PythonVersion(3, 8, 16): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_x86_64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-macos_arm64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.8-v7.3.11-win64.zip",
-    },
-    PythonVersion(3, 7, 13): {
-        PlatformTriple(
-            arch="x86_64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-linux64.tar.bz2",
-        PlatformTriple(
-            arch="aarch64", platform="linux", environment="gnu", flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-aarch64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="macos", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-osx64.tar.bz2",
-        PlatformTriple(
-            arch="x86_64", platform="windows", environment=None, flavor=""
-        ): "https://downloads.python.org/pypy/pypy3.7-v7.3.9-win64.zip",
-    },
-}
 
 if __name__ == "__main__":
     main()
@@ -417,7 +504,7 @@ class Tests(unittest.TestCase):
             "x86_64-unknown-linux-gnu-debug": PlatformTriple(
                 "x86_64", "linux", "gnu", "debug"
             ),
-            "linux64": PlatformTriple("x86_64", "linux", "gnu", ""),
+            "linux64": PlatformTriple("x86_64", "linux", "gnu", None),
             "ppc64le-unknown-linux-gnu-noopt-full": None,
             "x86_64_v3-unknown-linux-gnu-lto": None,
             "x86_64-pc-windows-msvc-shared-pgo": PlatformTriple(
@@ -426,4 +513,4 @@ class Tests(unittest.TestCase):
         }
 
         for input, expected in expected.items():
-            self.assertEqual(PlatformTriple.from_str(input), expected, input)
+            self.assertEqual(CPythonFinder.parse_triple(input), expected, input)

@@ -15,8 +15,7 @@ target older Python packages.
 ## Sources
 
 PyPy builds are downloaded from
-[downloads.python.org](https://downloads.python.org/pypy/).  These downloads
-are not verified today.
+[downloads.python.org](https://downloads.python.org/pypy/).
 
 ## Usage
 

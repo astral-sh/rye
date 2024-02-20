@@ -29,10 +29,6 @@ success: Downloaded cpython@3.8.17
 
     If no version is provided, the requested version will be fetched.
 
-* `[ARCH]`: Overrides the architecture to fetch.
-
-    When a non native architecture is fetched, the toolchain is installed under an alias.
-    
 ## Options
 
 * `-v, --verbose`: Enables verbose diagnostics

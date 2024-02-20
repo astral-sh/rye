@@ -30,6 +30,7 @@ mod version;
 use git_testament::git_testament;
 
 use crate::bootstrap::SELF_PYTHON_TARGET_VERSION;
+use crate::config::Config;
 use crate::platform::symlinks_supported;
 
 git_testament!(TESTAMENT);
@@ -152,5 +153,6 @@ fn print_version() -> Result<(), Error> {
     );
     echo!("self-python: {}", SELF_PYTHON_TARGET_VERSION);
     echo!("symlink support: {}", symlinks_supported());
+    echo!("uv enabled: {}", Config::current().use_uv());
     Ok(())
 }

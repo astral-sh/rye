@@ -1,6 +1,6 @@
 [package]
 name = "rye"
-version = "0.25.0"
+version = "0.26.0"
 edition = "2021"
 license = "MIT"
 
@@ -71,3 +71,8 @@ winreg = "0.52.0"
 
 [target."cfg(windows)".build-dependencies]
 static_vcruntime = "2.0.0"
+
+[dev-dependencies]
+fslock = "0.2.1"
+insta = { version = "1.35.1", features = ["filters"] }
+insta-cmd = "0.5.0"

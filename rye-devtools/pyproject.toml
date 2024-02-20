@@ -4,7 +4,7 @@ version = "1.0.0"
 description = "Development tools for rye"
 authors = [{ name = "Armin Ronacher", email = "armin.ronacher@active-4.com" }]
 dependencies = [
-    "httpx>=0.26.0",
+    "httpx[socks]>=0.26.0",
 ]
 requires-python = ">= 3.11"
 

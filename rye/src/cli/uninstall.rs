@@ -4,7 +4,7 @@ use clap::Parser;
 use crate::installer::uninstall;
 use crate::utils::CommandOutput;
 
-/// Uninstalls a global tool.
+/// Uninstalls a global tool. This is an alias of `rye tools uninstall`.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The package to uninstall

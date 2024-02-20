@@ -16,7 +16,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
-use crate::sync::autosync;
+use crate::sync::{autosync, sync, SyncOptions};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
@@ -256,6 +256,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     if !cmd.excluded {
         if cfg.use_uv() {
+            sync(SyncOptions::python_only().pyproject(None))
+                .context("failed to sync ahead of add")?;
             resolve_requirements_with_uv(
                 &pyproject_toml,
                 &self_venv,

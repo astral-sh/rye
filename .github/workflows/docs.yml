@@ -1,17 +1,22 @@
 name: Publish docs via GitHub Pages
 on:
   push:
+    paths:
+      - 'docs/**'
+      - 'CHANGELOG.md'
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build:
+    if: github.repository == 'mitsuhiko/rye'
     name: Deploy docs
     runs-on: ubuntu-latest
     steps:
       - name: Checkout main
         uses: actions/checkout@v2
-
+      - uses: Swatinem/rust-cache@v2
       - name: Deploy docs
         uses: mhausenblas/mkdocs-deploy-gh-pages@master
         env:
