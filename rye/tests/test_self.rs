@@ -1,8 +1,9 @@
 use crate::common::Space;
-use std::process::Stdio;
 mod common;
 
+// This test is self-destructive, making other tests slow, ignore it by default.
 #[test]
+#[ignore]
 fn test_self_uninstall() {
     let space = Space::new();
     let _guard = space.lock_rye_home();
@@ -22,8 +23,6 @@ fn test_self_uninstall() {
 
     let status = space
         .rye_cmd()
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
         .arg("self")
         .arg("uninstall")
         .arg("--yes")
