@@ -1,5 +1,5 @@
-use std::process::Stdio;
 use crate::common::Space;
+use std::process::Stdio;
 mod common;
 
 #[test]
