@@ -99,3 +99,12 @@ lockfile (`requirements-dev.lock`).
 ```
 rye sync --no-dev
 ```
+
+## Limitations
+
+Lockfiles depend on the platform they were generated on. This is a known limitation
+in pip-tools.
+
+For example, if your project relies on platform-specific packages and you generate
+lockfiles on Windows, these lockfiles will include Windows-specific projects.
+Consequently, they won't be compatible with other platforms like Linux or MacOS.
