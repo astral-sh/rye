@@ -85,6 +85,10 @@ global-python = false
 # for pip-tools. Learn more about uv here: https://github.com/astral-sh/uv
 use-uv = false
 
+# Enable or disable automatic `sync` after `add` and `remove`.  This defaults
+# to `true` when uv is enabled and `false` otherwise.
+autosync = true
+
 # Marks the managed .venv in a way that cloud based synchronization systems
 # like Dropbox and iCloud Files will not upload it.  This defaults to true
 # as a .venv in cloud storage typically does not make sense.  Set this to
