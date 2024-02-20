@@ -14,7 +14,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v4
       - name: Install Rye
         uses: eifinger/setup-rye@v1
         with:
