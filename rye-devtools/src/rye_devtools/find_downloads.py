@@ -122,8 +122,8 @@ class CPythonFinder(Finder):
         "shared-noopt",
         "shared-noopt",
         "pgo+lto",
-        "lto",
         "pgo",
+        "lto",
     ]
     HIDDEN_FLAVORS = [
         "debug",
