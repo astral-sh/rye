@@ -18,7 +18,7 @@ If you have ever hit that URL you will have realized that it's an enormous HTML 
 package very uploaded to PyPI.  Yet this is still in some sense the canonical way to install
 packages.  If you for instance use `Rye` today you configure the index by pointing to that URL.
 
-With the use of a **meta server**, one would instead point it to a meta server instead.  So for instance
+With the use of a **meta server**, one would instead point it to a meta server.  So for instance
 the meta server for `pypi.org` could be hosted at a different URL, say `https://meta.pypi.org/`.
 That meta server URL fully replaces the existing index URL.  Each meta server is supposed to target
 a single index only.  A package manager _only_ interfaces with the meta server and it's the meta
