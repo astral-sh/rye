@@ -645,7 +645,8 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
                 || dialoguer::Confirm::with_theme(tui_theme())
                     .with_prompt(format!(
                         "Should the installer add Rye to {} via {}?",
-                        style("PATH").cyan(), profile
+                        style("PATH").cyan(),
+                        profile
                     ))
                     .interact()?
             {
