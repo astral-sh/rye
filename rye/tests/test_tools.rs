@@ -57,7 +57,7 @@ fn test_basic_tool_behavior() {
         space.rye_cmd()
             .arg("tools")
             .arg("list")
-            .arg("--version-show"), @r###"
+            .arg("--include-version"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----

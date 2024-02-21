@@ -19,6 +19,8 @@ _Unreleased_
 
 - When `uv` is enabled, rye will now automatically sync on `add` and `remove`.  #677
 
+- Rename `rye tools list` flags: `-i, --include-scripts` to `-s, --include-scripts` and `-v, --version-show` to `-v, --include-version`.  #722
+
 <!-- released start -->
 
 ## 0.25.0

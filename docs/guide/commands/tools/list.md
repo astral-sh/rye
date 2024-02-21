@@ -16,7 +16,7 @@ pycowsay
 List installed tools with version:
 
 ```
-$ rye tools list --version-show
+$ rye tools list --include-version
 pycowsay 0.0.0.2 (cpython@3.12.1)
 ```
 
@@ -26,8 +26,16 @@ pycowsay 0.0.0.2 (cpython@3.12.1)
 
 ## Options
 
-* `-i, --include-scripts`: Also show all the scripts installed by the tools
+* `-s, --include-scripts`: Show all the scripts installed by the tools
 
-* `-v, --version-show`: Show the version of tools
++/- 0.26.0
+
+    Renamed from `-i, --include-scripts` to `-s, --include-scripts`.
+
+* `-v, --include-version`: Show the version of tools
+
++/- 0.26.0
+
+    Renamed from `-v, --version-show` to `-v, --include-version`.
 
 * `-h, --help`: Print help
