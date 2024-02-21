@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed `rye config --show-path` abort with an error. #706
+
 - Bumped `uv` to 0.1.6. #719
 
 - Bumped `ruff` to 0.2.2.  #700

@@ -4,7 +4,6 @@ use std::sync::Arc;
 use anyhow::bail;
 use anyhow::Context;
 use anyhow::Error;
-use clap::Args as ClapArgs;
 use clap::Parser;
 use clap::ValueEnum;
 use serde::Serialize;
@@ -31,19 +30,20 @@ enum Format {
 #[derive(Parser, Debug)]
 #[command(arg_required_else_help(true))]
 pub struct Args {
-    #[command(flatten)]
-    action: ActionArgs,
     /// Print the path to the config.
-    #[arg(long, conflicts_with = "format")]
+    #[arg(long)]
     show_path: bool,
+
+    #[command(flatten)]
+    action: Action,
+}
+
+#[derive(Parser, Debug)]
+#[group(required = false, multiple = true, conflicts_with = "show_path")]
+pub struct Action {
     /// Request parseable output format rather than lines.
     #[arg(long)]
     format: Option<Format>,
-}
-
-#[derive(ClapArgs, Debug)]
-#[group(required = true, multiple = true)]
-pub struct ActionArgs {
     /// Reads a config key
     #[arg(long)]
     get: Vec<String>,
@@ -60,6 +60,7 @@ pub struct ActionArgs {
     #[arg(long)]
     unset: Vec<String>,
 }
+
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut config = Config::current();
     let doc = Arc::make_mut(&mut config).doc_mut();
@@ -80,7 +81,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
 
         let val = ptr.and_then(|x| x.as_value());
-        match cmd.format {
+        match cmd.action.format {
             None => {
                 read_as_string.push(value_to_string(val));
             }
@@ -171,7 +172,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         config.save()?;
     }
 
-    match cmd.format {
+    match cmd.action.format {
         None => {
             for line in read_as_string {
                 echo!("{}", line);
