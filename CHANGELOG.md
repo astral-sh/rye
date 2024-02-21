@@ -21,7 +21,7 @@ _Unreleased_
 
 - Rename `rye tools list` flags: `-i, --include-scripts` to `-s, --include-scripts` and `-v, --version-show` to `-v, --include-version`.  #722
 
-- Rye now adds env source to `.zprofile` for `zsh` shell.  #xxx
+- Rye now adds env source to `.zprofile` for `zsh` shell instead of `.profile`.  #731
 
 <!-- released start -->
 
