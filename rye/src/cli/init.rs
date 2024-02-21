@@ -47,7 +47,7 @@ pub struct Args {
     /// Do not create .python-version file (requires-python will be used)
     #[arg(long)]
     no_pin: bool,
-    /// Which build system should be used(defaults to hatchling)?
+    /// Which build system should be used (defaults to hatchling)?
     #[arg(long)]
     build_system: Option<BuildSystem>,
     /// Which license should be used (SPDX identifier)?
