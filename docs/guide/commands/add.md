@@ -32,6 +32,13 @@ $ rye add flask --git https://github.com/pallets/flask
 Added flask @ git+https://github.com/pallets/flask as regular dependency
 ```
 
+Add a local dependency:
+
+```
+$ rye add packagename --path path/to/packagename
+Added packagename @ file:///path/to/packagename as regular dependency
+```
+
 ## Arguments
 
 * `<REQUIREMENTS>...`: The package to add as PEP 508 requirement string. e.g. 'flask==2.2.3'
