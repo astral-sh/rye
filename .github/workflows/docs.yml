@@ -4,6 +4,8 @@ on:
     paths:
       - 'docs/**'
       - 'CHANGELOG.md'
+      - 'mkdocs.yml'
+      - 'scripts/install.sh'
     branches:
       - main
   workflow_dispatch:

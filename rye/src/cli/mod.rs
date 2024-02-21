@@ -132,7 +132,7 @@ pub fn execute() -> Result<(), Error> {
         Command::List(cmd) => list::execute(cmd),
         Command::Shell(..) => {
             bail!(
-                "unknown command. The shell command was removed. Activate the virtualenv instead with '{}' instead.",
+                "unknown command. The shell command was removed. Activate the virtualenv with '{}' instead.",
                 if cfg!(windows) {
                     ".venv\\Scripts\\activate"
                 } else {

@@ -310,6 +310,19 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     Ok(())
 }
 
+/// Performs an autosync.
+pub fn autosync(pyproject: &PyProject, output: CommandOutput) -> Result<(), Error> {
+    sync(SyncOptions {
+        output,
+        dev: true,
+        mode: SyncMode::Regular,
+        force: false,
+        no_lock: false,
+        lock_options: LockOptions::default(),
+        pyproject: Some(pyproject.toml_path().to_path_buf()),
+    })
+}
+
 pub fn create_virtualenv(
     output: CommandOutput,
     self_venv: &Path,

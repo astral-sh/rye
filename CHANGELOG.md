@@ -9,11 +9,19 @@ _Unreleased_
 
 - Fixed `rye config --show-path` abort with an error. #706
 
+- Bumped `uv` to 0.1.6. #719
+
 - Bumped `ruff` to 0.2.2.  #700
 
 - Prevent `rye toolchain remove` from removing the currently active toolchain.  #693
 
 - Sync latest PyPy releases. #683
+
+- Fixes an issue where when `uv` is enabled, `add` did not honor custom sources.  #720
+
+- When `uv` is enabled, rye will now automatically sync on `add` and `remove`.  #677
+
+- Rename `rye tools list` flags: `-i, --include-scripts` to `-s, --include-scripts` and `-v, --version-show` to `-v, --include-version`.  #722
 
 <!-- released start -->
 

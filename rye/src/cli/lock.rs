@@ -34,6 +34,9 @@ pub struct Args {
     /// Set to true to lock with sources in the lockfile.
     #[arg(long)]
     with_sources: bool,
+    /// Reset prior lock options.
+    #[arg(long)]
+    reset: bool,
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
@@ -51,6 +54,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             features: cmd.features,
             all_features: cmd.all_features,
             with_sources: cmd.with_sources,
+            reset: cmd.reset,
         },
         pyproject: cmd.pyproject,
         ..SyncOptions::default()

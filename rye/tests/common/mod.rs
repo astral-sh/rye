@@ -9,6 +9,7 @@ use tempfile::TempDir;
 // Exclude any packages uploaded after this date.
 pub static EXCLUDE_NEWER: &str = "2023-11-18T12:00:00Z";
 
+#[allow(unused)]
 pub const INSTA_FILTERS: &[(&str, &str)] = &[
     // general temp folders
     (
@@ -33,7 +34,7 @@ fn marked_tempdir() -> TempDir {
 }
 
 fn bootstrap_test_rye() -> PathBuf {
-    let home = get_cargo_bin("rye").parent().unwrap().join("rye-test-home");
+    let home = get_bin().parent().unwrap().join("rye-test-home");
     fs::create_dir_all(&home).ok();
     let lock_path = home.join("lock");
     let mut lock = fslock::LockFile::open(&lock_path).unwrap();
@@ -133,6 +134,24 @@ impl Space {
     }
 
     #[allow(unused)]
+    pub fn edit_toml<P: AsRef<Path>, R, F: FnOnce(&mut toml_edit::Document) -> R>(
+        &self,
+        path: P,
+        f: F,
+    ) -> R {
+        let p = self.project_path().join(path.as_ref());
+        let mut doc = if p.is_file() {
+            std::fs::read_to_string(&p).unwrap().parse().unwrap()
+        } else {
+            toml_edit::Document::default()
+        };
+        let rv = f(&mut doc);
+        fs::create_dir_all(p.parent().unwrap()).ok();
+        fs::write(p, doc.to_string()).unwrap();
+        rv
+    }
+
+    #[allow(unused)]
     pub fn write<P: AsRef<Path>, B: AsRef<[u8]>>(&self, path: P, contents: B) {
         let p = self.project_path().join(path.as_ref());
         fs::create_dir_all(p.parent().unwrap()).ok();
@@ -165,6 +184,13 @@ impl Space {
 
     pub fn project_path(&self) -> &Path {
         &self.project_dir
+    }
+
+    #[allow(unused)]
+    pub fn lock_rye_home(&self) -> fslock::LockFile {
+        let mut lock = fslock::LockFile::open(&self.rye_home().join("lock")).unwrap();
+        lock.lock().unwrap();
+        lock
     }
 }
 

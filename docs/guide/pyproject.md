@@ -162,7 +162,7 @@ devserver = { cmd = "flask run --debug", env = { FLASK_APP = "./hello.py" } }
 
 This is a special key that can be set instead of `cmd` to make a command invoke multiple
 other commands.  Each command will be executed one after another.  If any of the commands
-fails the rest of the commands won't be executed and instead the chain fails.
+fails, the rest of the commands won't be executed and the chain fails.
 
 ```toml
 [tool.rye.scripts]

@@ -344,6 +344,7 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
         remove_dir_all_if_exists(&app_dir.join("self"))?;
         remove_dir_all_if_exists(&app_dir.join("py"))?;
         remove_dir_all_if_exists(&app_dir.join("pip-tools"))?;
+        remove_dir_all_if_exists(&app_dir.join("tools"))?;
 
         // special deleting logic if we are placed in the app dir and the shim deletion
         // did not succeed.  This is likely the case on windows where we then use the

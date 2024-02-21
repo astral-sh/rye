@@ -247,6 +247,15 @@ impl Config {
         Ok(rv)
     }
 
+    /// Enable autosync.
+    pub fn autosync(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("autosync"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or_else(|| self.use_uv())
+    }
+
     /// Indicates if the experimental uv support should be used.
     pub fn use_uv(&self) -> bool {
         self.doc

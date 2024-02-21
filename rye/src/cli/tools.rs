@@ -14,12 +14,12 @@ pub struct Args {
 /// List all registered tools
 #[derive(Parser, Debug)]
 pub struct ListCommand {
-    /// Also how all the scripts installed by the tools.
-    #[arg(short, long)]
+    /// Show all the scripts installed by the tools.
+    #[arg(short = 's', long)]
     include_scripts: bool,
     /// Show the version of tools.
-    #[arg(short, long)]
-    version_show: bool,
+    #[arg(short = 'v', long)]
+    include_version: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -47,7 +47,7 @@ fn list_tools(cmd: ListCommand) -> Result<(), Error> {
             echo!("{} ({})", style(tool).red(), style("seems broken").red());
             continue;
         }
-        if cmd.version_show {
+        if cmd.include_version {
             if let Some(ref venv) = info.venv_marker {
                 echo!("{} {} ({})", style(tool).cyan(), info.version, venv.python);
             } else {

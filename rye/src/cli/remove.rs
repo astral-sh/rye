@@ -4,7 +4,9 @@ use anyhow::Error;
 use clap::Parser;
 use pep508_rs::Requirement;
 
+use crate::config::Config;
 use crate::pyproject::{DependencyKind, PyProject};
+use crate::sync::autosync;
 use crate::utils::{format_requirement, CommandOutput};
 
 /// Removes a package from this project.
@@ -19,6 +21,12 @@ pub struct Args {
     /// Remove this from an optional dependency group.
     #[arg(long, conflicts_with = "dev")]
     optional: Option<String>,
+    /// Runs `sync` even if auto-sync is disabled.
+    #[arg(long)]
+    sync: bool,
+    /// Does not run `sync` even if auto-sync is enabled.
+    #[arg(long, conflicts_with = "sync")]
+    no_sync: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -54,6 +62,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         for requirement in removed_packages {
             echo!("Removed {}", format_requirement(&requirement));
         }
+    }
+
+    if (Config::current().autosync() && !cmd.no_sync) || cmd.sync {
+        autosync(&pyproject_toml, output)?;
     }
 
     Ok(())

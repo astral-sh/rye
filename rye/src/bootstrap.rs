@@ -37,7 +37,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 13;
+const SELF_VERSION: u64 = 14;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.0.3
@@ -57,7 +57,7 @@ unearth==0.14.0
 urllib3==2.0.7
 virtualenv==20.25.0
 ruff==0.2.2
-uv==0.1.5
+uv==0.1.6
 "#;
 
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
@@ -90,7 +90,7 @@ pub fn ensure_self_venv_with_toolchain(
             return Ok(venv_dir);
         } else {
             if output != CommandOutput::Quiet {
-                echo!("detected outdated rye internals. Refreshing");
+                echo!("Detected outdated rye internals. Refreshing");
             }
             fs::remove_dir_all(&venv_dir).context("could not remove self-venv for update")?;
             if pip_tools_dir.is_dir() {
@@ -388,6 +388,7 @@ fn ensure_specific_self_toolchain(
         Ok(toolchain_version)
     }
 }
+
 /// Fetches a version if missing.
 pub fn fetch(
     version: &PythonVersionRequest,
@@ -433,19 +434,22 @@ pub fn fetch(
 
     if let Some(sha256) = sha256 {
         if output != CommandOutput::Quiet {
-            echo!("{}", style("Checking checksum").cyan());
+            echo!("{} {}", style("Checking").cyan(), "checksum");
         }
         check_checksum(&archive_buffer, sha256)
-            .with_context(|| format!("hash check of {} failed", &url))?;
+            .with_context(|| format!("Checksum check of {} failed", &url))?;
     } else if output != CommandOutput::Quiet {
         echo!("Checksum check skipped (no hash available)");
     }
 
+    if output != CommandOutput::Quiet {
+        echo!("{}", style("Unpacking").cyan());
+    }
     unpack_archive(&archive_buffer, &target_dir, 1)
         .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
 
     if output != CommandOutput::Quiet {
-        echo!("{} Downloaded {}", style("success:").green(), version);
+        echo!("{} {}", style("Downloaded").green(), version);
     }
 
     Ok(version)

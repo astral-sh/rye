@@ -1,12 +1,18 @@
 # Syncing and Locking
 
-Rye currently uses [pip-tools](https://github.com/jazzband/pip-tools) to download and install
-dependencies.  For this purpose it creates two "lockfiles" (called `requirements.lock` and
-`requirements-dev.lock`).  These are not real lockfiles but they fulfill a similar purpose
-until a better solution has been implemented.
+Rye supports two systems to manage dependencies:
+[uv](https://github.com/astral-sh/uv) and
+[pip-tools](https://github.com/jazzband/pip-tools).  It currently defaults to
+`pip-tools` but will offer you the option to use `uv` instead.  `uv` will become
+the default choice once it stabilzes as it offers significantly better performance.
 
-Whenever `rye sync` is called, it will update lockfiles as well as the virtualenv.  If you only
-want to update the lockfiles, then `rye lock` can be used.
+In order to download dependencies rye creates two "lockfiles" (called
+`requirements.lock` and `requirements-dev.lock`).  These are not real lockfiles
+but they fulfill a similar purpose until a better solution has been implemented.
+
+Whenever `rye sync` is called, it will update lockfiles as well as the
+virtualenv.  If you only want to update the lockfiles, then `rye lock` can be
+used.
 
 ## Lock
 
@@ -93,3 +99,12 @@ lockfile (`requirements-dev.lock`).
 ```
 rye sync --no-dev
 ```
+
+## Limitations
+
+Lockfiles depend on the platform they were generated on. This is a known limitation
+in pip-tools.
+
+For example, if your project relies on platform-specific packages and you generate
+lockfiles on Windows, these lockfiles will include Windows-specific projects.
+Consequently, they won't be compatible with other platforms like Linux or macOS.

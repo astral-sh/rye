@@ -16,7 +16,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::PythonVersion;
-use crate::sync::{sync, SyncOptions};
+use crate::sync::{autosync, sync, SyncOptions};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
@@ -210,6 +210,12 @@ pub struct Args {
     /// Overrides the pin operator
     #[arg(long)]
     pin: Option<Pin>,
+    /// Runs `sync` even if auto-sync is disabled.
+    #[arg(long)]
+    sync: bool,
+    /// Does not run `sync` even if auto-sync is enabled.
+    #[arg(long, conflicts_with = "sync")]
+    no_sync: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -222,6 +228,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let self_venv = ensure_self_venv(output).context("error bootstrapping venv")?;
     let python_path = self_venv.join(VENV_BIN).join("python");
+    let cfg = Config::current();
 
     let mut pyproject_toml = PyProject::discover()?;
     let py_ver = pyproject_toml.venv_python_version()?;
@@ -251,7 +258,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if !cmd.excluded {
-        if Config::current().use_uv() {
+        if cfg.use_uv() {
             sync(SyncOptions::python_only().pyproject(None))
                 .context("failed to sync ahead of add")?;
             resolve_requirements_with_uv(
@@ -292,6 +299,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 &dep_kind
             );
         }
+    }
+
+    if (cfg.autosync() && !cmd.no_sync) || cmd.sync {
+        autosync(&pyproject_toml, output)?;
     }
 
     Ok(())
@@ -453,6 +464,12 @@ fn resolve_requirements_with_uv(
     if output == CommandOutput::Quiet {
         cmd.arg("-q");
     }
+    // this primarily exists for testing
+    if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
+        cmd.arg("--exclude-newer").arg(dt);
+    }
+    let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
+    sources.add_as_pip_args(&mut cmd);
     let mut child = cmd
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
