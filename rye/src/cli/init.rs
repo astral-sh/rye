@@ -188,7 +188,7 @@ const LICENSE_TEMPLATE: &str = r#"
 "#;
 
 /// Template for the __init__.py
-const INIT_PY_TEMPLATE: &str = r#"def hello():
+const INIT_PY_TEMPLATE: &str = r#"def hello() -> str:
     return "Hello from {{ name }}!"
 
 "#;
