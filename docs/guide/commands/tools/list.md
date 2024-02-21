@@ -28,6 +28,14 @@ pycowsay 0.0.0.2 (cpython@3.12.1)
 
 * `-s, --include-scripts`: Show all the scripts installed by the tools
 
++/- 0.26.0
+
+    Renamed from `-i, --inlcude-scripts` to `-s, --include-scripts`.
+
 * `-v, --include-version`: Show the version of tools
+
++/- 0.26.0
+
+    Renamed from `-v, --version-show` to `-v, --include-version`.
 
 * `-h, --help`: Print help
