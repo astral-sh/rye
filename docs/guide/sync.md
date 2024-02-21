@@ -107,4 +107,4 @@ in pip-tools.
 
 For example, if your project relies on platform-specific packages and you generate
 lockfiles on Windows, these lockfiles will include Windows-specific projects.
-Consequently, they won't be compatible with other platforms like Linux or MacOS.
+Consequently, they won't be compatible with other platforms like Linux or macOS.
