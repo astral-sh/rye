@@ -11,7 +11,6 @@ use console::style;
 use minijinja::render;
 use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
-use whattheshell::Shell;
 
 use crate::bootstrap::{
     download_url, download_url_ignore_404, ensure_self_venv_with_toolchain,
@@ -634,6 +633,7 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
             );
             echo!("It is highly recommended that you add it.");
 
+            use whattheshell::Shell;
             let shell = Shell::infer().unwrap_or(Shell::Bash);
             let profile = match shell {
                 Shell::Zsh => ".zprofile",
