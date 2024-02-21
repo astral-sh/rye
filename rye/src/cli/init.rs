@@ -35,6 +35,9 @@ pub struct Args {
     /// Where to place the project (defaults to current path)
     #[arg(default_value = ".")]
     path: PathBuf,
+    /// Initialization type
+    #[command(flatten)]
+    init_type: ArgTemplateChoice,
     /// Minimal Python version supported by this project.
     #[arg(long)]
     min_py: Option<String>,
@@ -82,6 +85,23 @@ pub struct Args {
     quiet: bool,
 }
 
+#[derive(Parser, Debug)]
+#[group(multiple = false)]
+struct ArgTemplateChoice {
+    /// Generate a library project (default).
+    #[arg(long)]
+    lib: bool,
+
+    /// Generate an executable project.
+    #[arg(long)]
+    script: bool,
+}
+
+enum TemplateChoice {
+    Lib,
+    Script,
+}
+
 /// The pyproject.toml template
 ///
 /// This uses a template just to simplify the flexibility of emitting it.
@@ -113,9 +133,11 @@ license = { text = {{ license }} }
 {%- if private %}
 classifiers = ["Private :: Do Not Upload"]
 {%- endif %}
+{%- if is_script %}
 
 [project.scripts]
-hello = {{ name_safe ~ ":hello"}}
+hello = {{ name_safe ~ ":main"}}
+{%- endif %}
 
 {%- if not is_virtual %}
 
@@ -187,10 +209,22 @@ const LICENSE_TEMPLATE: &str = r#"
 {{ license_text }}
 "#;
 
-/// Template for the __init__.py
-const INIT_PY_TEMPLATE: &str = r#"def hello():
+/// Template for the __init__.py when --lib is specified
+const INIT_PY_LIB_TEMPLATE: &str = r#"def hello() -> str:
     return "Hello from {{ name }}!"
 
+"#;
+
+/// Template for the __init__.py when --bin is specified
+const INIT_PY_BIN_TEMPLATE: &str = r#"def main() -> int:
+    print("Hello from {{ name }}!")
+    return 0
+"#;
+
+const INIT_PY_BIN_MAIN_TEMPLATE: &str = r#"import {{ name_safe }}
+import sys
+
+sys.exit({{ name_safe }}.main())
 "#;
 
 /// Template for the lib.rs
@@ -419,6 +453,20 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     let private = cmd.private;
 
+    // What template are we using?
+    let template = {
+        if cmd.init_type.script {
+            TemplateChoice::Script
+        } else {
+            // default value
+            TemplateChoice::Lib
+        }
+    };
+
+    if cmd.init_type.script && build_system == BuildSystem::Maturin {
+        bail!("--script is not supported when the build-system is maturin");
+    }
+
     // crate a python module safe name.  This is the name on the metadata with
     // underscores instead of dashes to form a valid python package name and in
     // case it starts with a digit, an underscore is prepended.
@@ -430,8 +478,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     {
         name_safe.insert(0, '_');
     }
-
-    let is_rust = build_system == BuildSystem::Maturin;
 
     // if git init is successful prepare the local git repository
     if !is_inside_git_work_tree(&dir)
@@ -452,7 +498,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 "gitignore.txt",
                 GITIGNORE_TEMPLATE,
                 context! {
-                    is_rust
+                    is_rust => matches!(build_system, BuildSystem::Maturin)
                 },
             )?;
             fs::write(&gitignore, rv).context("failed to write .gitignore")?;
@@ -478,6 +524,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             license => metadata.license,
             dependencies => metadata.dependencies,
             dev_dependencies => metadata.dev_dependencies,
+            is_script => matches!(template, TemplateChoice::Script),
             is_virtual,
             with_readme,
             build_system,
@@ -490,37 +537,63 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let src_dir = dir.join("src");
         if !imported_something && !src_dir.is_dir() {
             let name = metadata.name.expect("project name");
-            if is_rust {
-                fs::create_dir_all(&src_dir).ok();
-                let project_dir = dir.join("python").join(&name_safe);
-                fs::create_dir_all(&project_dir).ok();
-                let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
-                fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
-                let rv = env.render_named_str(
-                    "Cargo.json",
-                    CARGO_TOML_TEMPLATE,
-                    context! {
-                        name,
-                        name_safe,
-                    },
-                )?;
-                fs::write(dir.join("Cargo.toml"), rv).context("failed to write Cargo.toml")?;
-                let rv = env.render_named_str(
-                    "__init__.py",
-                    RUST_INIT_PY_TEMPLATE,
-                    context! {
-                        name_safe
-                    },
-                )?;
-                fs::write(project_dir.join("__init__.py"), rv)
-                    .context("failed to write __init__.py")?;
-            } else {
-                let project_dir = src_dir.join(&name_safe);
-                fs::create_dir_all(&project_dir).ok();
-                let rv =
-                    env.render_named_str("__init__.py", INIT_PY_TEMPLATE, context! { name })?;
-                fs::write(project_dir.join("__init__.py"), rv)
-                    .context("failed to write __init__.py")?;
+            match (template, build_system) {
+                (TemplateChoice::Lib, BuildSystem::Maturin) => {
+                    fs::create_dir_all(&src_dir).ok();
+                    let project_dir = dir.join("python").join(&name_safe);
+                    fs::create_dir_all(&project_dir).ok();
+                    let rv = env.render_named_str("lib.rs", LIB_RS_TEMPLATE, context! { name })?;
+                    fs::write(src_dir.join("lib.rs"), rv).context("failed to write lib.rs")?;
+                    let rv = env.render_named_str(
+                        "Cargo.json",
+                        CARGO_TOML_TEMPLATE,
+                        context! {
+                            name,
+                            name_safe,
+                        },
+                    )?;
+                    fs::write(dir.join("Cargo.toml"), rv).context("failed to write Cargo.toml")?;
+                    let rv = env.render_named_str(
+                        "__init__.py",
+                        RUST_INIT_PY_TEMPLATE,
+                        context! {
+                            name_safe
+                        },
+                    )?;
+                    fs::write(project_dir.join("__init__.py"), rv)
+                        .context("failed to write __init__.py")?;
+                }
+                (TemplateChoice::Lib, _) => {
+                    let project_dir = src_dir.join(&name_safe);
+                    fs::create_dir_all(&project_dir).ok();
+                    let rv = env.render_named_str(
+                        "__init__.py",
+                        INIT_PY_LIB_TEMPLATE,
+                        context! { name },
+                    )?;
+                    fs::write(project_dir.join("__init__.py"), rv)
+                        .context("failed to write __init__.py")?;
+                }
+                (TemplateChoice::Script, _) => {
+                    let project_dir = src_dir.join(&name_safe);
+                    fs::create_dir_all(&project_dir).ok();
+
+                    let rv1 = env.render_named_str(
+                        "__init__.py",
+                        INIT_PY_BIN_TEMPLATE,
+                        context! { name },
+                    )?;
+                    fs::write(project_dir.join("__init__.py"), rv1)
+                        .context("failed to write __init__.py")?;
+
+                    let rv2 = env.render_named_str(
+                        "__main__.py",
+                        INIT_PY_BIN_MAIN_TEMPLATE,
+                        context! { name_safe },
+                    )?;
+                    fs::write(project_dir.join("__main__.py"), rv2)
+                        .context("failed to write __main__.py")?;
+                }
             }
         }
     }
