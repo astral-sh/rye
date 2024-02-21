@@ -3,12 +3,12 @@ use std::{env, fs};
 
 use anyhow::{Context, Error};
 
-pub(crate) fn add_to_path(rye_home: &Path) -> Result<(), Error> {
+pub(crate) fn add_to_path(rye_home: &Path, profile: &str) -> Result<(), Error> {
     // for regular shells just add the path to `.profile`
     add_source_line_to_profile(
         &home::home_dir()
             .context("could not find home dir")?
-            .join(".profile"),
+            .join(profile),
         &(format!(
             ". \"{}\"",
             reverse_resolve_env_home(rye_home.join("env")).display()
@@ -27,7 +27,8 @@ fn add_source_line_to_profile(profile_path: &Path, source_line: &str) -> Result<
     if !profile.lines().any(|x| x.trim() == source_line) {
         profile.push_str(source_line);
         profile.push('\n');
-        fs::write(profile_path, profile).context("failed to write updated .profile")?;
+        fs::write(profile_path, profile)
+            .with_context(|| format!("failed to write updated {}", profile_path.display()))?;
     }
 
     Ok(())

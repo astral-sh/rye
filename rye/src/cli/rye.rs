@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::env::consts::{ARCH, EXE_EXTENSION, OS};
-use std::env::{join_paths, split_paths};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
@@ -8,11 +7,11 @@ use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::{CommandFactory, Parser};
-use clap_complete::Shell;
 use console::style;
 use minijinja::render;
 use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
+use whattheshell::Shell;
 
 use crate::bootstrap::{
     download_url, download_url_ignore_404, ensure_self_venv_with_toolchain,
@@ -57,7 +56,7 @@ pub struct Args {
 pub struct CompletionCommand {
     /// The shell to generate a completion script for (defaults to 'bash').
     #[arg(short, long)]
-    shell: Option<Shell>,
+    shell: Option<clap_complete::Shell>,
 }
 
 /// Performs an update of rye.
@@ -177,7 +176,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
 fn completion(args: CompletionCommand) -> Result<(), Error> {
     clap_complete::generate(
-        args.shell.unwrap_or(Shell::Bash),
+        args.shell.unwrap_or(clap_complete::Shell::Bash),
         &mut super::Args::command(),
         "rye",
         &mut std::io::stdout(),
@@ -201,10 +200,10 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
             .arg("--root")
             .env(
                 "PATH",
-                join_paths(
+                env::join_paths(
                     Some(tmp.path().join("bin"))
                         .into_iter()
-                        .chain(split_paths(&env::var_os("PATH").unwrap_or_default())),
+                        .chain(env::split_paths(&env::var_os("PATH").unwrap_or_default())),
                 )?,
             )
             .arg(tmp.path());
@@ -385,12 +384,6 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
     }
 
     Ok(())
-}
-
-#[cfg(unix)]
-fn is_fish() -> bool {
-    use whattheshell::Shell;
-    Shell::infer().map_or(false, |x| matches!(x, Shell::Fish))
 }
 
 fn perform_install(
@@ -625,8 +618,8 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
         .unwrap_or(Cow::Borrowed(DEFAULT_HOME));
 
     let rye_home = Path::new(&*rye_home);
-    // For unices, we ask the user if they want rye to be added to PATH.
-    // If they choose to do so, we add the "env" script to .profile.
+    // For unix, we ask the user if they want rye to be added to PATH.
+    // If they choose to do so, we add the "env" script to .profile/.zprofile.
     // See [`crate::utils::unix::add_to_path`].
     #[cfg(unix)]
     {
@@ -641,16 +634,22 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
             );
             echo!("It is highly recommended that you add it.");
 
+            let shell = Shell::infer().unwrap_or(Shell::Bash);
+            let profile = match shell {
+                Shell::Zsh => ".zprofile",
+                _ => ".profile",
+            };
+
             if matches!(mode, InstallMode::NoPrompts)
                 || !ask
                 || dialoguer::Confirm::with_theme(tui_theme())
                     .with_prompt(format!(
-                        "Should the installer add Rye to {} via .profile?",
-                        style("PATH").cyan()
+                        "Should the installer add Rye to {} via {}?",
+                        style("PATH").cyan(), profile
                     ))
                     .interact()?
             {
-                crate::utils::unix::add_to_path(rye_home)?;
+                crate::utils::unix::add_to_path(rye_home, profile)?;
                 echo!("Added to {}.", style("PATH").cyan());
                 echo!(
                     "{}: for this to take effect you will need to restart your shell or run this manually:",
@@ -658,15 +657,15 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
                 );
             } else {
                 echo!(
-                    "{}: did not manipulate the path. To make it work, add this to your .profile manually:",
-                    style("note").cyan()
+                    "{}: did not manipulate the path. To make it work, add this to your {} manually:",
+                    style("note").cyan(), profile
                 );
             }
 
             echo!();
             echo!("    source \"{}/env\"", rye_home.display());
             echo!();
-            if is_fish() {
+            if matches!(shell, Shell::Fish) {
                 echo!("To make it work with fish, run this once instead:");
                 echo!();
                 echo!(
