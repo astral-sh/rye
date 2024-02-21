@@ -30,7 +30,7 @@ pycowsay 0.0.0.2 (cpython@3.12.1)
 
 +/- 0.26.0
 
-    Renamed from `-i, --inlcude-scripts` to `-s, --include-scripts`.
+    Renamed from `-i, --include-scripts` to `-s, --include-scripts`.
 
 * `-v, --include-version`: Show the version of tools
 
