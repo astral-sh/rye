@@ -1,7 +1,8 @@
+use fs_err as fs;
 use std::collections::{BTreeMap, HashMap};
+use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
-use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
 use console::style;

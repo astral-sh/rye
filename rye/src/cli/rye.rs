@@ -1,10 +1,11 @@
+use fs_err as fs;
 use std::borrow::Cow;
+use std::env;
 use std::env::consts::{ARCH, EXE_EXTENSION, OS};
 use std::env::{join_paths, split_paths};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
-use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::{CommandFactory, Parser};

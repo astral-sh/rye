@@ -1,7 +1,7 @@
-use std::path::{Path, PathBuf};
-use std::{env, fs};
-
 use anyhow::{Context, Error};
+use fs_err as fs;
+use std::env;
+use std::path::{Path, PathBuf};
 
 pub(crate) fn add_to_path(rye_home: &Path) -> Result<(), Error> {
     // for regular shells just add the path to `.profile`

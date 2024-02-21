@@ -1,10 +1,11 @@
+use fs_err as fs;
 use std::borrow::Cow;
+use std::env;
 use std::env::consts::EXE_EXTENSION;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::atomic::{self, AtomicBool};
-use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use console::style;

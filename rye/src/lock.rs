@@ -258,7 +258,7 @@ fn find_exclusions(projects: &[PyProject]) -> Result<HashSet<Requirement>, Error
                 if name == "PROJECT_ROOT" {
                     Some(project.workspace_path().to_string_lossy().to_string())
                 } else {
-                    std::env::var(name).ok()
+                    env::var(name).ok()
                 }
             })?);
         }
@@ -463,7 +463,7 @@ fn finalize_lockfile(
     sources: &ExpandedSources,
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
-    let mut rv = BufWriter::new(fs::File::create(out)?);
+    let mut rv = BufWriter::new(fs_err::File::create(out)?);
     lock_options.write_header(&mut rv)?;
 
     // only if we are asked to include sources we do that.
@@ -472,7 +472,7 @@ fn finalize_lockfile(
         writeln!(rv)?;
     }
 
-    for line in fs::read_to_string(generated)?.lines() {
+    for line in fs_err::read_to_string(generated)?.lines() {
         // we deal with this explicitly.
         if line.trim().is_empty()
             || line.starts_with("--index-url ")

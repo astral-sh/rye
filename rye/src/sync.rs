@@ -1,6 +1,7 @@
+use fs_err as fs;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::process::Command;
-use std::{env, fs};
 
 use anyhow::{bail, Context, Error};
 use console::style;

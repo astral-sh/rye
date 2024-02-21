@@ -1,5 +1,5 @@
+use fs_err as fs;
 use std::env;
-use std::fs;
 use std::path::PathBuf;
 
 use anyhow::Context;

@@ -60,6 +60,7 @@ python-pkginfo = { version = "0.6.0", features = ["serde"] }
 sysinfo = { version = "0.29.4", default-features = false, features = [] }
 home = "0.5.9"
 ctrlc = "3.4.2"
+fs-err = "2.11.0"
 
 [target."cfg(unix)".dependencies]
 whattheshell = "1.0.1"

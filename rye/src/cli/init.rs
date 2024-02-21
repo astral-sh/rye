@@ -1,8 +1,9 @@
+use fs_err as fs;
 use std::collections::BTreeMap;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
-use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;

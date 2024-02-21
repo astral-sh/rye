@@ -1848,6 +1848,7 @@ dependencies = [
  "decompress",
  "dialoguer",
  "flate2",
+ "fs-err",
  "fslock",
  "git-testament",
  "globset",

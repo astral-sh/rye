@@ -1,4 +1,4 @@
-use std::fs;
+use fs_err as fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 

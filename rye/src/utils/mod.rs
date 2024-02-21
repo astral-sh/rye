@@ -1,9 +1,10 @@
+use fs_err as fs;
 use std::borrow::Cow;
 use std::convert::Infallible;
+use std::fmt;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
-use std::{fmt, fs};
 
 use anyhow::{anyhow, bail, Error};
 use dialoguer::theme::{ColorfulTheme, Theme};
@@ -281,7 +282,7 @@ pub fn unpack_archive(contents: &[u8], dst: &Path, strip_components: usize) -> R
                 {
                     use std::os::unix::fs::PermissionsExt;
                     if let Some(mode) = file.unix_mode() {
-                        fs::set_permissions(&path, fs::Permissions::from_mode(mode))?;
+                        fs::set_permissions(&path, std::fs::Permissions::from_mode(mode))?;
                     }
                 }
             }

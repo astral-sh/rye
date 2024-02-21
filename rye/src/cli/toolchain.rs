@@ -1,7 +1,7 @@
+use fs_err as fs;
 use std::cmp::Reverse;
 use std::collections::HashMap;
 use std::env::consts::{ARCH, OS};
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 

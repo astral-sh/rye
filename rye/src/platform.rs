@@ -1,7 +1,8 @@
+use fs_err as fs;
+use std::env;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::sync::Mutex;
-use std::{env, fs};
 
 use anyhow::{anyhow, Context, Error};
 
@@ -264,7 +265,7 @@ pub fn get_credentials() -> Result<toml_edit::Document, Error> {
 }
 
 pub fn write_credentials(doc: &toml_edit::Document) -> Result<(), Error> {
-    std::fs::write(get_credentials_filepath()?, doc.to_string())
+    fs::write(get_credentials_filepath()?, doc.to_string())
         .context("unable to write to the credentials file")
 }
 

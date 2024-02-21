@@ -60,6 +60,7 @@ pub struct ActionArgs {
     #[arg(long)]
     unset: Vec<String>,
 }
+
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut config = Config::current();
     let doc = Arc::make_mut(&mut config).doc_mut();
