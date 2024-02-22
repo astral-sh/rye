@@ -1,0 +1,86 @@
+[project]
+name = {{ name }}
+version = {{ version }}
+description = {{ description }}
+{%- if author %}
+authors = [
+    { name = {{ author[0] }}, email = {{ author[1] }} }
+]
+{%- endif %}
+{%- if dependencies %}
+dependencies = [
+{%- for dependency in dependencies %}
+    {{ dependency }},
+{%- endfor %}
+]
+{%- else %}
+dependencies = []
+{%- endif %}
+{%- if with_readme %}
+readme = "README.md"
+{%- endif %}
+requires-python = {{ requires_python }}
+{%- if license %}
+license = { text = {{ license }} }
+{%- endif %}
+{%- if private %}
+classifiers = ["Private :: Do Not Upload"]
+{%- endif %}
+{%- if is_script %}
+
+[project.scripts]
+hello = {{ name_safe ~ ":main"}}
+{%- endif %}
+
+{%- if not is_virtual %}
+
+[build-system]
+{%- if build_system == "hatchling" %}
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+{%- elif build_system == "setuptools" %}
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+{%- elif build_system == "flit" %}
+requires = ["flit_core>=3.4"]
+build-backend = "flit_core.buildapi"
+{%- elif build_system == "pdm" %}
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+{%- elif build_system == "maturin" %}
+requires = ["maturin>=1.2,<2.0"]
+build-backend = "maturin"
+{%- endif %}
+{%- endif %}
+
+[tool.rye]
+managed = true
+{%- if is_virtual %}
+virtual = true
+{%- endif %}
+{%- if dev_dependencies %}
+dev-dependencies = [
+{%- for dependency in dev_dependencies %}
+    {{ dependency }},
+{%- endfor %}
+]
+{%- else %}
+dev-dependencies = []
+{%- endif %}
+
+{%- if not is_virtual %}
+{%- if build_system == "hatchling" %}
+
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.hatch.build.targets.wheel]
+packages = [{{ "src/" ~ name_safe }}]
+{%- elif build_system == "maturin" %}
+
+[tool.maturin]
+python-source = "python"
+module-name = {{ name_safe ~ "._lowlevel" }}
+features = ["pyo3/extension-module"]
+{%- endif %}
+{%- endif %}

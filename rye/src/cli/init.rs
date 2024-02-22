@@ -103,187 +103,33 @@ enum TemplateChoice {
 }
 
 /// The pyproject.toml template
-///
-/// This uses a template just to simplify the flexibility of emitting it.
-const TOML_TEMPLATE: &str = r#"[project]
-name = {{ name }}
-version = {{ version }}
-description = {{ description }}
-{%- if author %}
-authors = [
-    { name = {{ author[0] }}, email = {{ author[1] }} }
-]
-{%- endif %}
-{%- if dependencies %}
-dependencies = [
-{%- for dependency in dependencies %}
-    {{ dependency }},
-{%- endfor %}
-]
-{%- else %}
-dependencies = []
-{%- endif %}
-{%- if with_readme %}
-readme = "README.md"
-{%- endif %}
-requires-python = {{ requires_python }}
-{%- if license %}
-license = { text = {{ license }} }
-{%- endif %}
-{%- if private %}
-classifiers = ["Private :: Do Not Upload"]
-{%- endif %}
-{%- if is_script %}
+const TOML_TEMPLATE: &str = include_str!("../templates/pyproject.toml.j2");
 
-[project.scripts]
-hello = {{ name_safe ~ ":main"}}
-{%- endif %}
+/// The template for the README.md.
+const README_TEMPLATE: &str = include_str!("../templates/README.md.j2");
 
-{%- if not is_virtual %}
+/// The template for the LICENSE.txt.
+const LICENSE_TEMPLATE: &str = include_str!("../templates/LICENSE.txt.j2");
 
-[build-system]
-{%- if build_system == "hatchling" %}
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-{%- elif build_system == "setuptools" %}
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-{%- elif build_system == "flit" %}
-requires = ["flit_core>=3.4"]
-build-backend = "flit_core.buildapi"
-{%- elif build_system == "pdm" %}
-requires = ["pdm-backend"]
-build-backend = "pdm.backend"
-{%- elif build_system == "maturin" %}
-requires = ["maturin>=1.2,<2.0"]
-build-backend = "maturin"
-{%- endif %}
-{%- endif %}
+/// Template for the __init__.py when --lib is specified.
+const INIT_PY_LIB_TEMPLATE: &str = include_str!("../templates/lib/default/__init__.py.j2");
 
-[tool.rye]
-managed = true
-{%- if is_virtual %}
-virtual = true
-{%- endif %}
-{%- if dev_dependencies %}
-dev-dependencies = [
-{%- for dependency in dev_dependencies %}
-    {{ dependency }},
-{%- endfor %}
-]
-{%- else %}
-dev-dependencies = []
-{%- endif %}
+/// Template for the __init__.py when --script is specified.
+const INIT_PY_BIN_TEMPLATE: &str = include_str!("../templates/script/default/__init__.py.j2");
 
-{%- if not is_virtual %}
-{%- if build_system == "hatchling" %}
+const INIT_PY_BIN_MAIN_TEMPLATE: &str = include_str!("../templates/script/default/__main__.py.j2");
 
-[tool.hatch.metadata]
-allow-direct-references = true
+/// Template for the lib.rs when using the maturin build system.
+const LIB_RS_TEMPLATE: &str = include_str!("../templates/lib/maturin/lib.rs.j2");
 
-[tool.hatch.build.targets.wheel]
-packages = [{{ "src/" ~ name_safe }}]
-{%- elif build_system == "maturin" %}
+/// Template for the __init__.py when using the maturin build system.
+const RUST_INIT_PY_TEMPLATE: &str = include_str!("../templates/lib/maturin/__init__.py.j2");
 
-[tool.maturin]
-python-source = "python"
-module-name = {{ name_safe ~ "._lowlevel" }}
-features = ["pyo3/extension-module"]
-{%- endif %}
-{%- endif %}
+/// Template for the Cargo.toml.
+const CARGO_TOML_TEMPLATE: &str = include_str!("../templates/lib/maturin/Cargo.toml.j2");
 
-"#;
-
-/// The template for the readme file.
-const README_TEMPLATE: &str = r#"# {{ name }}
-
-Describe your project here.
-
-{%- if license %}
-* License: {{ license }}
-{%- endif %}
-
-"#;
-
-const LICENSE_TEMPLATE: &str = r#"
-{{ license_text }}
-"#;
-
-/// Template for the __init__.py when --lib is specified
-const INIT_PY_LIB_TEMPLATE: &str = r#"def hello() -> str:
-    return "Hello from {{ name }}!"
-
-"#;
-
-/// Template for the __init__.py when --bin is specified
-const INIT_PY_BIN_TEMPLATE: &str = r#"def main() -> int:
-    print("Hello from {{ name }}!")
-    return 0
-"#;
-
-const INIT_PY_BIN_MAIN_TEMPLATE: &str = r#"import {{ name_safe }}
-import sys
-
-sys.exit({{ name_safe }}.main())
-"#;
-
-/// Template for the lib.rs
-const LIB_RS_TEMPLATE: &str = r#"use pyo3::prelude::*;
-
-/// Prints a message.
-#[pyfunction]
-fn hello() -> PyResult<String> {
-    Ok("Hello from {{ name }}!".into())
-}
-
-/// A Python module implemented in Rust.
-#[pymodule]
-fn _lowlevel(_py: Python, m: &PyModule) -> PyResult<()> {
-    m.add_function(wrap_pyfunction!(hello, m)?)?;
-    Ok(())
-}
-"#;
-
-/// Template for the __init__.py
-const RUST_INIT_PY_TEMPLATE: &str = r#"from {{ name_safe }}._lowlevel import hello
-__all__ = ["hello"]
-
-"#;
-
-/// Template for the Cargo.toml
-const CARGO_TOML_TEMPLATE: &str = r#"[package]
-name = {{ name }}
-version = "0.1.0"
-edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-[lib]
-name = {{ name_safe }}
-crate-type = ["cdylib"]
-
-[dependencies]
-pyo3 = "0.19.0"
-
-"#;
-
-/// Template for fresh gitignore files
-const GITIGNORE_TEMPLATE: &str = r#"# python generated files
-__pycache__/
-*.py[oc]
-build/
-dist/
-wheels/
-*.egg-info
-
-{%- if is_rust %}
-# Rust
-target/
-{%- endif %}
-
-# venv
-.venv
-
-"#;
+/// Template for fresh gitignore files.
+const GITIGNORE_TEMPLATE: &str = include_str!("../templates/gitignore.j2");
 
 /// Script used for setup.py setup proxy.
 const SETUP_PY_PROXY_SCRIPT: &str = r#"
@@ -433,7 +279,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         true
     } else if !cmd.no_readme {
         let rv = env.render_named_str(
-            "README.txt",
+            "README.md",
             README_TEMPLATE,
             context! {
                 name => metadata.name,

@@ -1,0 +1,15 @@
+# python generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+{%- if is_rust %}
+# Rust
+target/
+{%- endif %}
+
+# venv
+.venv
