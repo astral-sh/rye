@@ -152,6 +152,12 @@ impl Space {
     }
 
     #[allow(unused)]
+    pub fn read_toml<P: AsRef<Path>>(&self, path: P) -> toml_edit::Document {
+        let p = self.project_path().join(path.as_ref());
+        std::fs::read_to_string(&p).unwrap().parse().unwrap()
+    }
+
+    #[allow(unused)]
     pub fn write<P: AsRef<Path>, B: AsRef<[u8]>>(&self, path: P, contents: B) {
         let p = self.project_path().join(path.as_ref());
         fs::create_dir_all(p.parent().unwrap()).ok();
