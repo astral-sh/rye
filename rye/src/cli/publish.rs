@@ -65,108 +65,111 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // Get the files to publish.
     let files = match cmd.dist {
         Some(paths) => paths,
-        None => vec![project.workspace_path().join("dist").join("*")],
+        None => vec![project.workspace_path().join("dist/*")],
     };
 
     // a. Get token from arguments and offer encryption, then store in credentials file.
     // b. Get token from ~/.rye/credentials keyed by provided repository and provide decryption option.
     // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
     let repository = &cmd.repository;
-    let mut credentials = get_credentials()?;
-    credentials
-        .entry(repository)
-        .or_insert(Item::Table(Table::new()));
+    // let mut credentials = get_credentials()?;
+    // credentials
+    //     .entry(repository)
+    //     .or_insert(Item::Table(Table::new()));
 
-    let repository_url = match cmd.repository_url {
-        Some(url) => url,
-        None => {
-            let default_repository_url = Url::parse("https://upload.pypi.org/legacy/")?;
-            credentials
-                .get(repository)
-                .and_then(|table| table.get("repository-url"))
-                .map(|url| match Url::parse(&escape_string(url.to_string())) {
-                    Ok(url) => url,
-                    Err(_) => default_repository_url.clone(),
-                })
-                .unwrap_or(default_repository_url)
-        }
-    };
+    // let repository_url = match cmd.repository_url {
+    //     Some(url) => url,
+    //     None => {
+    //         let default_repository_url = Url::parse("https://upload.pypi.org/legacy/")?;
+    //         credentials
+    //             .get(repository)
+    //             .and_then(|table| table.get("repository-url"))
+    //             .map(|url| match Url::parse(&escape_string(url.to_string())) {
+    //                 Ok(url) => url,
+    //                 Err(_) => default_repository_url.clone(),
+    //             })
+    //             .unwrap_or(default_repository_url)
+    //     }
+    // };
 
     // If -r is pypi but the url isn't pypi then bail
-    if repository == "pypi" && repository_url.domain() != Some("upload.pypi.org") {
-        bail!("invalid pypi url {} (use -h for help)", repository_url);
-    }
+    // if repository == "pypi" && repository_url.domain() != Some("upload.pypi.org") {
+    //     bail!("invalid pypi url {} (use -h for help)", repository_url);
+    // }
 
-    let username = match cmd.username {
-        Some(username) => username,
-        None => credentials
-            .get(repository)
-            .and_then(|table| table.get("username"))
-            .map(|username| username.to_string())
-            .map(escape_string)
-            .unwrap_or("__token__".to_string()),
-    };
+    // let username = match cmd.username {
+    //     Some(username) => username,
+    //     None => credentials
+    //         .get(repository)
+    //         .and_then(|table| table.get("username"))
+    //         .map(|username| username.to_string())
+    //         .map(escape_string)
+    //         .unwrap_or("__token__".to_string()),
+    // };
 
-    let token = if let Some(token) = cmd.token {
-        let secret = Secret::new(token);
-        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
-        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
-        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
-        write_credentials(&credentials)?;
+    // let token = if let Some(token) = cmd.token {
+    //     let secret = Secret::new(token);
+    //     let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
+    //     let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
+    //     credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
+    //     write_credentials(&credentials)?;
 
-        secret
-    } else if let Some(token) = credentials
-        .get(repository)
-        .and_then(|table| table.get("token"))
-        .map(|token| token.to_string())
-        .map(escape_string)
-    {
-        let secret = Secret::new(token);
+    //     secret
+    // } else if let Some(token) = credentials
+    //     .get(repository)
+    //     .and_then(|table| table.get("token"))
+    //     .map(|token| token.to_string())
+    //     .map(escape_string)
+    // {
+    //     let secret = Secret::new(token);
 
-        maybe_decrypt(&secret, cmd.yes)?
-    } else {
-        echo!("No access token found, generate one at: https://pypi.org/manage/account/token/");
-        let token = if !cmd.yes {
-            prompt_for_token()?
-        } else {
-            "".to_string()
-        };
-        if token.is_empty() {
-            bail!("an access token is required")
-        }
-        let secret = Secret::new(token);
-        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
-        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
-        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
+    //     maybe_decrypt(&secret, cmd.yes)?
+    // } else {
+    //     echo!("No access token found, generate one at: https://pypi.org/manage/account/token/");
+    //     let token = if !cmd.yes {
+    //         prompt_for_token()?
+    //     } else {
+    //         "".to_string()
+    //     };
+    //     if token.is_empty() {
+    //         bail!("an access token is required")
+    //     }
+    //     let secret = Secret::new(token);
+    //     let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
+    //     let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
+    //     credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
 
-        secret
-    };
+    //     secret
+    // };
 
-    credentials[repository]["repository-url"] = Item::Value(repository_url.to_string().into());
-    credentials[repository]["username"] = Item::Value(username.clone().into());
-    write_credentials(&credentials)?;
+    // credentials[repository]["repository-url"] = Item::Value(repository_url.to_string().into());
+    // credentials[repository]["username"] = Item::Value(username.clone().into());
+    // write_credentials(&credentials)?;
 
     let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
     publish_cmd
         .arg("-mtwine")
         .arg("--no-color")
         .arg("upload")
-        .args(files)
-        .arg("--username")
-        .arg(username)
-        .arg("--password")
-        .arg(token.expose_secret())
-        .arg("--repository-url")
-        .arg(repository_url.to_string());
-    if cmd.sign {
-        publish_cmd.arg("--sign");
-    }
-    if let Some(identity) = cmd.identity {
-        publish_cmd.arg("--identity").arg(identity);
-    }
-    if let Some(cert) = cmd.cert {
-        publish_cmd.arg("--cert").arg(cert);
-    }
+        // .arg("--username")
+        // .arg(username)
+        // .arg("--password")
+        // .arg(token.expose_secret())
+        // .arg("--repository-url")
+        // .arg(repository_url.to_string())
+        .arg("--repository")
+        .arg(repository)
+        .args(files);
+
+    // if cmd.sign {
+    //     publish_cmd.arg("--sign");
+    // }
+    // if let Some(identity) = cmd.identity {
+    //     publish_cmd.arg("--identity").arg(identity);
+    // }
+    // if let Some(cert) = cmd.cert {
+    //     publish_cmd.arg("--cert").arg(cert);
+    // }
 
     if output == CommandOutput::Quiet {
         publish_cmd.stdout(Stdio::null());

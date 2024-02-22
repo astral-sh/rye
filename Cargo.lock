@@ -1834,7 +1834,7 @@ dependencies = [
 
 [[package]]
 name = "rye"
-version = "0.26.0"
+version = "0.26.1-alpha"
 dependencies = [
  "age",
  "anyhow",
