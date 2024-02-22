@@ -143,7 +143,7 @@ allows much easier cross-python version testing via tox or CI.
 
 Today there are a ton of different resolvers in the Python ecosystem.  Pip has two, poetry
 has one, pdm has one, different independent Python and Rust resolvers exist on top of that.
-Resolvers are important, but unfortunately are are both too many and too many issues with
+Resolvers are important, but unfortunately, there are both too many and too many issues with
 the existing ones.  Here is what I believe a resolver needs to be able to accomplish:
 
 * **Allow resolving across markers:** most resolvers in the Python ecosystem today can only
