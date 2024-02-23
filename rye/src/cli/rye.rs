@@ -388,9 +388,15 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
 }
 
 #[cfg(unix)]
-fn is_fish() -> bool {
-    use whattheshell::Shell;
-    Shell::infer().map_or(false, |x| matches!(x, Shell::Fish))
+fn has_fish() -> bool {
+    use which::which;
+    which("fish").is_ok()
+}
+
+#[cfg(unix)]
+fn has_zsh() -> bool {
+    use which::which;
+    which("zsh").is_ok()
 }
 
 fn perform_install(
@@ -666,7 +672,13 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
             echo!();
             echo!("    source \"{}/env\"", rye_home.display());
             echo!();
-            if is_fish() {
+            if has_zsh() {
+                echo!("To make it work with zsh, you might need to add this to your .zprofile:");
+                echo!();
+                echo!("    source \"{}/env\"", rye_home.display());
+                echo!();
+            }
+            if has_fish() {
                 echo!("To make it work with fish, run this once instead:");
                 echo!();
                 echo!(
