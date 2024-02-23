@@ -3,6 +3,8 @@ use std::{env, fs};
 
 use anyhow::{Context, Error};
 
+use crate::utils::IoPathContext;
+
 pub(crate) fn add_to_path(rye_home: &Path) -> Result<(), Error> {
     // for regular shells just add the path to `.profile`
     add_source_line_to_profile(

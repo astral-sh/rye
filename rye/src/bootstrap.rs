@@ -254,7 +254,7 @@ pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
             }
             fs::remove_file(&py3_shim).ok();
             if fs::hard_link(this, &py3_shim).is_err() {
-                fs::copy(this, &py3_shim).context(&py_shim, "tried to copy python3 shim")?;
+                fs::copy(this, &py3_shim).path_context(&py_shim, "tried to copy python3 shim")?;
             }
 
         // on other unices we always use symlinks

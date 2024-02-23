@@ -5,8 +5,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use crate::installer::list_installed_tools;
-use crate::piptools::get_pip_tools_venv_path;
 use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
 use clap::ValueEnum;
@@ -14,6 +12,8 @@ use console::style;
 use serde::Deserialize;
 use serde::Serialize;
 
+use crate::installer::list_installed_tools;
+use crate::piptools::get_pip_tools_venv_path;
 use crate::platform::{get_app_dir, get_canonical_py_path, list_known_toolchains};
 use crate::pyproject::read_venv_marker;
 use crate::sources::{iter_downloadable, PythonVersion};
