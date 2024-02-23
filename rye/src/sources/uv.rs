@@ -19,6 +19,32 @@ pub struct UvDownload {
     pub sha256: Cow<'static, str>,
 }
 
+impl std::fmt::Display for UvDownload {
+    // The format of the version string is: "uv-<arch>-<os>@<major>.<minor>.<patch>.<suffix>"
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "uv")?;
+        if self.arch != ARCH || self.os != OS {
+            write!(f, "-{}", self.arch)?;
+            if self.os != OS {
+                write!(f, "-{}", self.os)?;
+            }
+        }
+        write!(f, "@{}.{}.{}", self.major, self.minor, self.patch)?;
+
+        if let Some(ref suffix) = self.suffix {
+            write!(f, ".{}", suffix)?;
+        }
+        Ok(())
+    }
+}
+
+impl UvDownload {
+    // See [`UvDownload::fmt`] for the format of the version string.
+    pub fn version(&self) -> String {
+        format!("{}.{}.{}", self.major, self.minor, self.patch)
+    }
+}
+
 // This is the request for the version of uv to download.
 // At the moment, we only support requesting the current architecture and OS.
 // We only have one version included in the binary, so we do not need to request

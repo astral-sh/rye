@@ -21,6 +21,7 @@ use crate::platform::{
 };
 use crate::pyproject::{latest_available_python_version, write_venv_marker};
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
+use crate::sources::uv::{UvDownload, UvRequest};
 use crate::utils::{
     check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
     CommandOutput, IoPathContext,
@@ -168,6 +169,7 @@ pub fn ensure_self_venv_with_toolchain(
     Ok(venv_dir)
 }
 
+#[allow(unused)]
 fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(), Error> {
     if output != CommandOutput::Quiet {
         echo!("Upgrading pip");
@@ -547,8 +549,77 @@ pub fn download_url_ignore_404(url: &str, output: CommandOutput) -> Result<Optio
     }
 }
 
+// Represents a uv binary and associated functions
+// to bootstrap rye using uv.
+#[derive(Clone)]
+struct Uv {
+    output: CommandOutput,
+    uv_bin: PathBuf,
+}
+
+impl Uv {
+    // Ensure we have a uv binary for bootstrapping
+    fn ensure_exists(output: CommandOutput) -> Result<Self, Error> {
+        // Request a download for the default uv binary for this platform.
+        // For instance on aarch64 macos this will request a compatible uv version.
+        let download = UvDownload::try_from(UvRequest::default())?;
+        let uv_dir = get_app_dir().join("uv").join(download.version());
+        let uv_bin = uv_dir.join("uv");
+
+        if uv_dir.exists() && uv_bin.is_file() {
+            return Ok(Self { uv_bin, output });
+        }
+
+        Self::download(&download, &uv_dir, output)?;
+        if uv_dir.exists() && uv_bin.is_file() {
+            return Ok(Self { uv_bin, output });
+        }
+
+        Err(anyhow!("Failed to ensure uv binary is available"))
+    }
+
+    fn download(download: &UvDownload, uv_dir: &Path, output: CommandOutput) -> Result<(), Error> {
+        // Download the version
+        let archive_buffer = download_url(&download.url, output)?;
+
+        // All uv downloads must have a sha256 checksum
+        check_checksum(&archive_buffer, &download.sha256)
+            .with_context(|| format!("Checksum check of {} failed", download.url))?;
+
+        // Unpack the archive once we ensured that the checksum is correct
+        unpack_archive(&archive_buffer, uv_dir, 1).with_context(|| {
+            format!(
+                "unpacking of downloaded tarball {} to '{}' failed",
+                download.url,
+                uv_dir.display(),
+            )
+        })?;
+
+        Ok(())
+    }
+
+    fn cmd(&self) -> Command {
+        let mut cmd = Command::new(&self.uv_bin);
+
+        match self.output {
+            CommandOutput::Verbose => {
+                cmd.arg("--verbose");
+            }
+            CommandOutput::Quiet => {
+                cmd.arg("--quiet");
+                cmd.env("PYTHONWARNINGS", "ignore");
+            }
+            CommandOutput::Normal => {}
+        }
+
+        set_proxy_variables(&mut cmd);
+        cmd
+    }
+}
+
 #[cfg(target_os = "linux")]
 fn validate_shared_libraries(py: &Path) -> Result<(), Error> {
+    use std::process::Command;
     let out = Command::new("ldd")
         .arg(py)
         .output()
