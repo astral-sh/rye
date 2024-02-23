@@ -13,7 +13,6 @@ use once_cell::sync::Lazy;
 use tempfile::NamedTempFile;
 
 use crate::config::Config;
-use crate::consts::VENV_BIN;
 use crate::piptools::LATEST_PIP;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
@@ -22,8 +21,7 @@ use crate::pyproject::{latest_available_python_version, write_venv_marker};
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::sources::uv::{UvDownload, UvRequest};
 use crate::utils::{
-    check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
-    CommandOutput, IoPathContext,
+    check_checksum, set_proxy_variables, symlink_file, unpack_archive, CommandOutput, IoPathContext,
 };
 
 /// this is the target version that we want to fetch
@@ -156,76 +154,6 @@ pub fn ensure_self_venv_with_toolchain(
     FORCED_TO_UPDATE.store(true, atomic::Ordering::Relaxed);
 
     Ok(venv_dir)
-}
-
-#[allow(unused)]
-fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(), Error> {
-    if output != CommandOutput::Quiet {
-        echo!("Upgrading pip");
-    }
-    let venv_bin = venv_dir.join(VENV_BIN);
-
-    let mut pip_install_cmd = Command::new(get_venv_python_bin(venv_dir));
-    pip_install_cmd.arg("-mpip");
-    pip_install_cmd.arg("install");
-    pip_install_cmd.arg("--upgrade");
-
-    // This pip is only used for shim usage and is known to not support 3.7.  pip-tools
-    // use their own local pip versions that are compatible.
-    pip_install_cmd.arg(LATEST_PIP);
-
-    if output == CommandOutput::Verbose {
-        pip_install_cmd.arg("--verbose");
-    } else {
-        pip_install_cmd.arg("--quiet");
-        pip_install_cmd.env("PYTHONWARNINGS", "ignore");
-    }
-    pip_install_cmd.env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
-    let status = pip_install_cmd
-        .status()
-        .context("unable to self-upgrade pip")?;
-    if !status.success() {
-        bail!("failed to initialize virtualenv (upgrade pip)");
-    }
-    let mut req_file = NamedTempFile::new()?;
-    writeln!(req_file, "{}", SELF_REQUIREMENTS)?;
-    let mut pip_install_cmd = Command::new(venv_bin.join("pip"));
-    pip_install_cmd
-        .arg("install")
-        .arg("-r")
-        .arg(req_file.path())
-        .env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
-    if output != CommandOutput::Quiet {
-        echo!("Installing internal dependencies");
-    }
-    if output == CommandOutput::Verbose {
-        pip_install_cmd.arg("--verbose");
-    } else {
-        pip_install_cmd.arg("--quiet");
-        pip_install_cmd.env("PYTHONWARNINGS", "ignore");
-    }
-    set_proxy_variables(&mut pip_install_cmd);
-    let status = pip_install_cmd
-        .status()
-        .context("unable to install self-dependencies")?;
-    if !status.success() {
-        bail!("failed to initialize virtualenv (install dependencies)");
-    }
-    let shims = app_dir.join("shims");
-    if !shims.is_dir() {
-        fs::create_dir_all(&shims).path_context(&shims, "tried to create shim folder")?;
-    }
-
-    // if rye is itself installed into the shims folder, we want to
-    // use that.  Otherwise we fall back to the current executable
-    let mut this = shims.join("rye").with_extension(EXE_EXTENSION);
-    if !this.is_file() {
-        this = env::current_exe()?;
-    }
-
-    update_core_shims(&shims, &this)?;
-
-    Ok(())
 }
 
 pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
