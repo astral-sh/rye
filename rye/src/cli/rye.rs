@@ -393,6 +393,12 @@ fn is_fish() -> bool {
     Shell::infer().map_or(false, |x| matches!(x, Shell::Fish))
 }
 
+#[cfg(unix)]
+fn has_zsh() -> bool {
+    use which::which;
+    which("zsh").is_ok()
+}
+
 fn perform_install(
     mode: InstallMode,
     toolchain_path: Option<&Path>,
@@ -666,6 +672,12 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
             echo!();
             echo!("    source \"{}/env\"", rye_home.display());
             echo!();
+            if has_zsh() {
+                echo!("To make it work with zsh, you might need to add this to your .zprofile:");
+                echo!();
+                echo!("    source \"{}/env\"", rye_home.display());
+                echo!();
+            }s
             if is_fish() {
                 echo!("To make it work with fish, run this once instead:");
                 echo!();
