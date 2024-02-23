@@ -17,7 +17,6 @@ use crate::consts::VENV_BIN;
 use crate::piptools::LATEST_PIP;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
-    symlinks_supported,
 };
 use crate::pyproject::{latest_available_python_version, write_venv_marker};
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
@@ -84,7 +83,6 @@ pub fn ensure_self_venv_with_toolchain(
 ) -> Result<PathBuf, Error> {
     let app_dir = get_app_dir();
     let venv_dir = app_dir.join("self");
-    let pip_tools_dir = app_dir.join("pip-tools");
 
     if venv_dir.is_dir() {
         if is_up_to_date() {
@@ -95,16 +93,15 @@ pub fn ensure_self_venv_with_toolchain(
             }
             fs::remove_dir_all(&venv_dir)
                 .path_context(&venv_dir, "could not remove self-venv for update")?;
-            if pip_tools_dir.is_dir() {
-                fs::remove_dir_all(&pip_tools_dir)
-                    .path_context(&pip_tools_dir, "could not remove pip-tools for update")?;
-            }
         }
     }
 
     if output != CommandOutput::Quiet {
         echo!("Bootstrapping rye internals");
     }
+
+    // Ensure we have uv
+    let uv = Uv::ensure_exists(output)?;
 
     let version = match toolchain_version_request {
         Some(ref version_request) => ensure_specific_self_toolchain(output, version_request)
@@ -131,39 +128,31 @@ pub fn ensure_self_venv_with_toolchain(
     }
 
     // initialize the virtualenv
-    let mut venv_cmd = Command::new(&py_bin);
-    venv_cmd.arg("-mvenv");
-    venv_cmd.arg("--upgrade-deps");
+    {
+        let uv_venv = uv.venv(&venv_dir, &py_bin, &version)?;
+        // write our marker
+        uv_venv.write_marker()?;
+        // update pip and our requirements
+        uv_venv.update()?;
 
-    // unlike virtualenv which we use after bootstrapping, the stdlib python
-    // venv does not detect symlink support itself and needs to be coerced into
-    // when available.
-    if cfg!(windows) && symlinks_supported() {
-        venv_cmd.arg("--symlinks");
+        // Update the shims
+        let shims = app_dir.join("shims");
+        if !shims.is_dir() {
+            fs::create_dir_all(&shims).path_context(&shims, "tried to create shim folder")?;
+        }
+
+        // if rye is itself installed into the shims folder, we want to
+        // use that.  Otherwise we fall back to the current executable
+        let mut this = shims.join("rye").with_extension(EXE_EXTENSION);
+        if !this.is_file() {
+            this = env::current_exe()?;
+        }
+
+        update_core_shims(&shims, &this)?;
+
+        uv_venv.write_tool_version(SELF_VERSION)?;
     }
 
-    venv_cmd.arg(&venv_dir);
-    set_proxy_variables(&mut venv_cmd);
-
-    let status = venv_cmd.status().with_context(|| {
-        format!(
-            "unable to create self venv using {}. It might be that \
-             the used Python build is incompatible with this machine. \
-             For more information see https://rye-up.com/guide/installation/",
-            py_bin.display()
-        )
-    })?;
-    if !status.success() {
-        bail!("failed to initialize virtualenv in {}", venv_dir.display());
-    }
-
-    write_venv_marker(&venv_dir, &version)?;
-
-    do_update(output, &venv_dir, app_dir)?;
-
-    let tool_version_path = venv_dir.join("tool-version.txt");
-    fs::write(&tool_version_path, SELF_VERSION.to_string())
-        .path_context(tool_version_path, "could not write tool version")?;
     FORCED_TO_UPDATE.store(true, atomic::Ordering::Relaxed);
 
     Ok(venv_dir)
