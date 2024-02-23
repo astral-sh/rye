@@ -331,6 +331,8 @@ pub fn update_single_project_lockfile(
         }
     }
 
+    req_file.flush()?;
+
     let exclusions = find_exclusions(std::slice::from_ref(pyproject))?;
     generate_lockfile(
         output,
