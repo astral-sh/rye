@@ -504,7 +504,11 @@ impl Uv {
             .with_context(|| format!("Checksum check of {} failed", download.url))?;
 
         // Unpack the archive once we ensured that the checksum is correct
-        unpack_archive(&archive_buffer, uv_dir, 1).with_context(|| {
+        // The tarballs have a top level directory that we need to strip.
+        // The windows zip files don't.
+        let strip = if download.url.ends_with("zip") { 0 } else { 1 };
+
+        unpack_archive(&archive_buffer, uv_dir, strip).with_context(|| {
             format!(
                 "unpacking of downloaded tarball {} to '{}' failed",
                 download.url,
