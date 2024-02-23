@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
 use std::{fmt, fs};
 
-use anyhow::{anyhow, bail, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use dialoguer::theme::{ColorfulTheme, Theme};
 use once_cell::sync::Lazy;
 use pep508_rs::{Requirement, VersionOrUrl};
@@ -36,6 +36,21 @@ pub(crate) mod unix;
 
 pub(crate) mod ruff;
 pub(crate) mod toml;
+
+pub trait IoPathContext {
+    type Out;
+
+    /// Adds path information to an error.
+    fn path_context<P: AsRef<Path>, D: fmt::Display>(self, p: P, msg: D) -> Self::Out;
+}
+
+impl<T, E: std::error::Error + Send + Sync + 'static> IoPathContext for Result<T, E> {
+    type Out = Result<T, Error>;
+
+    fn path_context<P: AsRef<Path>, D: fmt::Display>(self, p: P, msg: D) -> Self::Out {
+        self.with_context(|| format!("{} (at '{}')", msg, p.as_ref().display()))
+    }
+}
 
 #[cfg(windows)]
 pub fn symlink_dir<P, Q>(original: P, link: Q) -> Result<(), std::io::Error>
@@ -71,7 +86,8 @@ pub fn mark_path_sync_ignore(venv: &Path, mark_ignore: bool) -> Result<(), Error
 
         for flag in ATTRS {
             if mark_ignore {
-                xattr::set(venv, flag, b"1")?;
+                xattr::set(venv, flag, b"1")
+                    .path_context(venv, "failed to write extended attribute")?;
             } else {
                 xattr::remove(venv, flag).ok();
             }
@@ -83,7 +99,7 @@ pub fn mark_path_sync_ignore(venv: &Path, mark_ignore: bool) -> Result<(), Error
         let mut stream_path = venv.as_os_str().to_os_string();
         stream_path.push(":com.dropbox.ignored");
         if mark_ignore {
-            fs::write(stream_path, b"1")?;
+            fs::write(&stream_path, b"1").path_context(&stream_path, "failed to write stream")?;
         } else {
             fs::remove_file(stream_path).ok();
         }
@@ -268,20 +284,25 @@ pub fn unpack_archive(contents: &[u8], dst: &Path, strip_components: usize) -> R
             let path = dst.join(components.as_path());
             if path != Path::new("") && path.strip_prefix(dst).is_ok() {
                 if file.name().ends_with('/') {
-                    fs::create_dir_all(&path)?;
+                    fs::create_dir_all(&path).path_context(&path, "failed to create directory")?;
                 } else {
                     if let Some(p) = path.parent() {
                         if !p.exists() {
-                            fs::create_dir_all(p)?;
+                            fs::create_dir_all(p).path_context(p, "failed to create directory")?;
                         }
                     }
-                    std::io::copy(&mut file, &mut fs::File::create(&path)?)?;
+                    std::io::copy(
+                        &mut file,
+                        &mut fs::File::create(&path)
+                            .path_context(&path, "failed to create file")?,
+                    )?;
                 }
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
                     if let Some(mode) = file.unix_mode() {
-                        fs::set_permissions(&path, fs::Permissions::from_mode(mode))?;
+                        fs::set_permissions(&path, fs::Permissions::from_mode(mode))
+                            .path_context(&path, "failed to set permissions")?;
                     }
                 }
             }
@@ -398,7 +419,10 @@ pub fn copy_dir<T: AsRef<Path>>(from: T, to: T, options: &CopyDirOptions) -> Res
     let to = to.as_ref();
 
     if from.is_dir() {
-        for entry in fs::read_dir(from)?.filter_map(|e| e.ok()) {
+        for entry in fs::read_dir(from)
+            .path_context(from, "failed to enumerate directory")?
+            .filter_map(|e| e.ok())
+        {
             let entry_path = entry.path();
             if options.exclude.iter().any(|dir| *dir == entry_path) {
                 continue;
@@ -406,10 +430,12 @@ pub fn copy_dir<T: AsRef<Path>>(from: T, to: T, options: &CopyDirOptions) -> Res
 
             let destination = to.join(entry.file_name());
             if entry.file_type()?.is_dir() {
-                fs::create_dir_all(&destination)?;
+                fs::create_dir_all(&destination)
+                    .path_context(&destination, "failed to create directory")?;
                 copy_dir(entry.path(), destination, options)?;
             } else {
-                fs::copy(entry.path(), &destination)?;
+                fs::copy(entry.path(), &destination)
+                    .path_context(entry.path(), "failed to copy file")?;
             }
         }
     }

@@ -23,7 +23,7 @@ use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
 };
 use crate::sources::PythonVersion;
-use crate::utils::{set_proxy_variables, CommandOutput};
+use crate::utils::{set_proxy_variables, CommandOutput, IoPathContext};
 
 static FILE_EDITABLE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^-e (file://.*?)\s*$").unwrap());
 static DEP_COMMENT_RE: Lazy<Regex> =
@@ -331,6 +331,8 @@ pub fn update_single_project_lockfile(
         }
     }
 
+    req_file.flush()?;
+
     let exclusions = find_exclusions(std::slice::from_ref(pyproject))?;
     generate_lockfile(
         output,
@@ -363,10 +365,14 @@ fn generate_lockfile(
     let requirements_file = scratch.path().join("requirements.txt");
     let lock_options = if lockfile.is_file() {
         let requirements = fs::read_to_string(lockfile)?;
-        fs::write(&requirements_file, &requirements)?;
+        fs::write(&requirements_file, &requirements)
+            .path_context(&requirements_file, "unable to restore requirements file")?;
         LockOptions::restore(&requirements, lock_options)?
     } else {
-        fs::write(&requirements_file, b"")?;
+        fs::write(&requirements_file, b"").path_context(
+            &requirements_file,
+            "unable to write empty requirements file",
+        )?;
         Cow::Borrowed(lock_options)
     };
 
@@ -463,7 +469,8 @@ fn finalize_lockfile(
     sources: &ExpandedSources,
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
-    let mut rv = BufWriter::new(fs::File::create(out)?);
+    let mut rv =
+        BufWriter::new(fs::File::create(out).path_context(out, "unable to finalize lockfile")?);
     lock_options.write_header(&mut rv)?;
 
     // only if we are asked to include sources we do that.
@@ -472,7 +479,10 @@ fn finalize_lockfile(
         writeln!(rv)?;
     }
 
-    for line in fs::read_to_string(generated)?.lines() {
+    for line in fs::read_to_string(generated)
+        .path_context(generated, "unable to parse resolver output")?
+        .lines()
+    {
         // we deal with this explicitly.
         if line.trim().is_empty()
             || line.starts_with("--index-url ")

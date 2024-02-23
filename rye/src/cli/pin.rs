@@ -10,6 +10,7 @@ use crate::platform::get_pinnable_version;
 use crate::pyproject::DiscoveryUnsuccessful;
 use crate::pyproject::PyProject;
 use crate::sources::PythonVersionRequest;
+use crate::utils::IoPathContext;
 
 /// Pins a Python version to this project.
 ///
@@ -57,7 +58,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => env::current_dir()?.join(".python-version"),
     };
     fs::write(&version_file, format!("{}\n", to_write))
-        .context("failed to write .python-version file")?;
+        .path_context(&version_file, "failed to write .python-version file")?;
 
     if !cmd.no_update_requires_python {
         if let Some(mut pyproject_toml) = pyproject {

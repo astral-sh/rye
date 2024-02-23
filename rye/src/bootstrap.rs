@@ -23,7 +23,7 @@ use crate::pyproject::{latest_available_python_version, write_venv_marker};
 use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{
     check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
-    CommandOutput,
+    CommandOutput, IoPathContext,
 };
 
 /// this is the target version that we want to fetch
@@ -92,10 +92,11 @@ pub fn ensure_self_venv_with_toolchain(
             if output != CommandOutput::Quiet {
                 echo!("Detected outdated rye internals. Refreshing");
             }
-            fs::remove_dir_all(&venv_dir).context("could not remove self-venv for update")?;
+            fs::remove_dir_all(&venv_dir)
+                .path_context(&venv_dir, "could not remove self-venv for update")?;
             if pip_tools_dir.is_dir() {
                 fs::remove_dir_all(&pip_tools_dir)
-                    .context("could not remove pip-tools for update")?;
+                    .path_context(&pip_tools_dir, "could not remove pip-tools for update")?;
             }
         }
     }
@@ -159,7 +160,9 @@ pub fn ensure_self_venv_with_toolchain(
 
     do_update(output, &venv_dir, app_dir)?;
 
-    fs::write(venv_dir.join("tool-version.txt"), SELF_VERSION.to_string())?;
+    let tool_version_path = venv_dir.join("tool-version.txt");
+    fs::write(&tool_version_path, SELF_VERSION.to_string())
+        .path_context(tool_version_path, "could not write tool version")?;
     FORCED_TO_UPDATE.store(true, atomic::Ordering::Relaxed);
 
     Ok(venv_dir)
@@ -219,7 +222,7 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
     }
     let shims = app_dir.join("shims");
     if !shims.is_dir() {
-        fs::create_dir_all(&shims).context("tried to create shim folder")?;
+        fs::create_dir_all(&shims).path_context(&shims, "tried to create shim folder")?;
     }
 
     // if rye is itself installed into the shims folder, we want to
@@ -237,47 +240,54 @@ fn do_update(output: CommandOutput, venv_dir: &Path, app_dir: &Path) -> Result<(
 pub fn update_core_shims(shims: &Path, this: &Path) -> Result<(), Error> {
     #[cfg(unix)]
     {
+        let py_shim = shims.join("python");
+        let py3_shim = shims.join("python3");
+
         // on linux we cannot symlink at all, as this will misreport.  We will try to do
         // hardlinks and if that fails, we fall back to copying the entire file over.  This
         // for instance is needed when the rye executable is placed on a different volume
         // than ~/.rye/shims
         if cfg!(target_os = "linux") {
-            fs::remove_file(shims.join("python")).ok();
-            if fs::hard_link(this, shims.join("python")).is_err() {
-                fs::copy(this, shims.join("python")).context("tried to copy python shim")?;
+            fs::remove_file(&py_shim).ok();
+            if fs::hard_link(this, &py_shim).is_err() {
+                fs::copy(this, &py_shim).path_context(&py_shim, "tried to copy python shim")?;
             }
-            fs::remove_file(shims.join("python3")).ok();
-            if fs::hard_link(this, shims.join("python3")).is_err() {
-                fs::copy(this, shims.join("python2")).context("tried to copy python3 shim")?;
+            fs::remove_file(&py3_shim).ok();
+            if fs::hard_link(this, &py3_shim).is_err() {
+                fs::copy(this, &py3_shim).path_context(&py_shim, "tried to copy python3 shim")?;
             }
 
         // on other unices we always use symlinks
         } else {
-            fs::remove_file(shims.join("python")).ok();
-            symlink_file(this, shims.join("python")).context("tried to symlink python shim")?;
-            fs::remove_file(shims.join("python3")).ok();
-            symlink_file(this, shims.join("python3")).context("tried to symlink python3 shim")?;
+            fs::remove_file(&py_shim).ok();
+            symlink_file(this, &py_shim).path_context(&py_shim, "tried to symlink python shim")?;
+            fs::remove_file(&py3_shim).ok();
+            symlink_file(this, &py3_shim)
+                .path_context(&py3_shim, "tried to symlink python3 shim")?;
         }
     }
 
     #[cfg(windows)]
     {
+        let py_shim = shims.join("python.exe");
+        let pyw_shim = shims.join("pythonw.exe");
+        let py3_shim = shims.join("python3.exe");
+
         // on windows we need privileges to symlink.  Not everyone might have that, so we
         // fall back to hardlinks.
-        fs::remove_file(shims.join("python.exe")).ok();
-        if symlink_file(this, shims.join("python.exe")).is_err() {
-            fs::hard_link(this, shims.join("python.exe"))
-                .context("tried to symlink python shim")?;
+        fs::remove_file(&py_shim).ok();
+        if symlink_file(this, &py_shim).is_err() {
+            fs::hard_link(this, &py_shim).path_context(&py_shim, "tried to symlink python shim")?;
         }
-        fs::remove_file(shims.join("python3.exe")).ok();
-        if symlink_file(this, shims.join("python3.exe")).is_err() {
-            fs::hard_link(this, shims.join("python3.exe"))
-                .context("tried to symlink python shim")?;
+        fs::remove_file(&py3_shim).ok();
+        if symlink_file(this, &py3_shim).is_err() {
+            fs::hard_link(this, &py3_shim)
+                .path_context(&py3_shim, "tried to symlink python3 shim")?;
         }
-        fs::remove_file(shims.join("pythonw.exe")).ok();
-        if symlink_file(this, shims.join("pythonw.exe")).is_err() {
-            fs::hard_link(this, shims.join("pythonw.exe"))
-                .context("tried to symlink pythonw shim")?;
+        fs::remove_file(&pyw_shim).ok();
+        if symlink_file(this, &pyw_shim).is_err() {
+            fs::hard_link(this, &pyw_shim)
+                .path_context(&pyw_shim, "tried to symlink pythonw shim")?;
         }
     }
 
@@ -421,8 +431,7 @@ pub fn fetch(
         return Ok(version);
     }
 
-    fs::create_dir_all(&target_dir)
-        .with_context(|| format!("failed to create target folder {}", target_dir.display()))?;
+    fs::create_dir_all(&target_dir).path_context(&target_dir, "failed to create target folder")?;
 
     if output == CommandOutput::Verbose {
         echo!("download url: {}", url);
@@ -445,8 +454,13 @@ pub fn fetch(
     if output != CommandOutput::Quiet {
         echo!("{}", style("Unpacking").cyan());
     }
-    unpack_archive(&archive_buffer, &target_dir, 1)
-        .with_context(|| format!("unpacking of downloaded tarball {} failed", &url))?;
+    unpack_archive(&archive_buffer, &target_dir, 1).with_context(|| {
+        format!(
+            "unpacking of downloaded tarball {} to '{}' failed",
+            &url,
+            target_dir.display()
+        )
+    })?;
 
     if output != CommandOutput::Quiet {
         echo!("{} {}", style("Downloaded").green(), version);

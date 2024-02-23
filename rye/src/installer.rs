@@ -20,6 +20,7 @@ use crate::sources::PythonVersionRequest;
 use crate::sync::{create_virtualenv, VenvMarker};
 use crate::utils::{
     get_short_executable_name, get_venv_python_bin, is_executable, symlink_file, CommandOutput,
+    IoPathContext,
 };
 
 const FIND_SCRIPT_SCRIPT: &str = r#"
@@ -299,13 +300,12 @@ fn install_scripts(
             {
                 if symlink_file(file, &shim_target).is_err() {
                     fs::hard_link(file, &shim_target)
-                        .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
+                        .path_context(file, "unable to symlink tool")?;
                 }
             }
             #[cfg(unix)]
             {
-                symlink_file(file, shim_target)
-                    .with_context(|| format!("unable to symlink tool to {}", file.display()))?;
+                symlink_file(file, shim_target).path_context(file, "unable to symlink tool")?;
             }
             rv.push(get_short_executable_name(file));
         }
@@ -340,7 +340,7 @@ pub fn list_installed_tools() -> Result<HashMap<String, ToolInfo>, Error> {
     }
 
     let mut rv = HashMap::new();
-    for folder in fs::read_dir(&tool_dir)? {
+    for folder in fs::read_dir(&tool_dir).path_context(&tool_dir, "unable to enumerate tools")? {
         let folder = folder?;
         if !folder.file_type()?.is_dir() {
             continue;
@@ -350,7 +350,9 @@ pub fn list_installed_tools() -> Result<HashMap<String, ToolInfo>, Error> {
         let venv_marker = read_venv_marker(&folder.path());
 
         let mut scripts = Vec::new();
-        for script in fs::read_dir(target_venv_bin_path.clone())? {
+        for script in fs::read_dir(target_venv_bin_path.clone())
+            .path_context(&target_venv_bin_path, "unable to enumerate scripts")?
+        {
             let script = script?;
             let script_path = script.path();
             if let Some(base_name) = script_path.file_name() {
@@ -388,7 +390,9 @@ fn uninstall_helper(target_venv_path: &Path, shim_dir: &Path) -> Result<(), Erro
         return Ok(());
     }
 
-    for script in fs::read_dir(target_venv_bin_path)? {
+    for script in fs::read_dir(&target_venv_bin_path)
+        .path_context(&target_venv_bin_path, "unable to enumerate scripts")?
+    {
         let script = script?;
         if let Some(base_name) = script.path().file_name() {
             let shim_path = shim_dir.join(base_name);

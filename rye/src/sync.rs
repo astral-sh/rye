@@ -21,6 +21,7 @@ use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources, PyP
 use crate::sources::PythonVersion;
 use crate::utils::{
     get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
+    IoPathContext,
 };
 
 /// Controls the sync mode
@@ -149,7 +150,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
     // kill the virtualenv if it's there and we need to get rid of it.
     if recreate && venv.is_dir() {
-        fs::remove_dir_all(&venv).context("failed to delete existing virtualenv")?;
+        fs::remove_dir_all(&venv).path_context(&venv, "failed to delete existing virtualenv")?;
     }
 
     if venv.is_dir() {
@@ -347,8 +348,7 @@ pub fn create_virtualenv(
         venv_cmd
     } else {
         // create the venv folder first so we can manipulate some flags on it.
-        fs::create_dir_all(venv)
-            .with_context(|| format!("unable to create virtualenv folder '{}'", venv.display()))?;
+        fs::create_dir_all(venv).path_context(venv, "unable to create virtualenv folder")?;
 
         update_venv_sync_marker(output, venv);
         let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("virtualenv"));
@@ -469,7 +469,7 @@ fn inject_tcl_config(venv: &Path, py_bin: &Path) -> Result<(), Error> {
 // There is only one folder in the venv/lib folder. But in practice, only pypy will use this method in linux
 #[cfg(unix)]
 fn get_site_packages(lib_dir: PathBuf) -> Result<Option<PathBuf>, Error> {
-    let entries = fs::read_dir(lib_dir).context("read venv/lib/ path is fail")?;
+    let entries = fs::read_dir(&lib_dir).path_context(&lib_dir, "read venv/lib/ path failed")?;
 
     for entry in entries {
         let entry = entry?;
