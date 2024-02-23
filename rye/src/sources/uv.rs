@@ -74,8 +74,8 @@ impl TryFrom<UvRequest> for UvDownload {
             .iter()
             .rev()
             .find(|d| {
-                (v.arch.is_none() || v.arch.as_ref().unwrap() == d.arch)
-                    && (v.os.is_none() || v.os.as_ref().unwrap() == d.os)
+                (v.arch.is_none() || v.arch.as_ref().unwrap() == &d.arch)
+                    && (v.os.is_none() || v.os.as_ref().unwrap() == &d.os)
             })
             .cloned()
             .ok_or_else(|| anyhow!("No matching download found"))
