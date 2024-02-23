@@ -615,6 +615,109 @@ impl Uv {
         set_proxy_variables(&mut cmd);
         cmd
     }
+
+    // Generate a venv using the uv binary
+    fn venv(
+        &self,
+        venv_dir: &Path,
+        py_bin: &Path,
+        version: &PythonVersion,
+    ) -> Result<UvWithVenv, Error> {
+        self.cmd()
+            .arg("venv")
+            .arg("--python")
+            .arg(py_bin)
+            .arg(venv_dir)
+            .status()
+            .with_context(|| {
+                format!(
+                    "unable to create self venv using {}. It might be that \
+                      the used Python build is incompatible with this machine. \
+                      For more information see https://rye-up.com/guide/installation/",
+                    py_bin.display()
+                )
+            })?;
+
+        Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+    }
+}
+
+// Represents a venv generated and managed by uv
+struct UvWithVenv {
+    uv: Uv,
+    venv_path: PathBuf,
+    py_version: PythonVersion,
+}
+
+impl UvWithVenv {
+    fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
+        UvWithVenv {
+            uv,
+            py_version: version.clone(),
+            venv_path: venv_dir.to_path_buf(),
+        }
+    }
+
+    fn venv_cmd(&self) -> Command {
+        let mut cmd = self.uv.cmd();
+        cmd.env("VIRTUAL_ENV", &self.venv_path);
+        cmd
+    }
+
+    fn write_marker(&self) -> Result<(), Error> {
+        write_venv_marker(&self.venv_path, &self.py_version)
+    }
+
+    fn update(&self) -> Result<(), Error> {
+        self.update_pip(LATEST_PIP)?;
+        self.update_requirements(SELF_REQUIREMENTS)?;
+        Ok(())
+    }
+
+    fn update_pip(&self, pip_version: &str) -> Result<(), Error> {
+        self.venv_cmd()
+            .arg("pip")
+            .arg("install")
+            .arg("--upgrade")
+            .arg(pip_version)
+            .status()
+            .with_context(|| {
+                format!(
+                    "unable to update pip in venv at {}",
+                    self.venv_path.display()
+                )
+            })?;
+
+        Ok(())
+    }
+
+    fn update_requirements(&self, requirements: &str) -> Result<(), Error> {
+        let mut req_file = NamedTempFile::new()?;
+        writeln!(req_file, "{}", requirements)?;
+
+        self.venv_cmd()
+            .arg("pip")
+            .arg("install")
+            .arg("--upgrade")
+            .arg("-r")
+            .arg(req_file.path())
+            .status()
+            .with_context(|| {
+                format!(
+                    "unable to update requirements in venv at {}",
+                    self.venv_path.display()
+                )
+            })?;
+
+        Ok(())
+    }
+
+    fn write_tool_version(&self, version: u64) -> Result<(), Error> {
+        let tool_version_path = self.venv_path.join("tool-version.txt");
+        fs::write(&tool_version_path, version.to_string())
+            .path_context(&tool_version_path, "could not write tool version")?;
+        Ok(())
+    }
 }
 
 #[cfg(target_os = "linux")]
