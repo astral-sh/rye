@@ -5,7 +5,7 @@ use crate::bootstrap::fetch;
 use crate::config::Config;
 use crate::platform::get_python_version_request_from_pyenv_pin;
 use crate::pyproject::PyProject;
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
 /// Fetches a Python interpreter for the local machine. This is an alias of `rye toolchain fetch`.

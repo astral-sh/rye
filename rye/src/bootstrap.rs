@@ -20,7 +20,7 @@ use crate::platform::{
     symlinks_supported,
 };
 use crate::pyproject::{latest_available_python_version, write_venv_marker};
-use crate::sources::{get_download_url, PythonVersion, PythonVersionRequest};
+use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{
     check_checksum, get_venv_python_bin, set_proxy_variables, symlink_file, unpack_archive,
     CommandOutput, IoPathContext,

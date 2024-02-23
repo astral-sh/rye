@@ -21,7 +21,7 @@ use crate::bootstrap::{
 use crate::cli::toolchain::register_toolchain;
 use crate::config::Config;
 use crate::platform::{get_app_dir, symlinks_supported};
-use crate::sources::{get_download_url, PythonVersionRequest};
+use crate::sources::py::{get_download_url, PythonVersionRequest};
 use crate::utils::{check_checksum, toml, tui_theme, CommandOutput, IoPathContext, QuietExit};
 
 #[cfg(windows)]

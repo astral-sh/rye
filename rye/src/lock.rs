@@ -22,7 +22,7 @@ use crate::piptools::{get_pip_compile, get_pip_tools_version, PipToolsVersion};
 use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
 };
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::utils::{set_proxy_variables, CommandOutput, IoPathContext};
 
 static FILE_EDITABLE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^-e (file://.*?)\s*$").unwrap());

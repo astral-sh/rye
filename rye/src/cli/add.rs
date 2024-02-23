@@ -15,7 +15,7 @@ use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
 

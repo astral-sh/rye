@@ -16,7 +16,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::get_app_dir;
 use crate::pyproject::{normalize_package_name, read_venv_marker, ExpandedSources};
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::sync::{create_virtualenv, VenvMarker};
 use crate::utils::{
     get_short_executable_name, get_venv_python_bin, is_executable, symlink_file, CommandOutput,

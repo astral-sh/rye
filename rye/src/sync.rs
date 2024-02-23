@@ -18,7 +18,7 @@ use crate::lock::{
 use crate::piptools::{get_pip_sync, get_pip_tools_venv_path};
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources, PyProject};
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::utils::{
     get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
     IoPathContext,
