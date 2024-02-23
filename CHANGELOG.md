@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- `init` now supports `--script` and `--lib` to generate a script or library project.  #738
+
 - Fixed `rye config --show-path` abort with an error. #706
 
 - Bumped `uv` to 0.1.9.  #719, #740, #746

@@ -1,0 +1,15 @@
+import json, sys
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+def setup(**kwargs) -> None:
+    print(json.dumps(kwargs), file=sys.stderr)
+
+if __name__ == "setuptools":
+    _setup_proxy_module = sys.modules.pop("setuptools")
+    _setup_proxy_cwd = sys.path.pop(0)
+    import setuptools as __setuptools
+    sys.path.insert(0, _setup_proxy_cwd)
+    sys.modules["setuptools"] = _setup_proxy_module
+    def __getattr__(name):
+        return getattr(__setuptools, name)
