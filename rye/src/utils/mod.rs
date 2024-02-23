@@ -87,7 +87,7 @@ pub fn mark_path_sync_ignore(venv: &Path, mark_ignore: bool) -> Result<(), Error
         for flag in ATTRS {
             if mark_ignore {
                 xattr::set(venv, flag, b"1")
-                    .path_context(&venv, "failed to write extended attribute")?;
+                    .path_context(venv, "failed to write extended attribute")?;
             } else {
                 xattr::remove(venv, flag).ok();
             }
