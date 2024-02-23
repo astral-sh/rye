@@ -26,7 +26,7 @@ use crate::pyproject::BuildSystem;
 use crate::sources::PythonVersionRequest;
 use crate::utils::{
     copy_dir, escape_string, format_requirement, get_venv_python_bin, is_inside_git_work_tree,
-    CommandOutput, CopyDirOptions,
+    CommandOutput, CopyDirOptions, IoPathContext,
 };
 
 /// Initialize a new or existing Python project with Rye.
@@ -218,7 +218,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 license_text,
             },
         )?;
-        fs::write(&license_file, rv)?;
+        fs::write(&license_file, rv).path_context(&license_file, "create license file")?;
     }
 
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
@@ -270,8 +270,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         // the full version request.  This has the disadvantage that we might end up
         // pinning to an architecture specific version.
         let to_write = get_pinnable_version(&py, false).unwrap_or_else(|| py.to_string());
-        fs::write(python_version_file, format!("{}\n", to_write))
-            .context("could not write .python-version file")?;
+        fs::write(&python_version_file, format!("{}\n", to_write))
+            .path_context(&python_version_file, "could not write .python-version file")?;
     }
 
     // create a readme if one is missing
@@ -347,7 +347,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     is_rust => matches!(build_system, BuildSystem::Maturin)
                 },
             )?;
-            fs::write(&gitignore, rv).context("failed to write .gitignore")?;
+            fs::write(&gitignore, rv).path_context(&gitignore, "failed to write .gitignore")?;
         }
         if is_metadata_author_none {
             let new_author = get_default_author_with_fallback(&dir);

@@ -17,7 +17,7 @@ use serde::Serialize;
 use crate::platform::{get_app_dir, get_canonical_py_path, list_known_toolchains};
 use crate::pyproject::read_venv_marker;
 use crate::sources::{iter_downloadable, PythonVersion};
-use crate::utils::symlink_file;
+use crate::utils::{symlink_file, IoPathContext};
 
 const INSPECT_SCRIPT: &str = r#"
 import json
@@ -144,10 +144,10 @@ pub fn remove(cmd: RemoveCommand) -> Result<(), Error> {
     }
 
     if path.is_file() {
-        fs::remove_file(&path)?;
+        fs::remove_file(&path).path_context(&path, "failed to remove toolchain link")?;
         echo!("Removed toolchain link {}", &ver);
     } else if path.is_dir() {
-        fs::remove_dir_all(&path)?;
+        fs::remove_dir_all(&path).path_context(&path, "failed to remove toolchain")?;
         echo!("Removed installed toolchain {}", &ver);
     } else {
         echo!("Toolchain is not installed");
@@ -286,7 +286,7 @@ where
                     .to_str()
                     .ok_or_else(|| anyhow::anyhow!("non unicode path to interpreter"))?,
             )
-            .context("could not register interpreter")?;
+            .path_context(&target, "could not register interpreter")?;
         }
     }
 

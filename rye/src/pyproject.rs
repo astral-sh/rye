@@ -17,11 +17,11 @@ use crate::consts::VENV_BIN;
 use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
 use crate::sources::{get_download_url, matches_version, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
-use crate::utils::CommandOutput;
 use crate::utils::{
     escape_string, expand_env_vars, format_requirement, get_short_executable_name, is_executable,
     toml,
 };
+use crate::utils::{CommandOutput, IoPathContext};
 use anyhow::{anyhow, bail, Context, Error};
 use globset::GlobBuilder;
 use once_cell::sync::Lazy;
@@ -577,14 +577,9 @@ impl PyProject {
     pub fn load(filename: &Path) -> Result<PyProject, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
         let doc = fs::read_to_string(filename)
-            .with_context(|| format!("failed to read pyproject.toml from {}", &filename.display()))?
+            .path_context(filename, "failed to read pyproject.toml")?
             .parse::<Document>()
-            .with_context(|| {
-                format!(
-                    "failed to parse pyproject.toml from {}",
-                    &filename.display()
-                )
-            })?;
+            .path_context(filename, "failed to parse pyproject.toml")?;
         let mut workspace = Workspace::try_load_from_toml(&doc, root).map(Arc::new);
 
         if workspace.is_none() {
@@ -626,7 +621,7 @@ impl PyProject {
             .parse::<Document>()
             .with_context(|| {
                 format!(
-                    "failed to parse pyproject.toml from {} in context of workspace {}",
+                    "failed to parse pyproject.toml from '{}' in context of workspace {}",
                     &filename.display(),
                     workspace.path().display(),
                 )
@@ -996,9 +991,8 @@ impl PyProject {
 
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
-        fs::write(self.toml_path(), self.doc.to_string()).with_context(|| {
-            format!("unable to write changes to {}", self.toml_path().display())
-        })?;
+        let path = self.toml_path();
+        fs::write(&path, self.doc.to_string()).path_context(&path, "unable to write changes")?;
         Ok(())
     }
 }
@@ -1069,14 +1063,15 @@ pub fn read_venv_marker(venv_path: &Path) -> Option<VenvMarker> {
 }
 
 pub fn write_venv_marker(venv_path: &Path, py_ver: &PythonVersion) -> Result<(), Error> {
+    let marker = venv_path.join("rye-venv.json");
     fs::write(
-        venv_path.join("rye-venv.json"),
+        &marker,
         serde_json::to_string_pretty(&VenvMarker {
             python: py_ver.clone(),
             venv_path: Some(venv_path.into()),
         })?,
     )
-    .context("failed writing venv marker file")?;
+    .path_context(&marker, "failed writing venv marker file")?;
 
     Ok(())
 }

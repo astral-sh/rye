@@ -8,7 +8,7 @@ use console::style;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::pyproject::{locate_projects, PyProject};
-use crate::utils::{get_venv_python_bin, CommandOutput};
+use crate::utils::{get_venv_python_bin, CommandOutput, IoPathContext};
 
 /// Builds a package for distribution.
 #[derive(Parser, Debug)]
@@ -53,10 +53,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     };
 
     if out.exists() && cmd.clean {
-        for entry in fs::read_dir(&out)? {
+        for entry in fs::read_dir(&out).path_context(&out, "enumerate build output")? {
             let path = entry?.path();
             if path.is_file() {
-                fs::remove_file(path)?;
+                fs::remove_file(&path).path_context(&path, "clean build artifact")?;
             }
         }
     }

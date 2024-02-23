@@ -11,7 +11,7 @@ use toml_edit::Document;
 use crate::platform::{get_app_dir, get_latest_cpython_version};
 use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
 use crate::sources::PythonVersionRequest;
-use crate::utils::toml;
+use crate::utils::{toml, IoPathContext};
 
 static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);
 static AUTHOR_REGEX: Lazy<Regex> =
@@ -55,7 +55,8 @@ impl Config {
 
     /// Saves changes back.
     pub fn save(&self) -> Result<(), Error> {
-        fs::write(&self.path, self.doc.to_string())?;
+        fs::write(&self.path, self.doc.to_string())
+            .path_context(&self.path, "failed to save config")?;
         Ok(())
     }
 
@@ -66,12 +67,11 @@ impl Config {
 
     /// Loads a config from a path.
     pub fn from_path(path: &Path) -> Result<Config, Error> {
-        let contents = fs::read_to_string(path)
-            .with_context(|| format!("failed to read config from '{}'", path.display()))?;
+        let contents = fs::read_to_string(path).path_context(path, "failed to read config")?;
         Ok(Config {
             doc: contents
                 .parse::<Document>()
-                .with_context(|| format!("failed to parse config from '{}'", path.display()))?,
+                .path_context(path, "failed to parse config")?,
             path: path.to_path_buf(),
         })
     }

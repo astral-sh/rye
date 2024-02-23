@@ -19,7 +19,8 @@ pub(crate) fn add_to_path(rye_home: &Path) -> Result<(), Error> {
 
 fn add_source_line_to_profile(profile_path: &Path, source_line: &str) -> Result<(), Error> {
     let mut profile = if profile_path.is_file() {
-        fs::read_to_string(profile_path)?
+        fs::read_to_string(profile_path)
+            .path_context(profile_path, "failed to read profile file")?
     } else {
         String::new()
     };
@@ -27,7 +28,8 @@ fn add_source_line_to_profile(profile_path: &Path, source_line: &str) -> Result<
     if !profile.lines().any(|x| x.trim() == source_line) {
         profile.push_str(source_line);
         profile.push('\n');
-        fs::write(profile_path, profile).context("failed to write updated .profile")?;
+        fs::write(profile_path, profile)
+            .path_context(profile_path, "failed to write updated .profile")?;
     }
 
     Ok(())

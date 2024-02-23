@@ -8,6 +8,7 @@ use anyhow::{anyhow, Context, Error};
 use crate::config::Config;
 use crate::pyproject::latest_available_python_version;
 use crate::sources::{PythonVersion, PythonVersionRequest};
+use crate::utils::IoPathContext;
 
 static APP_DIR: Mutex<Option<&'static PathBuf>> = Mutex::new(None);
 
@@ -78,7 +79,7 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
                 return Ok(p);
             }
         }
-        let contents = fs::read_to_string(&p).context("could not read toolchain file")?;
+        let contents = fs::read_to_string(&p).path_context(&p, "could not read toolchain file")?;
         return Ok(PathBuf::from(contents.trim_end()));
     }
 
@@ -258,14 +259,15 @@ pub fn get_credentials() -> Result<toml_edit::Document, Error> {
 
     let doc = fs::read_to_string(&filepath)?
         .parse::<toml_edit::Document>()
-        .with_context(|| format!("failed to parse credentials from {}", filepath.display()))?;
+        .path_context(&filepath, "failed to parse credentials")?;
 
     Ok(doc)
 }
 
 pub fn write_credentials(doc: &toml_edit::Document) -> Result<(), Error> {
-    std::fs::write(get_credentials_filepath()?, doc.to_string())
-        .context("unable to write to the credentials file")
+    let path = get_credentials_filepath()?;
+    std::fs::write(&path, doc.to_string())
+        .path_context(&path, "unable to write to the credentials file")
 }
 
 pub fn get_credentials_filepath() -> Result<PathBuf, Error> {
