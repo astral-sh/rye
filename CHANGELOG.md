@@ -7,7 +7,7 @@ that were not yet released.
 
 _Unreleased_
 
-- Bumped `uv` to 0.1.10.
+- Bumped `uv` to 0.1.10.  #760
 
 ## 0.26.0
 
