@@ -11,14 +11,15 @@ pub struct Args {
     /// The version to set
     version: Option<String>,
     /// The version bump to apply
-    #[arg(short, long)]
+    #[arg(short, long, value_enum)]
     bump: Option<Bump>,
 }
 
-#[derive(Debug, Clone, ValueEnum)]
+#[derive(Debug, Default, Clone, ValueEnum)]
 pub enum Bump {
     Major,
     Minor,
+    #[default]
     Patch,
 }
 
