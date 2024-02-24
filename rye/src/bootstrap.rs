@@ -481,7 +481,13 @@ impl Uv {
         // For instance on aarch64 macos this will request a compatible uv version.
         let download = UvDownload::try_from(UvRequest::default())?;
         let uv_dir = get_app_dir().join("uv").join(download.version());
-        let uv_bin = uv_dir.join("uv");
+        let uv_bin = if cfg!(windows) {
+            let mut bin = uv_dir.join("uv");
+            bin.set_extension("exe");
+            bin
+        } else {
+            uv_dir.join("uv")
+        };
 
         if uv_dir.exists() && uv_bin.is_file() {
             return Ok(Self { uv_bin, output });
