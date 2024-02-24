@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::env::consts::EXE_EXTENSION;
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
 use std::sync::atomic::{self, AtomicBool};
 use std::{env, fs};
 
@@ -10,19 +9,16 @@ use anyhow::{anyhow, bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
-use tempfile::NamedTempFile;
 
 use crate::config::Config;
 use crate::piptools::LATEST_PIP;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
 };
-use crate::pyproject::{latest_available_python_version, write_venv_marker};
+use crate::pyproject::latest_available_python_version;
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
-use crate::sources::uv::{UvDownload, UvRequest};
-use crate::utils::{
-    check_checksum, set_proxy_variables, symlink_file, unpack_archive, CommandOutput, IoPathContext,
-};
+use crate::utils::{check_checksum, symlink_file, unpack_archive, CommandOutput, IoPathContext};
+use crate::uv::Uv;
 
 /// this is the target version that we want to fetch
 pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionRequest {
@@ -131,7 +127,7 @@ pub fn ensure_self_venv_with_toolchain(
         // write our marker
         uv_venv.write_marker()?;
         // update pip and our requirements
-        uv_venv.update()?;
+        uv_venv.update(LATEST_PIP, SELF_REQUIREMENTS)?;
 
         // Update the shims
         let shims = app_dir.join("shims");
@@ -463,187 +459,6 @@ pub fn download_url_ignore_404(url: &str, output: CommandOutput) -> Result<Optio
         bail!("Failed to download: {}", code)
     } else {
         Ok(Some(archive_buffer))
-    }
-}
-
-// Represents a uv binary and associated functions
-// to bootstrap rye using uv.
-#[derive(Clone)]
-struct Uv {
-    output: CommandOutput,
-    uv_bin: PathBuf,
-}
-
-impl Uv {
-    // Ensure we have a uv binary for bootstrapping
-    fn ensure_exists(output: CommandOutput) -> Result<Self, Error> {
-        // Request a download for the default uv binary for this platform.
-        // For instance on aarch64 macos this will request a compatible uv version.
-        let download = UvDownload::try_from(UvRequest::default())?;
-        let uv_dir = get_app_dir().join("uv").join(download.version());
-        let uv_bin = if cfg!(windows) {
-            let mut bin = uv_dir.join("uv");
-            bin.set_extension("exe");
-            bin
-        } else {
-            uv_dir.join("uv")
-        };
-
-        if uv_dir.exists() && uv_bin.is_file() {
-            return Ok(Self { uv_bin, output });
-        }
-
-        Self::download(&download, &uv_dir, output)?;
-        if uv_dir.exists() && uv_bin.is_file() {
-            return Ok(Self { uv_bin, output });
-        }
-
-        Err(anyhow!("Failed to ensure uv binary is available"))
-    }
-
-    fn download(download: &UvDownload, uv_dir: &Path, output: CommandOutput) -> Result<(), Error> {
-        // Download the version
-        let archive_buffer = download_url(&download.url, output)?;
-
-        // All uv downloads must have a sha256 checksum
-        check_checksum(&archive_buffer, &download.sha256)
-            .with_context(|| format!("Checksum check of {} failed", download.url))?;
-
-        // Unpack the archive once we ensured that the checksum is correct
-        // The tarballs have a top level directory that we need to strip.
-        // The windows zip files don't.
-        let strip = if download.url.ends_with("zip") { 0 } else { 1 };
-
-        unpack_archive(&archive_buffer, uv_dir, strip).with_context(|| {
-            format!(
-                "unpacking of downloaded tarball {} to '{}' failed",
-                download.url,
-                uv_dir.display(),
-            )
-        })?;
-
-        Ok(())
-    }
-
-    fn cmd(&self) -> Command {
-        let mut cmd = Command::new(&self.uv_bin);
-
-        match self.output {
-            CommandOutput::Verbose => {
-                cmd.arg("--verbose");
-            }
-            CommandOutput::Quiet => {
-                cmd.arg("--quiet");
-                cmd.env("PYTHONWARNINGS", "ignore");
-            }
-            CommandOutput::Normal => {}
-        }
-
-        set_proxy_variables(&mut cmd);
-        cmd
-    }
-
-    // Generate a venv using the uv binary
-    fn venv(
-        &self,
-        venv_dir: &Path,
-        py_bin: &Path,
-        version: &PythonVersion,
-    ) -> Result<UvWithVenv, Error> {
-        self.cmd()
-            .arg("venv")
-            .arg("--python")
-            .arg(py_bin)
-            .arg(venv_dir)
-            .status()
-            .with_context(|| {
-                format!(
-                    "unable to create self venv using {}. It might be that \
-                      the used Python build is incompatible with this machine. \
-                      For more information see https://rye-up.com/guide/installation/",
-                    py_bin.display()
-                )
-            })?;
-
-        Ok(UvWithVenv::new(self.clone(), venv_dir, version))
-    }
-}
-
-// Represents a venv generated and managed by uv
-struct UvWithVenv {
-    uv: Uv,
-    venv_path: PathBuf,
-    py_version: PythonVersion,
-}
-
-impl UvWithVenv {
-    fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
-        UvWithVenv {
-            uv,
-            py_version: version.clone(),
-            venv_path: venv_dir.to_path_buf(),
-        }
-    }
-
-    fn venv_cmd(&self) -> Command {
-        let mut cmd = self.uv.cmd();
-        cmd.env("VIRTUAL_ENV", &self.venv_path);
-        cmd
-    }
-
-    fn write_marker(&self) -> Result<(), Error> {
-        write_venv_marker(&self.venv_path, &self.py_version)
-    }
-
-    fn update(&self) -> Result<(), Error> {
-        self.update_pip(LATEST_PIP)?;
-        self.update_requirements(SELF_REQUIREMENTS)?;
-        Ok(())
-    }
-
-    fn update_pip(&self, pip_version: &str) -> Result<(), Error> {
-        self.venv_cmd()
-            .arg("pip")
-            .arg("install")
-            .arg("--upgrade")
-            .arg(pip_version)
-            .status()
-            .with_context(|| {
-                format!(
-                    "unable to update pip in venv at {}",
-                    self.venv_path.display()
-                )
-            })?;
-
-        Ok(())
-    }
-
-    fn update_requirements(&self, requirements: &str) -> Result<(), Error> {
-        let mut req_file = NamedTempFile::new()?;
-        writeln!(req_file, "{}", requirements)?;
-
-        self.venv_cmd()
-            .arg("pip")
-            .arg("install")
-            .arg("--upgrade")
-            .arg("-r")
-            .arg(req_file.path())
-            .status()
-            .with_context(|| {
-                format!(
-                    "unable to update requirements in venv at {}",
-                    self.venv_path.display()
-                )
-            })?;
-
-        Ok(())
-    }
-
-    fn write_tool_version(&self, version: u64) -> Result<(), Error> {
-        let tool_version_path = self.venv_path.join("tool-version.txt");
-        fs::write(&tool_version_path, version.to_string())
-            .path_context(&tool_version_path, "could not write tool version")?;
-        Ok(())
     }
 }
 
