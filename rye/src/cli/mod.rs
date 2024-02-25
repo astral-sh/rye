@@ -22,6 +22,7 @@ mod rye;
 mod shim;
 mod show;
 mod sync;
+mod test;
 mod toolchain;
 mod tools;
 mod uninstall;
@@ -66,6 +67,7 @@ enum Command {
     Run(run::Args),
     Show(show::Args),
     Sync(sync::Args),
+    Test(test::Args),
     Toolchain(toolchain::Args),
     Tools(tools::Args),
     #[command(name = "self")]
@@ -124,6 +126,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Run(cmd) => run::execute(cmd),
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
+        Command::Test(cmd) => test::execute(cmd),
         Command::Toolchain(cmd) => toolchain::execute(cmd),
         Command::Tools(cmd) => tools::execute(cmd),
         Command::Rye(cmd) => rye::execute(cmd),

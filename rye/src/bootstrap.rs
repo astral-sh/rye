@@ -37,7 +37,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 14;
+const SELF_VERSION: u64 = 15;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.0.3
@@ -50,6 +50,7 @@ idna==3.4
 packaging==23.1
 platformdirs==4.0.0
 pyproject_hooks==1.0.0
+pytest==8.0.2
 requests==2.31.0
 tomli==2.0.1
 twine==4.0.2
