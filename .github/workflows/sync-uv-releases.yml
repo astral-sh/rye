@@ -2,7 +2,7 @@
 # This setting can be found in a repository's settings under Actions > General > Workflow permissions.
 # For repositories belonging to an organization, this setting can be managed by
 # admins in organization settings under Actions > General > Workflow permissions.
-name: Sync Python Releases
+name: Sync UV Releases
 on:
   workflow_dispatch:
   schedule:
