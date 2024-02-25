@@ -94,7 +94,7 @@ pub fn ensure_self_venv_with_toolchain(
     }
 
     // Ensure we have uv
-    let uv = Uv::ensure_exists(output)?;
+    let uv = Uv::ensure_exists(CommandOutput::Quiet)?;
 
     let version = match toolchain_version_request {
         Some(ref version_request) => ensure_specific_self_toolchain(output, version_request)
