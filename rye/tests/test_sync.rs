@@ -1,3 +1,5 @@
+use std::fs;
+
 use crate::common::{rye_cmd_snapshot, Space};
 
 mod common;
@@ -26,6 +28,20 @@ fn test_empty_sync() {
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
+
+    // is the prompt set?
+    #[cfg(unix)]
+    {
+        let script = space.venv_path().join("bin/activate");
+        let contents = fs::read_to_string(script).unwrap();
+        assert!(contents.contains("VIRTUAL_ENV_PROMPT=\"my-project\""));
+    }
+    #[cfg(windows)]
+    {
+        let script = space.venv_path().join("Scrips/activate.bat");
+        let contents = fs::read_to_string(script).unwrap();
+        assert!(contents.contains("@set \"VIRTUAL_ENV_PROMPT=my-project\""));
+    }
 }
 
 #[test]
