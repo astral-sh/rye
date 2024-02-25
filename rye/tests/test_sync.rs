@@ -38,7 +38,7 @@ fn test_empty_sync() {
     }
     #[cfg(windows)]
     {
-        let script = space.venv_path().join("Scrips/activate.bat");
+        let script = space.venv_path().join("Scripts/activate.bat");
         let contents = fs::read_to_string(script).unwrap();
         assert!(contents.contains("@set \"VIRTUAL_ENV_PROMPT=my-project\""));
     }
