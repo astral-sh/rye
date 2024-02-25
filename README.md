@@ -68,10 +68,6 @@ Did we spark your interest?
 * [Read the Documentation](https://rye-up.com/guide/)
 * [Report Problems in the Issue Tracker](https://github.com/astral-sh/rye/issues)
 
-Rye now is a project maintained by the [Astral][astral] team:
-* [Rye grows with `uv`](https://lucumr.pocoo.org/2024/2/15/rye-grows-with-uv/)
-* [`uv`: Python packaging in Rust](https://astral.sh/blog/uv)
-
 ## More
 
 * [Discussion Forum](https://github.com/astral-sh/rye/discussions), to discuss the project
@@ -80,6 +76,13 @@ Rye now is a project maintained by the [Astral][astral] team:
 * [Issue Tracker](https://github.com/astral-sh/rye/issues), if you run into bugs or have suggestions
 * [Badges](https://rye-up.com/community/#badges), if you want to show that you use Rye
 * License: MIT
+
+## Astral
+
+Rye now is a project maintained by the [Astral][astral] team:
+* [Rye grows with `uv`](https://lucumr.pocoo.org/2024/2/15/rye-grows-with-uv/)
+* [`uv`: Python packaging in Rust](https://astral.sh/blog/uv)
+
 
 <div align="center">
   <a target="_blank" href="https://astral.sh" style="background:none">
