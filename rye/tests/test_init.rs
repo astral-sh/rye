@@ -22,7 +22,7 @@ fn test_init_lib() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.1
+    Python version: cpython@3.12.2
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
@@ -74,7 +74,7 @@ fn test_init_default() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.1
+    Python version: cpython@3.12.2
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
@@ -127,7 +127,7 @@ fn test_init_script() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.1
+    Python version: cpython@3.12.2
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies

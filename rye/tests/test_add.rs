@@ -16,7 +16,7 @@ fn test_add_flask() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.1
+    Python version: cpython@3.12.2
     Added colorama>=0.4.6 as regular dependency
     Added flask>=3.0.0 as regular dependency
     Reusing already existing virtualenv
@@ -65,7 +65,7 @@ fn test_add_from_find_links() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.1
+    Python version: cpython@3.12.2
     Added colorama>=0.4.6 as regular dependency
     Added tqdm>=4.66.1 as regular dependency
     Reusing already existing virtualenv
@@ -101,7 +101,7 @@ fn test_add_flask_wrong_venv_exported() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.1
+    Python version: cpython@3.12.2
     Added colorama>=0.4.6 as regular dependency
     Added flask>=3.0.0 as regular dependency
     Reusing already existing virtualenv
