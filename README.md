@@ -62,11 +62,15 @@ For more details and other options, refer to the [installation instructions](htt
 
 ## Learn More
 
-Did I spark your interest?
+Did we spark your interest?
 
 * [Visit the Website](https://rye-up.com/)
 * [Read the Documentation](https://rye-up.com/guide/)
 * [Report Problems in the Issue Tracker](https://github.com/astral-sh/rye/issues)
+
+Rye now is a project maintained by the [Astral][astral] team:
+* [Rye grows with `uv`](https://lucumr.pocoo.org/2024/2/15/rye-grows-with-uv/)
+* [`uv`: Python packaging in Rust](https://astral.sh/blog/uv)
 
 ## More
 
@@ -82,3 +86,5 @@ Did I spark your interest?
     <img src="https://raw.githubusercontent.com/astral-sh/uv/main/assets/svg/Astral.svg" alt="Made by Astral">
   </a>
 </div>
+
+[astral]: https://astral.sh
