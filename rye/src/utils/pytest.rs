@@ -38,6 +38,7 @@ const PYTEST_DEPENDENCY: &str = "pytest==8.0.2";
 pub fn execute_pytest(args: PyTestArgs, extra_args: &[String]) -> Result<(), Error> {
     let project = PyProject::load_or_discover(args.pyproject.as_deref())?;
     let output = CommandOutput::from_quiet_and_verbose(args.quiet, args.verbose);
+    // find pytest from project because pytest needs to access local packages
     let pytest = project.venv_path().join(VENV_BIN).join("pytest");
 
     let mut pytest_cmd = Command::new(pytest);
@@ -56,31 +57,40 @@ pub fn execute_pytest(args: PyTestArgs, extra_args: &[String]) -> Result<(), Err
 
     pytest_cmd.arg("--");
 
+    // if the package is managed by rye, we can update dev-dependencies and sync the project
     let mut need_sync = false;
 
     let projects = locate_projects(project, args.all, &args.package[..])?;
     for mut project in projects {
+        // is_workspace_root returns true if the workspace is missing...
         if project.workspace().is_some() && project.is_workspace_root() {
+            // don't install pytest in the root workspace as each package should be self consistent
             continue;
         }
-        let requires_pytest = project.search_dependency_by_name("pytest", DependencyKind::Dev);
+        // search for pytests in [dev-dependencies]
+        let installed_pytest = project.search_dependency_by_name("pytest", DependencyKind::Dev);
 
-        if requires_pytest.is_none() && project.rye_managed() {
-            warn!("This project is managed by rye, pytest will be added to the [dev-dependencies] of {} in order to use `rye test`", project.name().unwrap_or(""));
+        if installed_pytest.is_none() && !project.rye_managed() {
+            // pytest is missing and rye doesn't manage the workspace, we have no consent to update the pyproject.toml, error out and notify
+            return Err(anyhow::anyhow!("Unmanaged rye project, pytest should be part of [dev-dependencies] in order to use `rye test`"));
+        }
+
+        if installed_pytest.is_none() {
+            // pytest is missing but rye manages the package, alert the user and the workspace needs to synced
+            warn!("This project is managed by rye, {PYTEST_DEPENDENCY} will be added to the [dev-dependencies] of {} in order to use `rye test`, workspace will be synced", project.name().unwrap_or(""));
             project.add_dependency(
                 &Requirement::parse(&mut CharIter::new(PYTEST_DEPENDENCY))?,
                 &DependencyKind::Dev,
             )?;
             project.save()?;
             need_sync = true;
-        } else if requires_pytest.is_none() && !project.rye_managed() {
-            return Err(anyhow::anyhow!("Unmanaged rye project, pytest should be part of [dev-dependencies] in order to use `rye test`"));
         }
 
         pytest_cmd.arg(project.root_path().as_os_str());
     }
 
     if need_sync {
+        // only sync pytest
         crate::cli::sync::execute(crate::cli::sync::Args::parse_from(["--update=pytest"]))?;
     }
 

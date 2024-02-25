@@ -30,5 +30,5 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .iter()
             .map(|p| format!("--ignore={}", p.to_string_lossy())),
     );
-    pytest::execute_pytest(cmd.pytest, &args[..])
+    pytest::execute_pytest(cmd.pytest, &args)
 }
