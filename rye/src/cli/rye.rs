@@ -21,7 +21,7 @@ use crate::bootstrap::{
 use crate::cli::toolchain::register_toolchain;
 use crate::config::Config;
 use crate::platform::{get_app_dir, symlinks_supported};
-use crate::sources::{get_download_url, PythonVersionRequest};
+use crate::sources::py::{get_download_url, PythonVersionRequest};
 use crate::utils::{check_checksum, toml, tui_theme, CommandOutput, IoPathContext, QuietExit};
 
 #[cfg(windows)]
@@ -344,6 +344,7 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
         remove_dir_all_if_exists(&app_dir.join("self"))?;
         remove_dir_all_if_exists(&app_dir.join("py"))?;
         remove_dir_all_if_exists(&app_dir.join("pip-tools"))?;
+        remove_dir_all_if_exists(&app_dir.join("uv"))?;
         remove_dir_all_if_exists(&app_dir.join("tools"))?;
 
         // special deleting logic if we are placed in the app dir and the shim deletion

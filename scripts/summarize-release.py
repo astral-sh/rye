@@ -15,7 +15,12 @@ for folder in os.listdir(base):
                 sha256 = f.read().strip()
             checksums[filename[:-7]] = sha256
 
-print(json.dumps({
-    "version": version,
-    "checksums": checksums,
-}, indent=2))
+print(
+    json.dumps(
+        {
+            "version": version,
+            "checksums": checksums,
+        },
+        indent=2,
+    )
+)

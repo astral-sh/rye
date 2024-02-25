@@ -15,15 +15,14 @@ use serde::Serialize;
 use tempfile::NamedTempFile;
 use url::Url;
 
-use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
-use crate::consts::VENV_BIN;
 use crate::piptools::{get_pip_compile, get_pip_tools_version, PipToolsVersion};
 use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
 };
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::utils::{set_proxy_variables, CommandOutput, IoPathContext};
+use crate::uv::Uv;
 
 static FILE_EDITABLE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^-e (file://.*?)\s*$").unwrap());
 static DEP_COMMENT_RE: Lazy<Regex> =
@@ -377,8 +376,7 @@ fn generate_lockfile(
     };
 
     let mut cmd = if Config::current().use_uv() {
-        let self_venv = ensure_self_venv(output)?;
-        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+        let mut cmd = Uv::ensure_exists(output)?.cmd();
         cmd.arg("pip")
             .arg("compile")
             .arg("--no-header")
@@ -386,11 +384,7 @@ fn generate_lockfile(
                 "--python-version={}.{}.{}",
                 py_ver.major, py_ver.minor, py_ver.patch
             ));
-        if output == CommandOutput::Verbose {
-            cmd.arg("--verbose");
-        } else if output == CommandOutput::Quiet {
-            cmd.arg("-q");
-        }
+
         if lock_options.pre {
             cmd.arg("--prerelease=allow");
         }

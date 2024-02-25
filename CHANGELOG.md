@@ -9,6 +9,8 @@ _Unreleased_
 
 <!-- released start -->
 
+- rye now uses `uv` to bootstrap its internal packages and tools. #754
+
 ## 0.26.0
 
 Released on 2024-02-23

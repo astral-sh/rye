@@ -14,7 +14,8 @@ on my mind when I built it:
 - **No Core Non Standard Stuff:** Rye (with the exception of it's own `tool` section
   in the `pyproject.toml`) uses standardized keys. That means it uses regular
   requirements as you would expect. It also does not use a custom lock file
-  format and uses [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
+  format and uses [`uv`](https://github.com/astral-sh/uv) and
+  [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
 
 - **No Pip:** Rye uses pip, but it does not expose it. It manage dependencies in
   `pyproject.toml` only.
@@ -187,7 +188,7 @@ match on different platforms.
 
 However this is a solvable problem with sufficient caching, and with the right design for
 the cache, this cache could be shared.  It might even be quite interesting for PyPI to
-serve up "fake" metadata records for popular sdist only packages to help resolvers. 
+serve up "fake" metadata records for popular sdist only packages to help resolvers.
 This might go a long way in improving the quality of the developer experience.
 
 **What needs to be done:**

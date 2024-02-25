@@ -23,7 +23,7 @@ use crate::platform::{
     get_python_version_request_from_pyenv_pin,
 };
 use crate::pyproject::BuildSystem;
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::utils::{
     copy_dir, escape_string, format_requirement, get_venv_python_bin, is_inside_git_work_tree,
     CommandOutput, CopyDirOptions, IoPathContext,
