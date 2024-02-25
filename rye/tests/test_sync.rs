@@ -18,10 +18,8 @@ fn test_empty_sync() {
     Done!
 
     ----- stderr -----
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 1 package in [EXECUTION_TIME]
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 1 package in [EXECUTION_TIME]
     Built 1 editable in [EXECUTION_TIME]
@@ -58,10 +56,8 @@ fn test_add_and_sync_no_auto_sync() {
     Done!
 
     ----- stderr -----
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
     Built 1 editable in [EXECUTION_TIME]
@@ -100,10 +96,8 @@ fn test_add_autosync() {
     Done!
 
     ----- stderr -----
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
     Built 1 editable in [EXECUTION_TIME]
