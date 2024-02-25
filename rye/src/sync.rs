@@ -334,19 +334,14 @@ pub fn create_virtualenv(
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
 
-    let mut venv_cmd = if Config::current().use_uv() {
+    if Config::current().use_uv() {
         // try to kill the empty venv if there is one as uv can't work otherwise.
         fs::remove_dir(venv).ok();
-        let mut venv_cmd = Uv::ensure_exists(output)?.cmd();
-        venv_cmd.arg("venv");
-        if output == CommandOutput::Verbose {
-            venv_cmd.arg("--verbose");
-        } else {
-            venv_cmd.arg("-q");
-        }
-        venv_cmd.arg("-p");
-        venv_cmd.arg(&py_bin);
-        venv_cmd
+        let uv = Uv::ensure_exists(output.quieter())?
+            .venv(venv, &py_bin, py_ver)
+            .context("failed to initialize virtualenv")?;
+        uv.write_marker()?;
+        uv.sync_marker();
     } else {
         // create the venv folder first so we can manipulate some flags on it.
         fs::create_dir_all(venv).path_context(venv, "unable to create virtualenv folder")?;
@@ -364,24 +359,16 @@ pub fn create_virtualenv(
         venv_cmd.arg("--no-seed");
         venv_cmd.arg("--prompt");
         venv_cmd.arg(prompt);
-        venv_cmd
+        venv_cmd.arg("--").arg(venv);
+        let status = venv_cmd
+            .status()
+            .context("unable to invoke virtualenv command")?;
+        if !status.success() {
+            bail!("failed to initialize virtualenv");
+        }
+
+        write_venv_marker(venv, py_ver)?;
     };
-
-    venv_cmd.arg("--").arg(venv);
-
-    let status = venv_cmd
-        .status()
-        .context("unable to invoke virtualenv command")?;
-    if !status.success() {
-        bail!("failed to initialize virtualenv");
-    }
-
-    write_venv_marker(venv, py_ver)?;
-
-    // uv can only do it now
-    if Config::current().use_uv() {
-        update_venv_sync_marker(output, venv);
-    }
 
     // On UNIX systems Python is unable to find the tcl config that is placed
     // outside of the virtualenv.  It also sometimes is entirely unable to find

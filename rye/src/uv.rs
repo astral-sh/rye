@@ -4,7 +4,8 @@ use crate::pyproject::write_venv_marker;
 use crate::sources::py::PythonVersion;
 use crate::sources::uv::{UvDownload, UvRequest};
 use crate::utils::{
-    check_checksum, set_proxy_variables, unpack_archive, CommandOutput, IoPathContext,
+    check_checksum, set_proxy_variables, unpack_archive, update_venv_sync_marker, CommandOutput,
+    IoPathContext,
 };
 use anyhow::{anyhow, Context, Error};
 use std::fs::{self, remove_dir_all};
@@ -132,7 +133,8 @@ impl Uv {
         py_bin: &Path,
         version: &PythonVersion,
     ) -> Result<UvWithVenv, Error> {
-        self.cmd()
+        let status = self
+            .cmd()
             .arg("venv")
             .arg("--python")
             .arg(py_bin)
@@ -147,6 +149,13 @@ impl Uv {
                 )
             })?;
 
+        if !status.success() {
+            return Err(anyhow!(
+                "Failed to create self venv using {}. uv exited with status: {}",
+                py_bin.display(),
+                status
+            ));
+        }
         Ok(UvWithVenv::new(self.clone(), venv_dir, version))
     }
 }
@@ -234,5 +243,10 @@ impl UvWithVenv {
         fs::write(&tool_version_path, version.to_string())
             .path_context(&tool_version_path, "could not write tool version")?;
         Ok(())
+    }
+
+    /// Update the cloud synchronization marker for the given path
+    pub fn sync_marker(&self) {
+        update_venv_sync_marker(self.uv.output, &self.venv_path)
     }
 }
