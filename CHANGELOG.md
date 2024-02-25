@@ -7,9 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
-<!-- released start -->
-
 - rye now uses `uv` to bootstrap its internal packages and tools. #754
+
+<!-- released start -->
 
 ## 0.26.0
 
