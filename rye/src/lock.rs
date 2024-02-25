@@ -360,6 +360,7 @@ fn generate_lockfile(
     exclusions: &HashSet<Requirement>,
     no_deps: bool,
 ) -> Result<(), Error> {
+    let use_uv = Config::current().use_uv();
     let scratch = tempfile::tempdir()?;
     let requirements_file = scratch.path().join("requirements.txt");
     let lock_options = if lockfile.is_file() {
@@ -368,14 +369,16 @@ fn generate_lockfile(
             .path_context(&requirements_file, "unable to restore requirements file")?;
         LockOptions::restore(&requirements, lock_options)?
     } else {
-        fs::write(&requirements_file, b"").path_context(
-            &requirements_file,
-            "unable to write empty requirements file",
-        )?;
+        if !use_uv {
+            fs::write(&requirements_file, b"").path_context(
+                &requirements_file,
+                "unable to write empty requirements file",
+            )?;
+        }
         Cow::Borrowed(lock_options)
     };
 
-    let mut cmd = if Config::current().use_uv() {
+    let mut cmd = if use_uv {
         let mut cmd = Uv::ensure_exists(output)?.cmd();
         cmd.arg("pip")
             .arg("compile")

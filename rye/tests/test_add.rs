@@ -24,10 +24,8 @@ fn test_add_flask() {
     Done!
 
     ----- stderr -----
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
     Built 1 editable in [EXECUTION_TIME]
@@ -75,10 +73,8 @@ fn test_add_from_find_links() {
     Done!
 
     ----- stderr -----
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 3 packages in [EXECUTION_TIME]
-    warning: Requirements file [TEMP_FILE] does not contain any dependencies
     Built 1 editable in [EXECUTION_TIME]
     Resolved 3 packages in [EXECUTION_TIME]
     Built 1 editable in [EXECUTION_TIME]
