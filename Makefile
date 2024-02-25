@@ -8,6 +8,7 @@ build:
 .PHONY: test
 test:
 	@cargo test --all
+	@rye test
 
 .PHONY: check
 check:
