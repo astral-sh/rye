@@ -28,7 +28,7 @@ pub struct PyTestArgs {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
-    /// Extra arguments to ruff
+    /// Extra arguments to pytest
     #[arg(last = true)]
     extra_args: Vec<OsString>,
 }
@@ -60,6 +60,9 @@ pub fn execute_pytest(args: PyTestArgs, extra_args: &[&str]) -> Result<(), Error
 
     let projects = locate_projects(project, args.all, &args.package[..])?;
     for mut project in projects {
+        if project.workspace().is_some() && project.is_workspace_root() {
+            continue;
+        }
         let requires_pytest = project.search_dependency_by_name("pytest", DependencyKind::Dev);
 
         if requires_pytest.is_none() && project.rye_managed() {
