@@ -50,14 +50,14 @@ fn bootstrap_test_rye() -> PathBuf {
 use-uv = true
 
 [default]
-toolchain = "cpython@3.12.1"
+toolchain = "cpython@3.12.2"
 "#,
         )
         .unwrap();
     }
 
     // fetch the most important interpreters
-    for version in ["cpython@3.8.17", "cpython@3.11.7", "cpython@3.12.1"] {
+    for version in ["cpython@3.8.17", "cpython@3.11.8", "cpython@3.12.2"] {
         if home.join("py").join(version).is_dir() {
             continue;
         }
@@ -154,7 +154,7 @@ impl Space {
     #[allow(unused)]
     pub fn read_toml<P: AsRef<Path>>(&self, path: P) -> toml_edit::Document {
         let p = self.project_path().join(path.as_ref());
-        std::fs::read_to_string(&p).unwrap().parse().unwrap()
+        std::fs::read_to_string(p).unwrap().parse().unwrap()
     }
 
     #[allow(unused)]

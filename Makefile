@@ -34,4 +34,7 @@ lint:
 
 .PHONY: sync-python-releases
 sync-python-releases: .venv
-	@rye run find-downloads > rye/src/downloads.inc
+	@rye run find-downloads > rye/src/sources/generated/python_downloads.inc
+
+sync-uv-releases: .venv
+	@rye run uv-downloads > rye/src/sources/generated/uv_downloads.inc
