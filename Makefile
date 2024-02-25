@@ -8,7 +8,7 @@ build:
 .PHONY: test
 test:
 	@cargo test --all
-	@cargo run test -- --ignore=target
+	@cargo run test --ignore=target
 
 .PHONY: check
 check:

@@ -1,18 +1,34 @@
+use std::path::PathBuf;
+
 use anyhow::Error;
 use clap::Parser;
 
 use crate::utils::pytest;
 
-/// Run the code formatter on the project.
-///
-/// This invokes ruff in format mode.
+/// Run the tests on the project.
 #[derive(Parser, Debug)]
 pub struct Args {
     #[command(flatten)]
     pytest: pytest::PyTestArgs,
+
+    // Ignores the specified path
+    #[arg(short, long)]
+    ignore: Vec<PathBuf>,
+
+    // Disable test output capture to stdout
+    #[arg(long, name = "no-capture")]
+    no_capture: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let args: &[&str] = &[];
-    pytest::execute_pytest(cmd.pytest, args)
+    let mut args = Vec::new();
+    if cmd.no_capture {
+        args.push("-s".to_string());
+    }
+    args.extend(
+        cmd.ignore
+            .iter()
+            .map(|p| format!("--ignore={}", p.to_string_lossy())),
+    );
+    pytest::execute_pytest(cmd.pytest, &args[..])
 }
