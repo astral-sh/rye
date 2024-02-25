@@ -383,6 +383,7 @@ fn generate_lockfile(
         cmd.arg("pip")
             .arg("compile")
             .arg("--no-header")
+            .env_remove("VIRTUAL_ENV")
             .arg(format!(
                 "--python-version={}.{}.{}",
                 py_ver.major, py_ver.minor, py_ver.patch

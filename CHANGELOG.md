@@ -9,6 +9,9 @@ _Unreleased_
 
 - rye now uses `uv` to bootstrap its internal packages and tools. #754
 
+- rye no longer fails if an incorrect `VIRTUAL_ENV` environment
+  variable is exported.  #766
+
 <!-- released start -->
 
 ## 0.26.0
