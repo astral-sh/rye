@@ -142,6 +142,14 @@ impl CommandOutput {
             CommandOutput::Normal
         }
     }
+
+    pub fn quieter(self) -> CommandOutput {
+        match self {
+            CommandOutput::Normal => CommandOutput::Quiet,
+            CommandOutput::Verbose => CommandOutput::Normal,
+            CommandOutput::Quiet => CommandOutput::Quiet,
+        }
+    }
 }
 
 /// Given a path checks if that path is executable.
