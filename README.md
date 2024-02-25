@@ -7,7 +7,11 @@
 <div align="center">
 
 [![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye-up.com)
-[![](https://dcbadge.vercel.app/api/server/drbkcdtSbg?style=flat)](https://discord.gg/drbkcdtSbg)
+[![Rye Version](https://img.shields.io/github/v/release/astral-sh/rye?logo=github&logoColor=D7FF64&label=Version&color=261230)](https://github.com/astral-sh/rye/releases/)
+[![GitHub](https://img.shields.io/github/license/astral-sh/rye?logo=github&logoColor=D7FF64&color=261230)](https://github.com/astral-sh/rye/blob/main/LICENSE)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/astral-sh/rye/release.yml?logo=github&logoColor=D7FF64&color=261230)](https://github.com/astral-sh/rye/actions/workflows/release.yml)
+[![Astral Discord](https://img.shields.io/discord/1039017663004942429?logo=discord&logoColor=D7FF64&label=Astral%20Discord&color=261230)](https://discord.gg/astral-sh)
+[![Rye Discord](https://img.shields.io/discord/1108809133131563092?logo=discord&logoColor=D7FF64&label=Rye%20Discord&color=261230)](https://discord.gg/drbkcdtSbg)
 
 </div>
 
@@ -72,3 +76,9 @@ Did I spark your interest?
 * [Issue Tracker](https://github.com/astral-sh/rye/issues), if you run into bugs or have suggestions
 * [Badges](https://rye-up.com/community/#badges), if you want to show that you use Rye
 * License: MIT
+
+<div align="center">
+  <a target="_blank" href="https://astral.sh" style="background:none">
+    <img src="https://raw.githubusercontent.com/astral-sh/uv/main/assets/svg/Astral.svg" alt="Made by Astral">
+  </a>
+</div>
