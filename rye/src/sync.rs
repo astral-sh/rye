@@ -20,7 +20,7 @@ use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
 use crate::utils::{
-    get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
+    get_venv_python_bin, set_proxy_variables, symlink_dir, update_venv_sync_marker, CommandOutput,
     IoPathContext,
 };
 use crate::uv::Uv;
@@ -392,20 +392,6 @@ pub fn create_virtualenv(
     }
 
     Ok(())
-}
-
-/// Update the cloud synchronization marker for the given path
-/// based on the config flag.
-fn update_venv_sync_marker(output: CommandOutput, venv_path: &Path) {
-    if let Err(err) = mark_path_sync_ignore(venv_path, Config::current().venv_mark_sync_ignore()) {
-        if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
-            warn!(
-                "unable to mark virtualenv {} ignored for cloud sync: {}",
-                venv_path.display(),
-                err
-            );
-        }
-    }
 }
 
 #[cfg(unix)]
