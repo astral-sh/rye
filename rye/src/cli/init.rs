@@ -688,7 +688,7 @@ fn get_setup_py_json<T: AsRef<Path>>(path: T, python: T) -> Result<Value, Error>
 ///  * `<archive_url>`. TBD
 ///  * Options without a requirement, such as `--find-links` or `--index-url`
 ///
-/// See https://github.com/mitsuhiko/rye/issues/191
+/// See https://github.com/astral-sh/rye/issues/191
 fn import_requirements_file(
     requirements: &mut BTreeMap<String, String>,
     path: impl AsRef<Path>,
