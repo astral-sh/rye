@@ -14,6 +14,8 @@ _Unreleased_
 
 - Added latest Python builds.  #771
 
+- When `uv` is used the prompt is now set to the project name.  #773
+
 <!-- released start -->
 
 ## 0.26.0

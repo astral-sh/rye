@@ -193,6 +193,11 @@ impl Space {
     }
 
     #[allow(unused)]
+    pub fn venv_path(&self) -> PathBuf {
+        self.project_dir.join(".venv")
+    }
+
+    #[allow(unused)]
     pub fn lock_rye_home(&self) -> fslock::LockFile {
         let mut lock = fslock::LockFile::open(&self.rye_home().join("lock")).unwrap();
         lock.lock().unwrap();
