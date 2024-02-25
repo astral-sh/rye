@@ -23,6 +23,7 @@ use crate::utils::{
     get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
     IoPathContext,
 };
+use crate::uv::Uv;
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -241,7 +242,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
             let tempdir = tempdir()?;
             let mut sync_cmd = if Config::current().use_uv() {
-                let mut uv_sync_cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+                let mut uv_sync_cmd = Uv::ensure_exists(output)?.cmd();
                 uv_sync_cmd.arg("pip").arg("sync");
                 let root = pyproject.workspace_path();
 
@@ -336,7 +337,7 @@ pub fn create_virtualenv(
     let mut venv_cmd = if Config::current().use_uv() {
         // try to kill the empty venv if there is one as uv can't work otherwise.
         fs::remove_dir(venv).ok();
-        let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+        let mut venv_cmd = Uv::ensure_exists(output)?.cmd();
         venv_cmd.arg("venv");
         if output == CommandOutput::Verbose {
             venv_cmd.arg("--verbose");

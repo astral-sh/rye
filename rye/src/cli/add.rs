@@ -18,6 +18,7 @@ use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
+use crate::uv::Uv;
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
 import sys
@@ -263,7 +264,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 .context("failed to sync ahead of add")?;
             resolve_requirements_with_uv(
                 &pyproject_toml,
-                &self_venv,
                 &py_ver,
                 &mut requirements,
                 cmd.pre,
@@ -442,14 +442,13 @@ fn find_best_matches_with_unearth(
 
 fn resolve_requirements_with_uv(
     pyproject_toml: &PyProject,
-    self_venv: &Path,
     py_ver: &PythonVersion,
     requirements: &mut [Requirement],
     pre: bool,
     output: CommandOutput,
     default_operator: &Operator,
 ) -> Result<(), Error> {
-    let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+    let mut cmd = Uv::ensure_exists(output)?.cmd();
     cmd.arg("pip")
         .arg("compile")
         .arg("--python-version")

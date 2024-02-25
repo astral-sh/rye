@@ -104,7 +104,9 @@ impl Uv {
         Ok(())
     }
 
-    fn cmd(&self) -> Command {
+    /// Returns a new command with the uv binary as the command to run.
+    /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
+    pub fn cmd(&self) -> Command {
         let mut cmd = Command::new(&self.uv_bin);
 
         match self.output {

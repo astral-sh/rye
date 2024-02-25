@@ -22,6 +22,7 @@ use crate::utils::{
     get_short_executable_name, get_venv_python_bin, is_executable, symlink_file, CommandOutput,
     IoPathContext,
 };
+use crate::uv::Uv;
 
 const FIND_SCRIPT_SCRIPT: &str = r#"
 import os
@@ -141,7 +142,7 @@ pub fn install(
     )?;
 
     let mut cmd = if Config::current().use_uv() {
-        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+        let mut cmd = Uv::ensure_exists(output)?.cmd();
         cmd.arg("pip")
             .arg("install")
             .env("VIRTUAL_ENV", &target_venv_path)
