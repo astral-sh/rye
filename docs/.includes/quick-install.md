@@ -21,7 +21,7 @@
 
 === "macOS"
 
-    To install run you can curl a command which will install the right binary for your
+    To install you can run a curl command which will install the right binary for your
     operating system and CPU architecture and install it:
 
     ```bash
