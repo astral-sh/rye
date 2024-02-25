@@ -132,22 +132,22 @@ impl Uv {
         venv_dir: &Path,
         py_bin: &Path,
         version: &PythonVersion,
+        prompt: Option<&str>,
     ) -> Result<UvWithVenv, Error> {
-        let status = self
-            .cmd()
-            .arg("venv")
-            .arg("--python")
-            .arg(py_bin)
-            .arg(venv_dir)
-            .status()
-            .with_context(|| {
-                format!(
-                    "unable to create self venv using {}. It might be that \
+        let mut cmd = self.cmd();
+        cmd.arg("venv").arg("--python").arg(py_bin);
+        if let Some(prompt) = prompt {
+            cmd.arg("--prompt").arg(prompt);
+        }
+        cmd.arg(venv_dir);
+        let status = cmd.status().with_context(|| {
+            format!(
+                "unable to create self venv using {}. It might be that \
                       the used Python build is incompatible with this machine. \
                       For more information see https://rye-up.com/guide/installation/",
-                    py_bin.display()
-                )
-            })?;
+                py_bin.display()
+            )
+        })?;
 
         if !status.success() {
             return Err(anyhow!(

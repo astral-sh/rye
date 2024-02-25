@@ -338,7 +338,7 @@ pub fn create_virtualenv(
         // try to kill the empty venv if there is one as uv can't work otherwise.
         fs::remove_dir(venv).ok();
         let uv = Uv::ensure_exists(output.quieter())?
-            .venv(venv, &py_bin, py_ver)
+            .venv(venv, &py_bin, py_ver, Some(prompt))
             .context("failed to initialize virtualenv")?;
         uv.write_marker()?;
         uv.sync_marker();
