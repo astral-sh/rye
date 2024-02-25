@@ -1,5 +1,5 @@
-import rye_devtools
+from rye_devtools.find_downloads import batched
 
 
 def test_batched():
-    assert list(rye_devtools.batched("ABCDEFG", 3)) == ["ABC", "DEF", "G"]
+    assert list(batched("ABCDEFG", 3)) == [tuple("ABC"), tuple("DEF"), tuple("G")]

@@ -6,7 +6,6 @@ use anyhow::Error;
 use clap::Parser;
 use pep508_rs::{CharIter, Requirement};
 
-use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
 use crate::pyproject::DependencyKind;
 use crate::pyproject::{locate_projects, PyProject};
@@ -38,7 +37,6 @@ const PYTEST_DEPENDENCY: &str = "pytest==8.0.2";
 
 pub fn execute_pytest(args: PyTestArgs, extra_args: &[&str]) -> Result<(), Error> {
     let project = PyProject::load_or_discover(args.pyproject.as_deref())?;
-
     let output = CommandOutput::from_quiet_and_verbose(args.quiet, args.verbose);
     let pytest = project.venv_path().join(VENV_BIN).join("pytest");
 

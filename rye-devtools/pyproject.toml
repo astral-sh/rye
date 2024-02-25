@@ -19,6 +19,7 @@ build-backend = "hatchling.build"
 managed = true
 dev-dependencies = [
     "isort>=5.13.2",
+    "pytest==8.0.2",
 ]
 
 [tool.hatch.metadata]

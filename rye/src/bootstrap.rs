@@ -37,7 +37,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 15;
+const SELF_VERSION: u64 = 14;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.0.3
