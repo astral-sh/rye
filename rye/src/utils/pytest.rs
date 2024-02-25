@@ -4,16 +4,16 @@ use std::process::Command;
 
 use anyhow::Error;
 use clap::Parser;
+use pep508_rs::{CharIter, Requirement};
 
 use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
+use crate::pyproject::DependencyKind;
 use crate::pyproject::{locate_projects, PyProject};
 use crate::utils::{CommandOutput, QuietExit};
 
 #[derive(Parser, Debug)]
 pub struct PyTestArgs {
-    /// List of files or directories to limit the operation to
-    paths: Vec<PathBuf>,
     /// Perform the operation on all packages
     #[arg(short, long)]
     all: bool,
@@ -34,11 +34,13 @@ pub struct PyTestArgs {
     extra_args: Vec<OsString>,
 }
 
+const PYTEST_DEPENDENCY: &str = "pytest==8.0.2";
+
 pub fn execute_pytest(args: PyTestArgs, extra_args: &[&str]) -> Result<(), Error> {
     let project = PyProject::load_or_discover(args.pyproject.as_deref())?;
+
     let output = CommandOutput::from_quiet_and_verbose(args.quiet, args.verbose);
-    let venv = ensure_self_venv(output)?;
-    let pytest = venv.join(VENV_BIN).join("pytest");
+    let pytest = project.venv_path().join(VENV_BIN).join("pytest");
 
     let mut pytest_cmd = Command::new(pytest);
 
@@ -55,15 +57,30 @@ pub fn execute_pytest(args: PyTestArgs, extra_args: &[&str]) -> Result<(), Error
     pytest_cmd.args(args.extra_args);
 
     pytest_cmd.arg("--");
-    if args.paths.is_empty() {
-        let projects = locate_projects(project, args.all, &args.package[..])?;
-        for project in projects {
-            pytest_cmd.arg(project.root_path().as_os_str());
+
+    let mut need_sync = false;
+
+    let projects = locate_projects(project, args.all, &args.package[..])?;
+    for mut project in projects {
+        let requires_pytest = project.search_dependency_by_name("pytest", DependencyKind::Dev);
+
+        if requires_pytest.is_none() && project.rye_managed() {
+            warn!("This project is managed by rye, pytest will be added to the [dev-dependencies] of {} in order to use `rye test`", project.name().unwrap_or(""));
+            project.add_dependency(
+                &Requirement::parse(&mut CharIter::new(PYTEST_DEPENDENCY))?,
+                &DependencyKind::Dev,
+            )?;
+            project.save()?;
+            need_sync = true;
+        } else if requires_pytest.is_none() && !project.rye_managed() {
+            return Err(anyhow::anyhow!("Unmanaged rye project, pytest should be part of [dev-dependencies] in order to use `rye test`"));
         }
-    } else {
-        for file in args.paths {
-            pytest_cmd.arg(file.as_os_str());
-        }
+
+        pytest_cmd.arg(project.root_path().as_os_str());
+    }
+
+    if need_sync {
+        crate::cli::sync::execute(crate::cli::sync::Args::parse_from(["--update=pytest"]))?;
     }
 
     let status = pytest_cmd.status()?;

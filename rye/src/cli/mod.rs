@@ -21,7 +21,7 @@ mod run;
 mod rye;
 mod shim;
 mod show;
-mod sync;
+pub(crate) mod sync;
 mod test;
 mod toolchain;
 mod tools;

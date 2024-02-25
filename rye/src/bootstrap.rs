@@ -50,7 +50,6 @@ idna==3.4
 packaging==23.1
 platformdirs==4.0.0
 pyproject_hooks==1.0.0
-pytest==8.0.2
 requests==2.31.0
 tomli==2.0.1
 twine==4.0.2
