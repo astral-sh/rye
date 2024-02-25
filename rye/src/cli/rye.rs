@@ -29,7 +29,7 @@ const DEFAULT_HOME: &str = "%USERPROFILE%\\.rye";
 #[cfg(unix)]
 const DEFAULT_HOME: &str = "$HOME/.rye";
 
-const GITHUB_REPO: &str = "https://github.com/mitsuhiko/rye";
+const GITHUB_REPO: &str = "https://github.com/astral-sh/rye";
 const UNIX_ENV_FILE: &str = r#"
 # rye shell setup
 {%- if custom_home %}
@@ -197,7 +197,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         let tmp = tempdir()?;
         cmd.arg("install")
             .arg("--git")
-            .arg("https://github.com/mitsuhiko/rye")
+            .arg("https://github.com/astral-sh/rye")
             .arg("--root")
             .env(
                 "PATH",

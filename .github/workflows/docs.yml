@@ -12,7 +12,7 @@ on:
 
 jobs:
   build:
-    if: github.repository == 'mitsuhiko/rye'
+    if: github.repository == 'astral-sh/rye'
     name: Deploy docs
     runs-on: ubuntu-latest
     steps:

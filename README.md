@@ -6,7 +6,7 @@
 ----
 <div align="center">
 
-[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/mitsuhiko/rye/main/artwork/badge.json)](https://rye-up.com)
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye-up.com)
 [![](https://dcbadge.vercel.app/api/server/drbkcdtSbg?style=flat)](https://discord.gg/drbkcdtSbg)
 
 </div>
@@ -52,7 +52,7 @@ The installation takes just a minute:
 
 * **Windows:**
 
-    Download and run the installer ([64bit Intel](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86_64-windows.exe) or [32bit Intel](https://github.com/mitsuhiko/rye/releases/latest/download/rye-x86-windows.exe)).
+    Download and run the installer ([64bit Intel](https://github.com/astral-sh/rye/releases/latest/download/rye-x86_64-windows.exe) or [32bit Intel](https://github.com/astral-sh/rye/releases/latest/download/rye-x86-windows.exe)).
 
 For more details and other options, refer to the [installation instructions](https://rye-up.com/guide/installation/).
 
@@ -62,13 +62,13 @@ Did I spark your interest?
 
 * [Visit the Website](https://rye-up.com/)
 * [Read the Documentation](https://rye-up.com/guide/)
-* [Report Problems in the Issue Tracker](https://github.com/mitsuhiko/rye/issues)
+* [Report Problems in the Issue Tracker](https://github.com/astral-sh/rye/issues)
 
 ## More
 
-* [Discussion Forum](https://github.com/mitsuhiko/rye/discussions), to discuss the project
+* [Discussion Forum](https://github.com/astral-sh/rye/discussions), to discuss the project
   on GitHub
 * [Discord](https://discord.gg/drbkcdtSbg), for conversations with other developers in text form
-* [Issue Tracker](https://github.com/mitsuhiko/rye/issues), if you run into bugs or have suggestions
+* [Issue Tracker](https://github.com/astral-sh/rye/issues), if you run into bugs or have suggestions
 * [Badges](https://rye-up.com/community/#badges), if you want to show that you use Rye
 * License: MIT

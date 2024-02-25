@@ -1,7 +1,7 @@
 site_name: Rye
 site_description: An Experimental Package Management Solution for Python
-repo_name: mitsuhiko/rye
-repo_url: https://github.com/mitsuhiko/rye
+repo_name: astral-sh/rye
+repo_url: https://github.com/astral-sh/rye
 edit_uri: edit/main/docs/
 copyright: Copyright &copy; 2023 Armin Ronacher
 
@@ -109,7 +109,7 @@ markdown_extensions:
   - pymdownx.tabbed:
       alternate_style: true
   - mdx_gh_links:
-      user: mitsuhiko
+      user: astral-sh
       repo: rye
   - pymdownx.emoji:
       emoji_index: !!python/name:materialx.emoji.twemoji

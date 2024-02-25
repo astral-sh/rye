@@ -19,8 +19,8 @@ A hassle-free experience for Python developers at every level.
 
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <p align="center">
-  <a class="github-button" href="https://github.com/mitsuhiko/rye" data-size="large" data-show-count="true" data-color-scheme="light" aria-label="Star mitsuhiko/insta on GitHub">Star</a>
-<a class="github-button" href="https://github.com/mitsuhiko/rye/discussions" data-icon="octicon-comment-discussion" data-size="large" aria-label="Discuss mitsuhiko/rye on GitHub">Discuss</a>
+  <a class="github-button" href="https://github.com/astral-sh/rye" data-size="large" data-show-count="true" data-color-scheme="light" aria-label="Star astral-sh/rye on GitHub">Star</a>
+<a class="github-button" href="https://github.com/astral-sh/rye/discussions" data-icon="octicon-comment-discussion" data-size="large" aria-label="Discuss astral-sh/rye on GitHub">Discuss</a>
   <a class="github-button" href="https://github.com/sponsors/mitsuhiko" data-size="large" data-icon="octicon-heart" data-color-scheme="light" aria-label="Sponsor @mitsuhiko on GitHub">Sponsor</a>
 </p>
 

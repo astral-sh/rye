@@ -10,7 +10,7 @@ VERSION=${RYE_VERSION:-latest}
 # allow overriding the install option
 INSTALL_OPTION=${RYE_INSTALL_OPTION:-""}
 
-REPO=mitsuhiko/rye
+REPO=astral-sh/rye
 PLATFORM=`uname -s`
 ARCH=`uname -m`
 
