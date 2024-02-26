@@ -16,6 +16,8 @@ _Unreleased_
 
 - When `uv` is used the prompt is now set to the project name.  #773
 
+- Allow `rye fetch --force` to force re-fetch a downloaded toolchain.  #778
+
 <!-- released start -->
 
 ## 0.26.0

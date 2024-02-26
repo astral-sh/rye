@@ -131,7 +131,7 @@ pub fn install(
     uninstall_helper(&target_venv_path, &shim_dir)?;
 
     // make sure we have a compatible python version
-    let py_ver = fetch(py_ver, output)?;
+    let py_ver = fetch(py_ver, output, false)?;
 
     create_virtualenv(
         output,
