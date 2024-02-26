@@ -11,7 +11,8 @@ Fetch a specific version of Python:
 $ rye fetch 3.8.13
 Downloading cpython@3.8.13
 Checking checksum
-success: Downloaded cpython@3.8.13
+Unpacking
+Downloaded cpython@3.8.13
 ```
 
 To fetch the pinned version of Python you can leave out the argument:
@@ -20,7 +21,8 @@ To fetch the pinned version of Python you can leave out the argument:
 $ rye fetch
 Downloading cpython@3.8.17
 Checking checksum
-success: Downloaded cpython@3.8.17
+Unpacking
+Downloaded cpython@3.8.17
 ```
 
 ## Arguments
