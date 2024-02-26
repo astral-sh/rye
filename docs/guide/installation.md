@@ -77,14 +77,14 @@ opt-out, or you run a custom shell you will need to do this manually.
     Rye ships an `env` file which should be sourced to update `PATH` automatically.
 
     ```bash
-    echo 'source "$HOME/.rye/env"' >> ~/.profile
+    echo 'source "$HOME/.rye/env"' >> ~/.zprofile
     ```
 
-    In some setups `.profile` is not sourced, in which case you can add it to your
-    `.zprofile`:
+    In some setups `.zprofile` is not sourced, in which case you can add it to your
+    `.zshrc`:
 
     ```bash
-    echo 'source "$HOME/.rye/env"' >> ~/.zprofile
+    echo 'source "$HOME/.rye/env"' >> ~/.zshrc
     ```
 
 === "Fish"
