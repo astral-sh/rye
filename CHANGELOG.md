@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.27.0
 
-_Unreleased_
+Released on 2024-02-26
 
 - rye now uses `uv` to bootstrap its internal packages and tools. #754
 
@@ -21,8 +23,6 @@ _Unreleased_
 - Fixed a panic when adding a package to a virtual project.  #783
 
 - Bumped `uv` to 0.1.11.  #790
-
-<!-- released start -->
 
 ## 0.26.0
 
