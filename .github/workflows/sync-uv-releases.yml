@@ -29,7 +29,7 @@ jobs:
       - name: Create PR
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "Sync latest Python releases"
+          commit-message: "Sync latest UV releases"
           add-paths: "rye/src/sources/generated/uv_downloads.inc"
           branch: "sync-uv-releases"
           title: "Sync UV Releases"
