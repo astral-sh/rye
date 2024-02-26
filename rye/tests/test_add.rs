@@ -27,10 +27,6 @@ fn test_add_flask() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 9 packages in [EXECUTION_TIME]
-    Built 1 editable in [EXECUTION_TIME]
-    Resolved 9 packages in [EXECUTION_TIME]
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 8 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
@@ -76,10 +72,6 @@ fn test_add_from_find_links() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 3 packages in [EXECUTION_TIME]
-    Built 1 editable in [EXECUTION_TIME]
-    Resolved 3 packages in [EXECUTION_TIME]
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 2 packages in [EXECUTION_TIME]
     Downloaded 2 packages in [EXECUTION_TIME]
     Installed 3 packages in [EXECUTION_TIME]
@@ -111,10 +103,6 @@ fn test_add_flask_wrong_venv_exported() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
-    Resolved 9 packages in [EXECUTION_TIME]
-    Built 1 editable in [EXECUTION_TIME]
-    Resolved 9 packages in [EXECUTION_TIME]
     Built 1 editable in [EXECUTION_TIME]
     Resolved 8 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
