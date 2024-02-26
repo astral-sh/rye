@@ -31,6 +31,8 @@ success: Downloaded cpython@3.8.17
 
 ## Options
 
+* `-f, --force`: Fetch the Python toolchain even if it is already installed.
+
 * `-v, --verbose`: Enables verbose diagnostics
 
 * `-q, --quiet`: Turns off all output
