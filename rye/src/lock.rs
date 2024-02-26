@@ -414,24 +414,24 @@ fn generate_lockfile(
                 py_ver.minor,
                 py_ver.patch,
                 if no_deps { " --no-deps" } else { "" }
-            ))
-            .arg(if output == CommandOutput::Verbose {
-                "--verbose"
-            } else {
-                "-q"
-            });
+            ));
         if lock_options.pre {
             cmd.arg("--pre");
         }
         cmd
     };
 
-    cmd.arg("-o")
-        .arg(&requirements_file)
-        .arg(requirements_file_in)
-        .current_dir(workspace_path)
-        .env("PYTHONWARNINGS", "ignore")
-        .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
+    cmd.arg(if output == CommandOutput::Verbose {
+        "--verbose"
+    } else {
+        "-q"
+    })
+    .arg("-o")
+    .arg(&requirements_file)
+    .arg(requirements_file_in)
+    .current_dir(workspace_path)
+    .env("PYTHONWARNINGS", "ignore")
+    .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
 
     for pkg in &lock_options.update {
         cmd.arg("--upgrade-package");

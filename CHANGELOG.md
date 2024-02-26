@@ -20,6 +20,8 @@ _Unreleased_
 
 - Fixed a panic when adding a package to a virtual project.  #783
 
+- Bumped `uv` to 0.1.11.  #790
+
 <!-- released start -->
 
 ## 0.26.0
