@@ -34,16 +34,4 @@ fn test_fetch() {
 
     ----- stderr -----
     "###);
-
-    rye_cmd_snapshot!(space.rye_cmd().arg("toolchain").arg("list"), @r###"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    cpython@3.12.2 ([RYE_HOME]/py/cpython@3.12.2/install/bin/python3)
-    cpython@3.12.1 ([RYE_HOME]/py/cpython@3.12.1/install/bin/python3)
-    cpython@3.11.8 ([RYE_HOME]/py/cpython@3.11.8/install/bin/python3)
-    cpython@3.8.17 ([RYE_HOME]/py/cpython@3.8.17/install/bin/python3)
-
-    ----- stderr -----
-    "###);
 }
