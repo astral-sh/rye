@@ -115,3 +115,15 @@ can be supplied with environment variables.
     name = "company-internal"
     url = "https://${INDEX_USERNAME}:${INDEX_PASSWORD}@company.internal/simple/"
     ```
+
+## SSL/TLS Verification
+
+By default a source needs to be SSL/TLS protected.  If not, rye will refuse to honor
+the source.  You can override this by setting `verify-ssl` to `false`:
+
+```toml
+[[sources]]
+name = "company-internal"
+url = "http://company.internal/simple/"
+verify-ssl = false
+```
