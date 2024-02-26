@@ -14,7 +14,7 @@ a folder in your home directory and manage itself there.
 Rye will automatically download suitable Python toolchains as needed.  For more
 information about this [read about toolchains](toolchains/index.md).  To install
 a specific version download a binary directly
-[from GitHub](https://github.com/mitsuhiko/rye/releases).
+[from GitHub](https://github.com/astral-sh/rye/releases).
 
 ## Customized Installation
 
