@@ -421,17 +421,17 @@ fn generate_lockfile(
         cmd
     };
 
-    cmd.arg("-o")
-        .arg(&requirements_file)
-        .arg(requirements_file_in)
-        .arg(if output == CommandOutput::Verbose {
-            "--verbose"
-        } else {
-            "-q"
-        })
-        .current_dir(workspace_path)
-        .env("PYTHONWARNINGS", "ignore")
-        .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
+    cmd.arg(if output == CommandOutput::Verbose {
+        "--verbose"
+    } else {
+        "-q"
+    })
+    .arg("-o")
+    .arg(&requirements_file)
+    .arg(requirements_file_in)
+    .current_dir(workspace_path)
+    .env("PYTHONWARNINGS", "ignore")
+    .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
 
     for pkg in &lock_options.update {
         cmd.arg("--upgrade-package");
