@@ -7,7 +7,7 @@ build:
 
 .PHONY: test
 test:
-	@cargo test --all
+	@cargo insta test --workspace --all-features
 
 .PHONY: check
 check:
