@@ -1,8 +1,8 @@
 # `init`
 
-This command initializes a new or existing Python project with Rye.  Running it in
+This command initializes a new or existing Python project with Rye. Running it in
 a folder with an already existing Python project will attempt to convert it over
-and bootstrap Rye right there.  Otherwise it can be used to create a completely new
+and bootstrap Rye right there. Otherwise, it can be used to create a completely new
 project from scratch.
 
 For more information see the [Basics Guide](../basics.md).
@@ -33,7 +33,7 @@ success: Initialized project in /Users/john/Development/my-project.
 
     [possible values: `hatchling`, `setuptools`, `flit`, `pdm`, `maturin`]
 
-* `--license <LICENSE>`: Which license should be used (SPDX identifier)?
+* `--license <LICENSE>`: Which license should be used? [SPDX identifier](ttps://spdx.org/licenses/)
 
 * `--name <NAME>`: The name of the package
 
@@ -43,7 +43,7 @@ success: Initialized project in /Users/john/Development/my-project.
 
 * `--virtual`: Initialize this as a virtual package.
 
-    A virtual package can have dependencies but is itself not installed as a Python package.  It also cannot be published.
+    A virtual package can have dependencies but is itself not installed as a Python package. It also cannot be published.
 
 * `-r, --requirements <REQUIREMENTS_FILE>`: Requirements files to initialize pyproject.toml with
 
