@@ -18,6 +18,8 @@ _Unreleased_
 
 - Allow `rye fetch --force` to force re-fetch a downloaded toolchain.  #778
 
+- Fixed a panic when adding a package to a virtual project.  #783
+
 <!-- released start -->
 
 ## 0.26.0
