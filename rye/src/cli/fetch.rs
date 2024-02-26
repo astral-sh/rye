@@ -15,6 +15,9 @@ pub struct Args {
     ///
     /// If no version is provided, the requested version from local project or `.python-version` will be fetched.
     version: Option<String>,
+    /// Fetch the Python toolchain even if it is already installed.
+    #[arg(short, long)]
+    force: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -40,6 +43,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
 
-    fetch(&version, output).context("error while fetching Python installation")?;
+    fetch(&version, output, cmd.force).context("error while fetching Python installation")?;
     Ok(())
 }

@@ -147,7 +147,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
     // make sure we have a compatible python version
     let py_ver =
-        fetch(&py_ver.into(), output).context("failed fetching toolchain ahead of sync")?;
+        fetch(&py_ver.into(), output, false).context("failed fetching toolchain ahead of sync")?;
 
     // kill the virtualenv if it's there and we need to get rid of it.
     if recreate && venv.is_dir() {

@@ -277,7 +277,7 @@ fn ensure_latest_self_toolchain(output: CommandOutput) -> Result<PythonVersion, 
         }
         Ok(version)
     } else {
-        fetch(&SELF_PYTHON_TARGET_VERSION, output)
+        fetch(&SELF_PYTHON_TARGET_VERSION, output, false)
     }
 }
 
@@ -301,7 +301,7 @@ fn ensure_specific_self_toolchain(
                 toolchain_version
             );
         }
-        fetch(&toolchain_version.into(), output)
+        fetch(&toolchain_version.into(), output, false)
     } else {
         if output != CommandOutput::Quiet {
             echo!(
@@ -317,10 +317,11 @@ fn ensure_specific_self_toolchain(
 pub fn fetch(
     version: &PythonVersionRequest,
     output: CommandOutput,
+    force: bool,
 ) -> Result<PythonVersion, Error> {
     if let Ok(version) = PythonVersion::try_from(version.clone()) {
         let py_bin = get_toolchain_python_bin(&version)?;
-        if py_bin.is_file() {
+        if !force && py_bin.is_file() {
             if output == CommandOutput::Verbose {
                 echo!("Python version already downloaded. Skipping.");
             }
@@ -339,10 +340,17 @@ pub fn fetch(
         echo!("target dir: {}", target_dir.display());
     }
     if target_dir.is_dir() && target_py_bin.is_file() {
-        if output == CommandOutput::Verbose {
-            echo!("Python version already downloaded. Skipping.");
+        if !force {
+            if output == CommandOutput::Verbose {
+                echo!("Python version already downloaded. Skipping.");
+            }
+            return Ok(version);
         }
-        return Ok(version);
+        if output != CommandOutput::Quiet {
+            echo!("Removing the existing Python version");
+        }
+        fs::remove_dir_all(&target_dir)
+            .with_context(|| format!("failed to remove target folder {}", target_dir.display()))?;
     }
 
     fs::create_dir_all(&target_dir).path_context(&target_dir, "failed to create target folder")?;
