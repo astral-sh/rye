@@ -1,5 +1,5 @@
-import sys
 import hashlib
+import sys
 
 h = hashlib.sha256()
 

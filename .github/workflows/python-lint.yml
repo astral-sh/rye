@@ -1,0 +1,14 @@
+name: Python lint
+
+on: [push, pull_request]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: eifinger/setup-rye@v1
+      - name: Rye lint
+        run: rye lint
