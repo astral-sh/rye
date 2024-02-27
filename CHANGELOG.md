@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- The `init` command now generates a script with the name of the
+  project rather than `hello`.  #801
+
 <!-- released start -->
 
 ## 0.27.0
