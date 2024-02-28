@@ -77,6 +77,13 @@ fn test_add_flask_dotenv() {
      + python-dotenv==1.0.0
      + werkzeug==3.0.1
     "###);
+
+    space.load_toml("pyproject.toml", |doc| {
+        let deps = doc["project"]["dependencies"].as_array().unwrap();
+        assert!(deps
+            .iter()
+            .any(|x| x.as_str() == Some("flask[dotenv]>=3.0.0")));
+    });
 }
 
 #[test]

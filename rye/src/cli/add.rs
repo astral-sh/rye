@@ -506,7 +506,7 @@ fn resolve_requirements_with_uv(
                 }));
             }
         }
-        if let (None, Some(old_extras)) = (&new_req.extras, &req.extras) {
+        if let Some(old_extras) = &req.extras {
             new_req.extras = Some(old_extras.clone());
         }
         *req = new_req;
