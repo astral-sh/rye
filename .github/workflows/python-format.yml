@@ -1,0 +1,14 @@
+name: Python format
+
+on: [push, pull_request]
+
+jobs:
+  format:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: eifinger/setup-rye@v1
+      - name: Rye fmt
+        run: rye fmt --check
