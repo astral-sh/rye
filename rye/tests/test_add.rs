@@ -17,8 +17,8 @@ fn test_add_flask() {
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.2
-    Added colorama>=0.4.6 as regular dependency
     Added flask>=3.0.0 as regular dependency
+    Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
@@ -43,6 +43,43 @@ fn test_add_flask() {
 }
 
 #[test]
+fn test_add_flask_dotenv() {
+    let space = Space::new();
+    space.init("my-project");
+    // add colorama to ensure we have this as a dependency on all platforms
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("flask[dotenv]").arg("colorama"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.2
+    Added flask[dotenv]>=3.0.0 as regular dependency
+    Added colorama>=0.4.6 as regular dependency
+    Reusing already existing virtualenv
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
+
+    ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
+    Downloaded 9 packages in [EXECUTION_TIME]
+    Installed 10 packages in [EXECUTION_TIME]
+     + blinker==1.7.0
+     + click==8.1.7
+     + colorama==0.4.6
+     + flask==3.0.0
+     + itsdangerous==2.1.2
+     + jinja2==3.1.2
+     + markupsafe==2.1.3
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     + python-dotenv==1.0.0
+     + werkzeug==3.0.1
+    "###);
+}
+
+#[test]
 fn test_add_from_find_links() {
     let space = Space::new();
     space.init("my-project");
@@ -62,8 +99,8 @@ fn test_add_from_find_links() {
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.2
-    Added colorama>=0.4.6 as regular dependency
     Added tqdm>=4.66.1 as regular dependency
+    Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
@@ -94,8 +131,8 @@ fn test_add_flask_wrong_venv_exported() {
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.2
-    Added colorama>=0.4.6 as regular dependency
     Added flask>=3.0.0 as regular dependency
+    Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
