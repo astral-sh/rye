@@ -10,6 +10,8 @@ _Unreleased_
 - The `init` command now generates a script with the name of the
   project rather than `hello`.  #801
 
+- Retain markers when adding dependencies with features when uv is used.  #807
+
 <!-- released start -->
 
 ## 0.27.0

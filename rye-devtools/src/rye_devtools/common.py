@@ -1,9 +1,8 @@
-from typing import Self
 import itertools
 import sys
 import time
 from datetime import datetime, timezone
-from typing import NamedTuple
+from typing import NamedTuple, Self
 
 import httpx
 

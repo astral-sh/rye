@@ -3,15 +3,16 @@
 It finds the latest UV releases and generates rust code that can be included
 into rye at build time.
 """
-from .common import Version, PlatformTriple, fetch, log
-
-import re
-from typing import AsyncIterator
 import asyncio
 import os
-import httpx
+import re
 import sys
 from dataclasses import dataclass
+from typing import AsyncIterator
+
+import httpx
+
+from .common import PlatformTriple, Version, fetch, log
 
 
 @dataclass
@@ -62,7 +63,7 @@ class UvDownloads:
                         url = asset["browser_download_url"]
                         if (triple := self.parse_triple(url)) is not None:
                             sha_resp = await fetch(self.client, url + ".sha256")
-                            sha256 = sha_resp.text.split(' ')[0].strip()
+                            sha256 = sha_resp.text.split(" ")[0].strip()
                             yield UvDownload(
                                 triple=triple,
                                 version=version,

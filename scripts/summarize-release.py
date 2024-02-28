@@ -1,7 +1,6 @@
+import json
 import os
 import sys
-import json
-
 
 version = sys.argv[1]
 base = sys.argv[2]
