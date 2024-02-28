@@ -489,8 +489,8 @@ fn resolve_requirements_with_uv(
         .lines()
         .zip(requirements)
     {
-        *req = line.parse()?;
-        if let Some(ref mut version_or_url) = req.version_or_url {
+        let mut new_req: Requirement = line.parse()?;
+        if let Some(ref mut version_or_url) = new_req.version_or_url {
             if let VersionOrUrl::VersionSpecifier(ref mut specs) = version_or_url {
                 *version_or_url = VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter({
                     let mut new_specs = Vec::new();
@@ -511,6 +511,10 @@ fn resolve_requirements_with_uv(
                 }));
             }
         }
+        if let (None, Some(old_extras)) = (&new_req.extras, &req.extras) {
+            new_req.extras = Some(old_extras.clone());
+        }
+        *req = new_req;
     }
 
     Ok(())
