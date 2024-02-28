@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Retain markers when adding dependencies with features when uv is used.  #807
+
 <!-- released start -->
 
 ## 0.27.0
