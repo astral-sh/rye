@@ -9,6 +9,8 @@ _Unreleased_
 
 - Retain markers when adding dependencies with features when uv is used.  #807
 
+- Update `uv` to 0.1.12.  #812
+
 <!-- released start -->
 
 ## 0.27.0
