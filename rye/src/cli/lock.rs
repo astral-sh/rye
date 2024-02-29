@@ -23,7 +23,13 @@ pub struct Args {
     #[arg(long)]
     update_all: bool,
     /// Update to pre-release versions
-    #[arg(long)]
+    #[arg(
+        long,
+        default_value = "if-necessary-or-explicit",
+        conflicts_with = "pre"
+    )]
+    prerelease: Option<String>,
+    #[clap(long, hide = true, conflicts_with = "prerelease")]
     pre: bool,
     /// Extras/features to enable when locking the workspace.
     #[arg(long)]
@@ -50,7 +56,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         lock_options: LockOptions {
             update: cmd.update,
             update_all: cmd.update_all,
-            pre: cmd.pre,
+            prerelease: if cmd.pre {
+                Some("allow".to_string())
+            } else {
+                cmd.prerelease
+            },
             features: cmd.features,
             all_features: cmd.all_features,
             with_sources: cmd.with_sources,

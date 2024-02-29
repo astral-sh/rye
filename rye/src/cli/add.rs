@@ -206,7 +206,13 @@ pub struct Args {
     #[arg(long, conflicts_with = "dev", conflicts_with = "excluded")]
     optional: Option<String>,
     /// Include pre-releases when finding a package version.
-    #[arg(long)]
+    #[arg(
+        long,
+        default_value = "if-necessary-or-explicit",
+        conflicts_with = "pre"
+    )]
+    prerelease: Option<String>,
+    #[clap(long, hide = true, conflicts_with = "prerelease")]
     pre: bool,
     /// Overrides the pin operator
     #[arg(long)]
@@ -260,13 +266,18 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     if !cmd.excluded {
         if cfg.use_uv() {
+            let pre = if cmd.pre {
+                Some("allow".to_string())
+            } else {
+                cmd.prerelease
+            };
             sync(SyncOptions::python_only().pyproject(None))
                 .context("failed to sync ahead of add")?;
             resolve_requirements_with_uv(
                 &pyproject_toml,
                 &py_ver,
                 &mut requirements,
-                cmd.pre,
+                pre.as_ref(),
                 output,
                 &default_operator,
             )?;
@@ -444,7 +455,7 @@ fn resolve_requirements_with_uv(
     pyproject_toml: &PyProject,
     py_ver: &PythonVersion,
     requirements: &mut [Requirement],
-    pre: bool,
+    prerelease: Option<&String>,
     output: CommandOutput,
     default_operator: &Operator,
 ) -> Result<(), Error> {
@@ -458,8 +469,8 @@ fn resolve_requirements_with_uv(
             .arg("--no-header")
             .arg("-")
             .env("VIRTUAL_ENV", pyproject_toml.venv_path().as_os_str());
-        if pre {
-            cmd.arg("--prerelease=allow");
+        if let Some(it) = prerelease {
+            cmd.arg("--prerelease").arg(it);
         }
         if output == CommandOutput::Quiet {
             cmd.arg("-q");
