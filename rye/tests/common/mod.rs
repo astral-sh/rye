@@ -30,6 +30,11 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
     (r" in (\d+\.)?\d+(ms|s)\b", " in [EXECUTION_TIME]"),
     (r"\\\\?([\w\d.])", "/$1"),
     (r"rye.exe", "rye"),
+    // fixtures
+    (
+        r"(\b[A-Z\d]:)?[\\/].*?[\\/]tests[\\/]fixtures[\\/]",
+        "[FIXTURES]/",
+    ),
 ];
 
 fn marked_tempdir() -> TempDir {
@@ -100,6 +105,18 @@ toolchain = "cpython@3.12.2"
 
 pub fn get_bin() -> PathBuf {
     get_cargo_bin("rye")
+}
+
+#[allow(unused)]
+pub fn get_fixtures_dir() -> PathBuf {
+    get_cargo_manifest_dir().join("tests").join("fixtures")
+}
+
+#[allow(unused)]
+pub fn get_cargo_manifest_dir() -> PathBuf {
+    std::env::var_os("CARGO_MANIFEST_DIR")
+        .map(PathBuf::from)
+        .unwrap()
 }
 
 pub struct Space {

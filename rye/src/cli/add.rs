@@ -468,23 +468,29 @@ fn resolve_requirements_with_uv(
         if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
             cmd.arg("--exclude-newer").arg(dt);
         }
-        let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
-        sources.add_as_pip_args(&mut cmd);
-        let mut child = cmd
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()?;
-        let child_stdin = child.stdin.as_mut().unwrap();
-        writeln!(child_stdin, "{}", req)?;
 
-        let rv = child.wait_with_output()?;
-        if !rv.status.success() {
-            let log = String::from_utf8_lossy(&rv.stderr);
-            bail!("failed to resolve packages:\n{}", log);
-        }
+        // we can skip the `uv compile` step for dependencies with direct references (URLs/paths)
+        let mut new_req = if matches!(req.version_or_url, Some(VersionOrUrl::Url(_))) {
+            req.clone()
+        } else {
+            let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
+            sources.add_as_pip_args(&mut cmd);
+            let mut child = cmd
+                .stdin(Stdio::piped())
+                .stdout(Stdio::piped())
+                .stderr(Stdio::piped())
+                .spawn()?;
+            let child_stdin = child.stdin.as_mut().unwrap();
+            writeln!(child_stdin, "{}", req)?;
 
-        let mut new_req: Requirement = String::from_utf8_lossy(&rv.stdout).parse()?;
+            let rv = child.wait_with_output()?;
+            if !rv.status.success() {
+                let log = String::from_utf8_lossy(&rv.stderr);
+                bail!("failed to resolve packages:\n{}", log);
+            }
+            String::from_utf8_lossy(&rv.stdout).parse()?
+        };
+
         if let Some(ref mut version_or_url) = new_req.version_or_url {
             if let VersionOrUrl::VersionSpecifier(ref mut specs) = version_or_url {
                 *version_or_url = VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter({
