@@ -9,6 +9,10 @@ _Unreleased_
 
 - Bumped `uv` to 0.1.13.  #760, #820
 
+- Bumped `ruff` to 0.3.0.  #821
+
+<!-- released start -->
+
 ## 0.26.0
 
 Released on 2024-02-23
