@@ -32,5 +32,5 @@ serve-docs = "mkdocs serve"
 members = ["rye-devtools"]
 
 [tool.ruff]
-# the former folder is added by the rye github action
+# the .rye folder is added by the rye github action
 exclude = [".rye", ".venv"]
