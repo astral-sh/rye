@@ -3,7 +3,7 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.27.0
+## 0.28.0
 
 _Unreleased_
 
@@ -11,7 +11,31 @@ _Unreleased_
 
 - Bumped `ruff` to 0.3.0.  #821
 
+- The `init` command now generates a script with the name of the
+  project rather than `hello`.  #801
+
+- Retain markers when adding dependencies with features when uv is used.  #807
+
 <!-- released start -->
+
+## 0.27.0
+
+Released on 2024-02-26
+
+- rye now uses `uv` to bootstrap its internal packages and tools. #754
+
+- rye no longer fails if an incorrect `VIRTUAL_ENV` environment
+  variable is exported.  #766
+
+- Added latest Python builds.  #771
+
+- When `uv` is used the prompt is now set to the project name.  #773
+
+- Allow `rye fetch --force` to force re-fetch a downloaded toolchain.  #778
+
+- Fixed a panic when adding a package to a virtual project.  #783
+
+- Bumped `uv` to 0.1.11.  #790
 
 ## 0.26.0
 

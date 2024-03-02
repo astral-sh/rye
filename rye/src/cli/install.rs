@@ -7,7 +7,7 @@ use pep508_rs::Requirement;
 use crate::cli::add::ReqExtras;
 use crate::config::Config;
 use crate::installer::{install, resolve_local_requirement};
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
 /// Installs a package as global tool. This is an alias of `rye tools install`.

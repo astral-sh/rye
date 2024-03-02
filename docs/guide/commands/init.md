@@ -33,7 +33,7 @@ success: Initialized project in /Users/john/Development/my-project.
 
     [possible values: `hatchling`, `setuptools`, `flit`, `pdm`, `maturin`]
 
-* `--license <LICENSE>`: Which license should be used (SPDX identifier)?
+* `--license <LICENSE>`: Which license should be used? [SPDX identifier](https://spdx.org/licenses/)
 
 * `--name <NAME>`: The name of the package
 

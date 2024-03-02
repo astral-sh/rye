@@ -9,7 +9,7 @@ use clap::Parser;
 use crate::platform::get_pinnable_version;
 use crate::pyproject::DiscoveryUnsuccessful;
 use crate::pyproject::PyProject;
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::utils::IoPathContext;
 
 /// Pins a Python version to this project.

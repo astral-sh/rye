@@ -14,7 +14,7 @@ a folder in your home directory and manage itself there.
 Rye will automatically download suitable Python toolchains as needed.  For more
 information about this [read about toolchains](toolchains/index.md).  To install
 a specific version download a binary directly
-[from GitHub](https://github.com/mitsuhiko/rye/releases).
+[from GitHub](https://github.com/astral-sh/rye/releases).
 
 ## Customized Installation
 
@@ -77,14 +77,14 @@ opt-out, or you run a custom shell you will need to do this manually.
     Rye ships an `env` file which should be sourced to update `PATH` automatically.
 
     ```bash
-    echo 'source "$HOME/.rye/env"' >> ~/.profile
+    echo 'source "$HOME/.rye/env"' >> ~/.zprofile
     ```
 
-    In some setups `.profile` is not sourced, in which case you can add it to your
-    `.zprofile`:
+    In some setups `.zprofile` is not sourced, in which case you can add it to your
+    `.zshrc`:
 
     ```bash
-    echo 'source "$HOME/.rye/env"' >> ~/.zprofile
+    echo 'source "$HOME/.rye/env"' >> ~/.zshrc
     ```
 
 === "Fish"

@@ -10,7 +10,7 @@ use toml_edit::Document;
 
 use crate::platform::{get_app_dir, get_latest_cpython_version};
 use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::utils::{toml, IoPathContext};
 
 static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);

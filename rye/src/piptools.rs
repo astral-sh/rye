@@ -7,7 +7,7 @@ use anyhow::{bail, Context, Error};
 use crate::bootstrap::ensure_self_venv;
 use crate::consts::VENV_BIN;
 use crate::platform::get_app_dir;
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::sync::create_virtualenv;
 use crate::utils::{get_venv_python_bin, CommandOutput, IoPathContext};
 

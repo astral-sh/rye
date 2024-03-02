@@ -5,7 +5,7 @@ use crate::bootstrap::fetch;
 use crate::config::Config;
 use crate::platform::get_python_version_request_from_pyenv_pin;
 use crate::pyproject::PyProject;
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
 /// Fetches a Python interpreter for the local machine. This is an alias of `rye toolchain fetch`.
@@ -15,6 +15,9 @@ pub struct Args {
     ///
     /// If no version is provided, the requested version from local project or `.python-version` will be fetched.
     version: Option<String>,
+    /// Fetch the Python toolchain even if it is already installed.
+    #[arg(short, long)]
+    force: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -40,6 +43,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
 
-    fetch(&version, output).context("error while fetching Python installation")?;
+    fetch(&version, output, cmd.force).context("error while fetching Python installation")?;
     Ok(())
 }

@@ -15,9 +15,10 @@ use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
 use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
+use crate::uv::Uv;
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
 import sys
@@ -156,7 +157,7 @@ impl ReqExtras {
             // but this not supported by pip-tools,
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
-                PyProject::discover()?.build_backend().unwrap() == BuildSystem::Hatchling;
+                PyProject::discover()?.build_backend() == Some(BuildSystem::Hatchling);
             let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
@@ -263,7 +264,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 .context("failed to sync ahead of add")?;
             resolve_requirements_with_uv(
                 &pyproject_toml,
-                &self_venv,
                 &py_ver,
                 &mut requirements,
                 cmd.pre,
@@ -442,56 +442,50 @@ fn find_best_matches_with_unearth(
 
 fn resolve_requirements_with_uv(
     pyproject_toml: &PyProject,
-    self_venv: &Path,
     py_ver: &PythonVersion,
     requirements: &mut [Requirement],
     pre: bool,
     output: CommandOutput,
     default_operator: &Operator,
 ) -> Result<(), Error> {
-    let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
-    cmd.arg("pip")
-        .arg("compile")
-        .arg("--python-version")
-        .arg(py_ver.format_simple())
-        .arg("--no-deps")
-        .arg("--no-header")
-        .arg("-")
-        .env("VIRTUAL_ENV", pyproject_toml.venv_path().as_os_str());
-    if pre {
-        cmd.arg("--prerelease=allow");
-    }
-    if output == CommandOutput::Quiet {
-        cmd.arg("-q");
-    }
-    // this primarily exists for testing
-    if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
-        cmd.arg("--exclude-newer").arg(dt);
-    }
-    let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
-    sources.add_as_pip_args(&mut cmd);
-    let mut child = cmd
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::piped())
-        .spawn()?;
-    let child_stdin = child.stdin.as_mut().unwrap();
-    for requirement in &*requirements {
-        writeln!(child_stdin, "{}", requirement)?;
-    }
+    for req in requirements {
+        let mut cmd = Uv::ensure_exists(output)?.cmd();
+        cmd.arg("pip")
+            .arg("compile")
+            .arg("--python-version")
+            .arg(py_ver.format_simple())
+            .arg("--no-deps")
+            .arg("--no-header")
+            .arg("-")
+            .env("VIRTUAL_ENV", pyproject_toml.venv_path().as_os_str());
+        if pre {
+            cmd.arg("--prerelease=allow");
+        }
+        if output == CommandOutput::Quiet {
+            cmd.arg("-q");
+        }
+        // this primarily exists for testing
+        if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
+            cmd.arg("--exclude-newer").arg(dt);
+        }
+        let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
+        sources.add_as_pip_args(&mut cmd);
+        let mut child = cmd
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+        let child_stdin = child.stdin.as_mut().unwrap();
+        writeln!(child_stdin, "{}", req)?;
 
-    let rv = child.wait_with_output()?;
-    if !rv.status.success() {
-        let log = String::from_utf8_lossy(&rv.stderr);
-        bail!("failed to resolve packages:\n{}", log);
-    }
+        let rv = child.wait_with_output()?;
+        if !rv.status.success() {
+            let log = String::from_utf8_lossy(&rv.stderr);
+            bail!("failed to resolve packages:\n{}", log);
+        }
 
-    for (line, req) in String::from_utf8_lossy(&rv.stdout)
-        .lines()
-        .zip(requirements)
-    {
-        *req = line.parse()?;
-        if let Some(ref mut version_or_url) = req.version_or_url {
+        let mut new_req: Requirement = String::from_utf8_lossy(&rv.stdout).parse()?;
+        if let Some(ref mut version_or_url) = new_req.version_or_url {
             if let VersionOrUrl::VersionSpecifier(ref mut specs) = version_or_url {
                 *version_or_url = VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter({
                     let mut new_specs = Vec::new();
@@ -512,6 +506,10 @@ fn resolve_requirements_with_uv(
                 }));
             }
         }
+        if let Some(old_extras) = &req.extras {
+            new_req.extras = Some(old_extras.clone());
+        }
+        *req = new_req;
     }
 
     Ok(())

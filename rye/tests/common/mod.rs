@@ -17,7 +17,10 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
         "[TEMP_PATH]/",
     ),
     // home
-    (r"(\b[A-Z]:)?[\\/].*?[\\/]rye-test-home", "[RYE_HOME]"),
+    (
+        r"(\b[A-Z]:)?[\\/].*?[\\/]rye-test-dir[\\/]home",
+        "[RYE_HOME]",
+    ),
     // macos temp folder
     (r"/var/folders/\S+?/T/\S+", "[TEMP_FILE]"),
     // linux temp folders
@@ -34,7 +37,9 @@ fn marked_tempdir() -> TempDir {
 }
 
 fn bootstrap_test_rye() -> PathBuf {
-    let home = get_bin().parent().unwrap().join("rye-test-home");
+    let test_dir = get_bin().parent().unwrap().join("rye-test-dir");
+    let home = test_dir.join("home");
+
     fs::create_dir_all(&home).ok();
     let lock_path = home.join("lock");
     let mut lock = fslock::LockFile::open(&lock_path).unwrap();
@@ -50,14 +55,14 @@ fn bootstrap_test_rye() -> PathBuf {
 use-uv = true
 
 [default]
-toolchain = "cpython@3.12.1"
+toolchain = "cpython@3.12.2"
 "#,
         )
         .unwrap();
     }
 
     // fetch the most important interpreters
-    for version in ["cpython@3.8.17", "cpython@3.11.7", "cpython@3.12.1"] {
+    for version in ["cpython@3.8.17", "cpython@3.11.8", "cpython@3.12.2"] {
         if home.join("py").join(version).is_dir() {
             continue;
         }
@@ -134,6 +139,21 @@ impl Space {
     }
 
     #[allow(unused)]
+    pub fn load_toml<P: AsRef<Path>, R, F: FnOnce(&toml_edit::Document) -> R>(
+        &self,
+        path: P,
+        f: F,
+    ) -> R {
+        let p = self.project_path().join(path.as_ref());
+        let mut doc = if p.is_file() {
+            std::fs::read_to_string(&p).unwrap().parse().unwrap()
+        } else {
+            toml_edit::Document::default()
+        };
+        f(&doc)
+    }
+
+    #[allow(unused)]
     pub fn edit_toml<P: AsRef<Path>, R, F: FnOnce(&mut toml_edit::Document) -> R>(
         &self,
         path: P,
@@ -154,7 +174,7 @@ impl Space {
     #[allow(unused)]
     pub fn read_toml<P: AsRef<Path>>(&self, path: P) -> toml_edit::Document {
         let p = self.project_path().join(path.as_ref());
-        std::fs::read_to_string(&p).unwrap().parse().unwrap()
+        std::fs::read_to_string(p).unwrap().parse().unwrap()
     }
 
     #[allow(unused)]
@@ -190,6 +210,11 @@ impl Space {
 
     pub fn project_path(&self) -> &Path {
         &self.project_dir
+    }
+
+    #[allow(unused)]
+    pub fn venv_path(&self) -> PathBuf {
+        self.project_dir.join(".venv")
     }
 
     #[allow(unused)]

@@ -18,11 +18,12 @@ use crate::lock::{
 use crate::piptools::{get_pip_sync, get_pip_tools_venv_path};
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources, PyProject};
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::utils::{
-    get_venv_python_bin, mark_path_sync_ignore, set_proxy_variables, symlink_dir, CommandOutput,
+    get_venv_python_bin, set_proxy_variables, symlink_dir, update_venv_sync_marker, CommandOutput,
     IoPathContext,
 };
+use crate::uv::Uv;
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -146,7 +147,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
     // make sure we have a compatible python version
     let py_ver =
-        fetch(&py_ver.into(), output).context("failed fetching toolchain ahead of sync")?;
+        fetch(&py_ver.into(), output, false).context("failed fetching toolchain ahead of sync")?;
 
     // kill the virtualenv if it's there and we need to get rid of it.
     if recreate && venv.is_dir() {
@@ -241,7 +242,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
             let tempdir = tempdir()?;
             let mut sync_cmd = if Config::current().use_uv() {
-                let mut uv_sync_cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+                let mut uv_sync_cmd = Uv::ensure_exists(output)?.cmd();
                 uv_sync_cmd.arg("pip").arg("sync");
                 let root = pyproject.workspace_path();
 
@@ -333,19 +334,14 @@ pub fn create_virtualenv(
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
 
-    let mut venv_cmd = if Config::current().use_uv() {
+    if Config::current().use_uv() {
         // try to kill the empty venv if there is one as uv can't work otherwise.
         fs::remove_dir(venv).ok();
-        let mut venv_cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
-        venv_cmd.arg("venv");
-        if output == CommandOutput::Verbose {
-            venv_cmd.arg("--verbose");
-        } else {
-            venv_cmd.arg("-q");
-        }
-        venv_cmd.arg("-p");
-        venv_cmd.arg(&py_bin);
-        venv_cmd
+        let uv = Uv::ensure_exists(output.quieter())?
+            .venv(venv, &py_bin, py_ver, Some(prompt))
+            .context("failed to initialize virtualenv")?;
+        uv.write_marker()?;
+        uv.sync_marker();
     } else {
         // create the venv folder first so we can manipulate some flags on it.
         fs::create_dir_all(venv).path_context(venv, "unable to create virtualenv folder")?;
@@ -363,24 +359,16 @@ pub fn create_virtualenv(
         venv_cmd.arg("--no-seed");
         venv_cmd.arg("--prompt");
         venv_cmd.arg(prompt);
-        venv_cmd
+        venv_cmd.arg("--").arg(venv);
+        let status = venv_cmd
+            .status()
+            .context("unable to invoke virtualenv command")?;
+        if !status.success() {
+            bail!("failed to initialize virtualenv");
+        }
+
+        write_venv_marker(venv, py_ver)?;
     };
-
-    venv_cmd.arg("--").arg(venv);
-
-    let status = venv_cmd
-        .status()
-        .context("unable to invoke virtualenv command")?;
-    if !status.success() {
-        bail!("failed to initialize virtualenv");
-    }
-
-    write_venv_marker(venv, py_ver)?;
-
-    // uv can only do it now
-    if Config::current().use_uv() {
-        update_venv_sync_marker(output, venv);
-    }
 
     // On UNIX systems Python is unable to find the tcl config that is placed
     // outside of the virtualenv.  It also sometimes is entirely unable to find
@@ -391,20 +379,6 @@ pub fn create_virtualenv(
     }
 
     Ok(())
-}
-
-/// Update the cloud synchronization marker for the given path
-/// based on the config flag.
-fn update_venv_sync_marker(output: CommandOutput, venv_path: &Path) {
-    if let Err(err) = mark_path_sync_ignore(venv_path, Config::current().venv_mark_sync_ignore()) {
-        if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
-            warn!(
-                "unable to mark virtualenv {} ignored for cloud sync: {}",
-                venv_path.display(),
-                err
-            );
-        }
-    }
 }
 
 #[cfg(unix)]

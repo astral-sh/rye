@@ -10,6 +10,7 @@ requires-python = ">= 3.11"
 
 [project.scripts]
 find-downloads = "rye_devtools.find_downloads:main"
+uv-downloads = "rye_devtools.find_uv_downloads:main"
 
 [build-system]
 requires = ["hatchling"]
@@ -17,9 +18,7 @@ build-backend = "hatchling.build"
 
 [tool.rye]
 managed = true
-dev-dependencies = [
-    "isort>=5.13.2",
-]
+dev-dependencies = []
 
 [tool.hatch.metadata]
 allow-direct-references = true

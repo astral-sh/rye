@@ -142,6 +142,14 @@ impl CommandOutput {
             CommandOutput::Normal
         }
     }
+
+    pub fn quieter(self) -> CommandOutput {
+        match self {
+            CommandOutput::Normal => CommandOutput::Quiet,
+            CommandOutput::Verbose => CommandOutput::Normal,
+            CommandOutput::Quiet => CommandOutput::Quiet,
+        }
+    }
 }
 
 /// Given a path checks if that path is executable.
@@ -445,6 +453,20 @@ pub fn copy_dir<T: AsRef<Path>>(from: T, to: T, options: &CopyDirOptions) -> Res
 pub struct CopyDirOptions {
     /// Exclude paths
     pub exclude: Vec<PathBuf>,
+}
+
+/// Update the cloud synchronization marker for the given path
+/// based on the config flag.
+pub fn update_venv_sync_marker(output: CommandOutput, venv_path: &Path) {
+    if let Err(err) = mark_path_sync_ignore(venv_path, Config::current().venv_mark_sync_ignore()) {
+        if output != CommandOutput::Quiet && Config::current().venv_mark_sync_ignore() {
+            warn!(
+                "unable to mark virtualenv {} ignored for cloud sync: {}",
+                venv_path.display(),
+                err
+            );
+        }
+    }
 }
 
 #[test]

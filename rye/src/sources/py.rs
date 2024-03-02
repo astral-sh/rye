@@ -9,7 +9,7 @@ use serde::{de, Deserialize, Serialize};
 
 mod downloads {
     use super::PythonVersion;
-    include!("downloads.inc");
+    include!("generated/python_downloads.inc");
 }
 
 const DEFAULT_NAME: &str = "cpython";
