@@ -22,6 +22,7 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut args = Vec::new();
+    args.push("--ignore=target".to_string()); // ignores the cargo `target` directory by default
     if cmd.no_capture {
         args.push("-s".to_string());
     }
