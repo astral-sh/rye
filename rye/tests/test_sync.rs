@@ -201,7 +201,7 @@ fn test_autosync_remember() {
     markupsafe==2.1.3
     werkzeug==3.0.1
     "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("sync"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("sync").arg("--verbose"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
