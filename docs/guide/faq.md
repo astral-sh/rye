@@ -108,7 +108,7 @@ extensions.  There is no known solution to this problem today other than
 
 This issue is inherited from `python-build-standalone` and more information can
 be found in the documentation: [References to Build-Time Paths](https://gregoryszorc.com/docs/python-build-standalone/main/quirks.html#references-to-build-time-paths).  There is also an open 
-Rye issue for it: [Issue #621](https://github.com/mitsuhiko/rye/issues/621).
+Rye issue for it: [Issue #621](https://github.com/astral-sh/rye/issues/621).
 
 ## TKinter Support
 
@@ -199,4 +199,4 @@ while because the compiler spits out some bytes that have been associated with T
 written in Rust.
 
 It can be ignored.  For more information see the discussion [Windows Bearfoos
-virus associated with rye](https://github.com/mitsuhiko/rye/issues/468).
+virus associated with rye](https://github.com/astral-sh/rye/issues/468).

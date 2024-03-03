@@ -7,7 +7,7 @@ use anyhow::{anyhow, Context, Error};
 
 use crate::config::Config;
 use crate::pyproject::latest_available_python_version;
-use crate::sources::{PythonVersion, PythonVersionRequest};
+use crate::sources::py::{PythonVersion, PythonVersionRequest};
 use crate::utils::IoPathContext;
 
 static APP_DIR: Mutex<Option<&'static PathBuf>> = Mutex::new(None);

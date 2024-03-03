@@ -15,15 +15,14 @@ use serde::Serialize;
 use tempfile::NamedTempFile;
 use url::Url;
 
-use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
-use crate::consts::VENV_BIN;
 use crate::piptools::{get_pip_compile, get_pip_tools_version, PipToolsVersion};
 use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
 };
-use crate::sources::PythonVersion;
+use crate::sources::py::PythonVersion;
 use crate::utils::{set_proxy_variables, CommandOutput, IoPathContext};
+use crate::uv::Uv;
 
 static FILE_EDITABLE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^-e (file://.*?)\s*$").unwrap());
 static DEP_COMMENT_RE: Lazy<Regex> =
@@ -361,6 +360,7 @@ fn generate_lockfile(
     exclusions: &HashSet<Requirement>,
     no_deps: bool,
 ) -> Result<(), Error> {
+    let use_uv = Config::current().use_uv();
     let scratch = tempfile::tempdir()?;
     let requirements_file = scratch.path().join("requirements.txt");
     let lock_options = if lockfile.is_file() {
@@ -369,28 +369,26 @@ fn generate_lockfile(
             .path_context(&requirements_file, "unable to restore requirements file")?;
         LockOptions::restore(&requirements, lock_options)?
     } else {
-        fs::write(&requirements_file, b"").path_context(
-            &requirements_file,
-            "unable to write empty requirements file",
-        )?;
+        if !use_uv {
+            fs::write(&requirements_file, b"").path_context(
+                &requirements_file,
+                "unable to write empty requirements file",
+            )?;
+        }
         Cow::Borrowed(lock_options)
     };
 
-    let mut cmd = if Config::current().use_uv() {
-        let self_venv = ensure_self_venv(output)?;
-        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("uv"));
+    let mut cmd = if use_uv {
+        let mut cmd = Uv::ensure_exists(output)?.cmd();
         cmd.arg("pip")
             .arg("compile")
             .arg("--no-header")
+            .env_remove("VIRTUAL_ENV")
             .arg(format!(
                 "--python-version={}.{}.{}",
                 py_ver.major, py_ver.minor, py_ver.patch
             ));
-        if output == CommandOutput::Verbose {
-            cmd.arg("--verbose");
-        } else if output == CommandOutput::Quiet {
-            cmd.arg("-q");
-        }
+
         if lock_options.pre {
             cmd.arg("--prerelease=allow");
         }
@@ -416,24 +414,24 @@ fn generate_lockfile(
                 py_ver.minor,
                 py_ver.patch,
                 if no_deps { " --no-deps" } else { "" }
-            ))
-            .arg(if output == CommandOutput::Verbose {
-                "--verbose"
-            } else {
-                "-q"
-            });
+            ));
         if lock_options.pre {
             cmd.arg("--pre");
         }
         cmd
     };
 
-    cmd.arg("-o")
-        .arg(&requirements_file)
-        .arg(requirements_file_in)
-        .current_dir(workspace_path)
-        .env("PYTHONWARNINGS", "ignore")
-        .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
+    cmd.arg(if output == CommandOutput::Verbose {
+        "--verbose"
+    } else {
+        "-q"
+    })
+    .arg("-o")
+    .arg(&requirements_file)
+    .arg(requirements_file_in)
+    .current_dir(workspace_path)
+    .env("PYTHONWARNINGS", "ignore")
+    .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
 
     for pkg in &lock_options.update {
         cmd.arg("--upgrade-package");

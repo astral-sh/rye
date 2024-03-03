@@ -18,26 +18,20 @@ fn test_init_lib() {
         .expect("initialization successful");
 
     rye_cmd_snapshot!(space.rye_cmd().arg("sync"), @r###"
-        success: true
-        exit_code: 0
-        ----- stdout -----
-        Initializing new virtualenv in [TEMP_PATH]/project/.venv
-        Python version: cpython@3.12.1
-        Generating production lockfile: [TEMP_PATH]/project/requirements.lock
-        Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
-        Installing dependencies
-        Done!
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.2
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
 
-        ----- stderr -----
-        warning: Requirements file [TEMP_FILE] does not contain any dependencies
-        Built 1 editable in [EXECUTION_TIME]
-        Resolved 1 package in [EXECUTION_TIME]
-        warning: Requirements file [TEMP_FILE] does not contain any dependencies
-        Built 1 editable in [EXECUTION_TIME]
-        Resolved 1 package in [EXECUTION_TIME]
-        Built 1 editable in [EXECUTION_TIME]
-        Installed 1 package in [EXECUTION_TIME]
-         + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+    ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
+    Installed 1 package in [EXECUTION_TIME]
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
 
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("python").arg("-c").arg("import my_project; print(my_project.hello())"), @r###"
@@ -72,26 +66,20 @@ fn test_init_default() {
         .expect("initialization successful");
 
     rye_cmd_snapshot!(space.rye_cmd().arg("sync"), @r###"
-        success: true
-        exit_code: 0
-        ----- stdout -----
-        Initializing new virtualenv in [TEMP_PATH]/project/.venv
-        Python version: cpython@3.12.1
-        Generating production lockfile: [TEMP_PATH]/project/requirements.lock
-        Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
-        Installing dependencies
-        Done!
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.2
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
 
-        ----- stderr -----
-        warning: Requirements file [TEMP_FILE] does not contain any dependencies
-        Built 1 editable in [EXECUTION_TIME]
-        Resolved 1 package in [EXECUTION_TIME]
-        warning: Requirements file [TEMP_FILE] does not contain any dependencies
-        Built 1 editable in [EXECUTION_TIME]
-        Resolved 1 package in [EXECUTION_TIME]
-        Built 1 editable in [EXECUTION_TIME]
-        Installed 1 package in [EXECUTION_TIME]
-         + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+    ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
+    Installed 1 package in [EXECUTION_TIME]
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
 
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("python").arg("-c").arg("import my_project; print(my_project.hello())"), @r###"
@@ -127,29 +115,23 @@ fn test_init_script() {
         .expect("initialization successful");
 
     rye_cmd_snapshot!(space.rye_cmd().arg("sync"), @r###"
-        success: true
-        exit_code: 0
-        ----- stdout -----
-        Initializing new virtualenv in [TEMP_PATH]/project/.venv
-        Python version: cpython@3.12.1
-        Generating production lockfile: [TEMP_PATH]/project/requirements.lock
-        Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
-        Installing dependencies
-        Done!
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.2
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
 
-        ----- stderr -----
-        warning: Requirements file [TEMP_FILE] does not contain any dependencies
-        Built 1 editable in [EXECUTION_TIME]
-        Resolved 1 package in [EXECUTION_TIME]
-        warning: Requirements file [TEMP_FILE] does not contain any dependencies
-        Built 1 editable in [EXECUTION_TIME]
-        Resolved 1 package in [EXECUTION_TIME]
-        Built 1 editable in [EXECUTION_TIME]
-        Installed 1 package in [EXECUTION_TIME]
-         + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+    ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
+    Installed 1 package in [EXECUTION_TIME]
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
 
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("hello"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("my-project"), @r###"
         success: true
         exit_code: 0
         ----- stdout -----

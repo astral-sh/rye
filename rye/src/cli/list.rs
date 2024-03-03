@@ -9,6 +9,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::PyProject;
 use crate::utils::{get_venv_python_bin, CommandOutput};
+use crate::uv::Uv;
 
 /// Prints the currently installed packages.
 #[derive(Parser, Debug)]
@@ -27,7 +28,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
     let status = if Config::current().use_uv() {
-        Command::new(self_venv.join(VENV_BIN).join("uv"))
+        Uv::ensure_exists(CommandOutput::Normal)?
+            .cmd()
             .arg("pip")
             .arg("freeze")
             .env("VIRTUAL_ENV", project.venv_path().as_os_str())

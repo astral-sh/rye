@@ -13,7 +13,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{get_python_version_request_from_pyenv_pin, get_toolchain_python_bin};
 use crate::pyproject::{latest_available_python_version, PyProject};
-use crate::sources::PythonVersionRequest;
+use crate::sources::py::PythonVersionRequest;
 use crate::sync::{sync, SyncOptions};
 use crate::tui::redirect_to_stderr;
 use crate::utils::{exec_spawn, get_venv_python_bin, CommandOutput};

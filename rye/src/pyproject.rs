@@ -15,7 +15,7 @@ use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::{get_python_version_request_from_pyenv_pin, list_known_toolchains};
-use crate::sources::{get_download_url, matches_version, PythonVersion, PythonVersionRequest};
+use crate::sources::py::{get_download_url, matches_version, PythonVersion, PythonVersionRequest};
 use crate::sync::VenvMarker;
 use crate::utils::{
     escape_string, expand_env_vars, format_requirement, get_short_executable_name, is_executable,
