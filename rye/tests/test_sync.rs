@@ -1,6 +1,6 @@
 use std::fs;
 
-use insta::assert_snapshot;
+use insta::{assert_snapshot, Settings};
 
 use crate::common::{rye_cmd_snapshot, Space};
 
@@ -124,6 +124,11 @@ fn test_add_autosync() {
 
 #[test]
 fn test_autosync_remember() {
+    // remove the dependency source markers since they are instable between platforms
+    let mut settings = Settings::clone_current();
+    settings.add_filter(r"(?m)^\s+# via .*\r?\n", "");
+    let _guard = settings.bind_to_scope();
+
     let space = Space::new();
     space.init("my-project");
     rye_cmd_snapshot!(space.rye_cmd()
@@ -178,27 +183,19 @@ fn test_autosync_remember() {
     #   pre: false
     #   features: []
     #   all-features: true
-    #   with-sources: false
+    #   with-sources: true
+
+    --index-url https://pypi.org/simple/
 
     -e file:.
     blinker==1.7.0
-        # via flask
     click==8.1.7
-        # via flask
     colorama==0.4.6
-        # via click
-        # via my-project
     flask==3.0.0
-        # via my-project
     itsdangerous==2.1.2
-        # via flask
     jinja2==3.1.2
-        # via flask
     markupsafe==2.1.3
-        # via jinja2
-        # via werkzeug
     werkzeug==3.0.1
-        # via flask
     "###);
     rye_cmd_snapshot!(space.rye_cmd().arg("sync"), @r###"
     success: true
@@ -221,26 +218,18 @@ fn test_autosync_remember() {
     #   pre: false
     #   features: []
     #   all-features: true
-    #   with-sources: false
+    #   with-sources: true
+
+    --index-url https://pypi.org/simple/
 
     -e file:.
     blinker==1.7.0
-        # via flask
     click==8.1.7
-        # via flask
     colorama==0.4.6
-        # via click
-        # via my-project
     flask==3.0.0
-        # via my-project
     itsdangerous==2.1.2
-        # via flask
     jinja2==3.1.2
-        # via flask
     markupsafe==2.1.3
-        # via jinja2
-        # via werkzeug
     werkzeug==3.0.1
-        # via flask
     "###);
 }

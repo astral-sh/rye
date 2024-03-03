@@ -111,7 +111,9 @@ impl LockOptions {
                     "all-features" => {
                         rv.all_features = rv.all_features || serde_json::from_str(value)?
                     }
-                    "with-sources" => rv.with_sources = serde_json::from_str(value)?,
+                    "with-sources" => {
+                        rv.with_sources = rv.with_sources || serde_json::from_str(value)?
+                    }
                     _ => unreachable!(),
                 }
             }
