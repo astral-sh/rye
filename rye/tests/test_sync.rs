@@ -131,17 +131,12 @@ fn test_autosync_remember() {
 
     let space = Space::new();
     space.init("my-project");
-    rye_cmd_snapshot!(space.rye_cmd()
-        .arg("add").arg("--optional=web").arg("flask==3.0.0").arg("colorama"),
-        @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("sync").arg("--with-sources").arg("--all-features"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.2
-    Added flask>=3.0.0 as optional (web) dependency
-    Added colorama>=0.4.6 as optional (web) dependency
-    Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
@@ -152,10 +147,15 @@ fn test_autosync_remember() {
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("sync").arg("--with-sources").arg("--all-features"), @r###"
+
+    rye_cmd_snapshot!(space.rye_cmd()
+        .arg("add").arg("--optional=web").arg("flask==3.0.0").arg("colorama"),
+        @r###"
     success: true
     exit_code: 0
     ----- stdout -----
+    Added flask>=3.0.0 as optional (web) dependency
+    Added colorama>=0.4.6 as optional (web) dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
@@ -163,9 +163,11 @@ fn test_autosync_remember() {
     Done!
 
     ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
     Resolved 8 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
-    Installed 8 packages in [EXECUTION_TIME]
+    Uninstalled 1 package in [EXECUTION_TIME]
+    Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
      + click==8.1.7
      + colorama==0.4.6
@@ -173,6 +175,8 @@ fn test_autosync_remember() {
      + itsdangerous==2.1.2
      + jinja2==3.1.2
      + markupsafe==2.1.3
+     - my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
      + werkzeug==3.0.1
     "###);
     assert_snapshot!(std::fs::read_to_string(space.project_path().join("requirements.lock")).unwrap(), @r###"
