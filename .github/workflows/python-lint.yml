@@ -9,6 +9,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: eifinger/setup-rye@v1
+      - uses: eifinger/setup-rye@v2
       - name: Rye lint
         run: rye lint
