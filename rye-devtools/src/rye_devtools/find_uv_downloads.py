@@ -37,7 +37,7 @@ class UvDownloads:
 
     PLATFORM_ENV = {
         "unknown-linux-gnu": ("linux", "gnu"),
-        # "unknown-linux-musl": ("linux", "musl"),
+        "unknown-linux-musl": ("linux", "musl"),
         "apple-darwin": ("macos", None),
         "pc-windows-msvc": ("windows", None),
     }
@@ -101,8 +101,13 @@ def render(downloads: list[UvDownload]):
         version = download.version
         sha = download.sha256
         url = download.url
+        env = (
+            f'Some(Cow::Borrowed("{triple.environment}"))'
+            if triple.environment
+            else "None"
+        )
         print(
-            f'    UvDownload {{arch: Cow::Borrowed("{triple.arch}"), os: Cow::Borrowed("{triple.platform}"), major: {version.major}, minor: {version.minor}, patch: {version.patch}, suffix: None, url: Cow::Borrowed("{url}"), sha256: Cow::Borrowed("{sha}") }},'
+            f'    UvDownload {{arch: Cow::Borrowed("{triple.arch}"), os: Cow::Borrowed("{triple.platform}"), environment: {env}, major: {version.major}, minor: {version.minor}, patch: {version.patch}, suffix: None, url: Cow::Borrowed("{url}"), sha256: Cow::Borrowed("{sha}") }},'
         )
 
     print("];")

@@ -120,7 +120,9 @@ class CPythonFinder(Finder):
 
     async def fetch_indygreg_downloads(self, pages: int = 100) -> list[PythonDownload]:
         """Fetch all the indygreg downloads from the release API."""
-        results: dict[Version, dict[tuple[str, str, str | None], list[PythonDownload]]] = {}
+        results: dict[
+            Version, dict[tuple[str, str, str | None], list[PythonDownload]]
+        ] = {}
 
         for page in range(1, pages):
             log(f"Fetching indygreg release page {page}")
@@ -138,7 +140,12 @@ class CPythonFinder(Finder):
                             # For now, we only group by arch and platform, because Rust's PythonVersion doesn't have a notion
                             # of environment. Flavor will never be used to sort download choices and must not be included in grouping.
                             .setdefault(
-                                (download.triple.arch, download.triple.platform, download.triple.environment), []
+                                (
+                                    download.triple.arch,
+                                    download.triple.platform,
+                                    download.triple.environment,
+                                ),
+                                [],
                             )
                             .append(download)
                         )
