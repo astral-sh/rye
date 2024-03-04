@@ -16,6 +16,8 @@ _Unreleased_
 
 - Retain markers when adding dependencies with features when uv is used.  #807
 
+- Fixed a bug that caused repeated syncs not to recall all previous options.  #830
+
 <!-- released start -->
 
 ## 0.27.0
