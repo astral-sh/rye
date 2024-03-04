@@ -18,7 +18,7 @@ from urllib.parse import unquote
 import httpx
 from httpx import HTTPStatusError
 
-from .common import Version, fetch, PlatformTriple
+from .common import PlatformTriple, Version, fetch
 
 
 def log(*args, **kwargs):

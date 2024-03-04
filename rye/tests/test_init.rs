@@ -131,7 +131,7 @@ fn test_init_script() {
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
 
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("hello"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("my-project"), @r###"
         success: true
         exit_code: 0
         ----- stdout -----

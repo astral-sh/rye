@@ -29,7 +29,7 @@ classifiers = ["Private :: Do Not Upload"]
 {%- if is_script %}
 
 [project.scripts]
-hello = {{ name_safe ~ ":main"}}
+{{ name }} = {{ name_safe ~ ":main"}}
 {%- endif %}
 
 {%- if not is_virtual %}

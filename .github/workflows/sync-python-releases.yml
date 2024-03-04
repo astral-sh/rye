@@ -19,7 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Install Rye
-        uses: eifinger/setup-rye@v1
+        uses: eifinger/setup-rye@v2
         with:
           enable-cache: true
       - name: Sync Python Releases

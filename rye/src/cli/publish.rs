@@ -47,6 +47,9 @@ pub struct Args {
     /// Path to alternate CA bundle.
     #[arg(long)]
     cert: Option<PathBuf>,
+    /// Continue uploading files if one already exists (only applies to repositories supporting this feature)
+    #[arg(long)]
+    skip_existing: bool,
     /// Skip saving to credentials file.
     #[arg(long)]
     skip_save_credentials: bool,
@@ -185,6 +188,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
     if let Some(cert) = cmd.cert {
         publish_cmd.arg("--cert").arg(cert);
+    }
+    if cmd.skip_existing {
+        publish_cmd.arg("--skip-existing");
     }
 
     if output == CommandOutput::Quiet {

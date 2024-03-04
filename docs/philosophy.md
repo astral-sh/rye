@@ -17,7 +17,7 @@ on my mind when I built it:
   format and uses [`uv`](https://github.com/astral-sh/uv) and
   [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
 
-- **No Pip:** Rye uses pip, but it does not expose it. It manage dependencies in
+- **No Pip:** Rye uses pip, but it does not expose it. It manages dependencies in
   `pyproject.toml` only.
 
 - **No System Python:** I can't deal with any more linux distribution weird Python
