@@ -7,10 +7,18 @@ that were not yet released.
 
 _Unreleased_
 
+- `--skip-existing` is now available with Rye's `publish` command. #831
+
+- Bumped `uv` to 0.1.13.  #760, #820
+
+- Bumped `ruff` to 0.3.0.  #821
+
 - The `init` command now generates a script with the name of the
   project rather than `hello`.  #801
 
 - Retain markers when adding dependencies with features when uv is used.  #807
+
+- Fixed a bug that caused repeated syncs not to recall all previous options.  #830
 
 <!-- released start -->
 
