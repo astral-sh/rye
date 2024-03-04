@@ -234,6 +234,7 @@ pub fn get_latest_cpython_version() -> Result<PythonVersion, Error> {
         name: None,
         arch: None,
         os: None,
+        environment: None,
         major: 3,
         minor: None,
         patch: None,

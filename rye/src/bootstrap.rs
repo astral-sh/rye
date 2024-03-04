@@ -25,6 +25,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     name: Some(Cow::Borrowed("cpython")),
     arch: None,
     os: None,
+    environment: None,
     major: 3,
     minor: Some(12),
     patch: None,
