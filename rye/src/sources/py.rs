@@ -309,7 +309,10 @@ impl fmt::Display for PythonVersionRequest {
 
 fn default_environment(os: &str) -> Option<&str> {
     match os {
+        #[cfg(target_env = "gnu")]
         "linux" => Some("gnu"),
+        #[cfg(target_env = "musl")]
+        "linux" => Some("musl"),
         _ => None,
     }
 }
@@ -468,7 +471,13 @@ fn test_version_match() {
             name: "cpython".into(),
             arch: "x86_64".into(),
             os: "linux".into(),
-            environment: Some("gnu".into()),
+            environment: if cfg!(target_env = "gnu") {
+                Some("gnu".into())
+            } else if cfg!(target_env = "musl") {
+                Some("musl".into())
+            } else {
+                None
+            },
             major: 3,
             minor: 12,
             patch: 1,
