@@ -60,6 +60,7 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
                 name: None,
                 arch: None,
                 os: None,
+                environment: None,
                 major: 3,
                 minor: None,
                 patch: None,
