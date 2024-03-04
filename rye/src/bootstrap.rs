@@ -145,7 +145,7 @@ pub fn ensure_self_venv_with_toolchain(
     let py_bin = get_toolchain_python_bin(&version)?;
 
     // linux specific detection of shared libraries.
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", not(targetenv = "musl")))]
     {
         validate_shared_libraries(&py_bin)?;
     }
