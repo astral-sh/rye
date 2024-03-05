@@ -25,6 +25,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     name: Some(Cow::Borrowed("cpython")),
     arch: None,
     os: None,
+    environment: None,
     major: 3,
     minor: Some(12),
     patch: None,
@@ -115,7 +116,7 @@ pub fn ensure_self_venv_with_toolchain(
     let py_bin = get_toolchain_python_bin(&version)?;
 
     // linux specific detection of shared libraries.
-    #[cfg(target_os = "linux")]
+    #[cfg(all(target_os = "linux", not(targetenv = "musl")))]
     {
         validate_shared_libraries(&py_bin)?;
     }

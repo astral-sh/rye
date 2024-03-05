@@ -17,7 +17,7 @@ clap = { version = "4.3.5", default-features = false, features = [
 ] }
 clap_complete = "4.2.1"
 console = "0.15.7"
-curl = { version = "0.4.44", features = ["ssl", "static-curl", "static-ssl"] }
+curl = { version = "0.4.44", features = ["ssl", "static-curl"] }
 decompress = { version = "0.6.0", default-features = false, features = [
     "tarzst",
     "targz",
@@ -75,3 +75,7 @@ static_vcruntime = "2.0.0"
 fslock = "0.2.1"
 insta = { version = "1.35.1", features = ["filters"] }
 insta-cmd = "0.5.0"
+
+[features]
+default = ["curl/static-ssl"]
+system-ssl = []

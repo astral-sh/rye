@@ -234,6 +234,7 @@ pub fn get_latest_cpython_version() -> Result<PythonVersion, Error> {
         name: None,
         arch: None,
         os: None,
+        environment: None,
         major: 3,
         minor: None,
         patch: None,
@@ -272,4 +273,14 @@ pub fn write_credentials(doc: &toml_edit::Document) -> Result<(), Error> {
 
 pub fn get_credentials_filepath() -> Result<PathBuf, Error> {
     Ok(get_app_dir().join("credentials"))
+}
+
+pub fn default_environment() -> Option<&'static str> {
+    if cfg!(all(target_os = "linux", target_env = "gnu")) {
+        Some("gnu")
+    } else if cfg!(all(target_os = "linux", target_env = "musl")) {
+        Some("musl")
+    } else {
+        None
+    }
 }

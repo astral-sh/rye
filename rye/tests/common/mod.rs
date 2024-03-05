@@ -191,6 +191,22 @@ impl Space {
     }
 
     #[allow(unused)]
+    pub fn init_script(&self, name: &str) {
+        let status = self
+            .cmd(get_bin())
+            .arg("init")
+            .arg("--name")
+            .arg(name)
+            .arg("-q")
+            .arg("--script")
+            .current_dir(self.project_path())
+            .status()
+            .unwrap();
+
+        assert!(status.success());
+    }
+
+    #[allow(unused)]
     pub fn init(&self, name: &str) {
         let status = self
             .cmd(get_bin())
@@ -201,9 +217,9 @@ impl Space {
             .current_dir(self.project_path())
             .status()
             .unwrap();
+
         assert!(status.success());
     }
-
     pub fn rye_home(&self) -> &Path {
         &self.rye_home
     }
