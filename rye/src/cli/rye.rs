@@ -18,7 +18,7 @@ use crate::bootstrap::{
     download_url, download_url_ignore_404, ensure_self_venv_with_toolchain,
     is_self_compatible_toolchain, update_core_shims, SELF_PYTHON_TARGET_VERSION,
 };
-use crate::cli::toolchain::register_toolchain;
+use crate::cli::toolchain::ToolchainBuilder;
 use crate::config::Config;
 use crate::platform::{get_app_dir, symlinks_supported};
 use crate::sources::py::{get_download_url, PythonVersionRequest};
@@ -572,7 +572,10 @@ fn perform_install(
             "Registering toolchain at {}",
             style(toolchain_path.display()).cyan()
         );
-        let version = register_toolchain(&toolchain_path, None, |ver| {
+
+        let mut toolchain_builder = ToolchainBuilder::new(&toolchain_path, None);
+        toolchain_builder.find()?;
+        toolchain_builder.validate(|ver| {
             if ver.name != "cpython" {
                 bail!("Only cpython toolchains are allowed, got '{}'", ver.name);
             } else if !is_self_compatible_toolchain(ver) {
@@ -583,8 +586,11 @@ fn perform_install(
             }
             Ok(())
         })?;
-        echo!("Registered toolchain as {}", style(&version).cyan());
-        registered_toolchain = Some(version.into());
+        let toolchain = toolchain_builder.register()?;
+
+        echo!("Registered toolchain as {}", style(&toolchain).cyan());
+
+        registered_toolchain = Some(toolchain.into());
     }
 
     // Ensure internals next

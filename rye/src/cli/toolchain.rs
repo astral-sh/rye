@@ -104,8 +104,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 }
 
 fn register(cmd: RegisterCommand) -> Result<(), Error> {
-    let target_version = register_toolchain(&cmd.path, cmd.name.as_deref(), |_| Ok(()))?;
-    echo!("Registered {} as {}", cmd.path.display(), target_version);
+    let mut toolchain_builder = ToolchainBuilder::new(&cmd.path, cmd.name.as_deref());
+    toolchain_builder.find()?;
+    toolchain_builder.validate(|_| Ok(()))?;
+    let toolchain = toolchain_builder.register()?;
+    echo!("Registered {} as {}", cmd.path.display(), toolchain);
     Ok(())
 }
 
@@ -222,73 +225,161 @@ fn list(cmd: ListCommand) -> Result<(), Error> {
     Ok(())
 }
 
-pub fn register_toolchain<F>(
-    path: &Path,
-    name: Option<&str>,
-    validate: F,
-) -> Result<PythonVersion, Error>
-where
-    F: FnOnce(&PythonVersion) -> Result<(), Error>,
-{
-    let output = Command::new(path)
-        .arg("-c")
-        .arg(INSPECT_SCRIPT)
-        .output()
-        .context("error executing interpreter to inspect version")?;
-    if !output.status.success() {
-        bail!("passed path does not appear to be a valid Python installation");
-    }
+/// Find, validate, and register a custom Python toolchain
+#[derive(Debug)]
+pub struct ToolchainBuilder {
+    path: PathBuf,
+    name: Option<String>,
+    requested_target_version: Option<PythonVersion>,
+    validated_target_version: Option<PythonVersion>,
+}
 
-    let info: InspectInfo = serde_json::from_slice(&output.stdout)
-        .context("could not parse interpreter output as json")?;
-    let target_version = match name {
-        Some(ref name) => format!("{}@{}", name, info.python_version),
-        None => {
-            format!(
-                "{}{}@{}",
-                info.python_implementation.to_ascii_lowercase(),
-                if info.python_debug { "-dbg" } else { "" },
-                info.python_version
-            )
-        }
-    };
-    let target_version: PythonVersion = target_version.parse()?;
-    validate(&target_version)
-        .with_context(|| anyhow!("{} is not a valid toolchain", &target_version))?;
-
-    let target = get_canonical_py_path(&target_version)?;
-
-    if target.is_file() || target.is_dir() {
-        bail!("target Python path {} is already in use", target.display());
-    }
-
-    // for the unlikely case that no python installation has been bootstrapped yet
-    if let Some(parent) = target.parent() {
-        fs::create_dir_all(parent).ok();
-    }
-
-    // on unix we always create a symlink
-    #[cfg(unix)]
-    {
-        symlink_file(path, target).context("could not symlink interpreter")?;
-    }
-
-    // on windows on the other hand we try a symlink first, but if that fails we fall back
-    // to writing the interpreter into the text file.  This is also supported by the
-    // interpreter lookup (see: get_toolchain_python_bin).  This is done because symlinks
-    // require higher privileges.
-    #[cfg(windows)]
-    {
-        if symlink_file(path, &target).is_err() {
-            fs::write(
-                &target,
-                path.as_os_str()
-                    .to_str()
-                    .ok_or_else(|| anyhow::anyhow!("non unicode path to interpreter"))?,
-            )
-            .path_context(&target, "could not register interpreter")?;
+impl ToolchainBuilder {
+    pub fn new(path: &Path, name: Option<&str>) -> Self {
+        ToolchainBuilder {
+            path: path.to_owned(),
+            name: name.map(String::from),
+            requested_target_version: None,
+            validated_target_version: None,
         }
     }
 
-    Ok(target_version)
+    pub fn find(&mut self) -> anyhow::Result<&Self, Error> {
+        let output = Command::new(&self.path)
+            .arg("-c")
+            .arg(INSPECT_SCRIPT)
+            .output()
+            .context("error executing interpreter to inspect version")?;
+
+        if !output.status.success() {
+            bail!("passed path does not appear to be a valid Python installation");
+        }
+
+        let info: InspectInfo = serde_json::from_slice(&output.stdout)
+            .context("could not parse interpreter output as json")?;
+
+        let target_version = self
+            .parse_target_version(info)
+            .context("could not parse target version")?;
+
+        self.requested_target_version = Some(target_version);
+
+        Ok(self)
+    }
+
+    fn parse_target_version(&self, info: InspectInfo) -> anyhow::Result<PythonVersion, Error> {
+        let target_version_str = match &self.name {
+            Some(ref name) => format!("{}@{}", name, info.python_version),
+            None => {
+                format!(
+                    "{}{}@{}",
+                    info.python_implementation.to_ascii_lowercase(),
+                    if info.python_debug { "-dbg" } else { "" },
+                    info.python_version
+                )
+            }
+        };
+
+        let target_version: PythonVersion = target_version_str.parse()?;
+
+        Ok(target_version)
+    }
+
+    pub fn validate<F>(&mut self, validate: F) -> anyhow::Result<&Self, Error>
+    where
+        F: FnOnce(&PythonVersion) -> Result<(), Error>,
+    {
+        let requested_target_version = self
+            .requested_target_version
+            .as_ref()
+            .ok_or_else(|| anyhow!("toolchain has not been inquired yet"))?;
+
+        validate(requested_target_version)
+            .with_context(|| format!("{} is not a valid toolchain", requested_target_version))?;
+
+        self.validated_target_version = Some(requested_target_version.clone());
+
+        Ok(self)
+    }
+
+    pub fn register(&self) -> anyhow::Result<PythonVersion, Error> {
+        let validated_target_version = self
+            .validated_target_version
+            .as_ref()
+            .ok_or_else(|| anyhow!("toolchain has not been validated yet"))?;
+
+        let canonical_target_path = get_canonical_py_path(validated_target_version)?;
+
+        // Prepare the canonical target path
+        self.prepare_target_path(&canonical_target_path)?;
+
+        #[cfg(unix)]
+        self.symlink_or_fallback::<Unix>(&self.path, &canonical_target_path)?;
+
+        #[cfg(windows)]
+        self.symlink_or_fallback::<Windows>(&self.path, &canonical_target_path)?;
+
+        Ok(validated_target_version.to_owned())
+    }
+
+    fn prepare_target_path(&self, target: &Path) -> anyhow::Result<()> {
+        // Check if the target path exists to avoid overwriting
+        if target.is_file() || target.is_dir() {
+            bail!("Target Python path {} is already in use", target.display());
+        }
+
+        // Ensure the parent directory exists
+        if let Some(parent) = target.parent() {
+            fs::create_dir_all(parent)
+                .with_context(|| format!("Could not create directory {}", parent.display()))?;
+        }
+
+        Ok(())
+    }
+
+    fn symlink_or_fallback<S: SymlinkOrFallback>(
+        &self,
+        src: &Path,
+        dst: &Path,
+    ) -> anyhow::Result<()> {
+        S::symlink_or_fallback(src, dst)
+    }
+}
+
+trait SymlinkOrFallback {
+    fn symlink_or_fallback(src: &Path, dst: &Path) -> anyhow::Result<()>;
+}
+
+#[cfg(unix)]
+struct Unix;
+
+#[cfg(unix)]
+impl SymlinkOrFallback for Unix {
+    /// On Unix-like systems, creating symlinks does not require elevated privileges and is a common operation.
+    /// This function attempts to create a symlink and does not need a fallback mechanism,
+    /// as the permission model typically allows all users to create symlinks.
+    fn symlink_or_fallback(src: &Path, dst: &Path) -> anyhow::Result<()> {
+        symlink_file(src, dst).context("could not symlink interpreter")
+    }
+}
+
+#[cfg(windows)]
+struct Windows;
+
+#[cfg(windows)]
+impl SymlinkOrFallback for Windows {
+    /// On Windows, creating symlinks requires elevated privileges not commonly granted to all users.
+    /// If symlink creation fails, this function falls back to writing the source path to the destination file.
+    /// This ensures functionality across various permission levels, maintaining cross-platform compatibility.
+    fn symlink_or_fallback(src: &Path, dst: &Path) -> anyhow::Result<()> {
+        symlink_file(src, dst).or_else(|_| {
+            let src_str = src
+                .as_os_str()
+                .to_str()
+                .ok_or_else(|| anyhow!("non-unicode path to interpreter"))?;
+            fs::write(dst, src_str).context("could not register interpreter")
+        })?;
+
+        Ok(())
+    }
 }
