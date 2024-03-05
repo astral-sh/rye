@@ -61,3 +61,7 @@ rye publish --token <your_token> --yes
 ```
 
 Rye will store your repository info in `$HOME/.rye/credentials` for future use.
+
+### --skip-existing
+
+You can use `--skip-existing` to skip any distribution files that have already been published to the repository. Note that some repositories may not support this feature.
