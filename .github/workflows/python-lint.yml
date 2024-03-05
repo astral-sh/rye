@@ -1,6 +1,10 @@
 name: Python lint
 
-on: [push, pull_request]
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+  pull_request:
 
 jobs:
   lint:
@@ -9,6 +13,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: eifinger/setup-rye@v1
+      - uses: eifinger/setup-rye@v2
       - name: Rye lint
         run: rye lint
