@@ -24,6 +24,8 @@ _Unreleased_
 
 - Fixes a bug where `rye config` would not create the `RYE_HOME` folder if needed.  #844
 
+- `rye add` now retains version and URL for the requirements when `uv` is used.  #846
+
 <!-- released start -->
 
 ## 0.27.0
