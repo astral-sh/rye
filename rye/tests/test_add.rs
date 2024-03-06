@@ -11,7 +11,7 @@ fn test_add_flask() {
     let space = Space::new();
     space.init("my-project");
     // add colorama to ensure we have this as a dependency on all platforms
-    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("flask==3.0.0").arg("colorama"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("flask").arg("colorama"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -138,7 +138,7 @@ fn test_add_flask_wrong_venv_exported() {
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.2
-    Added flask>=3.0.0 as regular dependency
+    Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
@@ -162,4 +162,55 @@ fn test_add_flask_wrong_venv_exported() {
      + werkzeug==3.0.1
     "###);
     fs::remove_dir_all(&fake_venv).unwrap();
+}
+
+#[test]
+fn test_add_explicit_version_or_url() {
+    let space = Space::new();
+    space.init("my-project");
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("werkZeug==3.0.0"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.2
+    Added werkzeug==3.0.0 as regular dependency
+    Reusing already existing virtualenv
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
+
+    ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
+    Resolved 2 packages in [EXECUTION_TIME]
+    Downloaded 2 packages in [EXECUTION_TIME]
+    Installed 3 packages in [EXECUTION_TIME]
+     + markupsafe==2.1.3
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     + werkzeug==3.0.0
+    "###);
+
+    let pip_url = "https://github.com/pypa/pip/archive/1.3.1.zip#sha1=da9234ee9982d4bbb3c72346a6de940a148ea686";
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("pip").arg("--url").arg(pip_url), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Added pip @ https://github.com/pypa/pip/archive/1.3.1.zip#sha1=da9234ee9982d4bbb3c72346a6de940a148ea686 as regular dependency
+    Reusing already existing virtualenv
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
+
+    ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
+    Resolved 1 package in [EXECUTION_TIME]
+    Downloaded 1 package in [EXECUTION_TIME]
+    Uninstalled 1 package in [EXECUTION_TIME]
+    Installed 2 packages in [EXECUTION_TIME]
+     - my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     + pip==1.3.1 (from https://github.com/pypa/pip/archive/1.3.1.zip#sha1=da9234ee9982d4bbb3c72346a6de940a148ea686)
+    "###);
 }

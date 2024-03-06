@@ -485,6 +485,14 @@ fn resolve_requirements_with_uv(
         }
 
         let mut new_req: Requirement = String::from_utf8_lossy(&rv.stdout).parse()?;
+
+        // if a version or URL is already provided we just use the normalized package name but
+        // retain all old information.
+        if req.version_or_url.is_some() {
+            req.name = new_req.name;
+            continue;
+        }
+
         if let Some(ref mut version_or_url) = new_req.version_or_url {
             if let VersionOrUrl::VersionSpecifier(ref mut specs) = version_or_url {
                 *version_or_url = VersionOrUrl::VersionSpecifier(VersionSpecifiers::from_iter({
