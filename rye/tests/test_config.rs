@@ -1,3 +1,7 @@
+use std::fs;
+
+use insta::assert_snapshot;
+
 use crate::common::{rye_cmd_snapshot, Space};
 
 mod common;
@@ -107,5 +111,26 @@ fn test_config_show_path_and_any_action() {
 
     ----- stderr -----
     error: an argument cannot be used with one or more of the other specified arguments
+    "###);
+}
+
+#[test]
+fn test_config_save_missing_folder() {
+    let space = Space::new();
+    let fake_home = space.project_path().join("missing-thing");
+    rye_cmd_snapshot!(space.rye_cmd()
+        .arg("config")
+        .arg("--set")
+        .arg("default.toolchain=cpython@3.12")
+        .env("RYE_HOME", fake_home.as_os_str()), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+
+    ----- stderr -----
+    "###);
+    assert_snapshot!(fs::read_to_string(fake_home.join("config.toml")).unwrap(), @r###"
+    [default]
+    toolchain = "cpython@3.12"
     "###);
 }
