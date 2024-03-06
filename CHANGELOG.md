@@ -20,6 +20,8 @@ _Unreleased_
 
 - Fixed a bug that caused repeated syncs not to recall all previous options.  #830
 
+- Report `self-python` version in `--version`.  #843
+
 <!-- released start -->
 
 ## 0.27.0
