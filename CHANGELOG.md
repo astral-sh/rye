@@ -9,7 +9,7 @@ _Unreleased_
 
 - `--skip-existing` is now available with Rye's `publish` command. #831
 
-- Bumped `uv` to 0.1.13.  #760, #820
+- Bumped `uv` to 0.1.15.  #760, #820, #837
 
 - Bumped `ruff` to 0.3.0.  #821
 
