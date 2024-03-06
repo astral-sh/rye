@@ -168,7 +168,7 @@ fn test_add_flask_wrong_venv_exported() {
 fn test_add_explicit_version_or_url() {
     let space = Space::new();
     space.init("my-project");
-    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("werkzeug==3.0.0"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("werkZeug==3.0.0"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
