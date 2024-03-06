@@ -64,6 +64,28 @@ fn is_up_to_date() -> bool {
     *UP_TO_UPDATE || FORCED_TO_UPDATE.load(atomic::Ordering::Relaxed)
 }
 
+#[derive(Debug, Clone)]
+pub(crate) enum SelfVenvStatus {
+    NotUpToDate,
+    DoesNotExist,
+}
+
+/// Get self venv path and check if it exists and is up to date
+pub fn get_self_venv_status() -> Result<PathBuf, (PathBuf, SelfVenvStatus)> {
+    let app_dir = get_app_dir();
+    let venv_dir = app_dir.join("self");
+
+    if venv_dir.is_dir() {
+        if is_up_to_date() {
+            Ok(venv_dir)
+        } else {
+            Err((venv_dir, SelfVenvStatus::NotUpToDate))
+        }
+    } else {
+        Err((venv_dir, SelfVenvStatus::DoesNotExist))
+    }
+}
+
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     ensure_self_venv_with_toolchain(output, None)
@@ -75,19 +97,20 @@ pub fn ensure_self_venv_with_toolchain(
     toolchain_version_request: Option<PythonVersionRequest>,
 ) -> Result<PathBuf, Error> {
     let app_dir = get_app_dir();
-    let venv_dir = app_dir.join("self");
 
-    if venv_dir.is_dir() {
-        if is_up_to_date() {
-            return Ok(venv_dir);
-        } else {
+    let venv_dir = match get_self_venv_status() {
+        Ok(venv_dir) => return Ok(venv_dir),
+        Err((venv_dir, SelfVenvStatus::DoesNotExist)) => venv_dir,
+        Err((venv_dir, SelfVenvStatus::NotUpToDate)) => {
             if output != CommandOutput::Quiet {
                 echo!("Detected outdated rye internals. Refreshing");
             }
             fs::remove_dir_all(&venv_dir)
                 .path_context(&venv_dir, "could not remove self-venv for update")?;
+
+            venv_dir
         }
-    }
+    };
 
     if output != CommandOutput::Quiet {
         echo!("Bootstrapping rye internals");
