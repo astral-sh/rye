@@ -1,4 +1,6 @@
-use crate::common::Space;
+use insta::Settings;
+
+use crate::common::{rye_cmd_snapshot, Space};
 mod common;
 
 // This test is self-destructive, making other tests slow, ignore it by default.
@@ -41,4 +43,30 @@ fn test_self_uninstall() {
         })
         .collect();
     assert!(leftovers.is_empty(), "leftovers: {:?}", leftovers);
+}
+
+#[test]
+fn test_version() {
+    let space = Space::new();
+    let _guard = space.lock_rye_home();
+
+    let mut settings = Settings::clone_current();
+    settings.add_filter(r"(?m)^(rye )\d+\.\d+\.\d+?$", "$1[VERSION]");
+    settings.add_filter(r"(?m)^(commit: ).*?$", "$1[COMMIT]");
+    settings.add_filter(r"(?m)^(platform: ).*?$", "$1[PLATFORM]");
+    let _guard = settings.bind_to_scope();
+
+    rye_cmd_snapshot!(space.rye_cmd().arg("--version"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    rye [VERSION]
+    commit: [COMMIT]
+    platform: [PLATFORM]
+    self-python: cpython@3.12.2
+    symlink support: true
+    uv enabled: true
+
+    ----- stderr -----
+    "###);
 }

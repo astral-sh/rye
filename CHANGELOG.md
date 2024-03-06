@@ -9,7 +9,7 @@ _Unreleased_
 
 - `--skip-existing` is now available with Rye's `publish` command. #831
 
-- Bumped `uv` to 0.1.13.  #760, #820
+- Bumped `uv` to 0.1.15.  #760, #820, #837
 
 - Bumped `ruff` to 0.3.0.  #821
 
@@ -19,6 +19,12 @@ _Unreleased_
 - Retain markers when adding dependencies with features when uv is used.  #807
 
 - Fixed a bug that caused repeated syncs not to recall all previous options.  #830
+
+- Report `self-python` version in `--version`.  #843
+
+- Fixes a bug where `rye config` would not create the `RYE_HOME` folder if needed.  #844
+
+- `rye add` now retains version and URL for the requirements when `uv` is used.  #846
 
 <!-- released start -->
 

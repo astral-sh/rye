@@ -42,7 +42,7 @@ pub struct Args {
     /// Path to alternate CA bundle.
     #[arg(long)]
     cert: Option<PathBuf>,
-    /// Continue uploading files if one already exists (only applies to repositories supporting this feature)
+    /// Skip files that have already been published (only applies to repositories supporting this feature)
     #[arg(long)]
     skip_existing: bool,
     /// Skip prompts.

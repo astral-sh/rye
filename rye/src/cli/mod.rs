@@ -30,9 +30,10 @@ mod version;
 
 use git_testament::git_testament;
 
-use crate::bootstrap::SELF_PYTHON_TARGET_VERSION;
+use crate::bootstrap::{get_self_venv_status, SELF_PYTHON_TARGET_VERSION};
 use crate::config::Config;
 use crate::platform::symlinks_supported;
+use crate::pyproject::read_venv_marker;
 
 git_testament!(TESTAMENT);
 
@@ -154,7 +155,19 @@ fn print_version() -> Result<(), Error> {
         std::env::consts::OS,
         std::env::consts::ARCH
     );
-    echo!("self-python: {}", SELF_PYTHON_TARGET_VERSION);
+
+    let self_venv_python = match get_self_venv_status() {
+        Ok(venv_dir) | Err((venv_dir, _)) => read_venv_marker(&venv_dir).map(|mark| mark.python),
+    };
+
+    if let Some(python) = self_venv_python {
+        echo!("self-python: {}", python);
+    } else {
+        echo!(
+            "self-python: not bootstrapped (target: {})",
+            SELF_PYTHON_TARGET_VERSION
+        );
+    }
     echo!("symlink support: {}", symlinks_supported());
     echo!("uv enabled: {}", Config::current().use_uv());
     Ok(())
