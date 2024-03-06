@@ -22,6 +22,8 @@ _Unreleased_
 
 - Report `self-python` version in `--version`.  #843
 
+- Fixes a bug where `rye config` would not create the `RYE_HOME` folder if needed.  #844
+
 <!-- released start -->
 
 ## 0.27.0
