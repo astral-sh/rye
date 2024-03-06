@@ -55,6 +55,10 @@ impl Config {
 
     /// Saves changes back.
     pub fn save(&self) -> Result<(), Error> {
+        // try to make the parent folder if it does not exist.  ignore the error though.
+        if let Some(parent) = self.path.parent() {
+            fs::create_dir_all(parent).ok();
+        }
         fs::write(&self.path, self.doc.to_string())
             .path_context(&self.path, "failed to save config")?;
         Ok(())
