@@ -1,6 +1,6 @@
 # `test`
 
-+++ X.X.X
++++ 0.28.0
 
 Run the test suites of the project. At the moment this always runs `pytest`.
 Note that `pytest` must be installed into the virtual env unlike `ruff`
