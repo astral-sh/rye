@@ -1,5 +1,6 @@
 use std::fs;
 
+use insta::Settings;
 use toml_edit::{value, Array};
 
 use crate::common::{rye_cmd_snapshot, Space};
@@ -23,11 +24,18 @@ const PYTEST_COLS: &str = "79";
 
 #[test]
 fn test_basic_tool_behavior() {
+    // fixes issues for rendering between platforms
+    let mut settings = Settings::clone_current();
+    settings.add_filter(r"(?m)^(platform )(.*?)( --)", "$1[PLATFORM]$2");
+    settings.add_filter(r"(?m)\s+(\[\d+%\])\s*?$", " $1");
+    let _guard = settings.bind_to_scope();
+
     let space = Space::new();
     space.init("foo");
     space.edit_toml("pyproject.toml", |doc| {
         let mut deps = Array::new();
         deps.push("pytest>=7.0.0");
+        deps.push("colorama==0.4.6");
         let mut workspace_members = Array::new();
         workspace_members.push(".");
         workspace_members.push("child-dep");
@@ -63,11 +71,11 @@ fn test_basic_tool_behavior() {
     Done!
     Running tests for foo ([TEMP_PATH]/project)
     ============================= test session starts =============================
-    platform win32 -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM]win32 Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 
-    tests/test_foo.py .F                                                     [100%]
+    tests/test_foo.py .F [100%]
 
     ================================== FAILURES ===================================
     __________________________________ test_fail __________________________________
@@ -101,11 +109,11 @@ fn test_basic_tool_behavior() {
     ----- stdout -----
     Running tests for child-dep ([TEMP_PATH]/project/child-dep)
     ============================= test session starts =============================
-    platform win32 -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM]win32 Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project/child-dep
     collected 2 items
 
-    tests/test_child.py .F                                                   [100%]
+    tests/test_child.py .F [100%]
 
     ================================== FAILURES ===================================
     __________________________________ test_fail __________________________________
@@ -121,11 +129,11 @@ fn test_basic_tool_behavior() {
 
     Running tests for foo ([TEMP_PATH]/project)
     ============================= test session starts =============================
-    platform win32 -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM]win32 Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 
-    tests/test_foo.py .F                                                     [100%]
+    tests/test_foo.py .F [100%]
 
     ================================== FAILURES ===================================
     __________________________________ test_fail __________________________________
