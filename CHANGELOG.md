@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.28.0
 
-_Unreleased_
+Released on 2024-03-07
 
 - `--skip-existing` is now available with Rye's `publish` command. #831
 
@@ -27,8 +29,6 @@ _Unreleased_
 - `rye add` now retains version and URL for the requirements when `uv` is used.  #846
 
 - Added a `rye test` command which invokes `pytest`.  #847
-
-<!-- released start -->
 
 ## 0.27.0
 
