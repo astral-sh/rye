@@ -3,6 +3,16 @@
 +++ X.X.X
 
 Run the test suites of the project. At the moment this always runs `pytest`.
+Note that `pytest` must be installed into the virtual env unlike `ruff`
+which is used behind the scenes automatically for linting and formatting.
+Thus in order to use this, you need to declare `pytest` as dev dependency.
+
+```
+$ rye add --dev pytest
+```
+
+It's recommended to place tests in a folder called `tests` adjacent to the
+`src` folder of your project.
 
 For more information about how to use pytest, have a look at the
 [Pytest Documentation](https://docs.pytest.org/en/8.0.x/).
