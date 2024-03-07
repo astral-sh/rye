@@ -26,7 +26,7 @@ const PYTEST_COLS: &str = "79";
 fn test_basic_tool_behavior() {
     // fixes issues for rendering between platforms
     let mut settings = Settings::clone_current();
-    settings.add_filter(r"(?m)^(platform )(.*?)( --)", "$1[PLATFORM]$2");
+    settings.add_filter(r"(?m)^(platform )(.*?)( --)", "$1[PLATFORM]$3");
     settings.add_filter(r"(?m)\s+(\[\d+%\])\s*?$", " $1");
     let _guard = settings.bind_to_scope();
 
@@ -71,7 +71,7 @@ fn test_basic_tool_behavior() {
     Done!
     Running tests for foo ([TEMP_PATH]/project)
     ============================= test session starts =============================
-    platform [PLATFORM]win32 Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM] -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 
@@ -109,7 +109,7 @@ fn test_basic_tool_behavior() {
     ----- stdout -----
     Running tests for child-dep ([TEMP_PATH]/project/child-dep)
     ============================= test session starts =============================
-    platform [PLATFORM]win32 Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM] -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project/child-dep
     collected 2 items
 
@@ -129,7 +129,7 @@ fn test_basic_tool_behavior() {
 
     Running tests for foo ([TEMP_PATH]/project)
     ============================= test session starts =============================
-    platform [PLATFORM]win32 Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM] -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 
