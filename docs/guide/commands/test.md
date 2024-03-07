@@ -14,11 +14,11 @@ Run the test suite:
 ```
 $ rye test
 platform win32 -- Python 3.11.1, pytest-8.0.2, pluggy-1.4.0
-rootdir: C:\Users\User\rye
+rootdir: /Users/john/Development/stuff
 plugins: anyio-4.3.0
 collected 1 item
 
-rye-devtools\tests\test_batch.py .                                            [100%] 
+stuff/tests/test_batch.py .                                            [100%] 
 ```
 
 ## Arguments
@@ -43,6 +43,6 @@ rye-devtools\tests\test_batch.py .                                            [1
 
 * `-i, --ignore`: Ignore the specified directory
 
-* `--no-capture`: Disable stdout/stderr capture for the test runner
+* `-s`, `--no-capture`: Disable stdout/stderr capture for the test runner
 
 * `-h, --help`: Print help (see a summary with '-h')
