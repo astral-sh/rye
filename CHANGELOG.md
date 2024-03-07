@@ -26,6 +26,8 @@ _Unreleased_
 
 - `rye add` now retains version and URL for the requirements when `uv` is used.  #846
 
+- Added a `rye test` command which invokes `pytest`.  #847
+
 <!-- released start -->
 
 ## 0.27.0

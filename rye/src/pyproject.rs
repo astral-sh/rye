@@ -1412,5 +1412,8 @@ pub fn locate_projects(
             }
         }
     }
+
+    projects.sort_by(|a, b| a.name().cmp(&b.name()));
+
     Ok(projects)
 }
