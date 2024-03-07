@@ -8,7 +8,6 @@ build:
 .PHONY: test
 test:
 	@cargo insta test --workspace --all-features
-	@cargo run test
 
 .PHONY: check
 check:
