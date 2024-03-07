@@ -110,7 +110,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         pytest_cmd.args(&cmd.extra_args);
         pytest_cmd
             .arg("--rootdir")
-            .arg(project.root_path().as_os_str());
+            .arg(project.root_path().as_os_str())
+            .current_dir(project.root_path());
 
         // always ignore projects that are nested but not selected.
         for path in &project_roots {
