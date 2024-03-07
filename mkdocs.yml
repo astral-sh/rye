@@ -39,6 +39,7 @@ nav:
       - run: guide/commands/run.md
       - show: guide/commands/show.md
       - sync: guide/commands/sync.md
+      - test: guide/commands/test.md
       - toolchain:
         - Overview: guide/commands/toolchain/index.md
         - fetch: guide/commands/toolchain/fetch.md

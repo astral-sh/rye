@@ -18,6 +18,7 @@ This is a list of all the commands that rye provides:
 * [run](run.md): Runs a command installed into this package
 * [show](show.md): Prints the current state of the project
 * [sync](sync.md): Updates the virtualenv based on the pyproject.toml
+* [test](test.md): Runs the project's tests
 * [toolchain](toolchain/index.md): Helper utility to manage Python toolchains
 * [tools](tools/index.md): Helper utility to manage global tools.
 * [self](self/index.md): Rye self management
