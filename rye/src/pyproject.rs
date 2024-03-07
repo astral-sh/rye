@@ -955,16 +955,6 @@ impl PyProject {
             .map(DependencyRef::new)
     }
 
-    pub fn search_dependency_by_name(
-        &self,
-        name: &str,
-        kind: DependencyKind,
-    ) -> Option<Requirement> {
-        self.iter_dependencies(kind)
-            .flat_map(|dep| dep.expand(|s| Some(s.into())))
-            .find(|dep| dep.name == name)
-    }
-
     /// Returns a list of sources that should be considered.
     pub fn sources(&self) -> Result<Vec<SourceRef>, Error> {
         match self.workspace {
