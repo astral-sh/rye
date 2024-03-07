@@ -17,9 +17,9 @@ def test_fail():
 // pytest for weird reasons has different formatting behavior on
 // different platforms -.-
 #[cfg(windows)]
-const PYTEST_COLS: &str = "79";
-#[cfg(unix)]
 const PYTEST_COLS: &str = "80";
+#[cfg(unix)]
+const PYTEST_COLS: &str = "79";
 
 #[test]
 fn test_basic_tool_behavior() {
@@ -62,24 +62,24 @@ fn test_basic_tool_behavior() {
     Installing dependencies
     Done!
     Running tests for foo ([TEMP_PATH]/project)
-    ============================ test session starts =============================
+    ============================= test session starts =============================
     platform win32 -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 
-    tests/test_foo.py .F                                                    [100%]
+    tests/test_foo.py .F                                                     [100%]
 
-    ================================== FAILURES ==================================
-    _________________________________ test_fail __________________________________
+    ================================== FAILURES ===================================
+    __________________________________ test_fail __________________________________
 
         def test_fail():
     >       1 / 0
     E       ZeroDivisionError: division by zero
 
     tests/test_foo.py:6: ZeroDivisionError
-    ========================== short test summary info ===========================
+    =========================== short test summary info ===========================
     FAILED tests/test_foo.py::test_fail - ZeroDivisionError: division by zero
-    ======================== 1 failed, 1 passed in [EXECUTION_TIME] =========================
+    ========================= 1 failed, 1 passed in [EXECUTION_TIME] =========================
 
     ----- stderr -----
     Built 2 editables in [EXECUTION_TIME]
@@ -100,44 +100,44 @@ fn test_basic_tool_behavior() {
     exit_code: 1
     ----- stdout -----
     Running tests for child-dep ([TEMP_PATH]/project/child-dep)
-    ============================ test session starts =============================
+    ============================= test session starts =============================
     platform win32 -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project/child-dep
     collected 2 items
 
-    tests/test_child.py .F                                                  [100%]
+    tests/test_child.py .F                                                   [100%]
 
-    ================================== FAILURES ==================================
-    _________________________________ test_fail __________________________________
+    ================================== FAILURES ===================================
+    __________________________________ test_fail __________________________________
 
         def test_fail():
     >       1 / 0
     E       ZeroDivisionError: division by zero
 
     tests/test_child.py:6: ZeroDivisionError
-    ========================== short test summary info ===========================
+    =========================== short test summary info ===========================
     FAILED tests/test_child.py::test_fail - ZeroDivisionError: division by zero
-    ======================== 1 failed, 1 passed in [EXECUTION_TIME] =========================
+    ========================= 1 failed, 1 passed in [EXECUTION_TIME] =========================
 
     Running tests for foo ([TEMP_PATH]/project)
-    ============================ test session starts =============================
+    ============================= test session starts =============================
     platform win32 -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 
-    tests/test_foo.py .F                                                    [100%]
+    tests/test_foo.py .F                                                     [100%]
 
-    ================================== FAILURES ==================================
-    _________________________________ test_fail __________________________________
+    ================================== FAILURES ===================================
+    __________________________________ test_fail __________________________________
 
         def test_fail():
     >       1 / 0
     E       ZeroDivisionError: division by zero
 
     tests/test_foo.py:6: ZeroDivisionError
-    ========================== short test summary info ===========================
+    =========================== short test summary info ===========================
     FAILED tests/test_foo.py::test_fail - ZeroDivisionError: division by zero
-    ======================== 1 failed, 1 passed in [EXECUTION_TIME] =========================
+    ========================= 1 failed, 1 passed in [EXECUTION_TIME] =========================
 
     ----- stderr -----
     "###);
