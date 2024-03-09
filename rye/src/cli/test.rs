@@ -83,6 +83,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     for (idx, project) in projects.iter().enumerate() {
+        if project.workspace().is_some() && project.is_workspace_root() {
+            continue;
+        }
         if output != CommandOutput::Quiet {
             if idx > 0 {
                 println!();
