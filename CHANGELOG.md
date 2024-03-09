@@ -9,6 +9,8 @@ _Unreleased_
 
 <!-- released start -->
 
+- Updated to `uv` 0.1.6.  #850
+
 ## 0.28.0
 
 Released on 2024-03-07
