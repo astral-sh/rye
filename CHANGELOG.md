@@ -16,6 +16,8 @@ _Unreleased_
 - Updating `rye` will now also ensure that the self-venv is updated.  Previously
   this was deferred until the next `sync`.  #863
 
+- The `self update` command now accepts `--branch`.  #864
+
 ## 0.28.0
 
 Released on 2024-03-07
