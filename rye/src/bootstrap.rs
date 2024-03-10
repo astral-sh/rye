@@ -108,6 +108,12 @@ pub fn ensure_self_venv_with_toolchain(
             fs::remove_dir_all(&venv_dir)
                 .path_context(&venv_dir, "could not remove self-venv for update")?;
 
+            let pip_tools_dir = app_dir.join("pip-tools");
+            if pip_tools_dir.is_dir() {
+                fs::remove_dir_all(&pip_tools_dir)
+                    .context("could not remove pip-tools for update")?;
+            }
+
             venv_dir
         }
     };
