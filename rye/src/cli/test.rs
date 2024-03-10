@@ -20,10 +20,10 @@ use crate::utils::{CommandOutput, QuietExit};
 #[derive(Parser, Debug)]
 pub struct Args {
     /// Perform the operation on all packages
-    #[arg(short, long, default_value = "true")]
+    #[arg(short, long)]
     all: bool,
     /// Perform the operation on a specific package
-    #[arg(short, long)]
+    #[arg(short, long, conflicts_with = "all")]
     package: Vec<String>,
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
@@ -67,7 +67,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .join("pytest")
         .with_extension(EXE_EXTENSION);
 
-    let projects = locate_projects(project, cmd.all && cmd.package.is_empty(), &cmd.package[..])?;
+    let projects = locate_projects(project, cmd.all | cmd.package.is_empty(), &cmd.package[..])?;
 
     if !pytest.is_file() {
         let has_pytest = has_pytest_dependency(&projects)?;
