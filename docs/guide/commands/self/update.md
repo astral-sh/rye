@@ -25,6 +25,12 @@ Compile a specific revision:
 $ rye self update --rev 08910bc9b3b7c72a3d3ac694c4f3412259161477
 ```
 
+Compile latest development version:
+
+```
+$ rye self update --branch main
+```
+
 ## Arguments
 
 _no arguments_
