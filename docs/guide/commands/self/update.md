@@ -37,6 +37,8 @@ _no arguments_
 
 * `--rev <REV>`: Update to a specific git rev
 
+* `--branch <BRANCH>`: Update to a specific git branch
+
 * `--force`: Force reinstallation
 
 * `-h, --help`: Print help (see a summary with '-h')
