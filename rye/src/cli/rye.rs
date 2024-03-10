@@ -75,6 +75,9 @@ pub struct UpdateCommand {
     /// Update to a specific git rev.
     #[arg(long, conflicts_with = "tag")]
     rev: Option<String>,
+    /// Update to a specific git branch.
+    #[arg(long, conflicts_with = "tag", conflicts_with = "rev")]
+    branch: Option<String>,
     /// Force reinstallation
     #[arg(long)]
     force: bool,
@@ -192,7 +195,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
     let current_exe = env::current_exe()?;
 
     // git based installation with cargo
-    if args.rev.is_some() || args.tag.is_some() {
+    if args.rev.is_some() || args.tag.is_some() || args.branch.is_some() {
         let mut cmd = Command::new("cargo");
         let tmp = tempdir()?;
         cmd.arg("install")
@@ -214,6 +217,9 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         } else if let Some(ref tag) = args.tag {
             cmd.arg("--tag");
             cmd.arg(tag);
+        } else if let Some(ref branch) = args.branch {
+            cmd.arg("--branch");
+            cmd.arg(branch);
         }
         if args.force {
             cmd.arg("--force");
