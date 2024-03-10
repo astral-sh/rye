@@ -18,6 +18,8 @@ _Unreleased_
 
 - The `self update` command now accepts `--branch`.  #864
 
+- Fixed an issue that caused pip-tools to not update.  #865
+
 ## 0.28.0
 
 Released on 2024-03-07
