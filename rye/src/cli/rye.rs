@@ -75,6 +75,9 @@ pub struct UpdateCommand {
     /// Update to a specific git rev.
     #[arg(long, conflicts_with = "tag")]
     rev: Option<String>,
+    /// Update to a specific git branch.
+    #[arg(long, conflicts_with = "tag", conflicts_with = "rev")]
+    branch: Option<String>,
     /// Force reinstallation
     #[arg(long)]
     force: bool,
@@ -192,7 +195,7 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
     let current_exe = env::current_exe()?;
 
     // git based installation with cargo
-    if args.rev.is_some() || args.tag.is_some() {
+    if args.rev.is_some() || args.tag.is_some() || args.branch.is_some() {
         let mut cmd = Command::new("cargo");
         let tmp = tempdir()?;
         cmd.arg("install")
@@ -214,6 +217,9 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         } else if let Some(ref tag) = args.tag {
             cmd.arg("--tag");
             cmd.arg(tag);
+        } else if let Some(ref branch) = args.branch {
+            cmd.arg("--branch");
+            cmd.arg(branch);
         }
         if args.force {
             cmd.arg("--force");
@@ -273,9 +279,50 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
          Please stop running Python interpreters and retry the update.",
     )?;
 
+    echo!("Validate updated installation");
+    validate_updated_exe(&current_exe)
+        .context("unable to perform validation of updated installation")?;
+
     echo!("Updated!");
     echo!();
     Command::new(current_exe).arg("--version").status()?;
+
+    Ok(())
+}
+
+fn validate_updated_exe(rye: &Path) -> Result<(), Error> {
+    let folder = tempfile::tempdir()?;
+
+    // first create a dummy project via the new rye version
+    if !Command::new(rye)
+        .arg("init")
+        .arg("--name=test-project")
+        .arg("-q")
+        .arg(".")
+        .current_dir(folder.path())
+        .status()?
+        .success()
+    {
+        bail!("failed to initialize test project");
+    }
+
+    // then try to run the python shim in the context of that project.
+    // this as a by product should update outdated internals and perform
+    // a python only sync in all versions of rye known currently.
+    if !Command::new(
+        get_app_dir()
+            .join("shims")
+            .join("python")
+            .with_extension(EXE_EXTENSION),
+    )
+    .arg("-c")
+    .arg("")
+    .current_dir(folder.path())
+    .status()?
+    .success()
+    {
+        bail!("failed to run python shim in test project");
+    }
 
     Ok(())
 }
