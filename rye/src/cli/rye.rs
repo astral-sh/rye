@@ -15,7 +15,7 @@ use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
 use crate::bootstrap::{
-    download_url, download_url_ignore_404, ensure_self_venv, ensure_self_venv_with_toolchain,
+    download_url, download_url_ignore_404, ensure_self_venv_with_toolchain,
     is_self_compatible_toolchain, update_core_shims, SELF_PYTHON_TARGET_VERSION,
 };
 use crate::cli::toolchain::register_toolchain;
@@ -273,11 +273,50 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
          Please stop running Python interpreters and retry the update.",
     )?;
 
-    ensure_self_venv(CommandOutput::Normal).context("update failed on updating self-python")?;
+    echo!("Validate updated installation");
+    validate_updated_exe(&current_exe)
+        .context("unable to perform validation of updated installation")?;
 
     echo!("Updated!");
     echo!();
     Command::new(current_exe).arg("--version").status()?;
+
+    Ok(())
+}
+
+fn validate_updated_exe(rye: &Path) -> Result<(), Error> {
+    let folder = tempfile::tempdir()?;
+
+    // first create a dummy project via the new rye version
+    if !Command::new(rye)
+        .arg("init")
+        .arg("--name=test-project")
+        .arg("-q")
+        .arg(".")
+        .current_dir(folder.path())
+        .status()?
+        .success()
+    {
+        bail!("failed to initialize test project");
+    }
+
+    // then try to run the python shim in the context of that project.
+    // this as a by product should update outdated internals and perform
+    // a python only sync in all versions of rye known currently.
+    if !Command::new(
+        get_app_dir()
+            .join("shims")
+            .join("python")
+            .with_extension(EXE_EXTENSION),
+    )
+    .arg("-c")
+    .arg("")
+    .current_dir(folder.path())
+    .status()?
+    .success()
+    {
+        bail!("failed to run python shim in test project");
+    }
 
     Ok(())
 }
