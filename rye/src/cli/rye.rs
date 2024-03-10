@@ -15,7 +15,7 @@ use self_replace::self_delete_outside_path;
 use tempfile::tempdir;
 
 use crate::bootstrap::{
-    download_url, download_url_ignore_404, ensure_self_venv_with_toolchain,
+    download_url, download_url_ignore_404, ensure_self_venv, ensure_self_venv_with_toolchain,
     is_self_compatible_toolchain, update_core_shims, SELF_PYTHON_TARGET_VERSION,
 };
 use crate::cli::toolchain::register_toolchain;
@@ -272,6 +272,8 @@ fn update(args: UpdateCommand) -> Result<(), Error> {
         "Unable to perform update. This can happen because files are in use. \
          Please stop running Python interpreters and retry the update.",
     )?;
+
+    ensure_self_venv(CommandOutput::Normal).context("update failed on updating self-python")?;
 
     echo!("Updated!");
     echo!();
