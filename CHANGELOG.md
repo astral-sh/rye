@@ -20,6 +20,8 @@ _Unreleased_
 
 - Fixed an issue that caused pip-tools to not update.  #865
 
+- Updates `build` and `certifi`.  #866
+
 ## 0.28.0
 
 Released on 2024-03-07
