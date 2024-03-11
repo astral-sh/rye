@@ -150,20 +150,6 @@ impl Uv {
     /// and bootstrap it into [RYE_HOME]/uv/[version]/uv.
     ///
     /// See [`Uv::cmd`] to get access to the uv binary in a safe way.
-    ///
-    /// Example:
-    ///   ```rust
-    ///   use rye::sources::uv::Uv;
-    ///   use rye::utils::CommandOutput;
-    ///   let uv = Uv::ensure_exists(CommandOutput::Normal).expect("Failed to ensure uv binary is available");
-    ///   let status = uv.cmd().arg("--version").status().expect("Failed to run uv");
-    ///   assert!(status.success());
-    ///   ```
-    #[deprecated]
-    pub fn ensure_exists(output: CommandOutput) -> Result<Uv, Error> {
-        UvBuilder::new().with_output(output).ensure_exists()
-    }
-
     fn ensure(
         workdir: PathBuf,
         sources: ExpandedSources,
