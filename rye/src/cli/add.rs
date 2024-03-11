@@ -1,5 +1,4 @@
 use std::env;
-use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
@@ -17,8 +16,8 @@ use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
-use crate::utils::{format_requirement, set_proxy_variables, CommandOutput};
-use crate::uv::Uv;
+use crate::utils::{format_requirement, get_venv_python_bin, set_proxy_variables, CommandOutput};
+use crate::uv::UvBuilder;
 
 const PACKAGE_FINDER_SCRIPT: &str = r#"
 import sys
@@ -448,43 +447,17 @@ fn resolve_requirements_with_uv(
     output: CommandOutput,
     default_operator: &Operator,
 ) -> Result<(), Error> {
+    let venv_path = pyproject_toml.venv_path();
+    let py_bin = get_venv_python_bin(&venv_path);
     for req in requirements {
-        let mut cmd = Uv::ensure_exists(output)?.cmd();
-        cmd.arg("pip")
-            .arg("compile")
-            .arg("--python-version")
-            .arg(py_ver.format_simple())
-            .arg("--no-deps")
-            .arg("--no-header")
-            .arg("-")
-            .env("VIRTUAL_ENV", pyproject_toml.venv_path().as_os_str());
-        if pre {
-            cmd.arg("--prerelease=allow");
-        }
-        if output == CommandOutput::Quiet {
-            cmd.arg("-q");
-        }
-        // this primarily exists for testing
-        if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
-            cmd.arg("--exclude-newer").arg(dt);
-        }
         let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
-        sources.add_as_pip_args(&mut cmd);
-        let mut child = cmd
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()?;
-        let child_stdin = child.stdin.as_mut().unwrap();
-        writeln!(child_stdin, "{}", req)?;
 
-        let rv = child.wait_with_output()?;
-        if !rv.status.success() {
-            let log = String::from_utf8_lossy(&rv.stderr);
-            bail!("failed to resolve packages:\n{}", log);
-        }
-
-        let mut new_req: Requirement = String::from_utf8_lossy(&rv.stdout).parse()?;
+        let mut new_req = UvBuilder::new()
+            .with_output(output.quieter())
+            .with_sources(sources)
+            .ensure_exists()?
+            .venv(&venv_path, &py_bin, py_ver, None)?
+            .resolve(py_ver, req, pre, env::var("__RYE_UV_EXCLUDE_NEWER").ok())?;
 
         // if a version or URL is already provided we just use the normalized package name but
         // retain all old information.

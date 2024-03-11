@@ -13,7 +13,7 @@ use pep508_rs::Requirement;
 use std::fs::{self, remove_dir_all};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use tempfile::NamedTempFile;
 
 #[derive(Default)]
@@ -36,6 +36,39 @@ struct UvCompileOptions {
     pub exclude_newer: Option<String>,
     pub upgrade: UvPackageUpgrade,
     pub no_deps: bool,
+    pub no_header: bool,
+}
+
+impl UvCompileOptions {
+    fn add_as_pip_args(self, cmd: &mut Command) {
+        if self.no_header {
+            cmd.arg("--no-header");
+        }
+
+        if self.no_deps {
+            cmd.arg("--no-deps");
+        }
+
+        if self.allow_prerelease {
+            cmd.arg("--prerelease=allow");
+        }
+
+        if let Some(dt) = self.exclude_newer {
+            cmd.arg("--exclude-newer").arg(dt);
+        }
+
+        match self.upgrade {
+            UvPackageUpgrade::All => {
+                cmd.arg("--upgrade");
+            }
+            UvPackageUpgrade::Packages(ref pkgs) => {
+                for pkg in pkgs {
+                    cmd.arg("--upgrade-package").arg(pkg);
+                }
+            }
+            UvPackageUpgrade::Nothing => {}
+        }
+    }
 }
 
 impl Default for UvCompileOptions {
@@ -45,6 +78,7 @@ impl Default for UvCompileOptions {
             exclude_newer: None,
             upgrade: UvPackageUpgrade::Nothing,
             no_deps: false,
+            no_header: false,
         }
     }
 }
@@ -304,35 +338,12 @@ impl Uv {
         cmd.arg("pip").arg("compile").env_remove("VIRTUAL_ENV");
 
         self.sources.add_as_pip_args(&mut cmd);
+        options.add_as_pip_args(&mut cmd);
 
         cmd.arg("--python-version")
             .arg(py_version.format_simple())
             .arg("--output-file")
             .arg(target);
-
-        if options.no_deps {
-            cmd.arg("--no-deps");
-        }
-
-        if options.allow_prerelease {
-            cmd.arg("--prerelease=allow");
-        }
-
-        if let Some(dt) = options.exclude_newer {
-            cmd.arg("--exclude-newer").arg(dt);
-        }
-
-        match options.upgrade {
-            UvCompileUpgrade::All => {
-                cmd.arg("--upgrade");
-            }
-            UvCompileUpgrade::Packages(ref pkgs) => {
-                for pkg in pkgs {
-                    cmd.arg("--upgrade-package").arg(pkg);
-                }
-            }
-            UvCompileUpgrade::Nothing => {}
-        }
 
         cmd.arg(source);
 
@@ -540,5 +551,60 @@ impl UvWithVenv {
     /// Update the cloud synchronization marker for the given path
     pub fn sync_marker(&self) {
         update_venv_sync_marker(self.uv.output, &self.venv_path)
+    }
+
+    /// Resolves the given requirement and returns the resolved requirement.
+
+    /// This will spawn `uv` and read from it's stdout.
+    pub fn resolve(
+        &self,
+        py_version: &PythonVersion,
+        requirement: &Requirement,
+        allow_prerelease: bool,
+        exclude_newer: Option<String>,
+    ) -> Result<Requirement, Error> {
+        let mut cmd = self.venv_cmd();
+        let options = UvCompileOptions {
+            allow_prerelease,
+            exclude_newer,
+            upgrade: UvPackageUpgrade::Nothing,
+            no_deps: true,
+            no_header: true,
+        };
+
+        cmd.arg("pip").arg("compile");
+
+        self.uv.sources.add_as_pip_args(&mut cmd);
+        options.add_as_pip_args(&mut cmd);
+
+        cmd.arg("--python-version").arg(py_version.format_simple());
+
+        // We are using stdin so we can create the requirements in memory and don't
+        // have to create a temporary file.
+        cmd.arg("-");
+
+        let mut child = cmd
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+
+        // Write requirement to stdin
+        let child_stdin = child.stdin.as_mut().unwrap();
+        writeln!(child_stdin, "{}", requirement)?;
+
+        let rv = child.wait_with_output()?;
+        if !rv.status.success() {
+            let log = String::from_utf8_lossy(&rv.stderr);
+            return Err(anyhow!(
+                "Failed to run uv compile {}. uv exited with status: {}",
+                log,
+                rv.status
+            ));
+        }
+
+        String::from_utf8_lossy(&rv.stdout)
+            .parse()
+            .context("unable to parse requirement from uv.")
     }
 }
