@@ -3,11 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.29.0
 
-_Unreleased_
-
-<!-- released start -->
+Released on 2024-03-11
 
 - Updated to `uv` 0.1.7.  #850, #867
 
