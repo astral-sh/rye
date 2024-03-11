@@ -384,7 +384,7 @@ impl UvWithVenv {
         write_venv_marker(&self.venv_path, &self.py_version)
     }
 
-    #[allow(unused)]
+    /// Set the output level for subsequent invocations of uv.
     pub fn with_output(self, output: CommandOutput) -> Self {
         UvWithVenv {
             uv: Uv { output, ..self.uv },
@@ -506,6 +506,29 @@ impl UvWithVenv {
 
         Ok(())
     }
+
+    /// Syncs the venv
+    pub fn sync(&self, lockfile: &Path) -> Result<(), Error> {
+        let mut cmd = self.venv_cmd();
+        cmd.arg("pip").arg("sync");
+
+        self.uv.sources.add_as_pip_args(&mut cmd);
+
+        let status = cmd
+            .arg(lockfile)
+            .status()
+            .with_context(|| format!("unable to run sync {}", self.venv_path.display()))?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Installation of dependencies failed in venv at {}. uv exited with status: {}",
+                self.venv_path.display(),
+                status
+            ));
+        }
+        Ok(())
+    }
+
     /// Writes the tool version to the venv.
     pub fn write_tool_version(&self, version: u64) -> Result<(), Error> {
         let tool_version_path = self.venv_path.join("tool-version.txt");

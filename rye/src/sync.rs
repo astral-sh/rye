@@ -23,7 +23,7 @@ use crate::utils::{
     get_venv_python_bin, set_proxy_variables, symlink_dir, update_venv_sync_marker, CommandOutput,
     IoPathContext,
 };
-use crate::uv::Uv;
+use crate::uv::UvBuilder;
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -246,21 +246,26 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 echo!("Installing dependencies");
             }
 
-            let tempdir = tempdir()?;
-            let mut sync_cmd = if Config::current().use_uv() {
-                let mut uv_sync_cmd = Uv::ensure_exists(output)?.cmd();
-                uv_sync_cmd.arg("pip").arg("sync");
-                let root = pyproject.workspace_path();
+            let target_lockfile = if cmd.dev && dev_lockfile.is_file() {
+                dev_lockfile
+            } else {
+                lockfile
+            };
 
-                uv_sync_cmd
-                    .env("PROJECT_ROOT", make_project_root_fragment(&root))
-                    .env("VIRTUAL_ENV", pyproject.venv_path().as_os_str())
-                    .current_dir(&root);
-                uv_sync_cmd
+            let tempdir = tempdir()?;
+            let py_path = get_venv_python_bin(&venv);
+            if Config::current().use_uv() {
+                UvBuilder::new()
+                    .with_output(output.quieter())
+                    .with_workdir(&pyproject.workspace_path())
+                    .with_sources(sources)
+                    .ensure_exists()?
+                    .venv(&venv, &py_path, &py_ver, None)?
+                    .with_output(output)
+                    .sync(&target_lockfile)?;
             } else {
                 let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
                 let root = pyproject.workspace_path();
-                let py_path = get_venv_python_bin(&venv);
 
                 // we need to run this after we have run the `get_pip_sync` command
                 // as this is what bootstraps or updates the pip tools installation.
@@ -286,29 +291,24 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 } else if output == CommandOutput::Verbose && env::var("PIP_VERBOSE").is_err() {
                     pip_sync_cmd.env("PIP_VERBOSE", "2");
                 }
-                pip_sync_cmd
+
+                sources.add_as_pip_args(&mut pip_sync_cmd);
+
+                pip_sync_cmd.arg(&target_lockfile);
+
+                if output == CommandOutput::Verbose {
+                    pip_sync_cmd.arg("--verbose");
+                } else if output == CommandOutput::Quiet {
+                    pip_sync_cmd.arg("-q");
+                }
+                set_proxy_variables(&mut pip_sync_cmd);
+                let status = pip_sync_cmd.status().context("unable to run pip-sync")?;
+
+                if !status.success() {
+                    bail!("Installation of dependencies failed");
+                }
             };
-
-            sources.add_as_pip_args(&mut sync_cmd);
-
-            if cmd.dev && dev_lockfile.is_file() {
-                sync_cmd.arg(&dev_lockfile);
-            } else {
-                sync_cmd.arg(&lockfile);
-            }
-
-            if output == CommandOutput::Verbose {
-                sync_cmd.arg("--verbose");
-            } else if output == CommandOutput::Quiet {
-                sync_cmd.arg("-q");
-            }
-            set_proxy_variables(&mut sync_cmd);
-            let status = sync_cmd.status().context("unable to run pip-sync")?;
-
-            if !status.success() {
-                bail!("Installation of dependencies failed");
-            }
-        }
+        };
     }
 
     if output != CommandOutput::Quiet && cmd.mode != SyncMode::PythonOnly {
@@ -343,7 +343,9 @@ pub fn create_virtualenv(
     if Config::current().use_uv() {
         // try to kill the empty venv if there is one as uv can't work otherwise.
         fs::remove_dir(venv).ok();
-        let uv = Uv::ensure_exists(output.quieter())?
+        let uv = UvBuilder::new()
+            .with_output(output.quieter())
+            .ensure_exists()?
             .venv(venv, &py_bin, py_ver, Some(prompt))
             .context("failed to initialize virtualenv")?;
         uv.write_marker()?;
