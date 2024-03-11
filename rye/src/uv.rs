@@ -22,6 +22,33 @@ pub struct UvInstallOptions {
     pub extras: Vec<Requirement>,
 }
 
+pub enum UvPackageUpgrade {
+    /// Upgrade all packages.
+    All,
+    /// Upgrade the specific set of packages.
+    Packages(Vec<String>),
+    /// Upgrade nothig (default).
+    Nothing,
+}
+
+struct UvCompileOptions {
+    pub allow_prerelease: bool,
+    pub exclude_newer: Option<String>,
+    pub upgrade: UvPackageUpgrade,
+    pub no_deps: bool,
+}
+
+impl Default for UvCompileOptions {
+    fn default() -> Self {
+        Self {
+            allow_prerelease: false,
+            exclude_newer: None,
+            upgrade: UvPackageUpgrade::Nothing,
+            no_deps: false,
+        }
+    }
+}
+
 pub struct UvBuilder {
     workdir: Option<PathBuf>,
     sources: Option<ExpandedSources>,
@@ -37,7 +64,6 @@ impl UvBuilder {
         }
     }
 
-    #[allow(unused)]
     pub fn with_workdir(self, workdir: &Path) -> Self {
         Self {
             workdir: Some(workdir.to_path_buf()),
@@ -45,7 +71,6 @@ impl UvBuilder {
         }
     }
 
-    #[allow(unused)]
     pub fn with_sources(self, sources: ExpandedSources) -> Self {
         Self {
             sources: Some(sources),
@@ -71,7 +96,6 @@ pub struct Uv {
     output: CommandOutput,
     uv_bin: PathBuf,
     workdir: PathBuf,
-    #[allow(unused)]
     sources: ExpandedSources,
 }
 
@@ -242,6 +266,76 @@ impl Uv {
             ));
         }
         Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+    }
+
+    pub fn lockfile(
+        &self,
+        py_version: &PythonVersion,
+        source: &Path,
+        target: &Path,
+        allow_prerelease: bool,
+        exclude_newer: Option<String>,
+        upgrade: UvPackageUpgrade,
+    ) -> Result<(), Error> {
+        let options = UvCompileOptions {
+            allow_prerelease,
+            exclude_newer,
+            upgrade,
+            no_deps: false,
+            no_header: true,
+        };
+
+        let mut cmd = self.cmd();
+        cmd.arg("pip").arg("compile").env_remove("VIRTUAL_ENV");
+
+        self.sources.add_as_pip_args(&mut cmd);
+
+        cmd.arg("--python-version")
+            .arg(py_version.format_simple())
+            .arg("--output-file")
+            .arg(target);
+
+        if options.no_deps {
+            cmd.arg("--no-deps");
+        }
+
+        if options.allow_prerelease {
+            cmd.arg("--prerelease=allow");
+        }
+
+        if let Some(dt) = options.exclude_newer {
+            cmd.arg("--exclude-newer").arg(dt);
+        }
+
+        match options.upgrade {
+            UvCompileUpgrade::All => {
+                cmd.arg("--upgrade");
+            }
+            UvCompileUpgrade::Packages(ref pkgs) => {
+                for pkg in pkgs {
+                    cmd.arg("--upgrade-package").arg(pkg);
+                }
+            }
+            UvCompileUpgrade::Nothing => {}
+        }
+
+        cmd.arg(source);
+
+        let status = cmd.status().with_context(|| {
+            format!(
+                "Unable to run uv pip compile and generate {}",
+                target.to_str().unwrap_or("<unknown>")
+            )
+        })?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Failed to run uv compile {}. uv exited with status: {}",
+                target.to_str().unwrap_or("<unknown>"),
+                status
+            ));
+        }
+        Ok(())
     }
 }
 

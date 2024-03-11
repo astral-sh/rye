@@ -22,7 +22,7 @@ use crate::pyproject::{
 };
 use crate::sources::py::PythonVersion;
 use crate::utils::{set_proxy_variables, CommandOutput, IoPathContext};
-use crate::uv::Uv;
+use crate::uv::{UvBuilder, UvPackageUpgrade};
 
 static FILE_EDITABLE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^-e (file://.*?)\s*$").unwrap());
 static DEP_COMMENT_RE: Lazy<Regex> =
@@ -390,25 +390,30 @@ fn generate_lockfile(
         )?;
     };
 
-    let mut cmd = if use_uv {
-        let mut cmd = Uv::ensure_exists(output)?.cmd();
-        cmd.arg("pip")
-            .arg("compile")
-            .arg("--no-header")
-            .env_remove("VIRTUAL_ENV")
-            .arg(format!(
-                "--python-version={}.{}.{}",
-                py_ver.major, py_ver.minor, py_ver.patch
-            ));
+    if use_uv {
+        let upgrade = {
+            if lock_options.update_all {
+                UvPackageUpgrade::All
+            } else if !lock_options.update.is_empty() {
+                UvPackageUpgrade::Packages(lock_options.update.clone())
+            } else {
+                UvPackageUpgrade::Nothing
+            }
+        };
 
-        if lock_options.pre {
-            cmd.arg("--prerelease=allow");
-        }
-        // this primarily exists for testing
-        if let Ok(dt) = env::var("__RYE_UV_EXCLUDE_NEWER") {
-            cmd.arg("--exclude-newer").arg(dt);
-        }
-        cmd
+        UvBuilder::new()
+            .with_output(output.quieter())
+            .with_sources(sources.clone())
+            .with_workdir(workspace_path)
+            .ensure_exists()?
+            .lockfile(
+                py_ver,
+                requirements_file_in,
+                &requirements_file,
+                lock_options.pre,
+                env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
+                upgrade,
+            )?;
     } else {
         let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
         // legacy pip tools requires some extra parameters
@@ -430,33 +435,32 @@ fn generate_lockfile(
         if lock_options.pre {
             cmd.arg("--pre");
         }
-        cmd
-    };
 
-    cmd.arg(if output == CommandOutput::Verbose {
-        "--verbose"
-    } else {
-        "-q"
-    })
-    .arg("-o")
-    .arg(&requirements_file)
-    .arg(requirements_file_in)
-    .current_dir(workspace_path)
-    .env("PYTHONWARNINGS", "ignore")
-    .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
+        cmd.arg(if output == CommandOutput::Verbose {
+            "--verbose"
+        } else {
+            "-q"
+        })
+        .arg("-o")
+        .arg(&requirements_file)
+        .arg(requirements_file_in)
+        .current_dir(workspace_path)
+        .env("PYTHONWARNINGS", "ignore")
+        .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
 
-    for pkg in &lock_options.update {
-        cmd.arg("--upgrade-package");
-        cmd.arg(pkg);
-    }
-    if lock_options.update_all {
-        cmd.arg("--upgrade");
-    }
-    sources.add_as_pip_args(&mut cmd);
-    set_proxy_variables(&mut cmd);
-    let status = cmd.status().context("unable to run pip-compile")?;
-    if !status.success() {
-        bail!("failed to generate lockfile");
+        for pkg in &lock_options.update {
+            cmd.arg("--upgrade-package");
+            cmd.arg(pkg);
+        }
+        if lock_options.update_all {
+            cmd.arg("--upgrade");
+        }
+        sources.add_as_pip_args(&mut cmd);
+        set_proxy_variables(&mut cmd);
+        let status = cmd.status().context("unable to run pip-compile")?;
+        if !status.success() {
+            bail!("failed to generate lockfile");
+        };
     };
 
     finalize_lockfile(
