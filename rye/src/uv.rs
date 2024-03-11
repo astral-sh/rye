@@ -268,6 +268,15 @@ impl UvWithVenv {
         write_venv_marker(&self.venv_path, &self.py_version)
     }
 
+    #[allow(unused)]
+    pub fn with_output(self, output: CommandOutput) -> Self {
+        UvWithVenv {
+            uv: Uv { output, ..self.uv },
+            venv_path: self.venv_path,
+            py_version: self.py_version,
+        }
+    }
+
     /// Updates the venv to the given pip version and requirements.
     pub fn update(&self, pip_version: &str, requirements: &str) -> Result<(), Error> {
         self.update_pip(pip_version)?;
