@@ -449,15 +449,16 @@ fn resolve_requirements_with_uv(
 ) -> Result<(), Error> {
     let venv_path = pyproject_toml.venv_path();
     let py_bin = get_venv_python_bin(&venv_path);
-    for req in requirements {
-        let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
+    let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
 
-        let mut new_req = UvBuilder::new()
-            .with_output(output.quieter())
-            .with_sources(sources)
-            .ensure_exists()?
-            .venv(&venv_path, &py_bin, py_ver, None)?
-            .resolve(py_ver, req, pre, env::var("__RYE_UV_EXCLUDE_NEWER").ok())?;
+    let uv = UvBuilder::new()
+        .with_output(output.quieter())
+        .with_sources(sources)
+        .ensure_exists()?
+        .venv(&venv_path, &py_bin, py_ver, None)?;
+
+    for req in requirements {
+        let mut new_req = uv.resolve(py_ver, req, pre, env::var("__RYE_UV_EXCLUDE_NEWER").ok())?;
 
         // if a version or URL is already provided we just use the normalized package name but
         // retain all old information.
