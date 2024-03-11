@@ -9,7 +9,7 @@ _Unreleased_
 
 <!-- released start -->
 
-- Updated to `uv` 0.1.6.  #850
+- Updated to `uv` 0.1.7.  #850, #867
 
 - Trap panics and silence bad pipe errors.  #862
 
