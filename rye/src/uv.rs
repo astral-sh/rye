@@ -9,11 +9,18 @@ use crate::utils::{
     IoPathContext,
 };
 use anyhow::{anyhow, Context, Error};
+use pep508_rs::Requirement;
 use std::fs::{self, remove_dir_all};
 use std::io::Write;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::NamedTempFile;
+
+#[derive(Default)]
+pub struct UvInstallOptions {
+    pub importlib_workaround: bool,
+    pub extras: Vec<Requirement>,
+}
 
 pub struct UvBuilder {
     workdir: Option<PathBuf>,
@@ -336,6 +343,53 @@ impl UvWithVenv {
         if !status.success() {
             return Err(anyhow!(
                 "Failed to freeze venv at {}. uv exited with status: {}",
+                self.venv_path.display(),
+                status
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Installs the given requirement in the venv.
+    ///
+    /// If you provide a list of extras, they will be installed as well.
+    /// For python 3.7 you are best off setting importlib_workaround to true.
+    pub fn install(
+        &self,
+        requirement: &Requirement,
+        options: UvInstallOptions,
+    ) -> Result<(), Error> {
+        let mut cmd = self.venv_cmd();
+
+        cmd.arg("pip").arg("install");
+
+        self.uv.sources.add_as_pip_args(&mut cmd);
+
+        cmd.arg("--").arg(requirement.to_string());
+
+        for pkg in options.extras {
+            cmd.arg(pkg.to_string());
+        }
+
+        // We could also include this based on the python version,
+        // but we really want to leave this to the caller to decide.
+        if options.importlib_workaround {
+            cmd.arg("importlib-metadata==6.6.0");
+        }
+
+        let status = cmd.status().with_context(|| {
+            format!(
+                "unable to install {} in venv at {}",
+                requirement,
+                self.venv_path.display()
+            )
+        })?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Installation of {} failed in venv at {}. uv exited with status: {}",
+                requirement,
                 self.venv_path.display(),
                 status
             ));
