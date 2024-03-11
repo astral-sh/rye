@@ -1283,7 +1283,6 @@ pub struct ExpandedSources {
 }
 
 impl ExpandedSources {
-    #[allow(unused)]
     pub fn empty() -> ExpandedSources {
         ExpandedSources {
             index_urls: Vec::new(),

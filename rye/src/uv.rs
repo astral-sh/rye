@@ -1,6 +1,7 @@
 use crate::bootstrap::download_url;
+use crate::lock::make_project_root_fragment;
 use crate::platform::get_app_dir;
-use crate::pyproject::write_venv_marker;
+use crate::pyproject::{write_venv_marker, ExpandedSources};
 use crate::sources::py::PythonVersion;
 use crate::sources::uv::{UvDownload, UvRequest};
 use crate::utils::{
@@ -14,12 +15,68 @@ use std::path::{Path, PathBuf};
 use std::process::Command;
 use tempfile::NamedTempFile;
 
+pub struct UvBuilder {
+    workdir: Option<PathBuf>,
+    sources: Option<ExpandedSources>,
+    output: CommandOutput,
+}
+
+impl UvBuilder {
+    pub fn new() -> Self {
+        Self {
+            workdir: None,
+            sources: None,
+            output: CommandOutput::Normal,
+        }
+    }
+
+    #[allow(unused)]
+    pub fn with_workdir(self, workdir: &Path) -> Self {
+        Self {
+            workdir: Some(workdir.to_path_buf()),
+            ..self
+        }
+    }
+
+    #[allow(unused)]
+    pub fn with_sources(self, sources: ExpandedSources) -> Self {
+        Self {
+            sources: Some(sources),
+            ..self
+        }
+    }
+
+    pub fn with_output(self, output: CommandOutput) -> Self {
+        Self { output, ..self }
+    }
+
+    pub fn ensure_exists(self) -> Result<Uv, Error> {
+        let workdir = self.workdir.unwrap_or(std::env::current_dir()?);
+        let sources = self.sources.unwrap_or_else(ExpandedSources::empty);
+        Uv::ensure(workdir, sources, self.output)
+    }
+}
+
 // Represents a uv binary and associated functions
 // to bootstrap rye using uv.
 #[derive(Clone)]
 pub struct Uv {
     output: CommandOutput,
     uv_bin: PathBuf,
+    workdir: PathBuf,
+    #[allow(unused)]
+    sources: ExpandedSources,
+}
+
+impl Default for Uv {
+    fn default() -> Self {
+        Uv {
+            output: CommandOutput::Normal,
+            uv_bin: PathBuf::new(),
+            workdir: std::env::current_dir().unwrap_or_default(),
+            sources: ExpandedSources::empty(),
+        }
+    }
 }
 
 impl Uv {
@@ -39,6 +96,14 @@ impl Uv {
     ///   ```
     #[deprecated]
     pub fn ensure_exists(output: CommandOutput) -> Result<Uv, Error> {
+        UvBuilder::new().with_output(output).ensure_exists()
+    }
+
+    fn ensure(
+        workdir: PathBuf,
+        sources: ExpandedSources,
+        output: CommandOutput,
+    ) -> Result<Self, Error> {
         // Request a download for the default uv binary for this platform.
         // For instance on aarch64 macos this will request a compatible uv version.
         let download = UvDownload::try_from(UvRequest::default())?;
@@ -53,13 +118,23 @@ impl Uv {
         };
 
         if uv_dir.exists() && uv_bin.is_file() {
-            return Ok(Self { uv_bin, output });
+            return Ok(Uv {
+                output,
+                uv_bin,
+                workdir,
+                sources,
+            });
         }
 
         Self::download(&download, &uv_dir, output)?;
         Self::cleanup_old_versions(&base_dir, &uv_dir)?;
         if uv_dir.exists() && uv_bin.is_file() {
-            return Ok(Self { uv_bin, output });
+            return Ok(Uv {
+                output,
+                uv_bin,
+                workdir,
+                sources,
+            });
         }
 
         Err(anyhow!("Failed to ensure uv binary is available"))
@@ -110,6 +185,8 @@ impl Uv {
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     pub fn cmd(&self) -> Command {
         let mut cmd = Command::new(&self.uv_bin);
+        cmd.current_dir(&self.workdir);
+        cmd.env("PROJECT_ROOT", make_project_root_fragment(&self.workdir));
 
         match self.output {
             CommandOutput::Verbose => {
