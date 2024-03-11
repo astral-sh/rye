@@ -324,6 +324,25 @@ impl UvWithVenv {
         Ok(())
     }
 
+    /// Freezes the venv.
+    pub fn freeze(&self) -> Result<(), Error> {
+        let status = self
+            .venv_cmd()
+            .arg("pip")
+            .arg("freeze")
+            .status()
+            .with_context(|| format!("unable to freeze venv at {}", self.venv_path.display()))?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Failed to freeze venv at {}. uv exited with status: {}",
+                self.venv_path.display(),
+                status
+            ));
+        }
+
+        Ok(())
+    }
     /// Writes the tool version to the venv.
     pub fn write_tool_version(&self, version: u64) -> Result<(), Error> {
         let tool_version_path = self.venv_path.join("tool-version.txt");
