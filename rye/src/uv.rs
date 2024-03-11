@@ -1,7 +1,7 @@
 use crate::bootstrap::download_url;
 use crate::lock::make_project_root_fragment;
 use crate::platform::get_app_dir;
-use crate::pyproject::{write_venv_marker, ExpandedSources};
+use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources};
 use crate::sources::py::PythonVersion;
 use crate::sources::uv::{UvDownload, UvRequest};
 use crate::utils::{
@@ -243,6 +243,21 @@ impl Uv {
         version: &PythonVersion,
         prompt: Option<&str>,
     ) -> Result<UvWithVenv, Error> {
+        match read_venv_marker(venv_dir) {
+            Some(venv) if venv.is_compatible(version) => {
+                Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+            }
+            _ => self.create_venv(venv_dir, py_bin, version, prompt),
+        }
+    }
+
+    fn create_venv(
+        &self,
+        venv_dir: &Path,
+        py_bin: &Path,
+        version: &PythonVersion,
+        prompt: Option<&str>,
+    ) -> Result<UvWithVenv, Error> {
         let mut cmd = self.cmd();
         cmd.arg("venv").arg("--python").arg(py_bin);
         if let Some(prompt) = prompt {
@@ -358,7 +373,7 @@ impl UvWithVenv {
     /// Returns a new command with the uv binary as the command to run.
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     /// The command will also have the VIRTUAL_ENV environment variable set to the venv path.
-    pub fn venv_cmd(&self) -> Command {
+    fn venv_cmd(&self) -> Command {
         let mut cmd = self.uv.cmd();
         cmd.env("VIRTUAL_ENV", &self.venv_path);
         cmd

@@ -80,6 +80,12 @@ pub struct VenvMarker {
     pub venv_path: Option<PathBuf>,
 }
 
+impl VenvMarker {
+    pub fn is_compatible(&self, py_ver: &PythonVersion) -> bool {
+        self.python == *py_ver
+    }
+}
+
 /// Synchronizes a project's virtualenv.
 pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
