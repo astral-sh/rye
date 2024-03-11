@@ -37,7 +37,8 @@ impl Uv {
     ///   let status = uv.cmd().arg("--version").status().expect("Failed to run uv");
     ///   assert!(status.success());
     ///   ```
-    pub fn ensure_exists(output: CommandOutput) -> Result<Self, Error> {
+    #[deprecated]
+    pub fn ensure_exists(output: CommandOutput) -> Result<Uv, Error> {
         // Request a download for the default uv binary for this platform.
         // For instance on aarch64 macos this will request a compatible uv version.
         let download = UvDownload::try_from(UvRequest::default())?;
