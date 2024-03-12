@@ -3,13 +3,17 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.29.0
+## 0.30.0
 
 _Unreleased_
 
 <!-- released start -->
 
-- Updated to `uv` 0.1.6.  #850
+## 0.29.0
+
+Released on 2024-03-11
+
+- Updated to `uv` 0.1.7.  #850, #867
 
 - Trap panics and silence bad pipe errors.  #862
 
@@ -17,6 +21,10 @@ _Unreleased_
   this was deferred until the next `sync`.  #863
 
 - The `self update` command now accepts `--branch`.  #864
+
+- Fixed an issue that caused pip-tools to not update.  #865
+
+- Updates `build` and `certifi`.  #866
 
 ## 0.28.0
 
