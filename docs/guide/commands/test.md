@@ -41,7 +41,7 @@ stuff/tests/test_batch.py .                                            [100%]
 
 ## Options
 
-* `-a, --all`: Lint all packages in the workspace
+* `-a, --all`: Test all packages in the workspace
 
 * `-p, --package <PACKAGE>`: Run the test suite of a specific package
 
