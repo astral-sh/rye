@@ -13,7 +13,7 @@ _Unreleased_
 
 Released on 2024-03-11
 
-- Updated to `uv` 0.1.7.  #850, #867
+- Updated to `uv` 0.1.17.  #850, #867
 
 - Trap panics and silence bad pipe errors.  #862
 
