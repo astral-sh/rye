@@ -101,10 +101,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         match output {
             CommandOutput::Normal => {}
             CommandOutput::Verbose => {
-                pytest_cmd.arg("-q");
+                pytest_cmd.arg("-v");
             }
             CommandOutput::Quiet => {
-                pytest_cmd.arg("-v");
+                pytest_cmd.arg("-q");
             }
         }
         pytest_cmd.args(&cmd.extra_args);

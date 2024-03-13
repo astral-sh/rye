@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fix incorrect flag passing of `rye test` `-q` and `-v`.  #880
+
 <!-- released start -->
 
 ## 0.29.0
