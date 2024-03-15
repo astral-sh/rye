@@ -24,3 +24,6 @@ serve-docs = "mkdocs serve"
 
 [tool.rye.workspace]
 members = ["rye-devtools"]
+
+[tool.pytest.ini_options]
+addopts = "--ignore target"
