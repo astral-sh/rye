@@ -133,7 +133,7 @@ due to limitations in `libedit`.  In some cases though you might also discover t
 the backspace key does not work or arrow keys don't work as expected.  This can be
 because the _terminfo_ database cannot be found.
 
-For solutions to this issue, read the [behavior quirks guide](https://python-build-standalone.readthedocs.io/en/latest/quirks.html) in the
+For solutions to this issue, read the [behavior quirks guide](https://gregoryszorc.com/docs/python-build-standalone/main/quirks.html) in the
 Standalone Python Builds documentation for solutions.
 
 ## Can I use Rye Alongside Other Python Installations?
