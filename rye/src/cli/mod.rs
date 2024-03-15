@@ -88,6 +88,7 @@ pub mod shell {
 
 pub fn execute() -> Result<(), Error> {
     // common initialization
+    dotenv::dotenv().ok();
     crate::platform::init()?;
     crate::config::load()?;
 
