@@ -1,4 +1,4 @@
-"""This script is used to generate rye/src/downloads.inc.
+"""This script is used to generate rye/src/sources/generated/python_downloads.inc.
 
 It finds the latest Python releases, sorts them by
 various factors (arch, platform, flavor) and generates download
@@ -11,7 +11,6 @@ import itertools
 import os
 import re
 import sys
-import unittest
 from dataclasses import dataclass
 from enum import StrEnum
 from urllib.parse import unquote
@@ -435,31 +434,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
-
-class Tests(unittest.TestCase):
-    def test_parse_triplets(self):
-        expected = {
-            "aarch64-apple-darwin-lto": PlatformTriple("aarch64", "macos", None, "lto"),
-            "aarch64-unknown-linux-gnu-pgo+lto": PlatformTriple(
-                "aarch64", "linux", "gnu", "pgo+lto"
-            ),
-            # "x86_64-unknown-linux-musl-debug": PlatformTriple(
-            #     "x86_64", "linux", "musl", "debug"
-            # ),
-            "aarch64-unknown-linux-gnu-debug-full": PlatformTriple(
-                "aarch64", "linux", "gnu", "debug"
-            ),
-            "x86_64-unknown-linux-gnu-debug": PlatformTriple(
-                "x86_64", "linux", "gnu", "debug"
-            ),
-            "linux64": PlatformTriple("x86_64", "linux", "gnu", None),
-            "ppc64le-unknown-linux-gnu-noopt-full": None,
-            "x86_64_v3-unknown-linux-gnu-lto": None,
-            "x86_64-pc-windows-msvc-shared-pgo": PlatformTriple(
-                "x86_64", "windows", None, "shared-pgo"
-            ),
-        }
-
-        for input, expected in expected.items():
-            self.assertEqual(CPythonFinder.parse_triple(input), expected, input)
