@@ -158,7 +158,7 @@ impl ReqExtras {
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
                 PyProject::discover()?.build_backend() == Some(BuildSystem::Hatchling);
-            let file_url = if self.absolute || is_hatchling {
+            let file_url = if self.absolute || is_hatchling || cfg!(windows) {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
             } else {
