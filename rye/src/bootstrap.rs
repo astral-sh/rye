@@ -118,9 +118,7 @@ pub fn ensure_self_venv_with_toolchain(
         }
     };
 
-    if output != CommandOutput::Quiet {
-        echo!("Bootstrapping rye internals");
-    }
+    echo!(output, "Bootstrapping rye internals");
 
     // Ensure we have uv
     let uv = Uv::ensure_exists(CommandOutput::Quiet)?;
@@ -324,20 +322,18 @@ fn ensure_specific_self_toolchain(
         );
     }
     if !get_toolchain_python_bin(&toolchain_version)?.is_file() {
-        if output != CommandOutput::Quiet {
-            echo!(
-                "Fetching requested internal toolchain '{}'",
-                toolchain_version
-            );
-        }
+        echo!(
+            output,
+            "Fetching requested internal toolchain '{}'",
+            toolchain_version
+        );
         fetch(&toolchain_version.into(), output, false)
     } else {
-        if output != CommandOutput::Quiet {
-            echo!(
-                "Found a compatible Python version: {}",
-                style(&toolchain_version).cyan()
-            );
-        }
+        echo!(
+            output,
+            "Found a compatible Python version: {}",
+            style(&toolchain_version).cyan()
+        );
         Ok(toolchain_version)
     }
 }

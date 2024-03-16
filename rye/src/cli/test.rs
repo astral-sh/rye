@@ -85,9 +85,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     for (idx, project) in projects.iter().enumerate() {
         if output != CommandOutput::Quiet {
             if idx > 0 {
-                println!();
+                echo!();
             }
-            println!(
+            echo!(
                 "Running tests for {} ({})",
                 style(project.name().unwrap_or("<unknown>")).cyan(),
                 style(project.root_path().display()).dim()

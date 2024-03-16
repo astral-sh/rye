@@ -34,11 +34,19 @@ macro_rules! echo {
     () => {
         $crate::tui::_print(format_args!(""))
     };
+    ($out:ident, $($arg:tt)+) => {
+        match $out {
+            $crate::utils::CommandOutput::Normal | $crate::utils::CommandOutput::Verbose => {
+                $crate::tui::_print(format_args!($($arg)*))
+            }
+            _ => {}
+        }
+    };
     ($($arg:tt)+) => {
         // TODO: this is bloaty, but this way capturing of outputs
         // for stdout works in tests still.
         $crate::tui::_print(format_args!($($arg)*))
-    }
+    };
 }
 
 /// Like echo but always goes to stderr.
