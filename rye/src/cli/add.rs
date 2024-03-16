@@ -158,7 +158,7 @@ impl ReqExtras {
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
                 PyProject::discover()?.build_backend() == Some(BuildSystem::Hatchling);
-            let file_url = if self.absolute || is_hatchling || cfg!(windows) {
+            let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
             } else {
@@ -170,7 +170,9 @@ impl ReqExtras {
                         path.display()
                     )
                 })?;
-                Url::from_file_path(Path::new("/${PROJECT_ROOT}").join(rv)).unwrap()
+                let mut url = Url::parse("file://")?;
+                url.set_path(&Path::new("/${PROJECT_ROOT}").join(rv).to_string_lossy());
+                url
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
