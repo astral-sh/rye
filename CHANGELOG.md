@@ -11,6 +11,8 @@ _Unreleased_
 
 - Fix incorrect flag passing of `rye test` `-q` and `-v`.  #880
 
+- Fix `rye add m --path ./m` causing a panic on windows.  #897
+
 <!-- released start -->
 
 ## 0.29.0
