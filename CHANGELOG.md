@@ -7,7 +7,7 @@ that were not yet released.
 
 _Unreleased_
 
-- Update uv to 0.1.19.  #884
+- Update uv to 0.1.21.  #884, #890
 
 - Fix incorrect flag passing of `rye test` `-q` and `-v`.  #880
 
