@@ -170,7 +170,9 @@ impl ReqExtras {
                         path.display()
                     )
                 })?;
-                Url::from_file_path(Path::new("/${PROJECT_ROOT}").join(rv)).unwrap()
+                let mut url = Url::parse("file://")?;
+                url.set_path(&Path::new("/${PROJECT_ROOT}").join(rv).to_string_lossy());
+                url
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
