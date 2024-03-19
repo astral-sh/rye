@@ -21,6 +21,7 @@ nav:
     - Dependencies: guide/deps.md
     - Workspaces: guide/workspaces.md
     - Virtual Projects: guide/virtual.md
+    - Docker: guide/docker.md
     - Commands:
       - Overview: guide/commands/index.md
       - add: guide/commands/add.md
