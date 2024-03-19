@@ -1299,6 +1299,14 @@ pub struct ExpandedSources {
 }
 
 impl ExpandedSources {
+    pub fn empty() -> ExpandedSources {
+        ExpandedSources {
+            index_urls: Vec::new(),
+            find_links: Vec::new(),
+            trusted_hosts: HashSet::new(),
+        }
+    }
+
     /// Takes some sources and expands them.
     pub fn from_sources(sources: &[SourceRef]) -> Result<ExpandedSources, Error> {
         let mut index_urls = Vec::new();

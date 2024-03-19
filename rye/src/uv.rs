@@ -1,6 +1,7 @@
 use crate::bootstrap::download_url;
+use crate::lock::make_project_root_fragment;
 use crate::platform::get_app_dir;
-use crate::pyproject::write_venv_marker;
+use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources};
 use crate::sources::py::PythonVersion;
 use crate::sources::uv::{UvDownload, UvRequest};
 use crate::utils::{
@@ -8,11 +9,119 @@ use crate::utils::{
     IoPathContext,
 };
 use anyhow::{anyhow, Context, Error};
+use pep508_rs::Requirement;
 use std::fs::{self, remove_dir_all};
 use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 use tempfile::NamedTempFile;
+
+#[derive(Default)]
+pub struct UvInstallOptions {
+    pub importlib_workaround: bool,
+    pub extras: Vec<Requirement>,
+}
+
+pub enum UvPackageUpgrade {
+    /// Upgrade all packages.
+    All,
+    /// Upgrade the specific set of packages.
+    Packages(Vec<String>),
+    /// Upgrade nothig (default).
+    Nothing,
+}
+
+struct UvCompileOptions {
+    pub allow_prerelease: bool,
+    pub exclude_newer: Option<String>,
+    pub upgrade: UvPackageUpgrade,
+    pub no_deps: bool,
+    pub no_header: bool,
+}
+
+impl UvCompileOptions {
+    fn add_as_pip_args(self, cmd: &mut Command) {
+        if self.no_header {
+            cmd.arg("--no-header");
+        }
+
+        if self.no_deps {
+            cmd.arg("--no-deps");
+        }
+
+        if self.allow_prerelease {
+            cmd.arg("--prerelease=allow");
+        }
+
+        if let Some(dt) = self.exclude_newer {
+            cmd.arg("--exclude-newer").arg(dt);
+        }
+
+        match self.upgrade {
+            UvPackageUpgrade::All => {
+                cmd.arg("--upgrade");
+            }
+            UvPackageUpgrade::Packages(ref pkgs) => {
+                for pkg in pkgs {
+                    cmd.arg("--upgrade-package").arg(pkg);
+                }
+            }
+            UvPackageUpgrade::Nothing => {}
+        }
+    }
+}
+
+impl Default for UvCompileOptions {
+    fn default() -> Self {
+        Self {
+            allow_prerelease: false,
+            exclude_newer: None,
+            upgrade: UvPackageUpgrade::Nothing,
+            no_deps: false,
+            no_header: false,
+        }
+    }
+}
+
+pub struct UvBuilder {
+    workdir: Option<PathBuf>,
+    sources: Option<ExpandedSources>,
+    output: CommandOutput,
+}
+
+impl UvBuilder {
+    pub fn new() -> Self {
+        Self {
+            workdir: None,
+            sources: None,
+            output: CommandOutput::Normal,
+        }
+    }
+
+    pub fn with_workdir(self, workdir: &Path) -> Self {
+        Self {
+            workdir: Some(workdir.to_path_buf()),
+            ..self
+        }
+    }
+
+    pub fn with_sources(self, sources: ExpandedSources) -> Self {
+        Self {
+            sources: Some(sources),
+            ..self
+        }
+    }
+
+    pub fn with_output(self, output: CommandOutput) -> Self {
+        Self { output, ..self }
+    }
+
+    pub fn ensure_exists(self) -> Result<Uv, Error> {
+        let workdir = self.workdir.unwrap_or(std::env::current_dir()?);
+        let sources = self.sources.unwrap_or_else(ExpandedSources::empty);
+        Uv::ensure(workdir, sources, self.output)
+    }
+}
 
 // Represents a uv binary and associated functions
 // to bootstrap rye using uv.
@@ -20,6 +129,19 @@ use tempfile::NamedTempFile;
 pub struct Uv {
     output: CommandOutput,
     uv_bin: PathBuf,
+    workdir: PathBuf,
+    sources: ExpandedSources,
+}
+
+impl Default for Uv {
+    fn default() -> Self {
+        Uv {
+            output: CommandOutput::Normal,
+            uv_bin: PathBuf::new(),
+            workdir: std::env::current_dir().unwrap_or_default(),
+            sources: ExpandedSources::empty(),
+        }
+    }
 }
 
 impl Uv {
@@ -28,16 +150,11 @@ impl Uv {
     /// and bootstrap it into [RYE_HOME]/uv/[version]/uv.
     ///
     /// See [`Uv::cmd`] to get access to the uv binary in a safe way.
-    ///
-    /// Example:
-    ///   ```rust
-    ///   use rye::sources::uv::Uv;
-    ///   use rye::utils::CommandOutput;
-    ///   let uv = Uv::ensure_exists(CommandOutput::Normal).expect("Failed to ensure uv binary is available");
-    ///   let status = uv.cmd().arg("--version").status().expect("Failed to run uv");
-    ///   assert!(status.success());
-    ///   ```
-    pub fn ensure_exists(output: CommandOutput) -> Result<Self, Error> {
+    fn ensure(
+        workdir: PathBuf,
+        sources: ExpandedSources,
+        output: CommandOutput,
+    ) -> Result<Self, Error> {
         // Request a download for the default uv binary for this platform.
         // For instance on aarch64 macos this will request a compatible uv version.
         let download = UvDownload::try_from(UvRequest::default())?;
@@ -52,13 +169,23 @@ impl Uv {
         };
 
         if uv_dir.exists() && uv_bin.is_file() {
-            return Ok(Self { uv_bin, output });
+            return Ok(Uv {
+                output,
+                uv_bin,
+                workdir,
+                sources,
+            });
         }
 
         Self::download(&download, &uv_dir, output)?;
         Self::cleanup_old_versions(&base_dir, &uv_dir)?;
         if uv_dir.exists() && uv_bin.is_file() {
-            return Ok(Self { uv_bin, output });
+            return Ok(Uv {
+                output,
+                uv_bin,
+                workdir,
+                sources,
+            });
         }
 
         Err(anyhow!("Failed to ensure uv binary is available"))
@@ -109,6 +236,8 @@ impl Uv {
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     pub fn cmd(&self) -> Command {
         let mut cmd = Command::new(&self.uv_bin);
+        cmd.current_dir(&self.workdir);
+        cmd.env("PROJECT_ROOT", make_project_root_fragment(&self.workdir));
 
         match self.output {
             CommandOutput::Verbose => {
@@ -128,6 +257,21 @@ impl Uv {
     /// Ensures a venv is exists or is created at the given path.
     /// Returns a UvWithVenv that can be used to run commands in the venv.
     pub fn venv(
+        &self,
+        venv_dir: &Path,
+        py_bin: &Path,
+        version: &PythonVersion,
+        prompt: Option<&str>,
+    ) -> Result<UvWithVenv, Error> {
+        match read_venv_marker(venv_dir) {
+            Some(venv) if venv.is_compatible(version) => {
+                Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+            }
+            _ => self.create_venv(venv_dir, py_bin, version, prompt),
+        }
+    }
+
+    fn create_venv(
         &self,
         venv_dir: &Path,
         py_bin: &Path,
@@ -158,6 +302,53 @@ impl Uv {
         }
         Ok(UvWithVenv::new(self.clone(), venv_dir, version))
     }
+
+    pub fn lockfile(
+        &self,
+        py_version: &PythonVersion,
+        source: &Path,
+        target: &Path,
+        allow_prerelease: bool,
+        exclude_newer: Option<String>,
+        upgrade: UvPackageUpgrade,
+    ) -> Result<(), Error> {
+        let options = UvCompileOptions {
+            allow_prerelease,
+            exclude_newer,
+            upgrade,
+            no_deps: false,
+            no_header: true,
+        };
+
+        let mut cmd = self.cmd();
+        cmd.arg("pip").arg("compile").env_remove("VIRTUAL_ENV");
+
+        self.sources.add_as_pip_args(&mut cmd);
+        options.add_as_pip_args(&mut cmd);
+
+        cmd.arg("--python-version")
+            .arg(py_version.format_simple())
+            .arg("--output-file")
+            .arg(target);
+
+        cmd.arg(source);
+
+        let status = cmd.status().with_context(|| {
+            format!(
+                "Unable to run uv pip compile and generate {}",
+                target.to_str().unwrap_or("<unknown>")
+            )
+        })?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Failed to run uv compile {}. uv exited with status: {}",
+                target.to_str().unwrap_or("<unknown>"),
+                status
+            ));
+        }
+        Ok(())
+    }
 }
 
 // Represents a venv generated and managed by uv
@@ -179,7 +370,7 @@ impl UvWithVenv {
     /// Returns a new command with the uv binary as the command to run.
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     /// The command will also have the VIRTUAL_ENV environment variable set to the venv path.
-    pub fn venv_cmd(&self) -> Command {
+    fn venv_cmd(&self) -> Command {
         let mut cmd = self.uv.cmd();
         cmd.env("VIRTUAL_ENV", &self.venv_path);
         cmd
@@ -188,6 +379,15 @@ impl UvWithVenv {
     /// Writes a rye-venv.json for this venv.
     pub fn write_marker(&self) -> Result<(), Error> {
         write_venv_marker(&self.venv_path, &self.py_version)
+    }
+
+    /// Set the output level for subsequent invocations of uv.
+    pub fn with_output(self, output: CommandOutput) -> Self {
+        UvWithVenv {
+            uv: Uv { output, ..self.uv },
+            venv_path: self.venv_path,
+            py_version: self.py_version,
+        }
     }
 
     /// Updates the venv to the given pip version and requirements.
@@ -237,6 +437,95 @@ impl UvWithVenv {
         Ok(())
     }
 
+    /// Freezes the venv.
+    pub fn freeze(&self) -> Result<(), Error> {
+        let status = self
+            .venv_cmd()
+            .arg("pip")
+            .arg("freeze")
+            .status()
+            .with_context(|| format!("unable to freeze venv at {}", self.venv_path.display()))?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Failed to freeze venv at {}. uv exited with status: {}",
+                self.venv_path.display(),
+                status
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Installs the given requirement in the venv.
+    ///
+    /// If you provide a list of extras, they will be installed as well.
+    /// For python 3.7 you are best off setting importlib_workaround to true.
+    pub fn install(
+        &self,
+        requirement: &Requirement,
+        options: UvInstallOptions,
+    ) -> Result<(), Error> {
+        let mut cmd = self.venv_cmd();
+
+        cmd.arg("pip").arg("install");
+
+        self.uv.sources.add_as_pip_args(&mut cmd);
+
+        cmd.arg("--").arg(requirement.to_string());
+
+        for pkg in options.extras {
+            cmd.arg(pkg.to_string());
+        }
+
+        // We could also include this based on the python version,
+        // but we really want to leave this to the caller to decide.
+        if options.importlib_workaround {
+            cmd.arg("importlib-metadata==6.6.0");
+        }
+
+        let status = cmd.status().with_context(|| {
+            format!(
+                "unable to install {} in venv at {}",
+                requirement,
+                self.venv_path.display()
+            )
+        })?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Installation of {} failed in venv at {}. uv exited with status: {}",
+                requirement,
+                self.venv_path.display(),
+                status
+            ));
+        }
+
+        Ok(())
+    }
+
+    /// Syncs the venv
+    pub fn sync(&self, lockfile: &Path) -> Result<(), Error> {
+        let mut cmd = self.venv_cmd();
+        cmd.arg("pip").arg("sync");
+
+        self.uv.sources.add_as_pip_args(&mut cmd);
+
+        let status = cmd
+            .arg(lockfile)
+            .status()
+            .with_context(|| format!("unable to run sync {}", self.venv_path.display()))?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Installation of dependencies failed in venv at {}. uv exited with status: {}",
+                self.venv_path.display(),
+                status
+            ));
+        }
+        Ok(())
+    }
+
     /// Writes the tool version to the venv.
     pub fn write_tool_version(&self, version: u64) -> Result<(), Error> {
         let tool_version_path = self.venv_path.join("tool-version.txt");
@@ -248,5 +537,60 @@ impl UvWithVenv {
     /// Update the cloud synchronization marker for the given path
     pub fn sync_marker(&self) {
         update_venv_sync_marker(self.uv.output, &self.venv_path)
+    }
+
+    /// Resolves the given requirement and returns the resolved requirement.
+
+    /// This will spawn `uv` and read from it's stdout.
+    pub fn resolve(
+        &self,
+        py_version: &PythonVersion,
+        requirement: &Requirement,
+        allow_prerelease: bool,
+        exclude_newer: Option<String>,
+    ) -> Result<Requirement, Error> {
+        let mut cmd = self.venv_cmd();
+        let options = UvCompileOptions {
+            allow_prerelease,
+            exclude_newer,
+            upgrade: UvPackageUpgrade::Nothing,
+            no_deps: true,
+            no_header: true,
+        };
+
+        cmd.arg("pip").arg("compile");
+
+        self.uv.sources.add_as_pip_args(&mut cmd);
+        options.add_as_pip_args(&mut cmd);
+
+        cmd.arg("--python-version").arg(py_version.format_simple());
+
+        // We are using stdin so we can create the requirements in memory and don't
+        // have to create a temporary file.
+        cmd.arg("-");
+
+        let mut child = cmd
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()?;
+
+        // Write requirement to stdin
+        let child_stdin = child.stdin.as_mut().unwrap();
+        writeln!(child_stdin, "{}", requirement)?;
+
+        let rv = child.wait_with_output()?;
+        if !rv.status.success() {
+            let log = String::from_utf8_lossy(&rv.stderr);
+            return Err(anyhow!(
+                "Failed to run uv compile {}. uv exited with status: {}",
+                log,
+                rv.status
+            ));
+        }
+
+        String::from_utf8_lossy(&rv.stdout)
+            .parse()
+            .context("unable to parse requirement from uv.")
     }
 }

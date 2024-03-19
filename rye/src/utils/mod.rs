@@ -144,7 +144,7 @@ impl CommandOutput {
         }
     }
 
-    pub fn quieter(self) -> CommandOutput {
+    pub fn quieter(&self) -> CommandOutput {
         match self {
             CommandOutput::Normal => CommandOutput::Quiet,
             CommandOutput::Verbose => CommandOutput::Normal,
