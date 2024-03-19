@@ -203,14 +203,15 @@ impl SourceRef {
 }
 
 type EnvVars = HashMap<String, String>;
+type EnvFile = Option<PathBuf>;
 
 /// A reference to a script
 #[derive(Clone, Debug)]
 pub enum Script {
     /// Call python module entry
-    Call(String, EnvVars),
+    Call(String, EnvVars, EnvFile),
     /// A command alias
-    Cmd(Vec<String>, EnvVars),
+    Cmd(Vec<String>, EnvVars, EnvFile),
     /// A multi-script execution
     Chain(Vec<Vec<String>>),
     /// External script reference
@@ -257,11 +258,19 @@ impl Script {
             env_vars
         }
 
+        fn get_env_file(detailed: &dyn TableLike) -> EnvFile {
+            detailed
+                .get("env-file")
+                .and_then(|x| x.as_str())
+                .map(PathBuf::from)
+        }
+
         if let Some(detailed) = item.as_table_like() {
             if let Some(call) = detailed.get("call") {
                 let entry = call.as_str()?.to_string();
                 let env_vars = get_env_vars(detailed);
-                Some(Script::Call(entry, env_vars))
+                let env_file = get_env_file(detailed);
+                Some(Script::Call(entry, env_vars, env_file))
             } else if let Some(cmds) = detailed.get("chain").and_then(|x| x.as_array()) {
                 Some(Script::Chain(
                     cmds.iter().flat_map(toml_value_as_command_args).collect(),
@@ -269,13 +278,14 @@ impl Script {
             } else if let Some(cmd) = detailed.get("cmd") {
                 let cmd = toml_value_as_command_args(cmd.as_value()?)?;
                 let env_vars = get_env_vars(detailed);
-                Some(Script::Cmd(cmd, env_vars))
+                let env_file = get_env_file(detailed);
+                Some(Script::Cmd(cmd, env_vars, env_file))
             } else {
                 None
             }
         } else {
             toml_value_as_command_args(item.as_value()?)
-                .map(|cmd| Script::Cmd(cmd, EnvVars::default()))
+                .map(|cmd| Script::Cmd(cmd, EnvVars::default(), None))
         }
     }
 }
@@ -288,7 +298,7 @@ fn shlex_quote_unsafe(s: &str) -> Cow<'_, str> {
 impl fmt::Display for Script {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Script::Call(entry, env) => {
+            Script::Call(entry, env, env_file) => {
                 write!(f, "{}", shlex_quote_unsafe(entry))?;
                 if !env.is_empty() {
                     write!(f, " (env: ")?;
@@ -305,9 +315,12 @@ impl fmt::Display for Script {
                     }
                     write!(f, ")")?;
                 }
+                if let Some(ref env_file) = env_file {
+                    write!(f, " (env-file: {})", env_file.display())?;
+                }
                 Ok(())
             }
-            Script::Cmd(args, env) => {
+            Script::Cmd(args, env, env_file) => {
                 let mut need_space = false;
                 for (key, value) in env.iter() {
                     if need_space {
@@ -327,6 +340,9 @@ impl fmt::Display for Script {
                     }
                     write!(f, "{}", shlex_quote_unsafe(arg))?;
                     need_space = true;
+                }
+                if let Some(ref env_file) = env_file {
+                    write!(f, " (env-file: {})", env_file.display())?;
                 }
                 Ok(())
             }
