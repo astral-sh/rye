@@ -34,7 +34,15 @@ macro_rules! echo {
     () => {
         $crate::tui::_print(format_args!(""))
     };
-    ($out:ident, $($arg:tt)+) => {
+    (if verbose $out:expr, $($arg:tt)+) => {
+        match $out {
+            $crate::utils::CommandOutput::Verbose => {
+                $crate::tui::_print(format_args!($($arg)*))
+            }
+            _ => {}
+        }
+    };
+    (if $out:expr, $($arg:tt)+) => {
         match $out {
             $crate::utils::CommandOutput::Normal | $crate::utils::CommandOutput::Verbose => {
                 $crate::tui::_print(format_args!($($arg)*))

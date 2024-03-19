@@ -70,7 +70,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
 
         echo!(
-            output,
+            if output,
             "building {}",
             style(project.normalized_name()?).cyan()
         );

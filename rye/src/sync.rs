@@ -115,33 +115,29 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     if venv.is_dir() {
         if let Some(marker) = read_venv_marker(&venv) {
             if marker.python != py_ver {
-                if cmd.output != CommandOutput::Quiet {
-                    echo!(
-                        "Python version mismatch (found {}, expected {}), recreating.",
-                        marker.python,
-                        py_ver
-                    );
-                }
+                echo!(
+                    if cmd.output,
+                    "Python version mismatch (found {}, expected {}), recreating.",
+                    marker.python,
+                    py_ver
+                );
                 recreate = true;
             } else if let Some(ref venv_path) = marker.venv_path {
                 // for virtualenvs that have a location identifier, check if we need to
                 // recreate it.  On IO error we know that one of the paths is gone, so
                 // something needs recreation.
                 if !is_same_file(&venv, venv_path).unwrap_or(false) {
-                    if cmd.output != CommandOutput::Quiet {
-                        echo!(
-                            "Detected relocated virtualenv ({} => {}), recreating.",
-                            venv_path.display(),
-                            venv.display(),
-                        );
-                    }
+                    echo!(
+                        if cmd.output,
+                        "Detected relocated virtualenv ({} => {}), recreating.",
+                        venv_path.display(),
+                        venv.display(),
+                    );
                     recreate = true;
                 }
             }
         } else if cmd.force {
-            if cmd.output != CommandOutput::Quiet {
-                echo!("Forcing re-creation of non-rye managed virtualenv");
-            }
+            echo!(if cmd.output, "Forcing re-creation of non-rye managed virtualenv");
             recreate = true;
         } else if cmd.mode == SyncMode::PythonOnly {
             // in python-only sync mode, don't complain about foreign venvs
@@ -162,19 +158,16 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
     if venv.is_dir() {
         // we only care about this output if regular syncs are used
-        if !matches!(cmd.mode, SyncMode::PythonOnly | SyncMode::LockOnly)
-            && output != CommandOutput::Quiet
-        {
-            echo!("Reusing already existing virtualenv");
+        if !matches!(cmd.mode, SyncMode::PythonOnly | SyncMode::LockOnly) {
+            echo!(if output, "Reusing already existing virtualenv");
         }
     } else {
-        if output != CommandOutput::Quiet {
-            echo!(
-                "Initializing new virtualenv in {}",
-                style(venv.display()).cyan()
-            );
-            echo!("Python version: {}", style(&py_ver).cyan());
-        }
+        echo!(
+            if output,
+            "Initializing new virtualenv in {}",
+            style(venv.display()).cyan()
+        );
+        echo!(if output, "Python version: {}", style(&py_ver).cyan());
         let prompt = pyproject.name().unwrap_or("venv");
         create_virtualenv(output, &self_venv, &py_ver, &venv, prompt)
             .context("failed creating virtualenv ahead of sync")?;
@@ -242,9 +235,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 
         // run pip install with the lockfile.
         if cmd.mode != SyncMode::LockOnly {
-            if output != CommandOutput::Quiet {
-                echo!("Installing dependencies");
-            }
+            echo!(if output, "Installing dependencies");
 
             let target_lockfile = if cmd.dev && dev_lockfile.is_file() {
                 dev_lockfile
@@ -311,8 +302,8 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         };
     }
 
-    if output != CommandOutput::Quiet && cmd.mode != SyncMode::PythonOnly {
-        echo!("Done!");
+    if cmd.mode != SyncMode::PythonOnly {
+        echo!(if output, "Done!");
     }
 
     Ok(())

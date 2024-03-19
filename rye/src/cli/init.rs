@@ -445,13 +445,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     echo!(
-        output,
+        if output,
         "{} Initialized {}project in {}",
         style("success:").green(),
         if is_virtual { "virtual " } else { "" },
         dir.display()
     );
-    echo!(output, "  Run `rye sync` to get started");
+    echo!(if output, "  Run `rye sync` to get started");
 
     Ok(())
 }
