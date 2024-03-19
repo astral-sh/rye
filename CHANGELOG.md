@@ -11,6 +11,10 @@ _Unreleased_
 
 - Fix incorrect flag passing of `rye test` `-q` and `-v`.  #880
 
+- Rye now loads `.env` files.  This applies both for Rye's own
+  use of environment variables but also to scripts launched via
+  `run`.  #894
+
 - Fix `rye add m --path ./m` causing a panic on windows.  #897
 
 <!-- released start -->

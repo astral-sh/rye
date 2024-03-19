@@ -1,4 +1,5 @@
 use std::env;
+use std::path::PathBuf;
 
 use anyhow::{bail, Error};
 use clap::Parser;
@@ -34,6 +35,7 @@ use crate::bootstrap::{get_self_venv_status, SELF_PYTHON_TARGET_VERSION};
 use crate::config::Config;
 use crate::platform::symlinks_supported;
 use crate::pyproject::read_venv_marker;
+use crate::utils::IoPathContext;
 
 git_testament!(TESTAMENT);
 
@@ -43,6 +45,9 @@ git_testament!(TESTAMENT);
 struct Args {
     #[command(subcommand)]
     command: Option<Command>,
+    /// Load one or more .env files.
+    #[arg(long)]
+    env_file: Vec<PathBuf>,
     /// Print the version
     #[arg(long)]
     version: bool,
@@ -102,6 +107,13 @@ pub fn execute() -> Result<(), Error> {
     }
 
     let args = Args::try_parse()?;
+
+    // handle --env-file.  As this happens here this cannot influence `RYE_HOME` or
+    // the behavior of the shims.
+    for env_file in &args.env_file {
+        dotenvy::from_path(env_file).path_context(env_file, "unable to load env file")?;
+    }
+
     let cmd = if args.version {
         return print_version();
     } else if let Some(cmd) = args.command {
