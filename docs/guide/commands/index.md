@@ -24,3 +24,11 @@ This is a list of all the commands that rye provides:
 * [self](self/index.md): Rye self management
 * [uninstall](uninstall.md): Uninstalls a global tool (alias)
 * [version](version.md): Get or set project version
+
+## Options
+
+The toplevel `rye` command accepts the following options:
+
+* `--env-file` `<FILE>`: This can be supplied multiple times to make rye load
+  a given `.env` file.  Note that this file is not referenced to handle the
+  `RYE_HOME` variable which must be supplied as environment variable always.

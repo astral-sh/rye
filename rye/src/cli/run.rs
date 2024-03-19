@@ -65,7 +65,7 @@ fn invoke_script(
     match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
         Some(Script::Call(entry, env_vars, env_file)) => {
             let py = OsString::from(get_venv_python_bin(&pyproject.venv_path()));
-            env_overrides = Some(load_env_vars(env_file, env_vars)?);
+            env_overrides = Some(load_env_vars(pyproject, env_file, env_vars)?);
             args = if let Some((module, func)) = entry.split_once(':') {
                 if module.is_empty() || func.is_empty() {
                     bail!("Python callable must be in the form <module_name>:<callable_name> or <module_name>")
@@ -91,7 +91,7 @@ fn invoke_script(
             if script_args.is_empty() {
                 bail!("script has no arguments");
             }
-            env_overrides = Some(load_env_vars(env_file, env_vars)?);
+            env_overrides = Some(load_env_vars(pyproject, env_file, env_vars)?);
             let script_target = venv_bin.join(&script_args[0]);
             if script_target.is_file() {
                 args = Some(script_target.as_os_str().to_owned())
@@ -159,14 +159,16 @@ fn invoke_script(
 }
 
 fn load_env_vars(
+    pyproject: &PyProject,
     env_file: Option<PathBuf>,
     mut env_vars: HashMap<String, String>,
 ) -> Result<HashMap<String, String>, Error> {
     if let Some(ref env_file) = env_file {
+        let env_file = pyproject.root_path().join(env_file);
         for item in
-            dotenvy::from_path_iter(env_file).path_context(env_file, "could not load env-file")?
+            dotenvy::from_path_iter(&env_file).path_context(&env_file, "could not load env-file")?
         {
-            let (k, v) = item.path_context(env_file, "invalid value in env-file")?;
+            let (k, v) = item.path_context(&env_file, "invalid value in env-file")?;
             env_vars.insert(k, v);
         }
     }
