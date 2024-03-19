@@ -54,9 +54,7 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
             .path_context(&venv, "unable to wipe old virtualenv for pip-tools")?;
     }
 
-    if output != CommandOutput::Quiet {
-        echo!("Creating virtualenv for pip-tools");
-    }
+    echo!(if output, "Creating virtualenv for pip-tools");
     create_virtualenv(output, &self_venv, py_ver, &venv, "pip-tools")?;
 
     let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));

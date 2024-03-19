@@ -137,9 +137,7 @@ pub fn update_workspace_lockfile(
     sources: &ExpandedSources,
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
-    if output != CommandOutput::Quiet {
-        echo!("Generating {} lockfile: {}", lock_mode, lockfile.display());
-    }
+    echo!(if output, "Generating {} lockfile: {}", lock_mode, lockfile.display());
 
     let lock_options = restore_lock_options(lockfile, lock_options)?;
     let features_by_project = collect_workspace_features(&lock_options);
@@ -319,9 +317,7 @@ pub fn update_single_project_lockfile(
     sources: &ExpandedSources,
     lock_options: &LockOptions,
 ) -> Result<(), Error> {
-    if output != CommandOutput::Quiet {
-        echo!("Generating {} lockfile: {}", lock_mode, lockfile.display());
-    }
+    echo!(if output, "Generating {} lockfile: {}", lock_mode, lockfile.display());
 
     let lock_options = restore_lock_options(lockfile, lock_options)?;
     let mut req_file = NamedTempFile::new()?;

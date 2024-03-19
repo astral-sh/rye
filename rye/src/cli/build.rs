@@ -69,9 +69,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             continue;
         }
 
-        if output != CommandOutput::Quiet {
-            echo!("building {}", style(project.normalized_name()?).cyan());
-        }
+        echo!(
+            if output,
+            "building {}",
+            style(project.normalized_name()?).cyan()
+        );
 
         let mut build_cmd = Command::new(get_venv_python_bin(&venv));
         build_cmd
