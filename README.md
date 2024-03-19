@@ -7,11 +7,11 @@
 <div align="center">
 
 [![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye-up.com)
-[![Rye Version](https://img.shields.io/github/v/release/astral-sh/rye?logo=github&logoColor=D7FF64&label=Version&color=261230)](https://github.com/astral-sh/rye/releases/)
-[![GitHub](https://img.shields.io/github/license/astral-sh/rye?logo=github&logoColor=D7FF64&color=261230)](https://github.com/astral-sh/rye/blob/main/LICENSE)
-[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/astral-sh/rye/release.yml?logo=github&logoColor=D7FF64&color=261230)](https://github.com/astral-sh/rye/actions/workflows/release.yml)
+[![Rye Version](https://img.shields.io/github/v/release/astral-sh/rye?logo=github&label=Version)](https://github.com/astral-sh/rye/releases/)
+[![GitHub](https://img.shields.io/github/license/astral-sh/rye?logo=github&logoColor=D7FF64)](https://github.com/astral-sh/rye/blob/main/LICENSE)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/astral-sh/rye/release.yml?logo=github)](https://github.com/astral-sh/rye/actions/workflows/release.yml)
 [![Astral Discord](https://img.shields.io/discord/1039017663004942429?logo=discord&logoColor=D7FF64&label=Astral%20Discord&color=261230)](https://discord.gg/astral-sh)
-[![Rye Discord](https://img.shields.io/discord/1108809133131563092?logo=discord&logoColor=D7FF64&label=Rye%20Discord&color=261230)](https://discord.gg/drbkcdtSbg)
+[![Rye Discord](https://dcbadge.vercel.app/api/server/drbkcdtSbg?style=flat)](https://discord.gg/drbkcdtSbg)
 
 </div>
 
