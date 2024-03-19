@@ -18,7 +18,7 @@ use crate::platform::{
 use crate::pyproject::latest_available_python_version;
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{check_checksum, symlink_file, unpack_archive, CommandOutput, IoPathContext};
-use crate::uv::Uv;
+use crate::uv::UvBuilder;
 
 /// this is the target version that we want to fetch
 pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionRequest {
@@ -121,7 +121,9 @@ pub fn ensure_self_venv_with_toolchain(
     echo!(output, "Bootstrapping rye internals");
 
     // Ensure we have uv
-    let uv = Uv::ensure_exists(CommandOutput::Quiet)?;
+    let uv = UvBuilder::new()
+        .with_output(CommandOutput::Quiet)
+        .ensure_exists()?;
 
     let version = match toolchain_version_request {
         Some(ref version_request) => ensure_specific_self_toolchain(output, version_request)
