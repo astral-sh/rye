@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.30.0
 
-_Unreleased_
+Released on 2024-03-19
 
 - Update uv to 0.1.21.  #884, #890, #904
 
@@ -16,8 +18,6 @@ _Unreleased_
   `run`.  #894
 
 - Fix `rye add m --path ./m` causing a panic on windows.  #897
-
-<!-- released start -->
 
 ## 0.29.0
 
