@@ -9,6 +9,8 @@ _Unreleased_
 
 <!-- released start -->
 
+- Allow `rye publish` working outside of project.  #910
+
 ## 0.30.0
 
 Released on 2024-03-19

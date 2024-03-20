@@ -69,7 +69,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 bail!("virtual packages cannot be published");
             }
             vec![project.workspace_path().join("dist").join("*")]
-        },
+        }
     };
 
     // a. Get token from arguments and offer encryption, then store in credentials file.
@@ -116,7 +116,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
         let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
         credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
-        write_credentials(&credentials)?;
 
         secret
     } else if let Some(token) = credentials
