@@ -20,7 +20,7 @@ fn test_publish_outside_project() {
         .arg("fake-token")
         .arg("--quiet")
         .current_dir(space.project_path().parent().unwrap())
-        .arg(space.project_path().join("./dist/*")), @r###"
+        .arg(space.project_path().join("dist").join("*")), @r###"
     success: false
     exit_code: 1
     ----- stdout -----
