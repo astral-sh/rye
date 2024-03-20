@@ -13,7 +13,7 @@ use crate::utils::{get_venv_python_bin, CommandOutput, IoPathContext};
 /// Builds a package for distribution.
 #[derive(Parser, Debug)]
 pub struct Args {
-    /// Build an sdist
+    /// Build a sdist
     #[arg(long)]
     sdist: bool,
     /// Build a wheel
