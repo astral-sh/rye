@@ -7,9 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
-<!-- released start -->
-
 - Allow `rye publish` working outside of project.  #910
+
+<!-- released start -->
 
 ## 0.30.0
 
