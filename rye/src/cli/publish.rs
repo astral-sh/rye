@@ -59,16 +59,17 @@ pub struct Args {
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let venv = ensure_self_venv(output)?;
-    let project = PyProject::discover()?;
-
-    if project.is_virtual() {
-        bail!("virtual packages cannot be published");
-    }
 
     // Get the files to publish.
     let files = match cmd.dist {
         Some(paths) => paths,
-        None => vec![project.workspace_path().join("dist").join("*")],
+        None => {
+            let project = PyProject::discover()?;
+            if project.is_virtual() {
+                bail!("virtual packages cannot be published");
+            }
+            vec![project.workspace_path().join("dist").join("*")]
+        },
     };
 
     // a. Get token from arguments and offer encryption, then store in credentials file.
