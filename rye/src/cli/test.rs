@@ -95,7 +95,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
 
         let mut pytest_cmd = Command::new(&pytest);
-        if cmd.no_capture || output == CommandOutput::Quiet {
+        if cmd.no_capture {
             pytest_cmd.arg("--capture=no");
         }
         match output {

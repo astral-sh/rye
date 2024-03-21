@@ -8,6 +8,7 @@ that were not yet released.
 _Unreleased_
 
 - Allow `rye publish` working outside of project.  #910
+- `rye test --quiet` no longer implies `--no-capture`. #915
 
 <!-- released start -->
 
