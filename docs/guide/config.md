@@ -98,7 +98,7 @@ venv-mark-sync-ignore = true
 # a array of tables with optional sources.  Same format as in pyproject.toml
 [[sources]]
 name = "default"
-url = "http://pypi.org/simple/"
+url = "https://pypi.org/simple/"
 ```
 
 ## Manipulating Config
