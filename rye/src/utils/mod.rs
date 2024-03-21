@@ -34,6 +34,7 @@ pub(crate) mod windows;
 #[cfg(unix)]
 pub(crate) mod unix;
 
+pub(crate) mod panic;
 pub(crate) mod ruff;
 pub(crate) mod toml;
 
@@ -143,7 +144,7 @@ impl CommandOutput {
         }
     }
 
-    pub fn quieter(self) -> CommandOutput {
+    pub fn quieter(&self) -> CommandOutput {
         match self {
             CommandOutput::Normal => CommandOutput::Quiet,
             CommandOutput::Verbose => CommandOutput::Normal,

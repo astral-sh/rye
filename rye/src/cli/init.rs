@@ -444,15 +444,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    if output != CommandOutput::Quiet {
-        echo!(
-            "{} Initialized {}project in {}",
-            style("success:").green(),
-            if is_virtual { "virtual " } else { "" },
-            dir.display()
-        );
-        echo!("  Run `rye sync` to get started");
-    }
+    echo!(
+        if output,
+        "{} Initialized {}project in {}",
+        style("success:").green(),
+        if is_virtual { "virtual " } else { "" },
+        dir.display()
+    );
+    echo!(if output, "  Run `rye sync` to get started");
 
     Ok(())
 }

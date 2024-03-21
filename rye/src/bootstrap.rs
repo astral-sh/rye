@@ -18,7 +18,7 @@ use crate::platform::{
 use crate::pyproject::latest_available_python_version;
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{check_checksum, symlink_file, unpack_archive, CommandOutput, IoPathContext};
-use crate::uv::Uv;
+use crate::uv::UvBuilder;
 
 /// this is the target version that we want to fetch
 pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionRequest {
@@ -31,11 +31,11 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 16;
+const SELF_VERSION: u64 = 17;
 
 const SELF_REQUIREMENTS: &str = r#"
-build==1.0.3
-certifi==2023.11.17
+build==1.1.1
+certifi==2024.2.2
 charset-normalizer==3.3.2
 click==8.1.7
 distlib==0.3.8
@@ -64,6 +64,28 @@ fn is_up_to_date() -> bool {
     *UP_TO_UPDATE || FORCED_TO_UPDATE.load(atomic::Ordering::Relaxed)
 }
 
+#[derive(Debug, Clone)]
+pub(crate) enum SelfVenvStatus {
+    NotUpToDate,
+    DoesNotExist,
+}
+
+/// Get self venv path and check if it exists and is up to date
+pub fn get_self_venv_status() -> Result<PathBuf, (PathBuf, SelfVenvStatus)> {
+    let app_dir = get_app_dir();
+    let venv_dir = app_dir.join("self");
+
+    if venv_dir.is_dir() {
+        if is_up_to_date() {
+            Ok(venv_dir)
+        } else {
+            Err((venv_dir, SelfVenvStatus::NotUpToDate))
+        }
+    } else {
+        Err((venv_dir, SelfVenvStatus::DoesNotExist))
+    }
+}
+
 /// Bootstraps the venv for rye itself
 pub fn ensure_self_venv(output: CommandOutput) -> Result<PathBuf, Error> {
     ensure_self_venv_with_toolchain(output, None)
@@ -75,26 +97,31 @@ pub fn ensure_self_venv_with_toolchain(
     toolchain_version_request: Option<PythonVersionRequest>,
 ) -> Result<PathBuf, Error> {
     let app_dir = get_app_dir();
-    let venv_dir = app_dir.join("self");
 
-    if venv_dir.is_dir() {
-        if is_up_to_date() {
-            return Ok(venv_dir);
-        } else {
-            if output != CommandOutput::Quiet {
-                echo!("Detected outdated rye internals. Refreshing");
-            }
+    let venv_dir = match get_self_venv_status() {
+        Ok(venv_dir) => return Ok(venv_dir),
+        Err((venv_dir, SelfVenvStatus::DoesNotExist)) => venv_dir,
+        Err((venv_dir, SelfVenvStatus::NotUpToDate)) => {
+            echo!(if output, "Detected outdated rye internals. Refreshing");
             fs::remove_dir_all(&venv_dir)
                 .path_context(&venv_dir, "could not remove self-venv for update")?;
-        }
-    }
 
-    if output != CommandOutput::Quiet {
-        echo!("Bootstrapping rye internals");
-    }
+            let pip_tools_dir = app_dir.join("pip-tools");
+            if pip_tools_dir.is_dir() {
+                fs::remove_dir_all(&pip_tools_dir)
+                    .context("could not remove pip-tools for update")?;
+            }
+
+            venv_dir
+        }
+    };
+
+    echo!(if output, "Bootstrapping rye internals");
 
     // Ensure we have uv
-    let uv = Uv::ensure_exists(CommandOutput::Quiet)?;
+    let uv = UvBuilder::new()
+        .with_output(CommandOutput::Quiet)
+        .ensure_exists()?;
 
     let version = match toolchain_version_request {
         Some(ref version_request) => ensure_specific_self_toolchain(output, version_request)
@@ -269,12 +296,11 @@ fn ensure_latest_self_toolchain(output: CommandOutput) -> Result<PythonVersion, 
         .into_iter()
         .max()
     {
-        if output != CommandOutput::Quiet {
-            echo!(
-                "Found a compatible Python version: {}",
-                style(&version).cyan()
-            );
-        }
+        echo!(
+            if output,
+            "Found a compatible Python version: {}",
+            style(&version).cyan()
+        );
         Ok(version)
     } else {
         fetch(&SELF_PYTHON_TARGET_VERSION, output, false)
@@ -295,20 +321,18 @@ fn ensure_specific_self_toolchain(
         );
     }
     if !get_toolchain_python_bin(&toolchain_version)?.is_file() {
-        if output != CommandOutput::Quiet {
-            echo!(
-                "Fetching requested internal toolchain '{}'",
-                toolchain_version
-            );
-        }
+        echo!(
+            if output,
+            "Fetching requested internal toolchain '{}'",
+            toolchain_version
+        );
         fetch(&toolchain_version.into(), output, false)
     } else {
-        if output != CommandOutput::Quiet {
-            echo!(
-                "Found a compatible Python version: {}",
-                style(&toolchain_version).cyan()
-            );
-        }
+        echo!(
+            if output,
+            "Found a compatible Python version: {}",
+            style(&toolchain_version).cyan()
+        );
         Ok(toolchain_version)
     }
 }
@@ -322,9 +346,7 @@ pub fn fetch(
     if let Ok(version) = PythonVersion::try_from(version.clone()) {
         let py_bin = get_toolchain_python_bin(&version)?;
         if !force && py_bin.is_file() {
-            if output == CommandOutput::Verbose {
-                echo!("Python version already downloaded. Skipping.");
-            }
+            echo!(if verbose output, "Python version already downloaded. Skipping.");
             return Ok(version);
         }
     }
@@ -336,46 +358,32 @@ pub fn fetch(
 
     let target_dir = get_canonical_py_path(&version)?;
     let target_py_bin = get_toolchain_python_bin(&version)?;
-    if output == CommandOutput::Verbose {
-        echo!("target dir: {}", target_dir.display());
-    }
+    echo!(if verbose output, "target dir: {}", target_dir.display());
     if target_dir.is_dir() && target_py_bin.is_file() {
         if !force {
-            if output == CommandOutput::Verbose {
-                echo!("Python version already downloaded. Skipping.");
-            }
+            echo!(if verbose output, "Python version already downloaded. Skipping.");
             return Ok(version);
         }
-        if output != CommandOutput::Quiet {
-            echo!("Removing the existing Python version");
-        }
+        echo!(if output, "Removing the existing Python version");
         fs::remove_dir_all(&target_dir)
             .with_context(|| format!("failed to remove target folder {}", target_dir.display()))?;
     }
 
     fs::create_dir_all(&target_dir).path_context(&target_dir, "failed to create target folder")?;
 
-    if output == CommandOutput::Verbose {
-        echo!("download url: {}", url);
-    }
-    if output != CommandOutput::Quiet {
-        echo!("{} {}", style("Downloading").cyan(), version);
-    }
+    echo!(if verbose output, "download url: {}", url);
+    echo!(if output, "{} {}", style("Downloading").cyan(), version);
     let archive_buffer = download_url(url, output)?;
 
     if let Some(sha256) = sha256 {
-        if output != CommandOutput::Quiet {
-            echo!("{} {}", style("Checking").cyan(), "checksum");
-        }
+        echo!(if output, "{} {}", style("Checking").cyan(), "checksum");
         check_checksum(&archive_buffer, sha256)
             .with_context(|| format!("Checksum check of {} failed", &url))?;
-    } else if output != CommandOutput::Quiet {
-        echo!("Checksum check skipped (no hash available)");
+    } else {
+        echo!(if output, "Checksum check skipped (no hash available)");
     }
 
-    if output != CommandOutput::Quiet {
-        echo!("{}", style("Unpacking").cyan());
-    }
+    echo!(if output, "{}", style("Unpacking").cyan());
     unpack_archive(&archive_buffer, &target_dir, 1).with_context(|| {
         format!(
             "unpacking of downloaded tarball {} to '{}' failed",
@@ -384,9 +392,7 @@ pub fn fetch(
         )
     })?;
 
-    if output != CommandOutput::Quiet {
-        echo!("{} {}", style("Downloaded").green(), version);
-    }
+    echo!(if output, "{} {}", style("Downloaded").green(), version);
 
     Ok(version)
 }

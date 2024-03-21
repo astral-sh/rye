@@ -3,13 +3,52 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
-## 0.28.0
+## 0.31.0
 
 _Unreleased_
 
+- Allow `rye publish` working outside of project.  #910
+
+<!-- released start -->
+
+## 0.30.0
+
+Released on 2024-03-19
+
+- Update uv to 0.1.21.  #884, #890, #904
+
+- Fix incorrect flag passing of `rye test` `-q` and `-v`.  #880
+
+- Rye now loads `.env` files.  This applies both for Rye's own
+  use of environment variables but also to scripts launched via
+  `run`.  #894
+
+- Fix `rye add m --path ./m` causing a panic on windows.  #897
+
+## 0.29.0
+
+Released on 2024-03-11
+
+- Updated to `uv` 0.1.17.  #850, #867
+
+- Trap panics and silence bad pipe errors.  #862
+
+- Updating `rye` will now also ensure that the self-venv is updated.  Previously
+  this was deferred until the next `sync`.  #863
+
+- The `self update` command now accepts `--branch`.  #864
+
+- Fixed an issue that caused pip-tools to not update.  #865
+
+- Updates `build` and `certifi`.  #866
+
+## 0.28.0
+
+Released on 2024-03-07
+
 - `--skip-existing` is now available with Rye's `publish` command. #831
 
-- Bumped `uv` to 0.1.13.  #760, #820
+- Bumped `uv` to 0.1.15.  #760, #820, #837
 
 - Bumped `ruff` to 0.3.0.  #821
 
@@ -20,7 +59,13 @@ _Unreleased_
 
 - Fixed a bug that caused repeated syncs not to recall all previous options.  #830
 
-<!-- released start -->
+- Report `self-python` version in `--version`.  #843
+
+- Fixes a bug where `rye config` would not create the `RYE_HOME` folder if needed.  #844
+
+- `rye add` now retains version and URL for the requirements when `uv` is used.  #846
+
+- Added a `rye test` command which invokes `pytest`.  #847
 
 - `publish` will fall back to dispatching username and repository url for Twine's keyring support. #759
 

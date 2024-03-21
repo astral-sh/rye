@@ -132,7 +132,11 @@ fn is_pointless_windows_store_applink(path: &std::path::Path) -> bool {
         return false;
     }
 
-    let mut path_encoded = path.as_os_str().encode_wide().collect::<Vec<_>>();
+    let mut path_encoded = path
+        .as_os_str()
+        .encode_wide()
+        .chain(Some(0))
+        .collect::<Vec<_>>();
     let reparse_handle = unsafe {
         CreateFileW(
             path_encoded.as_mut_ptr(),

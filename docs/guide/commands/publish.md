@@ -40,6 +40,8 @@ $ rye publish dist/example-0.1.0.tar.gz
 
 * `--cert <CERT>`: Path to alternate CA bundle
 
+* `--skip-existing`: Skip files already published (repository must support this feature)
+
 * `-y, --yes`: Skip prompts
 
 * `-v, --verbose`: Enables verbose diagnostics

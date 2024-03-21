@@ -1,4 +1,5 @@
 use std::env;
+use std::path::PathBuf;
 
 use anyhow::{bail, Error};
 use clap::Parser;
@@ -22,6 +23,7 @@ mod rye;
 mod shim;
 mod show;
 mod sync;
+mod test;
 mod toolchain;
 mod tools;
 mod uninstall;
@@ -29,9 +31,11 @@ mod version;
 
 use git_testament::git_testament;
 
-use crate::bootstrap::SELF_PYTHON_TARGET_VERSION;
+use crate::bootstrap::{get_self_venv_status, SELF_PYTHON_TARGET_VERSION};
 use crate::config::Config;
 use crate::platform::symlinks_supported;
+use crate::pyproject::read_venv_marker;
+use crate::utils::IoPathContext;
 
 git_testament!(TESTAMENT);
 
@@ -41,6 +45,9 @@ git_testament!(TESTAMENT);
 struct Args {
     #[command(subcommand)]
     command: Option<Command>,
+    /// Load one or more .env files.
+    #[arg(long)]
+    env_file: Vec<PathBuf>,
     /// Print the version
     #[arg(long)]
     version: bool,
@@ -66,6 +73,7 @@ enum Command {
     Run(run::Args),
     Show(show::Args),
     Sync(sync::Args),
+    Test(test::Args),
     Toolchain(toolchain::Args),
     Tools(tools::Args),
     #[command(name = "self")]
@@ -99,6 +107,13 @@ pub fn execute() -> Result<(), Error> {
     }
 
     let args = Args::try_parse()?;
+
+    // handle --env-file.  As this happens here this cannot influence `RYE_HOME` or
+    // the behavior of the shims.
+    for env_file in &args.env_file {
+        dotenvy::from_path(env_file).path_context(env_file, "unable to load env file")?;
+    }
+
     let cmd = if args.version {
         return print_version();
     } else if let Some(cmd) = args.command {
@@ -124,6 +139,7 @@ pub fn execute() -> Result<(), Error> {
         Command::Run(cmd) => run::execute(cmd),
         Command::Show(cmd) => show::execute(cmd),
         Command::Sync(cmd) => sync::execute(cmd),
+        Command::Test(cmd) => test::execute(cmd),
         Command::Toolchain(cmd) => toolchain::execute(cmd),
         Command::Tools(cmd) => tools::execute(cmd),
         Command::Rye(cmd) => rye::execute(cmd),
@@ -151,7 +167,19 @@ fn print_version() -> Result<(), Error> {
         std::env::consts::OS,
         std::env::consts::ARCH
     );
-    echo!("self-python: {}", SELF_PYTHON_TARGET_VERSION);
+
+    let self_venv_python = match get_self_venv_status() {
+        Ok(venv_dir) | Err((venv_dir, _)) => read_venv_marker(&venv_dir).map(|mark| mark.python),
+    };
+
+    if let Some(python) = self_venv_python {
+        echo!("self-python: {}", python);
+    } else {
+        echo!(
+            "self-python: not bootstrapped (target: {})",
+            SELF_PYTHON_TARGET_VERSION
+        );
+    }
     echo!("symlink support: {}", symlinks_supported());
     echo!("uv enabled: {}", Config::current().use_uv());
     Ok(())

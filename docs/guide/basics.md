@@ -163,11 +163,11 @@ The following structure will be created:
 ```
 
 The [`pyproject.toml`](pyproject.md) will be generated with a
-[`[project.scripts]`](pyproject.md#projectscripts) section named `hello`
-that points to the `main()` function of `__init__.py`. After you
-synchronized your changes, you can run the script with `rye run hello`.
+[`[project.scripts]`](pyproject.md#projectscripts) section containing a
+`my-project` script that points to the `main()` function of `__init__.py`. After
+you synchronized your changes, you can run the script with `rye run my-project`.
 
 ```shell
 rye sync
-rye run hello
+rye run my-project
 ```

@@ -9,7 +9,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::PyProject;
 use crate::utils::{get_venv_python_bin, CommandOutput};
-use crate::uv::Uv;
+use crate::uv::UvBuilder;
 
 /// Prints the currently installed packages.
 #[derive(Parser, Debug)]
@@ -27,26 +27,30 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
-    let status = if Config::current().use_uv() {
-        Uv::ensure_exists(CommandOutput::Normal)?
-            .cmd()
-            .arg("pip")
-            .arg("freeze")
-            .env("VIRTUAL_ENV", project.venv_path().as_os_str())
-            .status()?
+    if Config::current().use_uv() {
+        UvBuilder::new()
+            .with_output(CommandOutput::Normal)
+            .ensure_exists()?
+            .venv(
+                &project.venv_path(),
+                &python,
+                &project.venv_python_version()?,
+                None,
+            )?
+            .freeze()?;
     } else {
-        Command::new(self_venv.join(VENV_BIN).join("pip"))
+        let status = Command::new(self_venv.join(VENV_BIN).join("pip"))
             .arg("--python")
             .arg(&python)
             .arg("freeze")
             .env("PYTHONWARNINGS", "ignore")
             .env("PIP_DISABLE_PIP_VERSION_CHECK", "1")
-            .status()?
-    };
+            .status()?;
 
-    if !status.success() {
-        bail!("failed to print dependencies via pip");
-    }
+        if !status.success() {
+            bail!("failed to print dependencies via pip");
+        }
+    };
 
     Ok(())
 }

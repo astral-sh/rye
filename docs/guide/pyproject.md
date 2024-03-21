@@ -158,6 +158,18 @@ This key can be used to provide environment variables with a script:
 devserver = { cmd = "flask run --debug", env = { FLASK_APP = "./hello.py" } }
 ```
 
+### `env-file`
+
++++ 0.30.0
+
+This is similar to `env` but rather than setting environment variables directly, it instead
+points to a file that should be loaded (relative to the `pyproject.toml`):
+
+```toml
+[tool.rye.scripts]
+devserver = { cmd = "flask run --debug", env-file = ".dev.env" }
+```
+
 ### `chain`
 
 This is a special key that can be set instead of `cmd` to make a command invoke multiple

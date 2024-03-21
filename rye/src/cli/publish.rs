@@ -47,7 +47,7 @@ pub struct Args {
     /// Path to alternate CA bundle.
     #[arg(long)]
     cert: Option<PathBuf>,
-    /// Continue uploading files if one already exists (only applies to repositories supporting this feature)
+    /// Skip files that have already been published (only applies to repositories supporting this feature)
     #[arg(long)]
     skip_existing: bool,
     /// Skip saving to credentials file.
@@ -67,16 +67,17 @@ pub struct Args {
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let venv = ensure_self_venv(output)?;
-    let project = PyProject::discover()?;
-
-    if project.is_virtual() {
-        bail!("virtual packages cannot be published");
-    }
 
     // Get the files to publish.
     let files = match cmd.dist {
         Some(paths) => paths,
-        None => vec![project.workspace_path().join("dist").join("*")],
+        None => {
+            let project = PyProject::discover()?;
+            if project.is_virtual() {
+                bail!("virtual packages cannot be published");
+            }
+            vec![project.workspace_path().join("dist").join("*")]
+        }
     };
 
     let token = cmd.token.map(Secret::new);

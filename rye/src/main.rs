@@ -1,6 +1,6 @@
-use std::process;
 use std::sync::atomic::{AtomicBool, Ordering};
 
+use crate::utils::panic::trap_bad_pipe;
 use crate::utils::QuietExit;
 
 #[macro_use]
@@ -34,6 +34,8 @@ pub fn disable_ctrlc_handler() {
 }
 
 pub fn main() {
+    crate::utils::panic::set_panic_hook();
+
     ctrlc::set_handler(move || {
         if !DISABLE_CTRLC_HANDLER.load(Ordering::Relaxed) {
             let term = console::Term::stderr();
@@ -48,26 +50,27 @@ pub fn main() {
     })
     .unwrap();
 
-    let result = cli::execute();
-    let status = match result {
-        Ok(()) => 0,
-        Err(err) => {
-            if let Some(err) = err.downcast_ref::<clap::Error>() {
-                err.print().ok();
-                err.exit_code()
-            } else if let Some(QuietExit(code)) = err.downcast_ref() {
-                *code
-            } else {
-                error!("{:?}", err);
-                1
+    trap_bad_pipe(|| {
+        let result = cli::execute();
+        let status = match result {
+            Ok(()) => 0,
+            Err(err) => {
+                if let Some(err) = err.downcast_ref::<clap::Error>() {
+                    err.print().ok();
+                    err.exit_code()
+                } else if let Some(QuietExit(code)) = err.downcast_ref() {
+                    *code
+                } else {
+                    error!("{:?}", err);
+                    1
+                }
             }
+        };
+
+        if SHOW_CONTINUE_PROMPT.load(Ordering::Relaxed) {
+            echo!("Press any key to continue");
+            console::Term::buffered_stderr().read_key().ok();
         }
-    };
-
-    if SHOW_CONTINUE_PROMPT.load(Ordering::Relaxed) {
-        echo!("Press any key to continue");
-        console::Term::buffered_stderr().read_key().ok();
-    }
-
-    process::exit(status);
+        status
+    });
 }

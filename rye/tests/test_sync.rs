@@ -54,7 +54,7 @@ fn test_add_and_sync_no_auto_sync() {
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.2
-    Added flask>=3.0.0 as regular dependency
+    Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
 
     ----- stderr -----
@@ -97,7 +97,7 @@ fn test_add_autosync() {
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.2
-    Added flask>=3.0.0 as regular dependency
+    Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
@@ -155,7 +155,7 @@ fn test_autosync_remember() {
     success: true
     exit_code: 0
     ----- stdout -----
-    Added flask>=3.0.0 as optional (web) dependency
+    Added flask==3.0.0 as optional (web) dependency
     Added colorama>=0.4.6 as optional (web) dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
