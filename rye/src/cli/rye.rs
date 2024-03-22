@@ -548,15 +548,15 @@ fn perform_install(
         .and_then(|x| x.get("use-uv"))
         .is_none()
         && !matches!(mode, InstallMode::NoPrompts)
-        && dialoguer::Select::with_theme(tui_theme())
+    {
+        let use_uv = dialoguer::Select::with_theme(tui_theme())
             .with_prompt("Select the preferred package installer")
-            .item("pip-tools (slow but stable)")
-            .item("uv (quick but experimental)")
+            .item("uv (fast, recommended)")
+            .item("pip-tools (slow, higher compatibility)")
             .default(0)
             .interact()?
-            == 1
-    {
-        toml::ensure_table(config_doc, "behavior")["use-uv"] = toml_edit::value(true);
+            == 0;
+        toml::ensure_table(config_doc, "behavior")["use-uv"] = toml_edit::value(use_uv);
     }
 
     // If the global-python flag is not in the settings, ask the user if they want to turn
