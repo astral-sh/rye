@@ -9,6 +9,7 @@ use anyhow::{anyhow, bail, Context, Error};
 use console::style;
 use indicatif::{ProgressBar, ProgressStyle};
 use once_cell::sync::Lazy;
+use tempfile::tempdir_in;
 
 use crate::config::Config;
 use crate::piptools::LATEST_PIP;
@@ -303,7 +304,10 @@ fn ensure_latest_self_toolchain(output: CommandOutput) -> Result<PythonVersion, 
         );
         Ok(version)
     } else {
-        fetch(&SELF_PYTHON_TARGET_VERSION, output, false)
+        fetch(
+            &SELF_PYTHON_TARGET_VERSION,
+            FetchOptions::with_output(output),
+        )
     }
 }
 
@@ -326,7 +330,7 @@ fn ensure_specific_self_toolchain(
             "Fetching requested internal toolchain '{}'",
             toolchain_version
         );
-        fetch(&toolchain_version.into(), output, false)
+        fetch(&toolchain_version.into(), FetchOptions::with_output(output))
     } else {
         echo!(
             if output,
@@ -337,64 +341,147 @@ fn ensure_specific_self_toolchain(
     }
 }
 
+/// Fetches a python installer.
+pub struct FetchOptions {
+    /// How verbose should the sync be?
+    pub output: CommandOutput,
+    /// Forces re-downloads even if they are already there.
+    pub force: bool,
+    /// Causes a fetch into a non standard location.
+    pub target_path: Option<PathBuf>,
+    /// Include build info (overrides configured default).
+    pub build_info: Option<bool>,
+}
+
+impl FetchOptions {
+    /// Basic fetch options.
+    pub fn with_output(output: CommandOutput) -> FetchOptions {
+        FetchOptions {
+            output,
+            ..Default::default()
+        }
+    }
+}
+
+impl Default for FetchOptions {
+    fn default() -> Self {
+        Self {
+            output: CommandOutput::Normal,
+            force: false,
+            target_path: None,
+            build_info: None,
+        }
+    }
+}
+
 /// Fetches a version if missing.
 pub fn fetch(
     version: &PythonVersionRequest,
-    output: CommandOutput,
-    force: bool,
+    options: FetchOptions,
 ) -> Result<PythonVersion, Error> {
-    if let Ok(version) = PythonVersion::try_from(version.clone()) {
-        let py_bin = get_toolchain_python_bin(&version)?;
-        if !force && py_bin.is_file() {
-            echo!(if verbose output, "Python version already downloaded. Skipping.");
-            return Ok(version);
-        }
-    }
-
     let (version, url, sha256) = match get_download_url(version) {
         Some(result) => result,
         None => bail!("unknown version {}", version),
     };
 
-    let target_dir = get_canonical_py_path(&version)?;
-    let target_py_bin = get_toolchain_python_bin(&version)?;
-    echo!(if verbose output, "target dir: {}", target_dir.display());
-    if target_dir.is_dir() && target_py_bin.is_file() {
-        if !force {
-            echo!(if verbose output, "Python version already downloaded. Skipping.");
-            return Ok(version);
+    let target_dir = match options.target_path {
+        Some(ref target_dir) => {
+            echo!(if options.output, "downloading to: {}", target_dir.display());
+            if target_dir.is_dir() {
+                if options.force {
+                    fs::remove_dir_all(target_dir)
+                        .path_context(target_dir, "could not remove target director")?;
+                } else {
+                    bail!("target directory '{}' exists", target_dir.display());
+                }
+            }
+            Cow::Borrowed(target_dir.as_path())
         }
-        echo!(if output, "Removing the existing Python version");
-        fs::remove_dir_all(&target_dir)
-            .with_context(|| format!("failed to remove target folder {}", target_dir.display()))?;
-    }
+        None => {
+            let target_dir = get_canonical_py_path(&version)?;
+            let target_py_bin = get_toolchain_python_bin(&version)?;
+            if target_dir.is_dir() && target_py_bin.is_file() {
+                if !options.force {
+                    echo!(if verbose options.output, "Python version already downloaded. Skipping.");
+                    return Ok(version);
+                }
+                echo!(if options.output, "Removing the existing Python version");
+                fs::remove_dir_all(&target_dir).with_context(|| {
+                    format!("failed to remove target folder {}", target_dir.display())
+                })?;
+            }
+            echo!(if verbose options.output, "target dir: {}", target_dir.display());
+            Cow::Owned(target_dir)
+        }
+    };
 
-    fs::create_dir_all(&target_dir).path_context(&target_dir, "failed to create target folder")?;
-
-    echo!(if verbose output, "download url: {}", url);
-    echo!(if output, "{} {}", style("Downloading").cyan(), version);
-    let archive_buffer = download_url(url, output)?;
+    echo!(if verbose options.output, "download url: {}", url);
+    echo!(if options.output, "{} {}", style("Downloading").cyan(), version);
+    let archive_buffer = download_url(url, options.output)?;
 
     if let Some(sha256) = sha256 {
-        echo!(if output, "{} {}", style("Checking").cyan(), "checksum");
+        echo!(if options.output, "{} {}", style("Checking").cyan(), "checksum");
         check_checksum(&archive_buffer, sha256)
             .with_context(|| format!("Checksum check of {} failed", &url))?;
     } else {
-        echo!(if output, "Checksum check skipped (no hash available)");
+        echo!(if options.output, "Checksum check skipped (no hash available)");
     }
 
-    echo!(if output, "{}", style("Unpacking").cyan());
-    unpack_archive(&archive_buffer, &target_dir, 1).with_context(|| {
+    echo!(if options.output, "{}", style("Unpacking").cyan());
+
+    let parent = target_dir
+        .parent()
+        .ok_or_else(|| anyhow!("cannot unpack to root"))?;
+    if !parent.exists() {
+        fs::create_dir_all(parent).path_context(&target_dir, "failed to create target folder")?;
+    }
+
+    let with_build_info = options
+        .build_info
+        .unwrap_or_else(|| Config::current().fetch_with_build_info());
+    let temp_dir = tempdir_in(target_dir.parent().unwrap()).context("temporary unpack location")?;
+
+    unpack_archive(&archive_buffer, temp_dir.path(), 1).with_context(|| {
         format!(
             "unpacking of downloaded tarball {} to '{}' failed",
             &url,
-            target_dir.display()
+            temp_dir.path().display(),
         )
     })?;
 
-    echo!(if output, "{} {}", style("Downloaded").green(), version);
+    // if we want to retain build infos or the installation has no build infos, then move
+    // the folder into the permanent location
+    if with_build_info || !installation_has_build_info(temp_dir.path()) {
+        let temp_dir = temp_dir.into_path();
+        fs::rename(&temp_dir, &target_dir).map_err(|err| {
+            fs::remove_dir_all(&temp_dir).ok();
+            err
+        })
+
+    // otherwise move the contents of the `install` folder over.
+    } else {
+        fs::rename(temp_dir.path().join("install"), &target_dir)
+    }
+    .path_context(&target_dir, "unable to persist download")?;
+
+    echo!(if options.output, "{} {}", style("Downloaded").green(), version);
 
     Ok(version)
+}
+
+fn installation_has_build_info(p: &Path) -> bool {
+    let mut has_install = false;
+    let mut has_build = false;
+    if let Ok(dir) = p.read_dir() {
+        for entry in dir.flatten() {
+            match entry.file_name().to_str() {
+                Some("install") => has_install = true,
+                Some("build") => has_build = true,
+                _ => {}
+            }
+        }
+    }
+    has_install && has_build
 }
 
 pub fn download_url(url: &str, output: CommandOutput) -> Result<Vec<u8>, Error> {

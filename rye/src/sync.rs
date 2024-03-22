@@ -8,7 +8,7 @@ use same_file::is_same_file;
 use serde::{Deserialize, Serialize};
 use tempfile::tempdir;
 
-use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module};
+use crate::bootstrap::{ensure_self_venv, fetch, get_pip_module, FetchOptions};
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::lock::{
@@ -148,8 +148,8 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     }
 
     // make sure we have a compatible python version
-    let py_ver =
-        fetch(&py_ver.into(), output, false).context("failed fetching toolchain ahead of sync")?;
+    let py_ver = fetch(&py_ver.into(), FetchOptions::with_output(output))
+        .context("failed fetching toolchain ahead of sync")?;
 
     // kill the virtualenv if it's there and we need to get rid of it.
     if recreate && venv.is_dir() {
