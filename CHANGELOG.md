@@ -7,7 +7,10 @@ that were not yet released.
 
 _Unreleased_
 
+- Update uv to 0.1.23.  #916
+
 - Allow `rye publish` working outside of project.  #910
+
 - `rye test --quiet` no longer implies `--no-capture`. #915
 
 <!-- released start -->
