@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Always create `.gitignore` file in `rye init`.  #919
+
 <!-- released start -->
 
 ## 0.31.0
