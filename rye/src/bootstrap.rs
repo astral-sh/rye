@@ -14,7 +14,8 @@ use tempfile::tempdir_in;
 use crate::config::Config;
 use crate::piptools::LATEST_PIP;
 use crate::platform::{
-    get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
+    get_app_dir, get_canonical_py_path, get_python_bin_within, get_toolchain_python_bin,
+    list_known_toolchains,
 };
 use crate::pyproject::latest_available_python_version;
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
@@ -386,11 +387,18 @@ pub fn fetch(
 
     let target_dir = match options.target_path {
         Some(ref target_dir) => {
-            echo!(if options.output, "downloading to: {}", target_dir.display());
+            echo!(if options.output, "Downloading to '{}'", target_dir.display());
             if target_dir.is_dir() {
                 if options.force {
+                    // Refuse to remove the target directory if it's not a python installation
+                    if get_python_bin_within(target_dir).is_none() {
+                        bail!(
+                            "target directory '{}' exists and is not a Python installation",
+                            target_dir.display()
+                        );
+                    }
                     fs::remove_dir_all(target_dir)
-                        .path_context(target_dir, "could not remove target director")?;
+                        .path_context(target_dir, "could not remove target directory")?;
                 } else {
                     bail!("target directory '{}' exists", target_dir.display());
                 }
@@ -439,7 +447,7 @@ pub fn fetch(
     let with_build_info = options
         .build_info
         .unwrap_or_else(|| Config::current().fetch_with_build_info());
-    let temp_dir = tempdir_in(target_dir.parent().unwrap()).context("temporary unpack location")?;
+    let temp_dir = tempdir_in(parent).context("temporary unpack location")?;
 
     unpack_archive(&archive_buffer, temp_dir.path(), 1).with_context(|| {
         format!(
