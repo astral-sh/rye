@@ -387,11 +387,16 @@ pub fn fetch(
 
     let target_dir = match options.target_path {
         Some(ref target_dir) => {
+            if target_dir.is_file() {
+                bail!("target directory '{}' is a file", target_dir.display());
+            }
             echo!(if options.output, "Downloading to '{}'", target_dir.display());
             if target_dir.is_dir() {
                 if options.force {
-                    // Refuse to remove the target directory if it's not a python installation
-                    if get_python_bin_within(target_dir).is_none() {
+                    // Refuse to remove the target directory if it's not empty and not a python installation
+                    if target_dir.read_dir()?.next().is_some()
+                        && !get_python_bin_within(target_dir).exists()
+                    {
                         bail!(
                             "target directory '{}' exists and is not a Python installation",
                             target_dir.display()

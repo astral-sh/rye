@@ -83,12 +83,11 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
         return Ok(PathBuf::from(contents.trim_end()));
     }
 
-    get_python_bin_within(&p)
-        .ok_or_else(|| anyhow!("could not find python binary within {}", p.display()))
+    Ok(get_python_bin_within(&p))
 }
 
 /// Returns the path to the python binary within the path.
-pub fn get_python_bin_within(path: &Path) -> Option<PathBuf> {
+pub fn get_python_bin_within(path: &Path) -> PathBuf {
     let mut path = path.to_path_buf();
     // we support install/bin/python, install/python and bin/python
     path.push("install");
@@ -108,7 +107,7 @@ pub fn get_python_bin_within(path: &Path) -> Option<PathBuf> {
     {
         path.push("python.exe");
     }
-    Some(path)
+    path
 }
 
 /// Returns a pinnable version for this version request.
