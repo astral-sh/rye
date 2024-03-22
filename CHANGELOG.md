@@ -18,6 +18,8 @@ _Unreleased_
   than having interpreters at `~/.rye/py/cpython@3.11.1/install/bin/python3`
   it will now reside at `~/.rye/py/cpython@3.11.1/bin/python3`.  #917
 
+- Installer now recommends `uv` over `pip-tools`.
+
 <!-- released start -->
 
 ## 0.30.0

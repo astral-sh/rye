@@ -260,7 +260,7 @@ impl Config {
             .unwrap_or_else(|| self.use_uv())
     }
 
-    /// Indicates if the experimental uv support should be used.
+    /// Indicates if uv should be used instead of pip-tools.
     pub fn use_uv(&self) -> bool {
         self.doc
             .get("behavior")
