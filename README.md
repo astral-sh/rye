@@ -1,6 +1,6 @@
 <div align="center">
   <img src="docs/static/favicon.svg" width="100">
-  <p><strong>Rye:</strong> a Hassle-Free Python Experience</p>
+  <p><strong>Rye:</strong> a Hassle-Free, Blazingly-Fast Python Experience</p>
 </div>
 
 ----
@@ -11,14 +11,14 @@
 
 </div>
 
-Rye is a comprehensive project and package management solution for Python.
+Rye is a blazingly-fast comprehensive project and package management solution for Python.
 Born from [its creator's](https://github.com/mitsuhiko) desire to establish a
 one-stop-shop for all Python users, Rye provides a unified experience to install and manage Python
 installations, `pyproject.toml` based projects, dependencies and virtualenvs
 seamlessly.  It's designed to accommodate complex projects, monorepos and to
 facilitate global tool installations.  Curious? [Watch an introduction](https://youtu.be/q99TYA7LnuA).
 
-A hassle-free experience for Python developers at every level.
+A hassle-free, blazingly-fast experience for Python developers at every level.
 
 <div align="center">
   <a href="https://youtu.be/q99TYA7LnuA">
