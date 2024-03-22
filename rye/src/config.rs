@@ -268,6 +268,17 @@ impl Config {
             .and_then(|x| x.as_bool())
             .unwrap_or(false)
     }
+
+    /// Fetches python installations with build info if possible.
+    ///
+    /// This used to be the default behavior in Rye prior to 0.31.
+    pub fn fetch_with_build_info(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("fetch-with-build-info"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or(false)
+    }
 }
 
 #[cfg(test)]

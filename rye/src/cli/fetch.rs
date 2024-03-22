@@ -1,7 +1,9 @@
+use std::path::PathBuf;
+
 use anyhow::{Context, Error};
 use clap::Parser;
 
-use crate::bootstrap::fetch;
+use crate::bootstrap::{fetch, FetchOptions};
 use crate::config::Config;
 use crate::platform::get_python_version_request_from_pyenv_pin;
 use crate::pyproject::PyProject;
@@ -18,6 +20,15 @@ pub struct Args {
     /// Fetch the Python toolchain even if it is already installed.
     #[arg(short, long)]
     force: bool,
+    /// Fetches the Python toolchain into an explicit location rather.
+    #[arg(long)]
+    target_path: Option<PathBuf>,
+    /// Fetches with build info.
+    #[arg(long)]
+    build_info: bool,
+    /// Fetches without build info.
+    #[arg(long, conflicts_with = "build_info")]
+    no_build_info: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -43,6 +54,21 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
 
-    fetch(&version, output, cmd.force).context("error while fetching Python installation")?;
+    fetch(
+        &version,
+        FetchOptions {
+            output,
+            force: cmd.force,
+            target_path: cmd.target_path,
+            build_info: if cmd.build_info {
+                Some(true)
+            } else if cmd.no_build_info {
+                Some(false)
+            } else {
+                None
+            },
+        },
+    )
+    .context("error while fetching Python installation")?;
     Ok(())
 }

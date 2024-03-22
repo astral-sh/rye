@@ -13,6 +13,11 @@ _Unreleased_
 
 - `rye test --quiet` no longer implies `--no-capture`. #915
 
+- Rye now can be used to fetch Python installations even when not using Rye
+  and build infos are no longer included by default.  This means that rather
+  than having interpreters at `~/.rye/py/cpython@3.11.1/install/bin/python3`
+  it will now reside at `~/.rye/py/cpython@3.11.1/bin/python3`.  #917
+
 <!-- released start -->
 
 ## 0.30.0

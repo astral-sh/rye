@@ -61,18 +61,32 @@ toolchain = "cpython@3.12.2"
         .unwrap();
     }
 
-    // fetch the most important interpreters
-    for version in ["cpython@3.8.17", "cpython@3.11.8", "cpython@3.12.2"] {
+    // fetch the most important interpreters.  Fetch some with and some without
+    // build info to make sure we cover our grounds here.
+    for (version, build_info) in [
+        ("cpython@3.8.17", false),
+        ("cpython@3.11.8", true),
+        ("cpython@3.12.2", false),
+    ] {
         if home.join("py").join(version).is_dir() {
             continue;
         }
         let status = Command::new(get_bin())
             .env("RYE_HOME", &home)
             .arg("fetch")
+            .arg(if build_info {
+                "--build-info"
+            } else {
+                "--no-build-info"
+            })
             .arg(version)
             .status()
             .unwrap();
         assert!(status.success());
+        assert_eq!(
+            home.join("py").join(version).join("install").is_dir(),
+            build_info
+        );
     }
 
     // make a dummy project to bootstrap it

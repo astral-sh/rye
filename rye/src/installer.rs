@@ -11,7 +11,7 @@ use regex::Regex;
 use same_file::is_same_file;
 use url::Url;
 
-use crate::bootstrap::{ensure_self_venv, fetch};
+use crate::bootstrap::{ensure_self_venv, fetch, FetchOptions};
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::get_app_dir;
@@ -131,7 +131,7 @@ pub fn install(
     uninstall_helper(&target_venv_path, &shim_dir)?;
 
     // make sure we have a compatible python version
-    let py_ver = fetch(py_ver, output, false)?;
+    let py_ver = fetch(py_ver, FetchOptions::with_output(output))?;
 
     create_virtualenv(
         output,

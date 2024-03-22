@@ -95,6 +95,19 @@ Toolchains are fetched from two sources:
 * [Indygreg's Portable Python Builds](https://github.com/indygreg/python-build-standalone) for CPython
 * [PyPy.org](https://www.pypy.org/) for PyPy
 
+You can also fetch toolchains into a specific location.  In this case the interpreter is not
+stored where Rye normally consults it, but in a specific location.  Rye will then not be able
+to use it unless it's manually registered.  This however can be useful for debugging or advanced
+setups:
+
+```
+rye toolchain fetch cpython@3.8.5 --target-path=my-interpreter
+```
+
+If you want to use rye interpreter fetching without installing rye, you might want to export the
+`RYE_NO_AUTO_INSTALL` environment variable and set it to `1` as otherwise the installer will kick
+in.
+
 ## Registering Toolchains
 
 Additionally, it's possible to register an external toolchain with the `rye toolchain register`
@@ -126,3 +139,19 @@ rye toolchain remove cpython@3.8.5
 !!! Warning
 
     Removing an actively used toolchain will render the virtualenvs that refer to use broken.
+
+## Build Info
+
++++ 0.31.0
+
+Prior to Rye 0.31.0 the Python installations were fetched with build infos.  You can see
+this because the folder structure in `~/.rye/py/INTERPRETER` is a bit different.  Rather than
+finding `cpython@3.8.5/bin/python3` there you will instead have an extra `install` folder
+(`cpython@3.8.5/install/bin/python3`) alongside a `build` folder containing the intermediate
+build outputs.  Starting with 0.31.0 the build info is removed by default.  If
+you want to get it back, you can explicitly fetch with `--build-info` or you can
+set the `behavior.fetch-with-build-info` config flag to true:
+
+```
+rye config --set-bool behavior.fetch-with-build-info=true
+```
