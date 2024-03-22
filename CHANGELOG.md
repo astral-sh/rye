@@ -71,6 +71,10 @@ Released on 2024-03-07
 
 - Added a `rye test` command which invokes `pytest`.  #847
 
+- `publish` will fall back to dispatching username and repository url for Twine's keyring support. #759
+
+- `publish` now includes `--skip-save-credentials`. #759
+
 ## 0.27.0
 
 Released on 2024-02-26
