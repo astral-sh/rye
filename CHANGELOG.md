@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.31.0
 
-_Unreleased_
+Released on 2024-03-22
 
 - Update uv to 0.1.23.  #916
 
@@ -19,8 +21,6 @@ _Unreleased_
   it will now reside at `~/.rye/py/cpython@3.11.1/bin/python3`.  #917
 
 - Installer now recommends `uv` over `pip-tools`.  #918
-
-<!-- released start -->
 
 ## 0.30.0
 
