@@ -335,26 +335,26 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .status()
             .map(|status| status.success())
             .unwrap_or(false)
+        && is_metadata_author_none
     {
-        let gitignore = dir.join(".gitignore");
+        let new_author = get_default_author_with_fallback(&dir);
+        if author != new_author {
+            metadata.author = new_author;
+        }
+    }
 
-        // create a .gitignore if one is missing
-        if !gitignore.is_file() {
-            let rv = env.render_named_str(
-                "gitignore.txt",
-                GITIGNORE_TEMPLATE,
-                context! {
-                    is_rust => matches!(build_system, BuildSystem::Maturin)
-                },
-            )?;
-            fs::write(&gitignore, rv).path_context(&gitignore, "failed to write .gitignore")?;
-        }
-        if is_metadata_author_none {
-            let new_author = get_default_author_with_fallback(&dir);
-            if author != new_author {
-                metadata.author = new_author;
-            }
-        }
+    let gitignore = dir.join(".gitignore");
+
+    // create a .gitignore if one is missing
+    if !gitignore.is_file() {
+        let rv = env.render_named_str(
+            "gitignore.txt",
+            GITIGNORE_TEMPLATE,
+            context! {
+                is_rust => matches!(build_system, BuildSystem::Maturin)
+            },
+        )?;
+        fs::write(&gitignore, rv).path_context(&gitignore, "failed to write .gitignore")?;
     }
 
     let rv = env.render_named_str(
