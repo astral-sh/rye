@@ -7,7 +7,11 @@
 <div align="center">
 
 [![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye-up.com)
-[![](https://dcbadge.vercel.app/api/server/drbkcdtSbg?style=flat)](https://discord.gg/drbkcdtSbg)
+[![Rye Version](https://img.shields.io/github/v/release/astral-sh/rye?logo=github&label=Version)](https://github.com/astral-sh/rye/releases/)
+[![GitHub](https://img.shields.io/github/license/astral-sh/rye?logo=github&logoColor=D7FF64)](https://github.com/astral-sh/rye/blob/main/LICENSE)
+[![GitHub Actions](https://img.shields.io/github/actions/workflow/status/astral-sh/rye/release.yml?logo=github)](https://github.com/astral-sh/rye/actions/workflows/release.yml)
+[![Astral Discord](https://img.shields.io/discord/1039017663004942429?logo=discord&logoColor=D7FF64&label=Astral%20Discord&color=261230)](https://discord.gg/astral-sh)
+[![Rye Discord](https://dcbadge.vercel.app/api/server/drbkcdtSbg?style=flat)](https://discord.gg/drbkcdtSbg)
 
 </div>
 
@@ -58,7 +62,7 @@ For more details and other options, refer to the [installation instructions](htt
 
 ## Learn More
 
-Did I spark your interest?
+Did we spark your interest?
 
 * [Visit the Website](https://rye-up.com/)
 * [Read the Documentation](https://rye-up.com/guide/)
@@ -72,3 +76,18 @@ Did I spark your interest?
 * [Issue Tracker](https://github.com/astral-sh/rye/issues), if you run into bugs or have suggestions
 * [Badges](https://rye-up.com/community/#badges), if you want to show that you use Rye
 * License: MIT
+
+## Astral
+
+Rye now is a project maintained by the [Astral][astral] team:
+* [Rye grows with `uv`](https://lucumr.pocoo.org/2024/2/15/rye-grows-with-uv/)
+* [`uv`: Python packaging in Rust](https://astral.sh/blog/uv)
+
+
+<div align="center">
+  <a target="_blank" href="https://astral.sh" style="background:none">
+    <img src="https://raw.githubusercontent.com/astral-sh/uv/main/assets/svg/Astral.svg" alt="Made by Astral">
+  </a>
+</div>
+
+[astral]: https://astral.sh
