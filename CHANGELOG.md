@@ -9,6 +9,8 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- Prevent `rye fetch --force` from removing a target directory that is not a Python installation.  #921
+
 <!-- released start -->
 
 ## 0.31.0
