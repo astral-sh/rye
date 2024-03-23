@@ -400,7 +400,7 @@ pub fn fetch(
         None => {
             let target_dir = get_canonical_py_path(&version)?;
             let target_py_bin = get_toolchain_python_bin(&version)?;
-            if target_dir.is_dir() && target_py_bin.is_file() {
+            if target_py_bin.is_file() {
                 if !options.force {
                     echo!(if verbose options.output, "Python version already downloaded. Skipping.");
                     return Ok(version);
