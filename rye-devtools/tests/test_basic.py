@@ -1,5 +1,6 @@
 import pytest
-from rye_devtools.find_downloads import CPythonFinder, PlatformTriple, batched
+from rye_devtools.common import batched
+from rye_devtools.find_downloads import CPythonFinder, PlatformTriple
 
 
 def test_batched():
