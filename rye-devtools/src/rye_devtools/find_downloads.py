@@ -7,7 +7,6 @@ links to be included into rye at build time.
 
 import abc
 import asyncio
-import itertools
 import os
 import re
 import sys
