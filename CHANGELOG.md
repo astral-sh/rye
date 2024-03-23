@@ -9,6 +9,8 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- Invoke Rye scripts from the project root.  #932
+
 <!-- released start -->
 
 ## 0.31.0

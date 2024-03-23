@@ -127,6 +127,8 @@ with different keys with the most important key being `cmd` which holds the comm
 However if only `cmd` is set, then the object is optional.  `cmd` itself can either be set to a
 string or an array of arguments.
 
+Scripts are invoked from the root of the project (where the `pyproject.toml` is located).
+
 ```toml
 [tool.rye.scripts]
 # These three options are equivalent:
