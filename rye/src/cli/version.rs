@@ -42,9 +42,9 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             }
         }
         None => {
-            let mut version = pyproject_toml.version()?;
+            let version = pyproject_toml.version()?;
             match cmd.bump {
-                Some(bump) => bump_version(&mut version, bump, &mut pyproject_toml)?,
+                Some(bump) => bump_version(version, bump, &mut pyproject_toml)?,
                 None => echo!("{}", version),
             }
         }
@@ -52,25 +52,26 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     Ok(())
 }
 
-fn bump_version(version: &mut Version, bump: Bump, pyproject: &mut PyProject) -> Result<(), Error> {
+fn bump_version(mut version: Version, bump: Bump, pyproject: &mut PyProject) -> Result<(), Error> {
     if version.is_post() {
-        version.post = None;
+        version = version.with_post(None);
     }
     if version.is_dev() {
-        version.dev = None;
+        version = version.with_dev(None);
         warn!("dev version will be bumped to release version");
     } else {
+        let mut release = version.release().to_vec();
         let index = bump as usize;
-        if version.release.get(index).is_none() {
-            version.release.resize(index + 1, 0);
+        if release.get(index).is_none() {
+            release.resize(index + 1, 0);
         }
-        version.release[index] += 1;
-        for i in index + 1..version.release.len() {
-            version.release[i] = 0;
-        }
+        release[index] += 1;
+        release[index + 1..].fill(0);
+
+        version = version.with_release(release);
     }
 
-    pyproject.set_version(version);
+    pyproject.set_version(&version);
     pyproject.save().unwrap();
 
     echo!("version bumped to {}", version);
