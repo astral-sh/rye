@@ -7,7 +7,7 @@ Generates a completion script for a shell
 Generate a completion script for zsh and load it:
 
 ```
-$ eval (rye self completion -s zsh)
+$ eval "$(rye self completion -s zsh)"
 ```
 
 ## Arguments
