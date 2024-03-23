@@ -310,13 +310,23 @@ fn dump_dependencies(
             // as the end result parses
             Some("VARIABLE".into())
         }) {
-            if let Some(path) = local_projects.get(&normalize_package_name(&expanded_dep.name)) {
+            if let Some(path) = local_projects.get(expanded_dep.name.as_ref()) {
                 // if there are extras and we have a local dependency, we just write it
                 // out again for pip-compile to pick up the extras.
                 // XXX: this drops the marker, but pip-compile already has other
                 // problems with markers too: https://github.com/jazzband/pip-tools/issues/826
-                if let Some(ref extras) = expanded_dep.extras {
-                    writeln!(out, "-e {}[{}]", path, extras.join(","))?;
+                if !expanded_dep.extras.is_empty() {
+                    writeln!(
+                        out,
+                        "-e {}[{}]",
+                        path,
+                        expanded_dep
+                            .extras
+                            .iter()
+                            .map(|x| x.as_ref())
+                            .collect::<Vec<_>>()
+                            .join(",")
+                    )?;
                 }
                 continue;
             }
@@ -544,7 +554,7 @@ fn finalize_lockfile(
         } else if let Ok(ref req) = line.trim().parse::<Requirement>() {
             // TODO: this does not evaluate markers
             if exclusions.iter().any(|x| {
-                normalize_package_name(&x.name) == normalize_package_name(&req.name)
+                x.name == req.name
                     && (x.version_or_url.is_none() || x.version_or_url == req.version_or_url)
             }) {
                 // skip exclusions

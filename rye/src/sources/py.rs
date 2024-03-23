@@ -116,31 +116,23 @@ impl fmt::Display for PythonVersion {
 
 impl From<PythonVersion> for Version {
     fn from(value: PythonVersion) -> Self {
-        Version {
-            epoch: 0,
-            release: vec![value.major as u64, value.minor as u64, value.patch as u64],
-            pre: None,
-            post: None,
-            dev: None,
-            local: None,
-        }
+        Version::new(vec![
+            value.major as u64,
+            value.minor as u64,
+            value.patch as u64,
+        ])
+        .with_epoch(0)
     }
 }
 
 impl From<PythonVersionRequest> for Version {
     fn from(value: PythonVersionRequest) -> Self {
-        Version {
-            epoch: 0,
-            release: vec![
-                value.major as u64,
-                value.minor.unwrap_or_default() as u64,
-                value.patch.unwrap_or_default() as u64,
-            ],
-            pre: None,
-            post: None,
-            dev: None,
-            local: None,
-        }
+        Version::new(vec![
+            value.major as u64,
+            value.minor.unwrap_or_default() as u64,
+            value.patch.unwrap_or_default() as u64,
+        ])
+        .with_epoch(0)
     }
 }
 
@@ -214,9 +206,9 @@ impl From<Version> for PythonVersionRequest {
             name: None,
             arch: None,
             os: None,
-            major: value.release.first().map(|x| *x as _).unwrap_or(3),
-            minor: value.release.get(1).map(|x| *x as _),
-            patch: value.release.get(2).map(|x| *x as _),
+            major: value.release().first().map(|x| *x as _).unwrap_or(3),
+            minor: value.release().get(1).map(|x| *x as _),
+            patch: value.release().get(2).map(|x| *x as _),
             suffix: None,
         }
     }

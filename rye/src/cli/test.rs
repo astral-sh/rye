@@ -11,7 +11,7 @@ use same_file::is_same_file;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::lock::KeyringProvider;
-use crate::pyproject::{locate_projects, normalize_package_name, DependencyKind, PyProject};
+use crate::pyproject::{locate_projects, DependencyKind, PyProject};
 use crate::sync::autosync;
 use crate::utils::{CommandOutput, QuietExit};
 
@@ -145,7 +145,7 @@ fn has_pytest_dependency(projects: &[PyProject]) -> Result<bool, Error> {
             .chain(project.iter_dependencies(DependencyKind::Normal))
         {
             if let Ok(req) = dep.expand(|name| std::env::var(name).ok()) {
-                if normalize_package_name(&req.name) == "pytest" {
+                if req.name.as_ref() == "pytest" {
                     return Ok(true);
                 }
             }

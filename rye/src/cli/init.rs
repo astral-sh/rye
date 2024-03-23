@@ -701,7 +701,8 @@ fn import_requirements_file(
     data.requirements.iter().for_each(|x| {
         requirements
             .entry(x.requirement.name.to_string())
-            .or_insert(format_requirement(&x.requirement).to_string());
+            // todo: will to_string this work?
+            .or_insert(x.requirement.to_string());
     });
     Ok(())
 }

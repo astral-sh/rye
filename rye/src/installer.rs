@@ -6,10 +6,9 @@ use std::{env, fs};
 use anyhow::{bail, Context, Error};
 use console::style;
 use once_cell::sync::Lazy;
-use pep508_rs::{Requirement, VersionOrUrl};
+use pep508_rs::{PackageName, Requirement, VerbatimUrl, VersionOrUrl};
 use regex::Regex;
 use same_file::is_same_file;
-use url::Url;
 
 use crate::bootstrap::{ensure_self_venv, fetch, FetchOptions};
 use crate::config::Config;
@@ -121,7 +120,7 @@ pub fn install(
         .map(|x| normalize_package_name(x))
         .collect::<Vec<_>>();
 
-    let target_venv_path = tool_dir.join(normalize_package_name(&requirement.name));
+    let target_venv_path = tool_dir.join(requirement.name.as_ref());
     if target_venv_path.is_dir() && !force {
         bail!("package already installed");
     }
@@ -138,7 +137,7 @@ pub fn install(
         &self_venv,
         &py_ver,
         &target_venv_path,
-        requirement.name.as_str(),
+        requirement.name.as_ref(),
     )?;
 
     if Config::current().use_uv() {
@@ -198,7 +197,7 @@ pub fn install(
     let out = Command::new(py)
         .arg("-c")
         .arg(FIND_SCRIPT_SCRIPT)
-        .arg(&requirement.name)
+        .arg(requirement.name.as_ref())
         .stdout(Stdio::piped())
         .output()
         .context("unable to dump package manifest from installed package")?;
@@ -220,7 +219,7 @@ pub fn install(
         if package.is_empty() {
             continue;
         }
-        if include_deps.contains(&normalize_package_name(package)) {
+        if include_deps.contains(package) {
             installed.extend(install_scripts(files, &target_venv_bin_path, &shim_dir)?);
         } else {
             let scripts = find_scripts(files, &target_venv_bin_path);
@@ -438,14 +437,16 @@ pub fn resolve_local_requirement(
     let output = String::from_utf8_lossy(&output.stdout);
     if let Some(c) = SUCCESSFULLY_DOWNLOADED_RE.captures(&output) {
         let version_or_url = Some(VersionOrUrl::Url(
-            match Url::from_file_path(env::current_dir()?.join(maybe_path)) {
+            match VerbatimUrl::from_absolute_path(
+                env::current_dir()?.join(maybe_path).to_string_lossy(),
+            ) {
                 Ok(url) => url,
-                Err(()) => bail!("invalid path reference"),
+                Err(err) => return Err(err).with_context(|| "invalid path reference"),
             },
         ));
-        let name = c[1].trim().to_string();
+        let name = PackageName::new(c[1].trim().to_string())?;
         Ok(Some(Requirement {
-            extras: None,
+            extras: Vec::new(),
             name,
             version_or_url,
             marker: None,

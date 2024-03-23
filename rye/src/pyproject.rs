@@ -1039,7 +1039,7 @@ fn set_dependency(deps: &mut Array, req: &Requirement) {
     for (idx, dep) in deps.iter().enumerate() {
         if let Some(dep) = dep.as_str() {
             if let Ok(dep_req) = Requirement::from_str(dep) {
-                if dep_req.name.eq_ignore_ascii_case(&req.name) {
+                if dep_req.name == req.name {
                     to_replace = Some(idx);
                     break;
                 }
@@ -1061,7 +1061,7 @@ fn remove_dependency(deps: &mut Array, req: &Requirement) -> Option<Requirement>
     for (idx, dep) in deps.iter().enumerate() {
         if let Some(dep) = dep.as_str() {
             if let Ok(dep_req) = Requirement::from_str(dep) {
-                if dep_req.name.eq_ignore_ascii_case(&req.name) {
+                if dep_req.name == req.name {
                     to_remove = Some(idx);
                     break;
                 }

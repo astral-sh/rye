@@ -197,8 +197,17 @@ pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
     impl<'x> fmt::Display for Helper<'x> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{}", self.0.name)?;
-            if let Some(extras) = &self.0.extras {
-                write!(f, "[{}]", extras.join(","))?;
+            if !self.0.extras.is_empty() {
+                write!(
+                    f,
+                    "[{}]",
+                    self.0
+                        .extras
+                        .iter()
+                        .map(|x| x.as_ref())
+                        .collect::<Vec<_>>()
+                        .join(",")
+                )?;
             }
             if let Some(version_or_url) = &self.0.version_or_url {
                 match version_or_url {
@@ -208,12 +217,12 @@ pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
                         write!(f, "{}", version_specifier.join(", "))?;
                     }
                     VersionOrUrl::Url(url) => {
-                        // retain `{` and `}` for interpolation in URLs
-                        write!(
-                            f,
-                            " @ {}",
-                            url.to_string().replace("%7B", "{").replace("%7D", "}")
-                        )?;
+                        // Use given url if present in VerbatimUrl
+                        if let Some(given) = url.given() {
+                            write!(f, " @ {}", given)?;
+                        } else {
+                            write!(f, " @ {}", url)?;
+                        }
                     }
                 }
             }
