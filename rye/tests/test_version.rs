@@ -1,6 +1,5 @@
 use crate::common::{rye_cmd_snapshot, Space};
 
-
 mod common;
 
 #[test]
