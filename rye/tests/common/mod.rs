@@ -56,6 +56,7 @@ use-uv = true
 
 [default]
 toolchain = "cpython@3.12.2"
+author = "Test User <test@example.com>"
 "#,
         )
         .unwrap();
@@ -253,3 +254,14 @@ macro_rules! rye_cmd_snapshot {
 
 #[allow(unused_imports)]
 pub(crate) use rye_cmd_snapshot;
+
+#[allow(unused)]
+pub fn toml_array_as_string_array(arr: &toml_edit::Array) -> Vec<String> {
+    arr.iter()
+        .map(|x| {
+            x.as_str()
+                .map(|x| x.to_string())
+                .unwrap_or_else(|| x.to_string())
+        })
+        .collect()
+}

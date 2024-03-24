@@ -9,6 +9,8 @@ use anyhow::{anyhow, bail, Context, Error};
 use dialoguer::theme::{ColorfulTheme, Theme};
 use once_cell::sync::Lazy;
 use pep508_rs::{Requirement, VersionOrUrl};
+use pep508_v030::Requirement as Requirement508v030;
+use pep508_v030::VersionOrUrl as VersionOrUrl508v030;
 use regex::{Captures, Regex};
 use sha2::{Digest, Sha256};
 
@@ -196,8 +198,17 @@ pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
     impl<'x> fmt::Display for Helper<'x> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{}", self.0.name)?;
-            if let Some(extras) = &self.0.extras {
-                write!(f, "[{}]", extras.join(","))?;
+            if !self.0.extras.is_empty() {
+                write!(
+                    f,
+                    "[{}]",
+                    self.0
+                        .extras
+                        .iter()
+                        .map(|x| x.as_ref())
+                        .collect::<Vec<_>>()
+                        .join(",")
+                )?;
             }
             if let Some(version_or_url) = &self.0.version_or_url {
                 match version_or_url {
@@ -207,6 +218,43 @@ pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
                         write!(f, "{}", version_specifier.join(", "))?;
                     }
                     VersionOrUrl::Url(url) => {
+                        // Use given url if present in VerbatimUrl
+                        if let Some(given) = url.given() {
+                            write!(f, " @ {}", given)?;
+                        } else {
+                            write!(f, " @ {}", url)?;
+                        }
+                    }
+                }
+            }
+            if let Some(marker) = &self.0.marker {
+                write!(f, " ; {}", marker)?;
+            }
+            Ok(())
+        }
+    }
+
+    Helper(req)
+}
+
+/// Formats a Python requirement
+pub fn format_requirement_v030(req: &Requirement508v030) -> impl fmt::Display + '_ {
+    struct Helper<'x>(&'x Requirement508v030);
+
+    impl<'x> fmt::Display for Helper<'x> {
+        fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+            write!(f, "{}", self.0.name)?;
+            if let Some(extras) = &self.0.extras {
+                write!(f, "[{}]", extras.join(","))?;
+            }
+            if let Some(version_or_url) = &self.0.version_or_url {
+                match version_or_url {
+                    VersionOrUrl508v030::VersionSpecifier(version_specifier) => {
+                        let version_specifier: Vec<String> =
+                            version_specifier.iter().map(ToString::to_string).collect();
+                        write!(f, "{}", version_specifier.join(", "))?;
+                    }
+                    VersionOrUrl508v030::Url(url) => {
                         // retain `{` and `}` for interpolation in URLs
                         write!(
                             f,

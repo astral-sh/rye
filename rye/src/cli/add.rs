@@ -1,14 +1,13 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::{Component, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::{Parser, ValueEnum};
-use pep440_rs::{Operator, Version, VersionSpecifier, VersionSpecifiers};
-use pep508_rs::{Requirement, VersionOrUrl};
+use pep440_rs::{Operator, Version, VersionPattern, VersionSpecifier, VersionSpecifiers};
+use pep508_rs::{ExtraName, PackageName, Requirement, VerbatimUrl, VersionOrUrl};
 use serde::Deserialize;
-use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
@@ -157,9 +156,11 @@ impl ReqExtras {
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
                 PyProject::discover()?.build_backend() == Some(BuildSystem::Hatchling);
+            let absolute_url =
+                VerbatimUrl::from_absolute_path(env::current_dir()?.join(path).to_string_lossy())
+                    .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?;
             let file_url = if self.absolute || is_hatchling {
-                Url::from_file_path(env::current_dir()?.join(path))
-                    .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
+                absolute_url
             } else {
                 let base = env::current_dir()?;
                 let rv = pathdiff::diff_paths(base.join(path), &base).ok_or_else(|| {
@@ -169,9 +170,8 @@ impl ReqExtras {
                         path.display()
                     )
                 })?;
-                let mut url = Url::parse("file://")?;
-                url.set_path(&Path::new("/${PROJECT_ROOT}").join(rv).to_string_lossy());
-                url
+                let relative_url = relative_path_to_verbatim_url(rv)?;
+                absolute_url.with_given(relative_url)
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
@@ -179,14 +179,39 @@ impl ReqExtras {
             };
         }
         for feature in self.features.iter().flat_map(|x| x.split(',')) {
-            let feature = feature.trim();
-            let extras = req.extras.get_or_insert_with(Vec::new);
-            if !extras.iter().any(|x| x == feature) {
-                extras.push(feature.into());
+            let feature = ExtraName::from_str(feature.trim())?;
+            if !req.extras.iter().any(|x| *x == feature) {
+                req.extras.push(feature);
             }
         }
         Ok(())
     }
+}
+
+/// Build a project root relative URL in a string (avoiding restrictions in Url and Path)
+fn relative_path_to_verbatim_url(rv: PathBuf) -> Result<String, Error> {
+    let mut relative_url = String::from("file:///${PROJECT_ROOT}");
+    for comp in rv.components() {
+        relative_url.push('/');
+        match comp {
+            Component::ParentDir => relative_url.push_str(".."),
+            Component::Normal(component) => {
+                if let Some(component_str) = component.to_str() {
+                    relative_url.push_str(component_str)
+                } else {
+                    bail!("unable to encode url from path {}", rv.display());
+                }
+            }
+            Component::RootDir | Component::CurDir | Component::Prefix(_) => {
+                bail!(
+                    "unexpected component when encoding url from path {}",
+                    rv.display()
+                );
+            }
+        }
+    }
+
+    Ok(relative_url)
 }
 
 /// Adds a Python package to this project.
@@ -388,20 +413,19 @@ fn resolve_requirements_with_unearth(
                     // use ~= but need to use ==.
                     match *default_operator {
                         _ if version.is_local() => Operator::Equal,
-                        Operator::TildeEqual if version.release.len() < 2 => {
+                        Operator::TildeEqual if version.release().len() < 2 => {
                             Operator::GreaterThanEqual
                         }
-                        ref other => other.clone(),
+                        other => other,
                     },
-                    Version::from_str(m.version.as_ref().unwrap())
+                    VersionPattern::from_str(m.version.as_ref().unwrap())
                         .map_err(|msg| anyhow!("invalid version: {}", msg))?,
-                    false,
                 )
                 .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
             )),
         ));
     }
-    requirement.name = m.name;
+    requirement.name = PackageName::new(m.name)?;
     Ok(())
 }
 
@@ -476,22 +500,25 @@ fn resolve_requirements_with_uv(
                     for spec in specs.iter() {
                         let op = match *default_operator {
                             _ if spec.version().is_local() => Operator::Equal,
-                            Operator::TildeEqual if spec.version().release.len() < 2 => {
+                            Operator::TildeEqual if spec.version().release().len() < 2 => {
                                 Operator::GreaterThanEqual
                             }
-                            ref other => other.clone(),
+                            other => other,
                         };
                         new_specs.push(
-                            VersionSpecifier::new(op, spec.version().clone(), false)
-                                .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
+                            VersionSpecifier::new(
+                                op,
+                                VersionPattern::verbatim(spec.version().clone()),
+                            )
+                            .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
                         );
                     }
                     new_specs
                 }));
             }
         }
-        if let Some(old_extras) = &req.extras {
-            new_req.extras = Some(old_extras.clone());
+        if !req.extras.is_empty() {
+            new_req.extras = req.extras.clone();
         }
         *req = new_req;
     }
