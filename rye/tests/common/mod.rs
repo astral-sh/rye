@@ -56,6 +56,7 @@ use-uv = true
 
 [default]
 toolchain = "cpython@3.12.2"
+author = "Test User <test@example.com>"
 "#,
         )
         .unwrap();
