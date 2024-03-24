@@ -163,3 +163,40 @@ fn test_init_lib_and_script_incompatible() {
         error: an argument cannot be used with one or more of the other specified arguments
     "###);
 }
+
+// Test init -r requirements.txt; that importing a requirements file works
+#[test]
+fn test_init_r_requirements() {
+    let space = Space::new();
+
+    let dependencies = vec![
+        String::from("package_a==1.17.173"),
+        String::from("package_b @ file:///${PROJECT_ROOT}/nested/b"),
+        String::from("package_c @ https://${USERNAME}:${PASSWORD}@example.com/"),
+        String::from("package_d @ git+https://githost.example.com/user/repo.git@tag"),
+    ];
+
+    space.write("requirements.txt", dependencies.join("\n") + "\n");
+
+    space
+        .cmd(get_bin())
+        .arg("init")
+        .arg("--name")
+        .arg("my-project")
+        .arg("-q")
+        .arg("-r")
+        .arg("requirements.txt")
+        .current_dir(space.project_path())
+        .status()
+        .expect("initialization successful");
+
+    assert_eq!(
+        space.read_toml("pyproject.toml")["project"]
+            .get("dependencies")
+            .and_then(|v| v.as_array())
+            .map(common::toml_array_as_string_array)
+            .as_ref(),
+        Some(&dependencies),
+        "dependencies should match after import"
+    )
+}
