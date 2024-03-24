@@ -25,8 +25,8 @@ use crate::platform::{
 use crate::pyproject::BuildSystem;
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::{
-    copy_dir, escape_string, format_requirement, get_venv_python_bin, is_inside_git_work_tree,
-    CommandOutput, CopyDirOptions, IoPathContext,
+    copy_dir, escape_string, format_requirement, format_requirement_v030, get_venv_python_bin,
+    is_inside_git_work_tree, CommandOutput, CopyDirOptions, IoPathContext,
 };
 
 /// Initialize a new or existing Python project with Rye.
@@ -701,8 +701,7 @@ fn import_requirements_file(
     data.requirements.iter().for_each(|x| {
         requirements
             .entry(x.requirement.name.to_string())
-            // todo: will to_string this work?
-            .or_insert(x.requirement.to_string());
+            .or_insert(format_requirement_v030(&x.requirement).to_string());
     });
     Ok(())
 }

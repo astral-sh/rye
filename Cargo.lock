@@ -1867,6 +1867,7 @@ dependencies = [
  "once_cell",
  "pathdiff",
  "pep440_rs 0.5.0",
+ "pep508_rs 0.3.0",
  "pep508_rs 0.4.2",
  "python-pkginfo",
  "regex",
