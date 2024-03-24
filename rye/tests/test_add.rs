@@ -1,4 +1,5 @@
 use std::fs;
+use std::process::ExitStatus;
 
 use toml_edit::{value, ArrayOfTables, Table};
 
@@ -213,4 +214,92 @@ fn test_add_explicit_version_or_url() {
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
      + pip==1.3.1 (from https://github.com/pypa/pip/archive/1.3.1.zip#sha1=da9234ee9982d4bbb3c72346a6de940a148ea686)
     "###);
+}
+
+fn assert_status_success(status: Result<ExitStatus, std::io::Error>) {
+    assert!(status.is_ok(), "command spawn successful");
+    assert!(status.unwrap().success(), "command status is success");
+}
+
+#[test]
+fn test_add_relative_path_nested() {
+    let space = Space::new();
+    assert_status_success(space.rye_cmd().arg("init").arg("--virtual").status());
+    assert_status_success(space.rye_cmd().arg("init").arg("nested/a").status());
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("a").arg("--path").arg("nested/a"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.3
+    Added a @ file:///${PROJECT_ROOT}/nested/a as regular dependency
+    Reusing already existing virtualenv
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
+
+    ----- stderr -----
+    Resolved 1 package in [EXECUTION_TIME]
+    Downloaded 1 package in [EXECUTION_TIME]
+    Installed 1 package in [EXECUTION_TIME]
+     + a==0.1.0 (from file:[TEMP_PATH]/project/nested/a)
+    "###);
+
+    let expected_dependencies = vec![String::from("a @ file:///${PROJECT_ROOT}/nested/a")];
+    assert_eq!(
+        space.read_toml("pyproject.toml")["project"]
+            .get("dependencies")
+            .and_then(|v| v.as_array())
+            .map(common::toml_array_as_string_array)
+            .as_ref(),
+        Some(&expected_dependencies),
+    );
+}
+
+#[test]
+fn test_add_relative_path_sibling() {
+    // + root dir
+    // |
+    // + --> main -> depends on ../sibling
+    // + --> sibling
+    let space = Space::new();
+    assert_status_success(
+        space
+            .rye_cmd()
+            .arg("init")
+            .arg("--virtual")
+            .arg("main")
+            .status(),
+    );
+    assert_status_success(space.rye_cmd().arg("init").arg("sibling").status());
+    rye_cmd_snapshot!(space.rye_cmd().current_dir(space.project_path().join("main")).arg("add").arg("sibling").arg("--path").arg("../sibling"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/main/.venv
+    Python version: cpython@3.12.3
+    Added sibling @ file:///${PROJECT_ROOT}/../sibling as regular dependency
+    Reusing already existing virtualenv
+    Generating production lockfile: [TEMP_PATH]/project/main/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/main/requirements-dev.lock
+    Installing dependencies
+    Done!
+
+    ----- stderr -----
+    Resolved 1 package in [EXECUTION_TIME]
+    Downloaded 1 package in [EXECUTION_TIME]
+    Installed 1 package in [EXECUTION_TIME]
+     + sibling==0.1.0 (from file:[TEMP_PATH]/project/sibling)
+    "###);
+
+    let expected_dependencies = vec![String::from("sibling @ file:///${PROJECT_ROOT}/../sibling")];
+    assert_eq!(
+        space.read_toml("main/pyproject.toml")["project"]
+            .get("dependencies")
+            .and_then(|v| v.as_array())
+            .map(common::toml_array_as_string_array)
+            .as_ref(),
+        Some(&expected_dependencies),
+    );
 }
