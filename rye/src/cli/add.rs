@@ -1,5 +1,5 @@
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::{Component, PathBuf};
 use std::process::{Command, Stdio};
 use std::str::FromStr;
 
@@ -172,10 +172,8 @@ impl ReqExtras {
                         path.display()
                     )
                 })?;
-                absolute_url.with_given(
-                    String::from("file://")
-                        + &Path::new("/${PROJECT_ROOT}").join(rv).to_string_lossy(),
-                )
+                let relative_url = relative_path_to_verbatim_url(rv)?;
+                absolute_url.with_given(relative_url)
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
@@ -190,6 +188,32 @@ impl ReqExtras {
         }
         Ok(())
     }
+}
+
+/// Build a project root relative URL in a string (avoiding restrictions in Url and Path)
+fn relative_path_to_verbatim_url(rv: PathBuf) -> Result<String, Error> {
+    let mut relative_url = String::from("file:///${PROJECT_ROOT}");
+    for comp in rv.components() {
+        relative_url.push('/');
+        match comp {
+            Component::ParentDir => relative_url.push_str(".."),
+            Component::Normal(component) => {
+                if let Some(component_str) = component.to_str() {
+                    relative_url.push_str(component_str)
+                } else {
+                    bail!("unable to encode url from path {}", rv.display());
+                }
+            }
+            Component::RootDir | Component::CurDir | Component::Prefix(_) => {
+                bail!(
+                    "unexpected component when encoding url from path {}",
+                    rv.display()
+                );
+            }
+        }
+    }
+
+    Ok(relative_url)
 }
 
 /// Adds a Python package to this project.
