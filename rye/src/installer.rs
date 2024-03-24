@@ -139,14 +139,21 @@ pub fn install(
         &py_ver,
         &target_venv_path,
         requirement.name.as_str(),
+        config.venv_system_site_packages(),
     )?;
 
-    if Config::current().use_uv() {
+    if config.use_uv() {
         let result = UvBuilder::new()
             .with_output(output.quieter())
             .with_sources(sources)
             .ensure_exists()?
-            .venv(&target_venv_path, &py, &py_ver, None)?
+            .venv(
+                &target_venv_path,
+                &py,
+                &py_ver,
+                None,
+                config.venv_system_site_packages(),
+            )?
             .with_output(output)
             .install(
                 &requirement,

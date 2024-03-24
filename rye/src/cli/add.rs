@@ -457,7 +457,13 @@ fn resolve_requirements_with_uv(
         .with_output(output.quieter())
         .with_sources(sources)
         .ensure_exists()?
-        .venv(&venv_path, &py_bin, py_ver, None)?;
+        .venv(
+            &venv_path,
+            &py_bin,
+            py_ver,
+            None,
+            Config::current().venv_system_site_packages(),
+        )?;
 
     for req in requirements {
         let mut new_req = uv.resolve(py_ver, req, pre, env::var("__RYE_UV_EXCLUDE_NEWER").ok())?;
