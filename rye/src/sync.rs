@@ -96,6 +96,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     let venv = pyproject.venv_path();
     let py_ver = pyproject.venv_python_version()?;
     let output = cmd.output;
+    let config = Config::current();
 
     if cmd.pyproject.is_some()
         && cmd.mode != SyncMode::PythonOnly
@@ -171,8 +172,15 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         );
         echo!(if output, "Python version: {}", style(&py_ver).cyan());
         let prompt = pyproject.name().unwrap_or("venv");
-        create_virtualenv(output, &self_venv, &py_ver, &venv, prompt)
-            .context("failed creating virtualenv ahead of sync")?;
+        create_virtualenv(
+            output,
+            &self_venv,
+            &py_ver,
+            &venv,
+            prompt,
+            config.venv_system_site_packages(),
+        )
+        .context("failed creating virtualenv ahead of sync")?;
     }
 
     // prepare necessary utilities for pip-sync.  This is a super crude
@@ -257,7 +265,13 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                     .with_workdir(&pyproject.workspace_path())
                     .with_sources(sources)
                     .ensure_exists()?
-                    .venv(&venv, &py_path, &py_ver, None)?
+                    .venv(
+                        &venv,
+                        &py_path,
+                        &py_ver,
+                        None,
+                        config.venv_system_site_packages(),
+                    )?
                     .with_output(output)
                     .sync(&target_lockfile)?;
             } else {
@@ -347,6 +361,7 @@ pub fn create_virtualenv(
     py_ver: &PythonVersion,
     venv: &Path,
     prompt: &str,
+    system_site_packages: bool,
 ) -> Result<(), Error> {
     let py_bin = get_toolchain_python_bin(py_ver)?;
 
@@ -356,7 +371,7 @@ pub fn create_virtualenv(
         let uv = UvBuilder::new()
             .with_output(output.quieter())
             .ensure_exists()?
-            .venv(venv, &py_bin, py_ver, Some(prompt))
+            .venv(venv, &py_bin, py_ver, Some(prompt), system_site_packages)
             .context("failed to initialize virtualenv")?;
         uv.write_marker()?;
         uv.sync_marker();

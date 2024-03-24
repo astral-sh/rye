@@ -265,3 +265,22 @@ fn test_autosync_remember() {
     werkzeug==3.0.1
     "###);
 }
+
+#[test]
+fn test_sync_include_system_site_packages() {
+    let space = Space::new();
+    space.init("my-project");
+    space
+        .rye_cmd()
+        .arg("config")
+        .arg("--set-bool")
+        .arg("behavior.venv-system-site-packages=true")
+        .status()
+        .expect("ok");
+
+    space.rye_cmd().arg("sync").status().expect("ok");
+
+    assert!(fs::read_to_string(space.venv_path().join("pyvenv.cfg"))
+        .unwrap()
+        .contains("include-system-site-packages = true"));
+}

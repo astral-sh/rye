@@ -151,7 +151,13 @@ pub fn ensure_self_venv_with_toolchain(
 
     // initialize the virtualenv
     {
-        let uv_venv = uv.venv(&venv_dir, &py_bin, &version, None)?;
+        let uv_venv = uv.venv(
+            &venv_dir,
+            &py_bin,
+            &version,
+            None,
+            Config::current().venv_system_site_packages(),
+        )?;
         // write our marker
         uv_venv.write_marker()?;
         // update pip and our requirements

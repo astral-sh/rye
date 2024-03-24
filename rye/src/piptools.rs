@@ -5,6 +5,7 @@ use std::process::Command;
 use anyhow::{bail, Context, Error};
 
 use crate::bootstrap::ensure_self_venv;
+use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::get_app_dir;
 use crate::sources::py::PythonVersion;
@@ -55,7 +56,14 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
     }
 
     echo!(if output, "Creating virtualenv for pip-tools");
-    create_virtualenv(output, &self_venv, py_ver, &venv, "pip-tools")?;
+    create_virtualenv(
+        output,
+        &self_venv,
+        py_ver,
+        &venv,
+        "pip-tools",
+        Config::current().venv_system_site_packages(),
+    )?;
 
     let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
     cmd.arg("--python")
