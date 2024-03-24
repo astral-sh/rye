@@ -9,6 +9,10 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- Update dependencies `pep508_rs` and `pep440_rs` #928
+
+- Fix adding relative path dependencies outside the project root #928
+
 <!-- released start -->
 
 ## 0.31.0
