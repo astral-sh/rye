@@ -359,7 +359,7 @@ pub struct UvWithVenv {
 }
 
 impl UvWithVenv {
-    fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
+    pub fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
         UvWithVenv {
             uv,
             py_version: version.clone(),
