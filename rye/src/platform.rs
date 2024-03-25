@@ -249,7 +249,7 @@ pub fn get_latest_cpython_version() -> Result<PythonVersion, Error> {
 /// [pypi]
 /// token = ""
 /// ```
-pub fn get_credentials() -> Result<toml_edit::Document, Error> {
+pub fn get_credentials() -> Result<toml_edit::DocumentMut, Error> {
     let filepath = get_credentials_filepath()?;
 
     // If a credentials file doesn't exist create an empty one. TODO: Move to bootstrapping?
@@ -258,13 +258,13 @@ pub fn get_credentials() -> Result<toml_edit::Document, Error> {
     }
 
     let doc = fs::read_to_string(&filepath)?
-        .parse::<toml_edit::Document>()
+        .parse::<toml_edit::DocumentMut>()
         .path_context(&filepath, "failed to parse credentials")?;
 
     Ok(doc)
 }
 
-pub fn write_credentials(doc: &toml_edit::Document) -> Result<(), Error> {
+pub fn write_credentials(doc: &toml_edit::DocumentMut) -> Result<(), Error> {
     let path = get_credentials_filepath()?;
     std::fs::write(&path, doc.to_string())
         .path_context(&path, "unable to write to the credentials file")
