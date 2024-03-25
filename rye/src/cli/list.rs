@@ -9,7 +9,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::PyProject;
 use crate::utils::{get_venv_python_bin, CommandOutput};
-use crate::uv::UvBuilder;
+use crate::uv::{UvBuilder, UvWithVenv};
 
 /// Prints the currently installed packages.
 #[derive(Parser, Debug)]
@@ -28,16 +28,20 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let self_venv = ensure_self_venv(CommandOutput::Normal)?;
 
     if Config::current().use_uv() {
-        UvBuilder::new()
+        let uv = UvBuilder::new()
             .with_output(CommandOutput::Normal)
-            .ensure_exists()?
-            .venv(
+            .ensure_exists()?;
+        if !project.rye_managed() {
+            UvWithVenv::new(uv, &project.venv_path(), &project.venv_python_version()?).freeze()?;
+        } else {
+            uv.venv(
                 &project.venv_path(),
                 &python,
                 &project.venv_python_version()?,
                 None,
             )?
             .freeze()?;
+        }
     } else {
         let status = Command::new(self_venv.join(VENV_BIN).join("pip"))
             .arg("--python")

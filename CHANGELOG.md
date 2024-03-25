@@ -9,6 +9,8 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- `rye list` always prints the currently installed packages even this project is not managed by Rye.  #940
+
 <!-- released start -->
 
 ## 0.31.0
