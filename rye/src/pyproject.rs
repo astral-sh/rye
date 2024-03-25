@@ -30,7 +30,7 @@ use pep508_rs::Requirement;
 use python_pkginfo::Metadata;
 use regex::Regex;
 use serde::Serialize;
-use toml_edit::{Array, Document, Formatted, Item, Table, TableLike, Value};
+use toml_edit::{Array, DocumentMut, Formatted, Item, Table, TableLike, Value};
 use url::Url;
 static NORMALIZATION_SPLIT_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"[-_.]+").unwrap());
 
@@ -371,13 +371,13 @@ impl fmt::Display for Script {
 #[derive(Debug)]
 pub struct Workspace {
     root: PathBuf,
-    doc: Document,
+    doc: DocumentMut,
     members: Option<Vec<String>>,
 }
 
 impl Workspace {
     /// Loads a workspace from a pyproject.toml and path
-    fn try_load_from_toml(doc: &Document, path: &Path) -> Option<Workspace> {
+    fn try_load_from_toml(doc: &DocumentMut, path: &Path) -> Option<Workspace> {
         doc.get("tool")
             .and_then(|x| x.get("rye"))
             .and_then(|x| x.get("workspace"))
@@ -405,7 +405,7 @@ impl Workspace {
             let project_file = here.join("pyproject.toml");
             if project_file.is_file() {
                 if let Ok(contents) = fs::read_to_string(&project_file) {
-                    if let Ok(doc) = contents.parse::<Document>() {
+                    if let Ok(doc) = contents.parse::<DocumentMut>() {
                         if let Some(workspace) = Workspace::try_load_from_toml(&doc, here) {
                             return Some(workspace);
                         }
@@ -565,7 +565,7 @@ pub struct PyProject {
     root: PathBuf,
     basename: OsString,
     workspace: Option<Arc<Workspace>>,
-    doc: Document,
+    doc: DocumentMut,
 }
 
 impl PyProject {
@@ -594,7 +594,7 @@ impl PyProject {
         let root = filename.parent().unwrap_or(Path::new("."));
         let doc = fs::read_to_string(filename)
             .path_context(filename, "failed to read pyproject.toml")?
-            .parse::<Document>()
+            .parse::<DocumentMut>()
             .path_context(filename, "failed to parse pyproject.toml")?;
         let mut workspace = Workspace::try_load_from_toml(&doc, root).map(Arc::new);
 
@@ -634,7 +634,7 @@ impl PyProject {
     ) -> Result<Option<PyProject>, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
         let doc = fs::read_to_string(filename)?
-            .parse::<Document>()
+            .parse::<DocumentMut>()
             .with_context(|| {
                 format!(
                     "failed to parse pyproject.toml from '{}' in context of workspace {}",
@@ -1131,7 +1131,7 @@ pub fn latest_available_python_version(
 }
 
 fn resolve_target_python_version(
-    doc: &Document,
+    doc: &DocumentMut,
     root: &Path,
     venv_path: &Path,
 ) -> Option<PythonVersionRequest> {
@@ -1142,7 +1142,7 @@ fn resolve_target_python_version(
 }
 
 fn resolve_intended_venv_python_version(
-    doc: &Document,
+    doc: &DocumentMut,
     root: &Path,
 ) -> Result<PythonVersion, Error> {
     let requested_version = get_python_version_request_from_pyenv_pin(root)
@@ -1168,7 +1168,7 @@ fn resolve_intended_venv_python_version(
     }
 }
 
-fn resolve_lower_bound_python_version(doc: &Document) -> Option<PythonVersionRequest> {
+fn resolve_lower_bound_python_version(doc: &DocumentMut) -> Option<PythonVersionRequest> {
     doc.get("project")
         .and_then(|x| x.get("requires-python"))
         .and_then(|x| x.as_str())
@@ -1231,7 +1231,7 @@ fn is_unsafe_script(path: &Path) -> bool {
     }
 }
 
-fn get_sources(doc: &Document) -> Result<Vec<SourceRef>, Error> {
+fn get_sources(doc: &DocumentMut) -> Result<Vec<SourceRef>, Error> {
     let cfg = Config::current();
     let mut rv = Vec::new();
 
@@ -1260,7 +1260,7 @@ fn get_sources(doc: &Document) -> Result<Vec<SourceRef>, Error> {
     Ok(rv)
 }
 
-fn is_rye_managed(doc: &Document) -> bool {
+fn is_rye_managed(doc: &DocumentMut) -> bool {
     if Config::current().force_rye_managed() {
         return true;
     }
@@ -1271,7 +1271,7 @@ fn is_rye_managed(doc: &Document) -> bool {
         .unwrap_or(false)
 }
 
-fn lock_with_sources(doc: &Document) -> bool {
+fn lock_with_sources(doc: &DocumentMut) -> bool {
     doc.get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("lock-with-sources"))

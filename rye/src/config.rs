@@ -6,7 +6,7 @@ use anyhow::{Context, Error};
 use once_cell::sync::Lazy;
 use pep440_rs::Operator;
 use regex::Regex;
-use toml_edit::Document;
+use toml_edit::DocumentMut;
 
 use crate::platform::{get_app_dir, get_latest_cpython_version};
 use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
@@ -23,7 +23,7 @@ pub fn load() -> Result<(), Error> {
         Config::from_path(&cfg_path)?
     } else {
         Config {
-            doc: Document::new(),
+            doc: DocumentMut::new(),
             path: cfg_path,
         }
     };
@@ -33,7 +33,7 @@ pub fn load() -> Result<(), Error> {
 
 #[derive(Clone)]
 pub struct Config {
-    doc: Document,
+    doc: DocumentMut,
     path: PathBuf,
 }
 
@@ -49,7 +49,7 @@ impl Config {
     }
 
     /// Returns a clone of the internal doc.
-    pub fn doc_mut(&mut self) -> &mut Document {
+    pub fn doc_mut(&mut self) -> &mut DocumentMut {
         &mut self.doc
     }
 
@@ -74,7 +74,7 @@ impl Config {
         let contents = fs::read_to_string(path).path_context(path, "failed to read config")?;
         Ok(Config {
             doc: contents
-                .parse::<Document>()
+                .parse::<DocumentMut>()
                 .path_context(path, "failed to parse config")?,
             path: path.to_path_buf(),
         })
