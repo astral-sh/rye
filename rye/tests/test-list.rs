@@ -42,7 +42,7 @@ fn test_list_not_rye_managed() {
         .arg("add")
         .arg("jinja2")
         .status()
-        .expect("ok");
+        .expect("Add package failed");
 
     rye_cmd_snapshot!(
         space.rye_cmd().arg("list"), @r###"
