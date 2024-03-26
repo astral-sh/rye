@@ -476,6 +476,7 @@ fn resolve_requirements_with_uv(
     let venv_path = pyproject_toml.venv_path();
     let py_bin = get_venv_python_bin(&venv_path);
     let sources = ExpandedSources::from_sources(&pyproject_toml.sources()?)?;
+    let pyproject = PyProject::discover()?;
 
     let uv = UvBuilder::new()
         .with_output(output.quieter())
@@ -486,7 +487,7 @@ fn resolve_requirements_with_uv(
             &py_bin,
             py_ver,
             None,
-            Config::current().venv_system_site_packages(),
+            pyproject.system_site_packages(),
         )?;
 
     for req in requirements {

@@ -96,7 +96,6 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     let venv = pyproject.venv_path();
     let py_ver = pyproject.venv_python_version()?;
     let output = cmd.output;
-    let config = Config::current();
 
     if cmd.pyproject.is_some()
         && cmd.mode != SyncMode::PythonOnly
@@ -178,7 +177,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             &py_ver,
             &venv,
             prompt,
-            config.venv_system_site_packages(),
+            pyproject.system_site_packages(),
         )
         .context("failed creating virtualenv ahead of sync")?;
     }
@@ -270,7 +269,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                         &py_path,
                         &py_ver,
                         None,
-                        config.venv_system_site_packages(),
+                        pyproject.system_site_packages(),
                     )?
                     .with_output(output)
                     .sync(&target_lockfile)?;
