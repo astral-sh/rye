@@ -1,8 +1,8 @@
 use std::fs;
 
-use insta::{assert_snapshot, Settings};
-
 use crate::common::{rye_cmd_snapshot, Space};
+use insta::{assert_snapshot, Settings};
+use toml_edit::value;
 
 mod common;
 
@@ -260,4 +260,19 @@ fn test_autosync_remember() {
     urllib3==2.1.0
     werkzeug==3.0.1
     "###);
+}
+
+#[test]
+fn test_sync_include_system_site_packages() {
+    let space = Space::new();
+    space.init("my-project");
+    space.edit_toml("pyproject.toml", |doc| {
+        doc["tool"]["rye"]["system-site-packages"] = value(true);
+    });
+
+    space.rye_cmd().arg("sync").status().expect("ok");
+
+    assert!(fs::read_to_string(space.venv_path().join("pyvenv.cfg"))
+        .unwrap()
+        .contains("include-system-site-packages = true"));
 }
