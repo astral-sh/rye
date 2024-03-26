@@ -16,7 +16,7 @@ use crate::piptools::LATEST_PIP;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_toolchain_python_bin, list_known_toolchains,
 };
-use crate::pyproject::latest_available_python_version;
+use crate::pyproject::{latest_available_python_version, PyProject};
 use crate::sources::py::{get_download_url, PythonVersion, PythonVersionRequest};
 use crate::utils::{check_checksum, symlink_file, unpack_archive, CommandOutput, IoPathContext};
 use crate::uv::UvBuilder;
@@ -142,6 +142,8 @@ pub fn ensure_self_venv_with_toolchain(
 
     let py_bin = get_toolchain_python_bin(&version)?;
 
+    let pyproject = PyProject::discover()?;
+
     // linux specific detection of shared libraries.
     #[cfg(target_os = "linux")]
     {
@@ -155,7 +157,7 @@ pub fn ensure_self_venv_with_toolchain(
             &py_bin,
             &version,
             None,
-            Config::current().venv_system_site_packages(),
+            pyproject.system_site_packages(),
         )?;
         // write our marker
         uv_venv.write_marker()?;

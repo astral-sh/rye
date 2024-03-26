@@ -9,6 +9,9 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- Added new `rye.tool.system-site-packages` config, so that the virtualenv
+  can be created with access to the system site packages.  #925
+
 <!-- released start -->
 
 ## 0.31.0

@@ -15,7 +15,7 @@ use crate::bootstrap::{ensure_self_venv, fetch, FetchOptions};
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::platform::get_app_dir;
-use crate::pyproject::{normalize_package_name, read_venv_marker, ExpandedSources};
+use crate::pyproject::{normalize_package_name, read_venv_marker, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersionRequest;
 use crate::sync::{create_virtualenv, VenvMarker};
 use crate::utils::{
@@ -110,6 +110,7 @@ pub fn install(
     extra_requirements: &[Requirement],
     output: CommandOutput,
 ) -> Result<(), Error> {
+    let pyproject = PyProject::discover()?;
     let config = Config::current();
     let sources = ExpandedSources::from_sources(&config.sources()?)?;
     let app_dir = get_app_dir();
@@ -139,7 +140,7 @@ pub fn install(
         &py_ver,
         &target_venv_path,
         requirement.name.as_str(),
-        config.venv_system_site_packages(),
+        pyproject.system_site_packages(),
     )?;
 
     if config.use_uv() {
@@ -152,7 +153,7 @@ pub fn install(
                 &py,
                 &py_ver,
                 None,
-                config.venv_system_site_packages(),
+                pyproject.system_site_packages(),
             )?
             .with_output(output)
             .install(

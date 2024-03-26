@@ -200,15 +200,6 @@ impl Config {
             .unwrap_or(true)
     }
 
-    /// Make the `.venv` to use the system site packages
-    pub fn venv_system_site_packages(&self) -> bool {
-        self.doc
-            .get("behavior")
-            .and_then(|x| x.get("venv-system-site-packages"))
-            .and_then(|x| x.as_bool())
-            .unwrap_or(false)
-    }
-
     /// Returns the HTTP proxy that should be used.
     pub fn http_proxy_url(&self) -> Option<String> {
         std::env::var("http_proxy").ok().or_else(|| {
@@ -386,13 +377,6 @@ author = "John Doe <john@example.com>""#,
         let (cfg_path, _temp_dir) = setup_config("[behavior]\nvenv-mark-sync-ignore = false");
         let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
         assert!(!cfg.venv_mark_sync_ignore());
-    }
-
-    #[test]
-    fn test_venv_system_site_packages() {
-        let (cfg_path, _temp_dir) = setup_config("[behavior]\nvenv-system-site-packages = true");
-        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
-        assert!(cfg.venv_system_site_packages());
     }
 
     #[test]

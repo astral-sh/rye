@@ -36,7 +36,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 &python,
                 &project.venv_python_version()?,
                 None,
-                Config::current().venv_system_site_packages(),
+                project.system_site_packages(),
             )?
             .freeze()?;
     } else {
