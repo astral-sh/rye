@@ -4,6 +4,7 @@ It finds the latest Python releases, sorts them by
 various factors (arch, platform, flavor) and generates download
 links to be included into rye at build time.
 """
+
 import abc
 import asyncio
 import itertools

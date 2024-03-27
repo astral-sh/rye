@@ -3,6 +3,7 @@
 It finds the latest UV releases and generates rust code that can be included
 into rye at build time.
 """
+
 import asyncio
 import os
 import re
