@@ -9,6 +9,8 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- Fix error on using -v or -q with `rye fmt` or `rye lint`. #959
+
 <!-- released start -->
 
 ## 0.31.0
