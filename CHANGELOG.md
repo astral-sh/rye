@@ -9,6 +9,8 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- Fix rye fetch detection of registered toolchain. #931
+
 <!-- released start -->
 
 ## 0.31.0
