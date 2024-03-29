@@ -11,10 +11,11 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
+- Prevent `rye fetch --force` from removing a target directory that is not a Python installation.  #921
+
 - `rye list` always prints the currently installed packages even this project is not managed by Rye.  #940
 
 - Fix error on using -v or -q with `rye fmt` or `rye lint`. #959
-- Fix error on using -v or -q with `rye fmt` or `rye lint`.  #959
 
 - Fix rye fetch detection of registered toolchain.  #931
 
