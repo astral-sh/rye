@@ -103,43 +103,34 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         resolve_credentials(credentials_table, cmd.username.as_ref(), token.as_ref());
     let mut repository = resolve_repository(credentials_table, cmd.repository, cmd.repository_url)?;
 
-    let token = if let Some(token) = cmd.token {
-        let secret = Secret::new(token);
-        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
-        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
-        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
+    // Token is from cli
+    let mut should_encrypt = token.is_some();
+    // We want to prompt decrypt any tokens from files and prompt encrypt any new inputs (cli)
+    let should_decrypt =
+        !should_encrypt && credentials_table.map_or(false, |it| it.get("token").is_some());
 
-        secret
-    } else if let Some(token) = credentials
-        .get(repository)
-        .and_then(|table| table.get("token"))
-        .map(|token| token.to_string())
-        .map(escape_string)
-    {
-        let secret = Secret::new(token);
+    // Fallback prompts
+    let mut passphrase = None;
 
-        maybe_decrypt(&secret, cmd.yes)?
-    } else {
-        echo!("No access token found, generate one at: https://pypi.org/manage/account/token/");
-        let token = if !cmd.yes {
-            prompt_for_token()?
-        } else {
-            "".to_string()
-        };
-        if token.is_empty() {
-            bail!("an access token is required")
+    if !cmd.yes {
+        if credentials.password.is_none() {
+            if is_unknown_repository(&repository) || is_default_repository(&repository) {
+                echo!("No access token found, generate one at: https://pypi.org/manage/account/token/");
+            }
+            credentials.password = prompt_token()?;
+            should_encrypt = credentials.password.is_some();
+
+            if should_encrypt {
+                passphrase = prompt_encrypt_passphrase()?;
+            } else if should_decrypt {
+                passphrase = prompt_decrypt_passphrase()?;
+            }
         }
-        let secret = Secret::new(token);
-        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
-        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
-        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
 
-        secret
-    };
-
-    credentials[repository]["repository-url"] = Item::Value(repository_url.to_string().into());
-    credentials[repository]["username"] = Item::Value(username.clone().into());
-    write_credentials(&credentials)?;
+        if repository.url.is_none() {
+            repository.url = prompt_repository_url()?;
+        }
+    }
 
     let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
     publish_cmd
@@ -304,11 +295,44 @@ fn default_repository_url() -> Url {
     Url::parse(DEFAULT_REPOSITORY_URL).expect("default: pypi repository url")
 }
 
-fn prompt_for_token() -> Result<String, Error> {
+fn is_unknown_repository(repository: &Repository) -> bool {
+    repository.name.is_none() && repository.url.is_none()
+}
+
+fn is_default_repository(repository: &Repository) -> bool {
+    repository
+        .name
+        .as_ref()
+        .map_or(false, |it| it == DEFAULT_REPOSITORY)
+        && repository
+            .url
+            .as_ref()
+            .map_or(false, |it| it.domain() == Some(DEFAULT_REPOSITORY_DOMAIN))
+}
+
+fn prompt_token() -> Result<Option<Secret<String>>, Error> {
     eprint!("Access token: ");
     let token = get_trimmed_user_input().context("failed to read provided token")?;
 
-    Ok(token)
+    if token.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(Secret::new(token)))
+    }
+}
+
+fn prompt_encrypt_passphrase() -> Result<Option<Secret<String>>, Error> {
+    let phrase = dialoguer::Password::with_theme(tui_theme())
+        .with_prompt("Encrypt with passphrase (optional)")
+        .allow_empty_password(true)
+        .report(false)
+        .interact()?;
+
+    if phrase.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(Secret::new(phrase)))
+    }
 }
 
 fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, Error> {
@@ -337,6 +361,20 @@ fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, 
     };
 
     Ok(Secret::new(token.to_vec()))
+}
+
+fn prompt_decrypt_passphrase() -> Result<Option<Secret<String>>, Error> {
+    let phrase = dialoguer::Password::with_theme(tui_theme())
+        .with_prompt("Decrypt with passphrase (optional)")
+        .allow_empty_password(true)
+        .report(false)
+        .interact()?;
+
+    if phrase.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(Secret::new(phrase)))
+    }
 }
 
 fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, Error> {
@@ -370,6 +408,17 @@ fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, E
     }
 
     bail!("failed to decrypt")
+}
+
+fn prompt_repository_url() -> Result<Option<Url>, Error> {
+    eprint!("Repository URL: ");
+    let url = get_trimmed_user_input().context("failed to read provided url")?;
+
+    if url.is_empty() {
+        Ok(None)
+    } else {
+        Ok(Some(Url::parse(&url)?))
+    }
 }
 
 fn get_trimmed_user_input() -> Result<String, Error> {
