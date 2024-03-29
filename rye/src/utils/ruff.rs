@@ -48,16 +48,18 @@ pub fn execute_ruff(args: RuffArgs, extra_args: &[&str]) -> Result<(), Error> {
             project.workspace_path().join(".ruff_cache"),
         );
     }
+    ruff_cmd.args(extra_args);
+
     match output {
         CommandOutput::Normal => {}
         CommandOutput::Verbose => {
             ruff_cmd.arg("--verbose");
         }
         CommandOutput::Quiet => {
-            ruff_cmd.arg("-q");
+            ruff_cmd.arg("--quiet");
         }
     }
-    ruff_cmd.args(extra_args);
+
     ruff_cmd.args(args.extra_args);
 
     ruff_cmd.arg("--");
