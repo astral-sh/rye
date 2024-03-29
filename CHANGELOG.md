@@ -7,9 +7,17 @@ that were not yet released.
 
 _Unreleased_
 
+- Update uv to 0.1.26.  #924
+
 - Always create `.gitignore` file in `rye init`.  #919
 
 - Prevent `rye fetch --force` from removing a target directory that is not a Python installation.  #921
+
+- Fix error on using -v or -q with `rye fmt` or `rye lint`.  #959
+
+- Fix rye fetch detection of registered toolchain.  #931
+
+- Ignore build-system configuration for virtual projects.  #929
 
 <!-- released start -->
 
