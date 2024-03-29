@@ -11,6 +11,8 @@ _Unreleased_
 
 - Fix error on using -v or -q with `rye fmt` or `rye lint`. #959
 
+- Fix rye fetch detection of registered toolchain. #931
+
 <!-- released start -->
 
 ## 0.31.0
