@@ -27,8 +27,8 @@ pub struct Args {
     /// The distribution files to upload to the repository (defaults to <workspace-root>/dist/*).
     dist: Option<Vec<PathBuf>>,
     /// The repository to publish to.
-    #[arg(short, long, default_value = "pypi")]
-    repository: String,
+    #[arg(short, long)]
+    repository: Option<String>,
     /// The repository url to publish to.
     #[arg(long)]
     repository_url: Option<Url>,
@@ -50,6 +50,9 @@ pub struct Args {
     /// Skip files that have already been published (only applies to repositories supporting this feature)
     #[arg(long)]
     skip_existing: bool,
+    /// Skip saving to credentials file.
+    #[arg(long)]
+    skip_save_credentials: bool,
     /// Skip prompts.
     #[arg(short, long)]
     yes: bool,
