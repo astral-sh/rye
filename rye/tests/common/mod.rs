@@ -61,6 +61,30 @@ toolchain = "cpython@3.12.2"
         .unwrap();
     }
 
+    // write the credentials file
+    let credentials_file = home.join("credentials");
+    if !credentials_file.is_file() {
+        fs::write(
+            credentials_file,
+            r#"
+[pypi]
+# Update pypi repository url to avoid using it during tests
+repository-url = "don't use"
+
+[found-username-token]
+username = "username"
+token = "token"
+
+[found-token]
+token = "token"
+
+[found-username]
+username = "username"
+"#,
+        )
+        .unwrap();
+    }
+
     // fetch the most important interpreters.  Fetch some with and some without
     // build info to make sure we cover our grounds here.
     for (version, build_info) in [
@@ -117,6 +141,7 @@ pub fn get_bin() -> PathBuf {
     get_cargo_bin("rye")
 }
 
+#[derive(Debug)]
 pub struct Space {
     #[allow(unused)]
     tempdir: TempDir,

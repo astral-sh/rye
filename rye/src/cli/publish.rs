@@ -546,3 +546,321 @@ fn pad_hex(s: String) -> String {
         s
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::PathBuf;
+    use tempfile::tempdir;
+
+    #[test]
+    fn test_config_from_cli_with_token() {
+        // User provides a token either from the CLI or credentials file (CLI here)
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = None; // no repo doesn't exclude pypi
+        let cli_repo_url = None;
+        let cli_username = None;
+        let cli_token = Secret::new("token".to_string());
+
+        let credentials =
+            resolve_credentials(Some(&credentials_table), cli_username, Some(&cli_token));
+        let repository =
+            resolve_repository(Some(&credentials_table), cli_repo, cli_repo_url).unwrap();
+
+        let config = PublishConfig {
+            credentials,
+            repository,
+        };
+        let config = config.resolve_with_defaults();
+
+        // We are 'pypi' ready with defaults (and keyring ready)
+        assert!(config_is_ready(&config));
+        assert!(config_is_keyring_ready(&config));
+    }
+
+    #[test]
+    fn test_config_from_cli_with_username() {
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = None; // no repo doesn't exclude pypi
+        let cli_repo_url = None;
+        let cli_username = "username";
+        let cli_token = None;
+
+        let credentials = resolve_credentials(
+            Some(&credentials_table),
+            Some(&cli_username.to_string()),
+            cli_token,
+        );
+        let repository =
+            resolve_repository(Some(&credentials_table), cli_repo, cli_repo_url).unwrap();
+
+        let config = PublishConfig {
+            credentials,
+            repository,
+        };
+        let config = config.resolve_with_defaults();
+
+        // We can fallback to keyring with a defaulted url
+        assert!(config_is_ready(&config));
+        assert!(config_is_keyring_ready(&config));
+    }
+
+    #[test]
+    fn test_config_from_cli_with_url() {
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = None; // no repo doesn't exclude pypi
+        let cli_repo_url = Url::parse("https://test.pypi.org/legacy/").unwrap();
+        let cli_username = None;
+        let cli_token = None;
+
+        let credentials = resolve_credentials(Some(&credentials_table), cli_username, cli_token);
+        let repository =
+            resolve_repository(Some(&credentials_table), cli_repo, Some(cli_repo_url)).unwrap();
+
+        let config = PublishConfig {
+            credentials,
+            repository,
+        };
+        let config = config.resolve_with_defaults();
+
+        // We are ready because we can fallback to keyring
+        assert!(config_is_ready(&config));
+        assert!(config_is_keyring_ready(&config));
+    }
+
+    #[test]
+    fn test_config_from_cli_with_username_token() {
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = None; // no repo doesn't exclude pypi
+        let cli_repo_url = Url::parse("https://test.pypi.org/legacy/").unwrap();
+        let cli_username = "username";
+        let cli_token = Secret::new("token".to_string());
+
+        let credentials = resolve_credentials(
+            Some(&credentials_table),
+            Some(&cli_username.to_string()),
+            Some(&cli_token),
+        );
+        let repository =
+            resolve_repository(Some(&credentials_table), cli_repo, Some(cli_repo_url)).unwrap();
+
+        let config = PublishConfig {
+            credentials,
+            repository,
+        };
+        let config = config.resolve_with_defaults();
+
+        // We are ready with username and password (token)
+        assert!(config_is_ready(&config));
+    }
+
+    #[test]
+    fn test_config_from_cli_with_keyring() {
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = None; // no repo doesn't exclude pypi
+        let cli_repo_url = Url::parse("https://test.pypi.org/legacy/").unwrap();
+        let cli_username = "username";
+        let cli_token = Secret::new("token".to_string());
+
+        let credentials = resolve_credentials(
+            Some(&credentials_table),
+            Some(&cli_username.to_string()),
+            Some(&cli_token),
+        );
+        let repository =
+            resolve_repository(Some(&credentials_table), cli_repo, Some(cli_repo_url)).unwrap();
+
+        let config = PublishConfig {
+            credentials,
+            repository,
+        };
+        let config = config.resolve_with_defaults();
+
+        // We are ready for keyring with username and url
+        assert!(config_is_keyring_ready(&config));
+    }
+
+    #[test]
+    fn test_repository_config_resolution_defaults() {
+        // Resolve without credentials file
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = "pypi".to_string();
+        let cli_repo_url = None;
+        let cli_username = None;
+        let cli_token = Secret::new("token".to_string());
+
+        let credentials =
+            resolve_credentials(Some(&credentials_table), cli_username, Some(&cli_token));
+        let repository =
+            resolve_repository(Some(&credentials_table), Some(cli_repo), cli_repo_url).unwrap();
+
+        assert_eq!(credentials.username.unwrap(), DEFAULT_USERNAME);
+        assert_eq!(
+            credentials.password.unwrap().expose_secret(),
+            cli_token.expose_secret()
+        );
+        assert_eq!(repository.url.unwrap().to_string(), DEFAULT_REPOSITORY_URL);
+    }
+
+    #[test]
+    fn test_repository_config_file_only() {
+        let mut credentials_table = Item::Table(Table::new());
+        credentials_table["repository-url"] =
+            Item::Value("https://test.pypi.org/".to_string().into());
+        credentials_table["username"] = Item::Value("username".to_string().into());
+        credentials_table["token"] = Item::Value("password".to_string().into());
+
+        let credentials = resolve_credentials(Some(&credentials_table), None, None);
+        let repository = resolve_repository(Some(&credentials_table), None, None).unwrap();
+
+        let repository_url = Url::parse("https://test.pypi.org/").unwrap();
+        let username = "username".to_string();
+        let password = "password".to_string();
+
+        assert_eq!(
+            repository.url,
+            Some(Url::parse("https://test.pypi.org/").unwrap())
+        );
+        assert_eq!(credentials.username, Some(username));
+        assert_eq!(*credentials.password.unwrap().expose_secret(), password);
+        assert_eq!(repository.url, Some(repository_url));
+    }
+
+    #[test]
+    fn test_repository_config_cli_only() {
+        // Resolve without credentials file
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = "pypi".to_string();
+        let cli_repo_url = Url::parse("https://test.pypi.org/").unwrap();
+        let cli_username = "username".to_string();
+        let cli_token = Secret::new("token".to_string());
+
+        let credentials = resolve_credentials(
+            Some(&credentials_table),
+            Some(&cli_username),
+            Some(&cli_token),
+        );
+        let repository = resolve_repository(
+            Some(&credentials_table),
+            Some(cli_repo),
+            Some(cli_repo_url.clone()),
+        )
+        .unwrap();
+
+        assert_eq!(credentials.username, Some(cli_username));
+        assert_eq!(
+            credentials.password.unwrap().expose_secret(),
+            cli_token.expose_secret()
+        );
+        assert_eq!(repository.url, Some(cli_repo_url));
+    }
+
+    #[test]
+    fn test_repository_config_file_and_cli() {
+        let mut credentials_table = Item::Table(Table::new());
+        credentials_table["repository-url"] =
+            Item::Value("https://test.pypi.org/".to_string().into());
+        credentials_table["username"] = Item::Value("username".to_string().into());
+
+        let cli_repo = "pypi".to_string();
+        let cli_repo_url = None;
+        let cli_username = None;
+        let cli_token = Secret::new("token".to_string());
+
+        let config = resolve_credentials(Some(&credentials_table), cli_username, Some(&cli_token));
+        let repository =
+            resolve_repository(Some(&credentials_table), Some(cli_repo), cli_repo_url).unwrap();
+
+        assert_eq!(
+            config.password.unwrap().expose_secret(),
+            cli_token.expose_secret()
+        );
+        assert_eq!(
+            repository.url.unwrap().to_string(),
+            "https://test.pypi.org/".to_string()
+        );
+    }
+
+    #[test]
+    fn test_repository_config_keyring_fallback() {
+        let credentials_table = Item::Table(Table::new());
+
+        let cli_repo = "pypi".to_string();
+        let cli_repo_url = Url::parse("https://test.pypi.org/").unwrap();
+        let cli_username = None;
+        let cli_token = None;
+
+        let credentials = resolve_credentials(Some(&credentials_table), cli_username, cli_token);
+        let repository = resolve_repository(
+            Some(&credentials_table),
+            Some(cli_repo),
+            Some(cli_repo_url.clone()),
+        )
+        .unwrap();
+
+        assert!(credentials.username.is_none());
+        assert!(credentials.password.is_none());
+        assert_eq!(repository.url.unwrap(), cli_repo_url);
+    }
+
+    #[test]
+    fn test_save_rye_credentials_encrypt() {
+        let tempdir = tempdir().unwrap();
+        let temp_home = tempdir.path();
+        let mut credentials_table = DocumentMut::new();
+
+        let cli_repo = "pypi".to_string();
+
+        // Set the environment variable for this specific test
+        std::env::set_var("RYE_HOME", temp_home);
+        crate::platform::init().unwrap();
+
+        assert_eq!(
+            std::env::var("RYE_HOME").map(PathBuf::from),
+            Ok(temp_home.to_path_buf())
+        );
+
+        save_rye_credentials(
+            &mut credentials_table,
+            &Credentials {
+                username: Some("username".to_string()),
+                password: Some("password".to_string().into()),
+            },
+            &Repository {
+                name: Some(cli_repo),
+                url: None,
+            },
+            true,
+            Some(&Secret::new("passphrase".to_string())),
+        )
+        .unwrap();
+
+        let credentials = get_credentials().unwrap();
+        let table = credentials.get("pypi");
+
+        assert_eq!(
+            table
+                .and_then(|it| it.get("username"))
+                .map(Item::to_string)
+                .map(escape_string)
+                .unwrap(),
+            "username".to_string()
+        );
+
+        let token = table
+            .and_then(|it| it.get("token").map(Item::to_string).map(escape_string))
+            .unwrap();
+
+        let password =
+            decrypt(&Secret::new(token), &Secret::new("passphrase".to_string())).unwrap();
+
+        assert_eq!(password.expose_secret(), "password");
+    }
+}
