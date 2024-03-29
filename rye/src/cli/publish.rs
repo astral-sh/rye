@@ -8,7 +8,7 @@ use age::{
 };
 use anyhow::{bail, Context, Error};
 use clap::Parser;
-use toml_edit::{Item, Table};
+use toml_edit::{DocumentMut, Item, Table};
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
@@ -143,6 +143,16 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             "failed to resolve configuration for repository '{}'",
             config.repository.name.unwrap_or_default()
         );
+    }
+
+    if !cmd.skip_save_credentials && config.repository.name.is_some() {
+        save_rye_credentials(
+            &mut credentials_file,
+            &config.credentials,
+            &config.repository,
+            should_encrypt,
+            passphrase.as_ref(),
+        )?;
     }
 
     let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
@@ -377,6 +387,47 @@ fn is_default_repository(repository: &Repository) -> bool {
             .map_or(false, |it| it.domain() == Some(DEFAULT_REPOSITORY_DOMAIN))
 }
 
+fn save_rye_credentials(
+    file: &mut DocumentMut,
+    credentials: &Credentials,
+    repository: &Repository,
+    should_encrypt: bool,
+    passphrase: Option<&Secret<String>>,
+) -> Result<(), Error> {
+    // We need a repository to key the credentials with
+    let Some(name) = repository.name.as_ref() else {
+        echo!("no repository found");
+        echo!("skipping save credentials");
+        return Ok(());
+    };
+
+    let table = file.entry(name).or_insert(Item::Table(Table::new()));
+
+    if let Some(it) = credentials.password.as_ref() {
+        let mut final_token = it.expose_secret().clone();
+        if let Some(phrase) = passphrase.as_ref() {
+            if should_encrypt {
+                final_token = hex::encode(encrypt(it, phrase)?.expose_secret());
+            }
+        }
+        if !final_token.is_empty() {
+            table["token"] = Item::Value(final_token.into());
+        }
+    }
+
+    if let Some(usr) = credentials.username.as_ref() {
+        if !usr.is_empty() {
+            table["username"] = Item::Value(usr.clone().into());
+        }
+    }
+
+    if let Some(url) = repository.url.as_ref() {
+        table["repository-url"] = Item::Value(url.to_string().into());
+    }
+
+    write_credentials(file)
+}
+
 fn prompt_token() -> Result<Option<Secret<String>>, Error> {
     eprint!("Access token: ");
     let token = get_trimmed_user_input().context("failed to read provided token")?;
@@ -402,23 +453,12 @@ fn prompt_encrypt_passphrase() -> Result<Option<Secret<String>>, Error> {
     }
 }
 
-fn maybe_encrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<Vec<u8>>, Error> {
-    let phrase = if !yes {
-        dialoguer::Password::with_theme(tui_theme())
-            .with_prompt("Encrypt with passphrase (optional)")
-            .allow_empty_password(true)
-            .report(false)
-            .interact()
-            .map(Secret::new)?
-    } else {
-        Secret::new("".to_string())
-    };
-
+fn encrypt(secret: &Secret<String>, phrase: &Secret<String>) -> Result<Secret<Vec<u8>>, Error> {
     let token = if phrase.expose_secret().is_empty() {
         secret.expose_secret().as_bytes().to_vec()
     } else {
         // Do the encryption
-        let encryptor = Encryptor::with_user_passphrase(phrase);
+        let encryptor = Encryptor::with_user_passphrase(phrase.clone());
         let mut encrypted = vec![];
         let mut writer = encryptor.wrap_output(&mut encrypted)?;
         writer.write_all(secret.expose_secret().as_bytes())?;
@@ -444,18 +484,7 @@ fn prompt_decrypt_passphrase() -> Result<Option<Secret<String>>, Error> {
     }
 }
 
-fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, Error> {
-    let phrase = if !yes {
-        dialoguer::Password::with_theme(tui_theme())
-            .with_prompt("Decrypt with passphrase (optional)")
-            .allow_empty_password(true)
-            .report(false)
-            .interact()
-            .map(Secret::new)?
-    } else {
-        Secret::new("".to_string())
-    };
-
+fn decrypt(secret: &Secret<String>, phrase: &Secret<String>) -> Result<Secret<String>, Error> {
     if phrase.expose_secret().is_empty() {
         return Ok(secret.clone());
     }
@@ -465,7 +494,7 @@ fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, E
     if let Decryptor::Passphrase(decryptor) = Decryptor::new(bytes.as_slice())? {
         // Do the decryption
         let mut decrypted = vec![];
-        let mut reader = decryptor.decrypt(&phrase, None)?;
+        let mut reader = decryptor.decrypt(phrase, None)?;
         reader.read_to_end(&mut decrypted)?;
 
         let token = String::from_utf8(decrypted).context("failed to parse utf-8")?;
