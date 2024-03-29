@@ -132,6 +132,19 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
+    let config = PublishConfig {
+        credentials,
+        repository,
+    };
+    let config = config.resolve_with_defaults();
+
+    if !config_is_ready(&config) {
+        bail!(
+            "failed to resolve configuration for repository '{}'",
+            config.repository.name.unwrap_or_default()
+        );
+    }
+
     let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
     publish_cmd
         .arg("-mtwine")
@@ -241,6 +254,60 @@ fn resolve_repository(
     }
 
     Ok(repository)
+}
+
+/// We need:
+/// 1. username
+/// 2. password (token)
+/// 4. repository url
+///
+/// This can be configured with:
+/// 1. credentials file
+/// 2. cli
+///
+/// (1) cli -> (2) credentials file -> (3) keyring
+//
+/// Only token ('pypi'):
+/// A token is resolved from either the cli or the credentials file.
+/// If a repository name, url, and a username aren't provided, we can
+/// default to 'pypi' configuration and save for next time with __token__
+/// username.
+///
+/// Only url (keyring):
+/// Only a repository url is provided. We can default to keyring settings
+/// with __token__.
+///
+/// Using a repository name:
+/// If a repository name is provided we would expect either sufficient
+/// configuration from remaining sources or from the credentials file.
+/// This includes an `is_keyring_ready` check.
+struct PublishConfig {
+    credentials: Credentials,
+    repository: Repository,
+}
+
+impl PublishConfig {
+    /// fallback defaults:
+    /// 1. username (__token__)
+    /// 2. repository name ('pypi')
+    /// 3. repository url ('pypi')
+    fn resolve_with_defaults(self) -> Self {
+        Self {
+            credentials: self.credentials.resolve_with_defaults(),
+            repository: self.repository.resolve_with_defaults(),
+        }
+    }
+}
+
+fn config_is_ready(config: &PublishConfig) -> bool {
+    (config.credentials.username.is_some()
+        && config.credentials.password.is_some()
+        && config.repository.url.is_some())
+        || config_is_keyring_ready(config)
+}
+
+fn config_is_keyring_ready(config: &PublishConfig) -> bool {
+    config.credentials.username.is_some() && config.repository.url.is_some()
 }
 
 struct Credentials {
