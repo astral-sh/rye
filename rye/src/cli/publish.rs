@@ -539,20 +539,6 @@ fn get_trimmed_user_input() -> Result<String, Error> {
     Ok(input.trim().to_string())
 }
 
-/// Helper function to manage potentially encoding secret data.
-///
-/// If the original secret data (bytes) are not the same as the new secret's
-/// then we encode, assuming the new data is encrypted data. Otherwise return
-/// a new secret with the same string.
-fn maybe_encode(original_secret: &Secret<String>, new_secret: &Secret<Vec<u8>>) -> Secret<String> {
-    if original_secret.expose_secret().as_bytes() != new_secret.expose_secret() {
-        let encoded = hex::encode(new_secret.expose_secret());
-        return Secret::new(encoded);
-    }
-
-    original_secret.clone()
-}
-
 fn pad_hex(s: String) -> String {
     if s.len() % 2 == 1 {
         format!("0{}", s)
