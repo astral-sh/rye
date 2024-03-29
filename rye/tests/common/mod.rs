@@ -67,6 +67,7 @@ toolchain = "cpython@3.12.2"
         ("cpython@3.8.17", false),
         ("cpython@3.11.8", true),
         ("cpython@3.12.2", false),
+        ("pypy@3.10.13", false),
     ] {
         if home.join("py").join(version).is_dir() {
             continue;
