@@ -3,9 +3,11 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.32.0
 
-_Unreleased_
+Released on 2024-03-29
 
 - Update uv to 0.1.26.  #924
 
@@ -20,8 +22,6 @@ _Unreleased_
 - Fix rye fetch detection of registered toolchain.  #931
 
 - Ignore build-system configuration for virtual projects.  #929
-
-<!-- released start -->
 
 ## 0.31.0
 
