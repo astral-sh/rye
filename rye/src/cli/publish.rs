@@ -156,17 +156,31 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
+
+    // Build Twine command
     publish_cmd
         .arg("-mtwine")
         .arg("--no-color")
         .arg("upload")
-        .args(files)
-        .arg("--username")
-        .arg(username)
-        .arg("--password")
-        .arg(token.expose_secret())
-        .arg("--repository-url")
-        .arg(repository_url.to_string());
+        .arg("--non-interactive")
+        .args(files);
+
+    if let Some(usr) = config.credentials.username {
+        publish_cmd.arg("--username").arg(usr);
+    }
+    if let Some(pwd) = config.credentials.password.as_ref() {
+        publish_cmd.arg("--password");
+
+        if should_decrypt && passphrase.is_some() {
+            // Can expect passphrase due to the condition
+            publish_cmd.arg(decrypt(pwd, &passphrase.expect("passphrase"))?.expose_secret());
+        } else {
+            publish_cmd.arg(pwd.expose_secret());
+        }
+    }
+    if let Some(url) = config.repository.url.as_ref() {
+        publish_cmd.arg("--repository-url").arg(url.to_string());
+    }
     if cmd.sign {
         publish_cmd.arg("--sign");
     }
