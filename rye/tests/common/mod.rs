@@ -67,6 +67,7 @@ toolchain = "cpython@3.12.2"
         ("cpython@3.8.17", false),
         ("cpython@3.11.8", true),
         ("cpython@3.12.2", false),
+        ("pypy@3.10.13", false),
     ] {
         if home.join("py").join(version).is_dir() {
             continue;
@@ -153,7 +154,7 @@ impl Space {
     }
 
     #[allow(unused)]
-    pub fn load_toml<P: AsRef<Path>, R, F: FnOnce(&toml_edit::Document) -> R>(
+    pub fn load_toml<P: AsRef<Path>, R, F: FnOnce(&toml_edit::DocumentMut) -> R>(
         &self,
         path: P,
         f: F,
@@ -162,13 +163,13 @@ impl Space {
         let mut doc = if p.is_file() {
             std::fs::read_to_string(&p).unwrap().parse().unwrap()
         } else {
-            toml_edit::Document::default()
+            toml_edit::DocumentMut::default()
         };
         f(&doc)
     }
 
     #[allow(unused)]
-    pub fn edit_toml<P: AsRef<Path>, R, F: FnOnce(&mut toml_edit::Document) -> R>(
+    pub fn edit_toml<P: AsRef<Path>, R, F: FnOnce(&mut toml_edit::DocumentMut) -> R>(
         &self,
         path: P,
         f: F,
@@ -177,7 +178,7 @@ impl Space {
         let mut doc = if p.is_file() {
             std::fs::read_to_string(&p).unwrap().parse().unwrap()
         } else {
-            toml_edit::Document::default()
+            toml_edit::DocumentMut::default()
         };
         let rv = f(&mut doc);
         fs::create_dir_all(p.parent().unwrap()).ok();
@@ -186,7 +187,7 @@ impl Space {
     }
 
     #[allow(unused)]
-    pub fn read_toml<P: AsRef<Path>>(&self, path: P) -> toml_edit::Document {
+    pub fn read_toml<P: AsRef<Path>>(&self, path: P) -> toml_edit::DocumentMut {
         let p = self.project_path().join(path.as_ref());
         std::fs::read_to_string(p).unwrap().parse().unwrap()
     }
