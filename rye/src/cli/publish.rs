@@ -97,35 +97,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let entry = entry.map(|it| it.or_insert(Item::Table(Table::new())));
     let credentials_table = entry.as_deref();
 
-    let repository_url = match cmd.repository_url {
-        Some(url) => url,
-        None => {
-            let default_repository_url = Url::parse("https://upload.pypi.org/legacy/")?;
-            credentials
-                .get(repository)
-                .and_then(|table| table.get("repository-url"))
-                .map(|url| match Url::parse(&escape_string(url.to_string())) {
-                    Ok(url) => url,
-                    Err(_) => default_repository_url.clone(),
-                })
-                .unwrap_or(default_repository_url)
-        }
-    };
+    let token = cmd.token.map(Secret::new);
 
-    // If -r is pypi but the url isn't pypi then bail
-    if repository == "pypi" && repository_url.domain() != Some("upload.pypi.org") {
-        bail!("invalid pypi url {} (use -h for help)", repository_url);
-    }
-
-    let username = match cmd.username {
-        Some(username) => username,
-        None => credentials
-            .get(repository)
-            .and_then(|table| table.get("username"))
-            .map(|username| username.to_string())
-            .map(escape_string)
-            .unwrap_or("__token__".to_string()),
-    };
+    let mut credentials =
+        resolve_credentials(credentials_table, cmd.username.as_ref(), token.as_ref());
+    let mut repository = resolve_repository(credentials_table, cmd.repository, cmd.repository_url)?;
 
     let token = if let Some(token) = cmd.token {
         let secret = Secret::new(token);
@@ -201,6 +177,93 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+fn resolve_credentials(
+    credentials_table: Option<&Item>,
+    username: Option<&String>,
+    password: Option<&Secret<String>>,
+) -> Credentials {
+    let mut credentials = Credentials {
+        username: None,
+        password: None,
+    };
+
+    if username.is_some() {
+        credentials.username = username.cloned();
+    } else {
+        credentials.username = credentials_table
+            .as_ref()
+            .and_then(|it| it.get("username").map(Item::to_string).map(escape_string));
+    }
+
+    if password.is_some() {
+        credentials.password = password.cloned();
+    } else {
+        credentials.password = credentials_table.as_ref().and_then(|it| {
+            it.get("token")
+                .map(Item::to_string)
+                .map(escape_string)
+                .map(Secret::new)
+        });
+    }
+
+    if credentials.username.is_some() && credentials.password.is_some() {
+        return credentials;
+    }
+
+    // Rye resolves tokens from the file or the cli. If a token was resolved
+    // we can assume a default username of __token__.
+    if credentials.password.is_some() && credentials.username.is_none() {
+        credentials.username = Some(DEFAULT_USERNAME.to_string())
+    }
+
+    credentials
+}
+
+fn resolve_repository(
+    credentials_table: Option<&Item>,
+    name: Option<String>,
+    url: Option<Url>,
+) -> Result<Repository, Error> {
+    let mut repository = Repository { name, url };
+
+    if repository.url.is_some() {
+        return Ok(repository);
+    }
+
+    if let Some(cred_url) = credentials_table.as_ref().and_then(|it| {
+        it.get("repository-url")
+            .map(Item::to_string)
+            .map(escape_string)
+    }) {
+        repository.url = Some(Url::parse(&cred_url)?);
+    }
+
+    if repository.url.is_none()
+        && repository
+            .name
+            .as_ref()
+            .map_or(false, |it| it == DEFAULT_REPOSITORY)
+    {
+        repository.url = Some(Url::parse(DEFAULT_REPOSITORY_URL)?);
+    }
+
+    Ok(repository)
+}
+
+struct Credentials {
+    username: Option<String>,
+    password: Option<Secret<String>>,
+}
+
+impl Credentials {
+    fn resolve_with_defaults(self) -> Self {
+        Self {
+            username: self.username.or(Some(DEFAULT_USERNAME.to_string())),
+            password: self.password,
+        }
+    }
 }
 
 struct Repository {
