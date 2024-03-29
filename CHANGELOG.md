@@ -9,6 +9,10 @@ _Unreleased_
 
 <!-- released start -->
 
+- `publish` will fall back to dispatching username and repository url for Twine's keyring support. #759
+
+- `publish` now includes `--skip-save-credentials`. #759
+
 ## 0.32.0
 
 Released on 2024-03-29
