@@ -748,7 +748,7 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
 
 fn prompt_for_default_toolchain(
     default_toolchain: PythonVersionRequest,
-    config_doc: &mut toml_edit::Document,
+    config_doc: &mut toml_edit::DocumentMut,
 ) -> Result<(), Error> {
     let choice = dialoguer::Input::with_theme(tui_theme())
         .with_prompt("Which version of Python should be used as default toolchain?")
