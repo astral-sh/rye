@@ -80,14 +80,22 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     };
 
-    // a. Get token from arguments and offer encryption, then store in credentials file.
-    // b. Get token from ~/.rye/credentials keyed by provided repository and provide decryption option.
-    // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
-    let repository = &cmd.repository;
-    let mut credentials = get_credentials()?;
-    credentials
-        .entry(repository)
-        .or_insert(Item::Table(Table::new()));
+    // Resolve credentials file
+    let mut credentials_file = get_credentials()?;
+    let entry = if let Some(key) = cmd.repository.as_ref() {
+        Some(credentials_file.entry(key))
+    } else if cmd.repository_url.is_none() {
+        let default_repository = Repository::default();
+        let key = default_repository
+            .name
+            .expect("default: pypi repository name");
+        Some(credentials_file.entry(&key))
+    } else {
+        // We can't key data into the credentials with only a url
+        None
+    };
+    let entry = entry.map(|it| it.or_insert(Item::Table(Table::new())));
+    let credentials_table = entry.as_deref();
 
     let repository_url = match cmd.repository_url {
         Some(url) => url,
@@ -193,6 +201,44 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+struct Repository {
+    name: Option<String>,
+    url: Option<Url>,
+}
+
+impl Default for Repository {
+    fn default() -> Self {
+        Self {
+            name: Some(DEFAULT_REPOSITORY.to_string()),
+            url: Some(default_repository_url()),
+        }
+    }
+}
+
+impl Repository {
+    fn resolve_with_defaults(self) -> Self {
+        let name = self.name;
+        let url = self.url;
+
+        if name.is_none() && url.is_none() {
+            return Self::default();
+        }
+
+        if url.is_none() && name.as_ref().map_or(false, |it| it == DEFAULT_REPOSITORY) {
+            return Self {
+                name,
+                url: Some(default_repository_url()),
+            };
+        }
+
+        Self { name, url }
+    }
+}
+
+fn default_repository_url() -> Url {
+    Url::parse(DEFAULT_REPOSITORY_URL).expect("default: pypi repository url")
 }
 
 fn prompt_for_token() -> Result<String, Error> {
