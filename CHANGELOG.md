@@ -11,6 +11,10 @@ _Unreleased_
 
 - `rye list` always prints the currently installed packages even this project is not managed by Rye.  #940
 
+- Fix error on using -v or -q with `rye fmt` or `rye lint`. #959
+
+- Fix rye fetch detection of registered toolchain. #931
+
 <!-- released start -->
 
 ## 0.31.0
