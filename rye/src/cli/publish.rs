@@ -16,6 +16,11 @@ use crate::platform::{get_credentials, write_credentials};
 use crate::pyproject::PyProject;
 use crate::utils::{escape_string, get_venv_python_bin, tui_theme, CommandOutput};
 
+const DEFAULT_USERNAME: &str = "__token__";
+const DEFAULT_REPOSITORY: &str = "pypi";
+const DEFAULT_REPOSITORY_DOMAIN: &str = "upload.pypi.org";
+const DEFAULT_REPOSITORY_URL: &str = "https://upload.pypi.org/legacy/";
+
 /// Publish packages to a package repository.
 #[derive(Parser, Debug)]
 pub struct Args {
