@@ -18,18 +18,12 @@ clap = { version = "4.3.5", default-features = false, features = [
 clap_complete = "4.2.1"
 console = "0.15.7"
 curl = { version = "0.4.44", features = ["ssl", "static-curl", "static-ssl"] }
-decompress = { version = "0.6.0", default-features = false, features = [
-    "tarzst",
-    "targz",
-] }
 flate2 = "1.0.25"
 git-testament = "0.2.4"
 globset = "0.4.10"
 indicatif = "0.17.3"
-memchr = "2.5.0"
 license = { version = "3.1.1", features = ["offline"] }
 minijinja = { version = "1.0.0", features = ["json"] }
-nix = { version = "0.28.0", default-features = false, features = ["process"] }
 once_cell = "1.17.1"
 pathdiff = "0.2.1"
 pep440_rs = "0.4.0"
@@ -57,7 +51,6 @@ self-replace = "1.3.5"
 configparser = "3.0.2"
 monotrail-utils = { git = "https://github.com/konstin/poc-monotrail", rev = "e0251f68c254f834180198b8677fcf85d4b6a844" }
 python-pkginfo = { version = "0.6.0", features = ["serde"] }
-sysinfo = { version = "0.30.7", default-features = false, features = [] }
 home = "0.5.9"
 ctrlc = "3.4.2"
 dotenvy = "0.15.7"
