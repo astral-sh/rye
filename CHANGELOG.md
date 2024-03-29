@@ -9,9 +9,11 @@ _Unreleased_
 
 - Always create `.gitignore` file in `rye init`.  #919
 
-- Fix error on using -v or -q with `rye fmt` or `rye lint`. #959
+- Fix error on using -v or -q with `rye fmt` or `rye lint`.  #959
 
-- Fix rye fetch detection of registered toolchain. #931
+- Fix rye fetch detection of registered toolchain.  #931
+
+- Ignore build-system configuration for virtual projects.  #929
 
 <!-- released start -->
 
