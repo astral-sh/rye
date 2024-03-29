@@ -822,12 +822,21 @@ impl PyProject {
             .get("build-system")
             .and_then(|x| x.get("build-backend"))
             .and_then(|x| x.as_str());
-        match backend {
+        let build_system = match backend {
             Some("hatchling.build") => Some(BuildSystem::Hatchling),
             Some("setuptools.build_meta") => Some(BuildSystem::Setuptools),
             Some("flit_core.buildapi") => Some(BuildSystem::Flit),
             Some("pdm.backend") => Some(BuildSystem::Pdm),
             _ => None,
+        };
+        if self.is_virtual() && build_system.is_some() {
+            warn!(
+                "project '{}' is virtual but defines build-system",
+                self.name().unwrap_or("")
+            );
+            None
+        } else {
+            build_system
         }
     }
     /// Looks up a script
