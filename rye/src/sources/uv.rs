@@ -1,3 +1,4 @@
+use crate::platform::default_environment;
 use anyhow::{anyhow, Error};
 use std::borrow::Cow;
 use std::env::consts::{ARCH, OS};
@@ -11,6 +12,7 @@ mod downloads {
 pub struct UvDownload {
     pub arch: Cow<'static, str>,
     pub os: Cow<'static, str>,
+    pub environment: Option<Cow<'static, str>>,
     pub major: u8,
     pub minor: u8,
     pub patch: u8,
@@ -27,6 +29,9 @@ impl std::fmt::Display for UvDownload {
             write!(f, "-{}", self.arch)?;
             if self.os != OS {
                 write!(f, "-{}", self.os)?;
+            }
+            if let Some(env) = &self.environment {
+                write!(f, "-{}", env)?;
             }
         }
         write!(f, "@{}.{}.{}", self.major, self.minor, self.patch)?;
@@ -52,6 +57,7 @@ impl UvDownload {
 pub struct UvRequest {
     pub arch: Option<Cow<'static, str>>,
     pub os: Option<Cow<'static, str>>,
+    pub environment: Option<Cow<'static, str>>,
 }
 
 impl Default for UvRequest {
@@ -59,6 +65,7 @@ impl Default for UvRequest {
         Self {
             arch: Some(ARCH.into()),
             os: Some(OS.into()),
+            environment: default_environment().map(|s| s.into()),
         }
     }
 }
@@ -76,6 +83,7 @@ impl TryFrom<UvRequest> for UvDownload {
             .find(|d| {
                 (v.arch.is_none() || v.arch.as_ref().unwrap() == &d.arch)
                     && (v.os.is_none() || v.os.as_ref().unwrap() == &d.os)
+                    && (v.environment.is_none() || v.environment == d.environment)
             })
             .cloned()
             .ok_or_else(|| anyhow!("No matching download found"))
