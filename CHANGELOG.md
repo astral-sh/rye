@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Update uv to 0.1.26.  #924
+
 - Always create `.gitignore` file in `rye init`.  #919
 
 - Fix error on using -v or -q with `rye fmt` or `rye lint`.  #959
