@@ -26,7 +26,7 @@ $ rye publish dist/example-0.1.0.tar.gz
 
 ## Options
 
-* `-r, --repository <REPOSITORY>`: The repository to publish to [default: `pypi`]
+* `-r, --repository <REPOSITORY>`: The repository to publish to
 
 * `--repository-url <REPOSITORY_URL>`: The repository url to publish to
 
