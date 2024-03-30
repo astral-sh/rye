@@ -65,3 +65,19 @@ Rye will store your repository info in `$HOME/.rye/credentials` for future use.
 ### --skip-existing
 
 You can use `--skip-existing` to skip any distribution files that have already been published to the repository. Note that some repositories may not support this feature.
+
+### Using Keyring
+
+Rye will attempt to fall back to Keyring if it could not resolve enough credentials. Since Rye offers token management it will prioritize that system. So if `-y` is not passed to skip its prompts, Rye will still prompt you for credentials without checking for Keyring backends.
+
+By default Rye targets PyPI. So if you have your PyPI authentication configured to use Keyring, you can skip Rye's prompts and it will try to fall back to Keyring.
+
+```
+rye publish -y
+```
+
+If you're using another repository you can also pass `--repository-url` and `--username` to use that Keyring setup.
+
+```
+rye publish --username <username> --repository-url <url> -y
+```
