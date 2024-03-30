@@ -42,6 +42,8 @@ $ rye publish dist/example-0.1.0.tar.gz
 
 * `--skip-existing`: Skip files already published (repository must support this feature)
 
+* `--skip-save-credentials`: Skip saving to credentials file
+
 * `-y, --yes`: Skip prompts
 
 * `-v, --verbose`: Enables verbose diagnostics

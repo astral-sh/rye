@@ -66,6 +66,10 @@ Rye will store your repository info in `$HOME/.rye/credentials` for future use.
 
 You can use `--skip-existing` to skip any distribution files that have already been published to the repository. Note that some repositories may not support this feature.
 
+### --skip-save-credentials
+
+Since Rye offers credentials management this data is stored in its credentials file. You can skip this step by passing `--skip-save-credentials`.
+
 ### Using Keyring
 
 Rye will attempt to fall back to Keyring if it could not resolve enough credentials. Since Rye offers token management it will prioritize that system. So if `-y` is not passed to skip its prompts, Rye will still prompt you for credentials without checking for Keyring backends.
