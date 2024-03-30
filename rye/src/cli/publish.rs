@@ -119,12 +119,12 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             }
             credentials.password = prompt_token()?;
             should_encrypt = credentials.password.is_some();
+        }
 
-            if should_encrypt {
-                passphrase = prompt_encrypt_passphrase()?;
-            } else if should_decrypt {
-                passphrase = prompt_decrypt_passphrase()?;
-            }
+        if should_encrypt {
+            passphrase = prompt_encrypt_passphrase()?;
+        } else if should_decrypt {
+            passphrase = prompt_decrypt_passphrase()?;
         }
 
         if repository.url.is_none() {

@@ -102,7 +102,10 @@ fn test_publish_from_credentials_found_repo_with_token() {
     ----- stdout -----
 
     ----- stderr -----
-    Repository URL: error: failed to resolve configuration for repository 'found-token'
+    error: IO error: not a terminal
+
+    Caused by:
+        not a terminal
     "###);
 }
 
@@ -117,7 +120,10 @@ fn test_publish_from_credentials_found_repo_with_username_token() {
     ----- stdout -----
 
     ----- stderr -----
-    Repository URL: error: failed to resolve configuration for repository 'found-username-token'
+    error: IO error: not a terminal
+
+    Caused by:
+        not a terminal
     "###);
 }
 
