@@ -65,7 +65,7 @@ pub fn execute_ruff(args: RuffArgs, extra_args: &[&str]) -> Result<(), Error> {
     ruff_cmd.arg("--");
     if args.paths.is_empty() {
         let projects = locate_projects(project, args.all, &args.package[..])?;
-        for project in projects {
+        for project in collapse_projects(projects) {
             ruff_cmd.arg(project.root_path().as_os_str());
         }
     } else {
@@ -81,4 +81,10 @@ pub fn execute_ruff(args: RuffArgs, extra_args: &[&str]) -> Result<(), Error> {
     } else {
         Ok(())
     }
+}
+
+// Collapse into unique workspace paths.
+fn collapse_projects(mut projects: Vec<PyProject>) -> Vec<PyProject> {
+    projects.dedup_by(|a, b| a.workspace_path() == b.workspace_path());
+    projects
 }
