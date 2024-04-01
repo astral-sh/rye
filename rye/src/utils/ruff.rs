@@ -48,7 +48,6 @@ pub fn execute_ruff(args: RuffArgs, extra_args: &[&str]) -> Result<(), Error> {
             project.workspace_path().join(".ruff_cache"),
         );
     }
-    ruff_cmd.args(extra_args);
 
     match output {
         CommandOutput::Normal => {}
@@ -60,6 +59,7 @@ pub fn execute_ruff(args: RuffArgs, extra_args: &[&str]) -> Result<(), Error> {
         }
     }
 
+    ruff_cmd.args(extra_args);
     ruff_cmd.args(args.extra_args);
 
     ruff_cmd.arg("--");
