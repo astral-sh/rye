@@ -9,6 +9,8 @@ _Unreleased_
 
 <!-- released start -->
 
+- Fix lint command emitting redundant output during --all usage. #974
+
 ## 0.32.0
 
 Released on 2024-03-29
