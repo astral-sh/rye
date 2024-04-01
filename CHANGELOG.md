@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Use uv in `rye build` when uv is enabled. #978
+
 <!-- released start -->
 
 ## 0.32.0

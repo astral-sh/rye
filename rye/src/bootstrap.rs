@@ -33,10 +33,10 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 17;
+const SELF_VERSION: u64 = 18;
 
 const SELF_REQUIREMENTS: &str = r#"
-build==1.1.1
+build==1.2.1
 certifi==2024.2.2
 charset-normalizer==3.3.2
 click==8.1.7
