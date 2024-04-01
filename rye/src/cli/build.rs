@@ -104,6 +104,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             build_cmd.arg("--sdist");
         }
 
+        if output == CommandOutput::Verbose {
+            build_cmd.arg("--verbose");
+        }
+
         if output == CommandOutput::Quiet {
             build_cmd.stdout(Stdio::null());
             build_cmd.stderr(Stdio::null());
