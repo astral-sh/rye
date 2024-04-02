@@ -215,6 +215,7 @@ fn test_run_name_collision() {
         .unwrap();
     assert!(status.success());
 
+    // Add a script with the same name as a virtualenv script, it should be shadowed by the virtualenv script.
     space.edit_toml("pyproject.toml", |doc| {
         doc["tool"]["rye"]["scripts"] = table();
         doc["tool"]["rye"]["scripts"]["flask"] =
