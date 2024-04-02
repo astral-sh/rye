@@ -84,7 +84,7 @@ fn test_basic_run() {
     .unwrap();
 
     let env_file = space.project_path().join("env_file");
-    fs::write(&env_file, r#"HELLO="Hello from script_6!""#).unwrap();
+    fs::write(&env_file, r#"HELLO="Hello from env_file!""#).unwrap();
 
     // Run Rye scripts
     space.edit_toml("pyproject.toml", |doc| {
@@ -92,14 +92,17 @@ fn test_basic_run() {
         scripts["script_1"] = value(r#"python -c 'print("Hello from script_1!")'"#);
         scripts["script_2"]["cmd"] = value(r#"python -c 'print("Hello from script_2!")'"#);
         scripts["script_3"]["call"] = value("my_project:hello");
-        scripts["script_4"]["chain"] =
+        scripts["script_4"]["cmd"] = value(r#"python -c 'import sys; sys.exit(1)'"#);
+        scripts["script_5"]["chain"] =
             value(Array::from_iter(["script_1", "script_2", "script_3"]));
+        scripts["script_6"]["chain"] =
+            value(Array::from_iter(["script_1", "script_2", "script_3", "script_4", "script_3"]));
 
-        scripts["script_5"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
-        scripts["script_5"]["env"]["HELLO"] = value("Hello from script_5!");
+        scripts["script_7"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
+        scripts["script_7"]["env"]["HELLO"] = value("Hello from script_7!");
 
-        scripts["script_6"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
-        scripts["script_6"]["env-file"] = value(env_file.to_string_lossy().into_owned());
+        scripts["script_8"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
+        scripts["script_8"]["env-file"] = value(env_file.to_string_lossy().into_owned());
 
         doc["tool"]["rye"]["scripts"] = scripts;
     });
@@ -129,6 +132,13 @@ fn test_basic_run() {
     ----- stderr -----
     "###);
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_4"), @r###"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    "###);
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_5"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -138,19 +148,30 @@ fn test_basic_run() {
 
     ----- stderr -----
     "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_5"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_6"), @r###"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    Hello from script_1!
+    Hello from script_2!
+    Hello from my-project!
+
+    ----- stderr -----
+    error: script failed with exit status: 1
+    "###);
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
-    Hello from script_5!
+    Hello from script_7!
 
     ----- stderr -----
     "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_6"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_8"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
-    Hello from script_6!
+    Hello from env_file!
 
     ----- stderr -----
     "###);
