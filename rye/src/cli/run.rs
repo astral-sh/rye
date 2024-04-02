@@ -132,8 +132,12 @@ fn invoke_script(
             }
             seen_chain.insert(args[0].clone());
             for args in commands {
-                let status =
-                    invoke_script(pyproject, args.into_iter().map(Into::into).collect(), false, seen_chain)?;
+                let status = invoke_script(
+                    pyproject,
+                    args.into_iter().map(Into::into).collect(),
+                    false,
+                    seen_chain,
+                )?;
                 if !status.success() {
                     if !exec {
                         return Ok(status);
