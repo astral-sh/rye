@@ -106,25 +106,29 @@ fn test_basic_run() {
         let mut scripts = table();
         // A simple string command
         scripts["script_1"] = value(r#"python -c 'print("Hello from script_1!")'"#);
+        // A simple array command
+        let mut script_2_args = Array::new();
+        script_2_args.extend(["python", "-c", "print('Hello from script_2!')"]);
+        scripts["script_2"] = value(script_2_args);
         // A simple command using `cmd` key
-        scripts["script_2"]["cmd"] = value(r#"python -c 'print("Hello from script_2!")'"#);
+        scripts["script_3"]["cmd"] = value(r#"python -c 'print("Hello from script_3!")'"#);
         // A `call` script
-        scripts["script_3"]["call"] = value("my_project:hello");
+        scripts["script_4"]["call"] = value("my_project:hello");
         // A failing script
-        scripts["script_4"]["cmd"] = value(r#"python -c 'import sys; sys.exit(1)'"#);
+        scripts["script_5"]["cmd"] = value(r#"python -c 'import sys; sys.exit(1)'"#);
         // A `chain` script
-        scripts["script_5"]["chain"] =
-            value(Array::from_iter(["script_1", "script_2", "script_3"]));
+        scripts["script_6"]["chain"] =
+            value(Array::from_iter(["script_1", "script_2", "script_3", r#"python -c 'print("hello")'"#]));
         // A failing `chain` script
-        scripts["script_6"]["chain"] = value(Array::from_iter([
-            "script_1", "script_2", "script_3", "script_4", "script_3",
+        scripts["script_7"]["chain"] = value(Array::from_iter([
+            "script_1", "script_2", "script_3", "script_5", "script_3",
         ]));
         // A script with environment variables
-        scripts["script_7"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
-        scripts["script_7"]["env"]["HELLO"] = value("Hello from script_7!");
-        // A script with an env-file
         scripts["script_8"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
-        scripts["script_8"]["env-file"] = value(env_file.to_string_lossy().into_owned());
+        scripts["script_8"]["env"]["HELLO"] = value("Hello from script_8!");
+        // A script with an env-file
+        scripts["script_9"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
+        scripts["script_9"]["env-file"] = value(env_file.to_string_lossy().into_owned());
 
         doc["tool"]["rye"]["scripts"] = scripts;
     });
@@ -149,47 +153,56 @@ fn test_basic_run() {
     success: true
     exit_code: 0
     ----- stdout -----
-    Hello from my-project!
+    Hello from script_3!
 
     ----- stderr -----
     "###);
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_4"), @r###"
-    success: false
-    exit_code: 1
+    success: true
+    exit_code: 0
     ----- stdout -----
+    Hello from my-project!
 
     ----- stderr -----
     "###);
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_5"), @r###"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    "###);
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_6"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
     Hello from script_1!
     Hello from script_2!
-    Hello from my-project!
+    Hello from script_3!
+    hello
 
     ----- stderr -----
     "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_6"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###"
     success: false
     exit_code: 1
     ----- stdout -----
     Hello from script_1!
     Hello from script_2!
-    Hello from my-project!
+    Hello from script_3!
 
     ----- stderr -----
     error: script failed with exit code: 1
     "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_8"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
-    Hello from script_7!
+    Hello from script_8!
 
     ----- stderr -----
     "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_8"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_9"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
