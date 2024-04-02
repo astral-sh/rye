@@ -106,18 +106,25 @@ fn test_basic_run() {
     // Run Rye scripts
     space.edit_toml("pyproject.toml", |doc| {
         let mut scripts = table();
+        // A simple string command
         scripts["script_1"] = value(r#"python -c 'print("Hello from script_1!")'"#);
+        // A simple command using `cmd` key
         scripts["script_2"]["cmd"] = value(r#"python -c 'print("Hello from script_2!")'"#);
+        // A `call` script
         scripts["script_3"]["call"] = value("my_project:hello");
+        // A failing script
         scripts["script_4"]["cmd"] = value(r#"python -c 'import sys; sys.exit(1)'"#);
+        // A `chain` script
         scripts["script_5"]["chain"] =
             value(Array::from_iter(["script_1", "script_2", "script_3"]));
-        scripts["script_6"]["chain"] =
-            value(Array::from_iter(["script_1", "script_2", "script_3", "script_4", "script_3"]));
-
+        // A failing `chain` script
+        scripts["script_6"]["chain"] = value(Array::from_iter([
+            "script_1", "script_2", "script_3", "script_4", "script_3",
+        ]));
+        // A script with environment variables
         scripts["script_7"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
         scripts["script_7"]["env"]["HELLO"] = value("Hello from script_7!");
-
+        // A script with an env-file
         scripts["script_8"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
         scripts["script_8"]["env-file"] = value(env_file.to_string_lossy().into_owned());
 
