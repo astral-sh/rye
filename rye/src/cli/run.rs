@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env::{self, join_paths, split_paths};
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -62,7 +62,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => unreachable!(),
     };
 
-    invoke_script(&pyproject, args, true)?;
+    invoke_script(&pyproject, args, true, &mut HashSet::new())?;
     unreachable!();
 }
 
@@ -70,6 +70,7 @@ fn invoke_script(
     pyproject: &PyProject,
     mut args: Vec<OsString>,
     exec: bool,
+    seen_chain: &mut HashSet<OsString>,
 ) -> Result<ExitStatus, Error> {
     let venv_bin = pyproject.venv_bin_path();
     let mut env_overrides = None;
@@ -126,9 +127,13 @@ fn invoke_script(
             if args.len() != 1 {
                 bail!("extra arguments to chained commands are not allowed");
             }
+            if seen_chain.contains(&args[0]) {
+                bail!("found recursive chain script");
+            }
+            seen_chain.insert(args[0].clone());
             for args in commands {
                 let status =
-                    invoke_script(pyproject, args.into_iter().map(Into::into).collect(), false)?;
+                    invoke_script(pyproject, args.into_iter().map(Into::into).collect(), false, seen_chain)?;
                 if !status.success() {
                     if !exec {
                         return Ok(status);

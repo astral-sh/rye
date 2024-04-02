@@ -209,7 +209,7 @@ fn test_script_chain() {
         // A nested `chain` script
         scripts["script_6"]["chain"] =
             value(Array::from_iter(["script_1", "script_4", "script_5"]));
-        // NEED FIX: A recursive `chain` script
+        // A recursive `chain` script
         scripts["script_7"]["chain"] = value(Array::from_iter(["script_7"]));
 
         doc["tool"]["rye"]["scripts"] = scripts;
@@ -249,7 +249,14 @@ fn test_script_chain() {
     ----- stderr -----
     error: script failed with exit code: 1
     "###);
-    // rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###""###);
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+
+    ----- stderr -----
+    error: found recursive chain script
+    "###);
 }
 
 #[test]
