@@ -71,6 +71,11 @@ impl SyncOptions {
         self.pyproject = pyproject;
         self
     }
+
+    pub fn output(mut self, output: CommandOutput) -> Self {
+        self.output = output;
+        self
+    }
 }
 
 /// Config written into the virtualenv for sync purposes.

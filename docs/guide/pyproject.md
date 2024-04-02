@@ -135,12 +135,28 @@ devserver-alt = ["flask", "run", "--app", "./hello.py", "--debug"]
 devserver-explicit = { cmd = "flask run --app ./hello.py --debug" }
 ```
 
+In addition to the shell's pre-existing PATH, Rye run adds `.venv/bin` to the PATH provided to scripts. Any scripts provided by locally-installed dependencies can be used without the `.venv/bin` prefix. For example, if there is a
+`dev-dependencies` on pytest in your package, you should write:
+
+```toml
+[tool.rye.scripts]
+test = "pytest --lf"
+```
+
+instead of
+
+```toml
+[tool.rye.scripts]
+test = ".venv/bin/pytest --lf"
+```
+
+Scripts are not run in a shell, so shell specific interpolation is unavailable.
+
 The following keys are possible for a script:
 
 ### `cmd`
 
-The command to execute.  This is either a `string` or an `array` of arguments.  In either case
-shell specific interpolation is unavailable.  The command will invoke one of the tools in the
+The command to execute.  This is either a `string` or an `array` of arguments.  The command will invoke one of the tools in the
 virtualenv if it's available there.
 
 ```toml
