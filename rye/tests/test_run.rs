@@ -46,8 +46,6 @@ fn test_run_list() {
     hello (echo hello)
     pydoc
     python
-    python3
-    python3.12
     pythonw
 
     ----- stderr -----
@@ -181,7 +179,7 @@ fn test_basic_run() {
     Hello from my-project!
 
     ----- stderr -----
-    error: script failed with exit status: 1
+    error: script failed with exit code: 1
     "###);
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###"
     success: true
