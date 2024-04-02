@@ -7,6 +7,8 @@ that were not yet released.
 
 _Unreleased_
 
+- Fixed a stack overflow issue caused by recursively chained Rye scripts. #983
+
 <!-- released start -->
 
 ## 0.32.0

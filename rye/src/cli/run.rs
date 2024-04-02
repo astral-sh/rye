@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::env::{self, join_paths, split_paths};
 use std::ffi::OsString;
 use std::path::PathBuf;
@@ -11,7 +11,7 @@ use console::style;
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
 use crate::tui::redirect_to_stderr;
-use crate::utils::{exec_spawn, get_venv_python_bin, success_status, IoPathContext};
+use crate::utils::{exec_spawn, get_venv_python_bin, success_status, CommandOutput, IoPathContext};
 
 /// Runs a command installed into this package.
 #[derive(Parser, Debug)]
@@ -26,6 +26,12 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Enables verbose diagnostics.
+    #[arg(short, long)]
+    verbose: bool,
+    /// Turns off all output.
+    #[arg(short, long, conflicts_with = "verbose")]
+    quiet: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -36,13 +42,19 @@ enum Cmd {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let _guard = redirect_to_stderr(true);
+    let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only().pyproject(cmd.pyproject))
-        .context("failed to sync ahead of run")?;
+    sync(
+        SyncOptions::python_only()
+            .pyproject(cmd.pyproject)
+            .output(output),
+    )
+    .context("failed to sync ahead of run")?;
 
     if cmd.list || cmd.cmd.is_none() {
+        drop(_guard);
         return list_scripts(&pyproject);
     }
     let args = match cmd.cmd {
@@ -50,7 +62,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => unreachable!(),
     };
 
-    invoke_script(&pyproject, args, true)?;
+    invoke_script(&pyproject, args, true, &mut HashSet::new())?;
     unreachable!();
 }
 
@@ -58,6 +70,7 @@ fn invoke_script(
     pyproject: &PyProject,
     mut args: Vec<OsString>,
     exec: bool,
+    seen_chain: &mut HashSet<OsString>,
 ) -> Result<ExitStatus, Error> {
     let venv_bin = pyproject.venv_bin_path();
     let mut env_overrides = None;
@@ -114,9 +127,17 @@ fn invoke_script(
             if args.len() != 1 {
                 bail!("extra arguments to chained commands are not allowed");
             }
+            if seen_chain.contains(&args[0]) {
+                bail!("found recursive chain script");
+            }
+            seen_chain.insert(args[0].clone());
             for args in commands {
-                let status =
-                    invoke_script(pyproject, args.into_iter().map(Into::into).collect(), false)?;
+                let status = invoke_script(
+                    pyproject,
+                    args.into_iter().map(Into::into).collect(),
+                    false,
+                    seen_chain,
+                )?;
                 if !status.success() {
                     if !exec {
                         return Ok(status);
