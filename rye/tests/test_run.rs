@@ -23,6 +23,8 @@ fn test_run_list() {
         scripts["hello"] = value("echo hello");
         doc["tool"]["rye"]["scripts"] = scripts;
     });
+
+    #[cfg(not(windows))]
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("--list"), @r###"
     success: true
     exit_code: 0
@@ -32,6 +34,21 @@ fn test_run_list() {
     python
     python3
     python3.12
+
+    ----- stderr -----
+    "###);
+    #[cfg(windows)]
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("--list"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    flask
+    hello (echo hello)
+    pydoc
+    python
+    python3
+    python3.12
+    pythonw
 
     ----- stderr -----
     "###);
