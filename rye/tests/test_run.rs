@@ -66,7 +66,7 @@ fn test_basic_run() {
         .status()
         .unwrap();
     assert!(status.success());
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("flask").arg("--version"), @r###"
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("-q").arg("flask").arg("--version"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -116,19 +116,12 @@ fn test_basic_run() {
         scripts["script_4"]["call"] = value("my_project:hello");
         // A failing script
         scripts["script_5"]["cmd"] = value(r#"python -c 'import sys; sys.exit(1)'"#);
-        // A `chain` script
-        scripts["script_6"]["chain"] =
-            value(Array::from_iter(["script_1", "script_2", "script_3", r#"python -c 'print("hello")'"#]));
-        // A failing `chain` script
-        scripts["script_7"]["chain"] = value(Array::from_iter([
-            "script_1", "script_2", "script_3", "script_5", "script_3",
-        ]));
         // A script with environment variables
-        scripts["script_8"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
-        scripts["script_8"]["env"]["HELLO"] = value("Hello from script_8!");
+        scripts["script_6"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
+        scripts["script_6"]["env"]["HELLO"] = value("Hello from script_6!");
         // A script with an env-file
-        scripts["script_9"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
-        scripts["script_9"]["env-file"] = value(env_file.to_string_lossy().into_owned());
+        scripts["script_7"]["cmd"] = value(r#"python -c 'import os; print(os.getenv("HELLO"))'"#);
+        scripts["script_7"]["env-file"] = value(env_file.to_string_lossy().into_owned());
 
         doc["tool"]["rye"]["scripts"] = scripts;
     });
@@ -176,33 +169,11 @@ fn test_basic_run() {
     success: true
     exit_code: 0
     ----- stdout -----
-    Hello from script_1!
-    Hello from script_2!
-    Hello from script_3!
-    hello
+    Hello from script_6!
 
     ----- stderr -----
     "###);
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###"
-    success: false
-    exit_code: 1
-    ----- stdout -----
-    Hello from script_1!
-    Hello from script_2!
-    Hello from script_3!
-
-    ----- stderr -----
-    error: script failed with exit code: 1
-    "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_8"), @r###"
-    success: true
-    exit_code: 0
-    ----- stdout -----
-    Hello from script_8!
-
-    ----- stderr -----
-    "###);
-    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_9"), @r###"
     success: true
     exit_code: 0
     ----- stdout -----
@@ -210,6 +181,75 @@ fn test_basic_run() {
 
     ----- stderr -----
     "###);
+}
+
+#[test]
+fn test_script_chain() {
+    let space = Space::new();
+    space.init("my-project");
+
+    space.edit_toml("pyproject.toml", |doc| {
+        let mut scripts = table();
+        // A simple string command
+        scripts["script_1"] = value(r#"python -c 'print("Hello from script_1!")'"#);
+        // A simple command using `cmd` key
+        scripts["script_2"]["cmd"] = value(r#"python -c 'print("Hello from script_2!")'"#);
+        // A failing script
+        scripts["script_3"]["cmd"] = value(r#"python -c 'import sys; sys.exit(1)'"#);
+        // A `chain` script
+        scripts["script_4"]["chain"] = value(Array::from_iter([
+            "script_1",
+            "script_2",
+            r#"python -c 'print("hello")'"#,
+        ]));
+        // A failing `chain` script
+        scripts["script_5"]["chain"] = value(Array::from_iter([
+            "script_1", "script_2", "script_3", "script_1",
+        ]));
+        // A nested `chain` script
+        scripts["script_6"]["chain"] =
+            value(Array::from_iter(["script_1", "script_4", "script_5"]));
+        // NEED FIX: A recursive `chain` script
+        scripts["script_7"]["chain"] = value(Array::from_iter(["script_7"]));
+
+        doc["tool"]["rye"]["scripts"] = scripts;
+    });
+
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("-q").arg("script_4"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Hello from script_1!
+    Hello from script_2!
+    hello
+
+    ----- stderr -----
+    "###);
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_5"), @r###"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    Hello from script_1!
+    Hello from script_2!
+
+    ----- stderr -----
+    error: script failed with exit code: 1
+    "###);
+    rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_6"), @r###"
+    success: false
+    exit_code: 1
+    ----- stdout -----
+    Hello from script_1!
+    Hello from script_1!
+    Hello from script_2!
+    hello
+    Hello from script_1!
+    Hello from script_2!
+
+    ----- stderr -----
+    error: script failed with exit code: 1
+    "###);
+    // rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("script_7"), @r###""###);
 }
 
 #[test]
