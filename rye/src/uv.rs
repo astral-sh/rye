@@ -20,6 +20,7 @@ use tempfile::NamedTempFile;
 pub struct UvInstallOptions {
     pub importlib_workaround: bool,
     pub extras: Vec<Requirement>,
+    pub refresh: bool,
 }
 
 pub enum UvPackageUpgrade {
@@ -27,7 +28,7 @@ pub enum UvPackageUpgrade {
     All,
     /// Upgrade the specific set of packages.
     Packages(Vec<String>),
-    /// Upgrade nothig (default).
+    /// Upgrade nothing (default).
     Nothing,
 }
 
@@ -469,6 +470,10 @@ impl UvWithVenv {
         let mut cmd = self.venv_cmd();
 
         cmd.arg("pip").arg("install");
+
+        if options.refresh {
+            cmd.arg("--refresh");
+        }
 
         self.uv.sources.add_as_pip_args(&mut cmd);
 
