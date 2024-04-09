@@ -47,5 +47,11 @@ fn test_dotenv() {
     42 23
 
     ----- stderr -----
+    Reusing already existing virtualenv
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Audited 1 package in [EXECUTION_TIME]
+    Done!
     "###);
 }

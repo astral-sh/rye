@@ -31,6 +31,12 @@ pub struct Args {
     // Disable test output capture to stdout
     #[arg(long = "no-capture", short = 's')]
     no_capture: bool,
+    /// Runs `sync` even if auto-sync is disabled.
+    #[arg(long)]
+    sync: bool,
+    /// Does not run `sync` even if auto-sync is enabled.
+    #[arg(long, conflicts_with = "sync")]
+    no_sync: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -72,7 +78,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     if !pytest.is_file() {
         let has_pytest = has_pytest_dependency(&projects)?;
         if has_pytest {
-            if Config::current().autosync() {
+            if (Config::current().autosync_before_run() && !cmd.no_sync) || cmd.sync {
                 autosync(&projects[0], output)?;
             } else {
                 bail!("pytest not installed but in dependencies. Run `rye sync`.")
