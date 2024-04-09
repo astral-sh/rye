@@ -37,6 +37,8 @@ pub enum SyncMode {
     Regular,
     /// recreate everything
     Full,
+    /// Recreate if no lock file present, otherwise install without updating
+    OneOff,
 }
 
 /// Updates the virtualenv based on the pyproject.toml
@@ -177,16 +179,19 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     // hack to make this work for now.  We basically sym-link pip itself
     // into a folder all by itself and place a second file in there which we
     // can pass to pip-sync to install the local package.
+    let has_lock = (if cmd.dev { &dev_lockfile } else { &lockfile }).is_file();
     if recreate || cmd.mode != SyncMode::PythonOnly {
         let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
         if cmd.no_lock {
             let lockfile = if cmd.dev { &dev_lockfile } else { &lockfile };
-            if !lockfile.is_file() {
+            if !has_lock {
                 bail!(
                     "Locking is disabled but lockfile '{}' does not exist",
                     lockfile.display()
                 );
             }
+        } else if cmd.mode == SyncMode::OneOff && has_lock {
+            // do nothing
         } else if let Some(workspace) = pyproject.workspace() {
             // make sure we have an up-to-date lockfile
             update_workspace_lockfile(
@@ -310,11 +315,11 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 }
 
 /// Performs an autosync.
-pub fn autosync(pyproject: &PyProject, output: CommandOutput) -> Result<(), Error> {
+pub fn autosync(pyproject: &PyProject, output: CommandOutput, one_off: bool) -> Result<(), Error> {
     sync(SyncOptions {
         output,
         dev: true,
-        mode: SyncMode::Regular,
+        mode: if one_off {SyncMode::OneOff} else {SyncMode::Regular},
         force: false,
         no_lock: false,
         lock_options: LockOptions::default(),

@@ -303,7 +303,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (cfg.autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject_toml, output)?;
+        autosync(&pyproject_toml, output, false)?;
     }
 
     Ok(())
