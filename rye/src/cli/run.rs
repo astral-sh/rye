@@ -10,7 +10,7 @@ use console::style;
 
 use crate::config::Config;
 use crate::pyproject::{PyProject, Script};
-use crate::sync::{autosync, sync, SyncOptions};
+use crate::sync::{autosync, sync, SyncOptions, SyncMode};
 use crate::tui::redirect_to_stderr;
 use crate::utils::{exec_spawn, get_venv_python_bin, success_status, CommandOutput, IoPathContext};
 
@@ -53,7 +53,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     if (Config::current().autosync_before_run() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject, output, true)?;
+        autosync(&pyproject, output, SyncMode::OneOffLock)?;
     } else {
         // make sure we have the minimal virtualenv. 
         sync(SyncOptions::python_only().pyproject(cmd.pyproject))

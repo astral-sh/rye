@@ -11,7 +11,7 @@ use same_file::is_same_file;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{locate_projects, normalize_package_name, DependencyKind, PyProject};
-use crate::sync::autosync;
+use crate::sync::{autosync, SyncMode};
 use crate::utils::{CommandOutput, QuietExit};
 
 /// Run the tests on the project.
@@ -79,7 +79,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let has_pytest = has_pytest_dependency(&projects)?;
         if has_pytest {
             if (Config::current().autosync_before_run() && !cmd.no_sync) || cmd.sync {
-                autosync(&projects[0], output, true)?;
+                autosync(&projects[0], output, SyncMode::OneOffLock)?;
             } else {
                 bail!("pytest not installed but in dependencies. Run `rye sync`.")
             }

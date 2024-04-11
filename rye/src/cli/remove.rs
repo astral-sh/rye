@@ -6,7 +6,7 @@ use pep508_rs::Requirement;
 
 use crate::config::Config;
 use crate::pyproject::{DependencyKind, PyProject};
-use crate::sync::autosync;
+use crate::sync::{autosync, SyncMode};
 use crate::utils::{format_requirement, CommandOutput};
 
 /// Removes a package from this project.
@@ -65,7 +65,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (Config::current().autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject_toml, output, false)?;
+        autosync(&pyproject_toml, output, SyncMode::Regular)?;
     }
 
     Ok(())

@@ -15,7 +15,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
-use crate::sync::{autosync, sync, SyncOptions};
+use crate::sync::{autosync, sync, SyncOptions, SyncMode};
 use crate::utils::{format_requirement, get_venv_python_bin, set_proxy_variables, CommandOutput};
 use crate::uv::UvBuilder;
 
@@ -303,7 +303,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (cfg.autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject_toml, output, false)?;
+        autosync(&pyproject_toml, output, SyncMode::Regular)?;
     }
 
     Ok(())
