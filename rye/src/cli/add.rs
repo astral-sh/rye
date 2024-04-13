@@ -11,8 +11,10 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
+use crate::cli::lock::KeyringProviderArg;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
+use crate::lock::KeyringProvider;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
@@ -212,6 +214,8 @@ pub struct Args {
     /// Overrides the pin operator
     #[arg(long)]
     pin: Option<Pin>,
+    #[arg(long)]
+    keyring_provider: Option<KeyringProviderArg>,
     /// Runs `sync` even if auto-sync is disabled.
     #[arg(long)]
     sync: bool,
@@ -259,6 +263,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         requirements.push(requirement);
     }
 
+    let keyring_provider = cmd.keyring_provider.unwrap_or_default().into();
+
     if !cmd.excluded {
         if cfg.use_uv() {
             sync(SyncOptions::python_only().pyproject(None))
@@ -270,8 +276,12 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 cmd.pre,
                 output,
                 &default_operator,
+                keyring_provider,
             )?;
         } else {
+            if keyring_provider != KeyringProvider::Disabled {
+                bail!("--keyring-provider option is only supported with uv");
+            }
             for requirement in &mut requirements {
                 resolve_requirements_with_unearth(
                     &pyproject_toml,
@@ -303,7 +313,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (cfg.autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject_toml, output)?;
+        autosync(&pyproject_toml, output, keyring_provider)?;
     }
 
     Ok(())
@@ -448,6 +458,7 @@ fn resolve_requirements_with_uv(
     pre: bool,
     output: CommandOutput,
     default_operator: &Operator,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     let venv_path = pyproject_toml.venv_path();
     let py_bin = get_venv_python_bin(&venv_path);
@@ -460,7 +471,13 @@ fn resolve_requirements_with_uv(
         .venv(&venv_path, &py_bin, py_ver, None)?;
 
     for req in requirements {
-        let mut new_req = uv.resolve(py_ver, req, pre, env::var("__RYE_UV_EXCLUDE_NEWER").ok())?;
+        let mut new_req = uv.resolve(
+            py_ver,
+            req,
+            pre,
+            env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
+            keyring_provider,
+        )?;
 
         // if a version or URL is already provided we just use the normalized package name but
         // retain all old information.

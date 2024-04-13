@@ -14,6 +14,8 @@ use crate::pyproject::{locate_projects, normalize_package_name, DependencyKind, 
 use crate::sync::autosync;
 use crate::utils::{CommandOutput, QuietExit};
 
+use crate::cli::lock::KeyringProviderArg;
+
 /// Run the tests on the project.
 ///
 /// Today this will always run `pytest` for all projects.
@@ -28,6 +30,8 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    #[arg(long)]
+    keyring_provider: Option<KeyringProviderArg>,
     // Disable test output capture to stdout
     #[arg(long = "no-capture", short = 's')]
     no_capture: bool,
@@ -73,7 +77,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let has_pytest = has_pytest_dependency(&projects)?;
         if has_pytest {
             if Config::current().autosync() {
-                autosync(&projects[0], output)?;
+                autosync(
+                    &projects[0],
+                    output,
+                    cmd.keyring_provider.unwrap_or_default().into(),
+                )?;
             } else {
                 bail!("pytest not installed but in dependencies. Run `rye sync`.")
             }

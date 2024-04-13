@@ -7,6 +7,8 @@ use crate::lock::LockOptions;
 use crate::sync::{sync, SyncMode, SyncOptions};
 use crate::utils::CommandOutput;
 
+use crate::cli::lock::KeyringProviderArg;
+
 /// Updates the virtualenv based on the pyproject.toml
 #[derive(Parser, Debug)]
 pub struct Args {
@@ -43,6 +45,8 @@ pub struct Args {
     /// Set to true to lock with sources in the lockfile.
     #[arg(long)]
     with_sources: bool,
+    #[arg(long)]
+    keyring_provider: Option<KeyringProviderArg>,
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
@@ -72,6 +76,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             with_sources: cmd.with_sources,
             reset: cmd.reset,
         },
+        keyring_provider: cmd.keyring_provider.unwrap_or_default().into(),
         pyproject: cmd.pyproject,
     })?;
     Ok(())

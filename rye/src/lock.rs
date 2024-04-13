@@ -59,6 +59,13 @@ impl fmt::Display for LockMode {
     }
 }
 
+#[derive(Debug, Clone, Copy, Default, PartialEq)]
+pub enum KeyringProvider {
+    #[default]
+    Disabled,
+    Subprocess,
+}
+
 /// Controls how locking should work.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct LockOptions {
@@ -136,6 +143,7 @@ pub fn update_workspace_lockfile(
     output: CommandOutput,
     sources: &ExpandedSources,
     lock_options: &LockOptions,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     echo!(if output, "Generating {} lockfile: {}", lock_mode, lockfile.display());
 
@@ -189,6 +197,7 @@ pub fn update_workspace_lockfile(
         &lock_options,
         &exclusions,
         true,
+        keyring_provider,
     )?;
 
     Ok(())
@@ -316,6 +325,7 @@ pub fn update_single_project_lockfile(
     output: CommandOutput,
     sources: &ExpandedSources,
     lock_options: &LockOptions,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     echo!(if output, "Generating {} lockfile: {}", lock_mode, lockfile.display());
 
@@ -356,6 +366,7 @@ pub fn update_single_project_lockfile(
         &lock_options,
         &exclusions,
         false,
+        keyring_provider,
     )?;
 
     Ok(())
@@ -372,6 +383,7 @@ fn generate_lockfile(
     lock_options: &LockOptions,
     exclusions: &HashSet<Requirement>,
     no_deps: bool,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     let use_uv = Config::current().use_uv();
     let scratch = tempfile::tempdir()?;
@@ -409,8 +421,12 @@ fn generate_lockfile(
                 lock_options.pre,
                 env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
                 upgrade,
+                keyring_provider,
             )?;
     } else {
+        if keyring_provider != KeyringProvider::Disabled {
+            bail!("--keyring-provider option is only supported with uv");
+        }
         let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
         // legacy pip tools requires some extra parameters
         if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {
