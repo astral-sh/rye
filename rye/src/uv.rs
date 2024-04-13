@@ -331,6 +331,7 @@ impl Uv {
         &self,
         py_version: &PythonVersion,
         source: &Path,
+        overrides: Option<&Path>,
         target: &Path,
         allow_prerelease: bool,
         exclude_newer: Option<String>,
@@ -360,6 +361,8 @@ impl Uv {
             .arg(target);
 
         cmd.arg(source);
+
+        overrides.map(|ref value| cmd.arg("--override").arg(value));
 
         let status = cmd.status().with_context(|| {
             format!(

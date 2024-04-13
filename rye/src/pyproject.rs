@@ -55,6 +55,7 @@ pub enum DependencyKind<'a> {
     Normal,
     Dev,
     Excluded,
+    Override,
     Optional(Cow<'a, str>),
 }
 
@@ -64,6 +65,7 @@ impl<'a> fmt::Display for DependencyKind<'a> {
             DependencyKind::Normal => f.write_str("regular"),
             DependencyKind::Dev => f.write_str("dev"),
             DependencyKind::Excluded => f.write_str("excluded"),
+            DependencyKind::Override => f.write_str("override"),
             DependencyKind::Optional(ref sect) => write!(f, "optional ({})", sect),
         }
     }
@@ -903,6 +905,7 @@ impl PyProject {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
             DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
             DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
+            DependencyKind::Override => &mut self.doc["tool"]["rye"]["override-dependencies"],
             DependencyKind::Optional(ref section) => {
                 // add this as a proper non-inline table if it's missing
                 let table = &mut self.doc["project"]["optional-dependencies"];
@@ -934,6 +937,7 @@ impl PyProject {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
             DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
             DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
+            DependencyKind::Override => &mut self.doc["tool"]["rye"]["override-dependencies"],
             DependencyKind::Optional(ref section) => {
                 &mut self.doc["project"]["optional-dependencies"][section as &str]
             }
@@ -953,7 +957,7 @@ impl PyProject {
     /// Iterates over all dependencies.
     pub fn iter_dependencies(
         &self,
-        kind: DependencyKind,
+        kind: &DependencyKind,
     ) -> impl Iterator<Item = DependencyRef> + '_ {
         let sec = match kind {
             DependencyKind::Normal => self.doc.get("project").and_then(|x| x.get("dependencies")),
@@ -967,6 +971,11 @@ impl PyProject {
                 .get("tool")
                 .and_then(|x| x.get("rye"))
                 .and_then(|x| x.get("excluded-dependencies")),
+            DependencyKind::Override => self
+                .doc
+                .get("tool")
+                .and_then(|x| x.get("rye"))
+                .and_then(|x| x.get("override-dependencies")),
             DependencyKind::Optional(ref section) => self
                 .doc
                 .get("project")

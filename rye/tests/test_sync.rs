@@ -265,3 +265,50 @@ fn test_autosync_remember() {
     werkzeug==3.0.1
     "###);
 }
+
+#[test]
+fn test_overrides() {
+    // enforce werkzeug==2.3.8 when flask==3.0.0 requires Werkzeug>=3.0.0
+
+    let space = Space::new();
+    space.init("my-project");
+
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("werkzeug==2.3.8").arg("--override").arg("--no-sync"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.3
+    Added werkzeug==2.3.8 as override dependency
+
+    ----- stderr -----
+    "###);
+
+    rye_cmd_snapshot!(space.rye_cmd().arg("add").arg("flask==3.0.0").arg("colorama==0.4.6"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Added flask==3.0.0 as regular dependency
+    Added colorama==0.4.6 as regular dependency
+    Reusing already existing virtualenv
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
+
+    ----- stderr -----
+    Built 1 editable in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
+    Downloaded 8 packages in [EXECUTION_TIME]
+    Installed 9 packages in [EXECUTION_TIME]
+     + blinker==1.7.0
+     + click==8.1.7
+     + colorama==0.4.6
+     + flask==3.0.0
+     + itsdangerous==2.1.2
+     + jinja2==3.1.2
+     + markupsafe==2.1.3
+     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     + werkzeug==2.3.8
+    "###);
+}
