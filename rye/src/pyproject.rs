@@ -371,6 +371,7 @@ impl fmt::Display for Script {
 #[derive(Debug)]
 pub struct Workspace {
     root: PathBuf,
+    search_root: PathBuf,
     doc: DocumentMut,
     members: Option<Vec<String>>,
 }
@@ -382,17 +383,37 @@ impl Workspace {
             .and_then(|x| x.get("rye"))
             .and_then(|x| x.get("workspace"))
             .and_then(|x| x.as_table_like())
-            .map(|workspace| Workspace {
-                root: path.to_path_buf(),
-                doc: doc.clone(),
-                members: workspace
-                    .get("members")
-                    .and_then(|x| x.as_array())
-                    .map(|x| {
-                        x.iter()
-                            .filter_map(|item| item.as_str().map(|x| x.to_string()))
-                            .collect::<Vec<_>>()
-                    }),
+            .map(|workspace| {
+                // take explicit search root from tool.rye.workspace.root if
+                // specified
+                let search_root = workspace.get("root")
+                    .and_then(|p| p.as_str())
+                    .and_then(|p| {
+                        let path = PathBuf::from(p).canonicalize();
+                        match path {
+                            Ok(path) => Some(path),
+                            Err(_) => {
+                                // TODO: should this be an error?
+                                warn!("Bad root path {}", p);
+                                None
+                            }
+                        }
+                    })
+                    .unwrap_or_else(|| path.to_path_buf());
+
+                Workspace {
+                    root: path.to_path_buf(),
+                    search_root,
+                    doc: doc.clone(),
+                    members: workspace
+                        .get("members")
+                        .and_then(|x| x.as_array())
+                        .map(|x| {
+                            x.iter()
+                                .filter_map(|item| item.as_str().map(|x| x.to_string()))
+                                .collect::<Vec<_>>()
+                        }),
+                }
             })
     }
 
@@ -427,9 +448,10 @@ impl Workspace {
         Cow::Borrowed(&self.root)
     }
 
-    /// Checks if a project is a member of the declared workspace.
-    pub fn is_member(&self, path: &Path) -> bool {
-        if let Ok(relative) = path.strip_prefix(&self.root) {
+    /// Checks if a project is a member of the declared workspace, 
+    /// relative to a specific root.
+    fn is_member_rooted(&self, path: &Path, root: &Path) -> bool {
+        if let Ok(relative) = path.strip_prefix(root) {
             if relative == Path::new("") {
                 true
             } else {
@@ -464,11 +486,31 @@ impl Workspace {
         }
     }
 
+    /// Checks if a project is a member of the declared workspace.
+    /// Checks current project root first (self.root) then, if it was specified
+    /// search_root.
+    pub fn is_member(&self, path: &Path) -> bool {
+        match self.is_member_rooted(path, &self.root) {
+            true => true,
+            false => {
+                if self.root == self.search_root {
+                    // explicit root wasn't set or is equal to project root
+                    false
+                } else {
+                    // search explicit root
+                    self.is_member_rooted(path, &self.search_root)
+                }
+            },
+        }
+    }
+
     /// Iterates through all projects in the workspace.
+    /// Search is performed relative to explicitly defined root
+    /// if it was set, otherwise project root.
     pub fn iter_projects<'a>(
         self: &'a Arc<Self>,
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
-        walkdir::WalkDir::new(&self.root)
+        walkdir::WalkDir::new(&self.search_root)
             .into_iter()
             .filter_entry(|entry| {
                 !(entry.file_type().is_dir() && skip_recurse_into(entry.file_name()))
