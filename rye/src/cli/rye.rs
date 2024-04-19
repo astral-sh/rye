@@ -8,7 +8,7 @@ use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::{CommandFactory, Parser, ValueEnum};
-use clap_complete::{shells, Generator, Shell};
+use clap_complete::{Generator, Shell};
 use clap_complete_nushell::Nushell;
 use console::style;
 use minijinja::render;
@@ -69,82 +69,33 @@ enum MoreShells {
     Nushell,
 }
 
-struct ShellUnion {
-    shell: Option<clap_complete::Shell>,
-    nushell: Option<clap_complete_nushell::Nushell>,
-}
-
-impl From<MoreShells> for ShellUnion {
-    fn from(shell: MoreShells) -> Self {
+impl From<&MoreShells> for Shell {
+    fn from(shell: &MoreShells) -> Shell {
         match shell {
-            MoreShells::Bash => Self {
-                shell: Some(Shell::Bash),
-                nushell: None,
-            },
-            MoreShells::Elvish => Self {
-                shell: Some(Shell::Elvish),
-                nushell: None,
-            },
-            MoreShells::Fish => Self {
-                shell: Some(Shell::Fish),
-                nushell: None,
-            },
-            MoreShells::PowerShell => Self {
-                shell: Some(Shell::PowerShell),
-                nushell: None,
-            },
-            MoreShells::Zsh => Self {
-                shell: Some(Shell::Zsh),
-                nushell: None,
-            },
-            MoreShells::Nushell => Self {
-                shell: None,
-                nushell: Some(Nushell),
-            },
+            MoreShells::Bash => Shell::Bash,
+            MoreShells::Elvish => Shell::Elvish,
+            MoreShells::Fish => Shell::Fish,
+            MoreShells::PowerShell => Shell::PowerShell,
+            MoreShells::Zsh => Shell::Zsh,
+            MoreShells::Nushell => {
+                unreachable!("Nushell is not in the `clap_complete::Shell` enum")
+            }
         }
     }
 }
 
-impl Generator for ShellUnion {
+impl Generator for MoreShells {
     fn file_name(&self, name: &str) -> String {
         match self {
-            Self {
-                shell: Some(shell),
-                nushell: None,
-            } => match &shell {
-                Shell::Bash => shells::Bash.file_name(name),
-                Shell::Elvish => shells::Elvish.file_name(name),
-                Shell::Fish => shells::Fish.file_name(name),
-                Shell::PowerShell => shells::PowerShell.file_name(name),
-                Shell::Zsh => shells::Zsh.file_name(name),
-                _ => unreachable!(),
-            },
-            Self {
-                shell: None,
-                nushell: Some(_),
-            } => Nushell.file_name(name),
-            _ => unreachable!(),
+            MoreShells::Nushell => Nushell.file_name(name),
+            _ => Shell::from(self).file_name(name),
         }
     }
 
     fn generate(&self, cmd: &clap::Command, buf: &mut dyn std::io::Write) {
         match self {
-            Self {
-                shell: Some(shell),
-                nushell: None,
-            } => match &shell {
-                Shell::Bash => shells::Bash.generate(cmd, buf),
-                Shell::Elvish => shells::Elvish.generate(cmd, buf),
-                Shell::Fish => shells::Fish.generate(cmd, buf),
-                Shell::PowerShell => shells::PowerShell.generate(cmd, buf),
-                Shell::Zsh => shells::Zsh.generate(cmd, buf),
-                _ => unreachable!(),
-            },
-            Self {
-                shell: None,
-                nushell: Some(_),
-            } => Nushell.generate(cmd, buf),
-            _ => unreachable!(),
+            MoreShells::Nushell => Nushell.generate(cmd, buf),
+            _ => Shell::from(self).generate(cmd, buf),
         }
     }
 }
@@ -277,7 +228,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
 fn completion(args: CompletionCommand) -> Result<(), Error> {
     clap_complete::generate(
-        ShellUnion::from(args.shell.unwrap_or(MoreShells::Bash)),
+        args.shell.unwrap_or(MoreShells::Bash),
         &mut super::Args::command(),
         "rye",
         &mut std::io::stdout(),
