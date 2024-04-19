@@ -16,6 +16,7 @@ clap = { version = "4.3.5", default-features = false, features = [
     "std",
 ] }
 clap_complete = "4.2.1"
+clap_complete_nushell = "4.5.1"
 console = "0.15.7"
 curl = { version = "0.4.44", features = ["ssl", "static-curl", "static-ssl"] }
 flate2 = "1.0.25"

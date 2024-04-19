@@ -137,7 +137,7 @@ to learn more.
 
 ## Shell Completion
 
-Rye supports generating completion scripts for Bash, Zsh, Fish or Powershell. Here are some common locations for each shell:
+Rye supports generating completion scripts for Bash, Zsh, Fish, Powershell and Nushell. Here are some common locations for each shell:
 
 === "Bash"
 
@@ -181,6 +181,12 @@ Rye supports generating completion scripts for Bash, Zsh, Fish or Powershell. He
     # Generate script
     Set-ExecutionPolicy Unrestricted -Scope CurrentUser
     rye self completion -s powershell | Out-File -Encoding utf8 $PROFILE\..\Completions\rye_completion.ps1
+    ```
+
+=== "NuShell"
+
+    ```nushell
+    rye self completion -s nushell | save --append $nu.env-path
     ```
 
 ## Updating Rye
