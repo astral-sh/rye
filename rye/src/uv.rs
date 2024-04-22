@@ -329,7 +329,8 @@ impl Uv {
         cmd.arg("--python-version")
             .arg(py_version.format_simple())
             .arg("--output-file")
-            .arg(target);
+            .arg(target)
+            .arg("--emit-index-url");
 
         cmd.arg(source);
 
@@ -508,8 +509,6 @@ impl UvWithVenv {
     pub fn sync(&self, lockfile: &Path) -> Result<(), Error> {
         let mut cmd = self.venv_cmd();
         cmd.arg("pip").arg("sync");
-
-        self.uv.sources.add_as_pip_args(&mut cmd);
 
         let status = cmd
             .arg(lockfile)

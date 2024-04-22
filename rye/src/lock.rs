@@ -493,12 +493,7 @@ fn finalize_lockfile(
         .path_context(generated, "unable to parse resolver output")?
         .lines()
     {
-        // we deal with this explicitly.
-        if line.trim().is_empty()
-            || line.starts_with("--index-url ")
-            || line.starts_with("--extra-index-url ")
-            || line.starts_with("--find-links ")
-        {
+        if line.trim().is_empty() {
             continue;
         }
 

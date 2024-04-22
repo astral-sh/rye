@@ -283,8 +283,6 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                     pip_sync_cmd.env("PIP_VERBOSE", "2");
                 }
 
-                sources.add_as_pip_args(&mut pip_sync_cmd);
-
                 pip_sync_cmd.arg(&target_lockfile);
 
                 if output == CommandOutput::Verbose {
