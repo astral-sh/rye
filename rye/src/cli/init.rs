@@ -152,7 +152,8 @@ if __name__ == "setuptools":
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let cfg = Config::current();
-    let env = Environment::new();
+    let mut env = Environment::new();
+    env.set_keep_trailing_newline(true);
     let dir = env::current_dir()?.join(cmd.path);
     let toml = dir.join("pyproject.toml");
     let readme = dir.join("README.md");

@@ -153,6 +153,7 @@ pub fn install(
                 UvInstallOptions {
                     importlib_workaround: py_ver.major == 3 && py_ver.minor == 7,
                     extras: extra_requirements.to_vec(),
+                    refresh: force,
                 },
             );
         if result.is_err() {
