@@ -3,14 +3,23 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.33.0
 
-_Unreleased_
+Released on 2024-04-24.
 
-- Ensure files created by `rye init`, such as `pyproject.toml` and initial
-  python files end with a newline. #979
+- Ensure files created by `rye init`, such as `pyproject.toml` and initial python files end with a newline. #979
 
-<!-- released start -->
+- Add `--refresh` argument on `-f`.  #994
+
+- Preserve trailing newline in templates.  #979
+
+- Update uv to 0.1.39.  #980
+
+- Allow comments in `.python-version`.  #1038
+
+- Update Python releases to include 3.12.3 et al.  #1022
 
 ## 0.32.0
 
