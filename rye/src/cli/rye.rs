@@ -54,7 +54,7 @@ pub struct Args {
 }
 
 #[derive(Clone, Debug, ValueEnum)]
-enum MoreShells {
+enum ShellCompletion {
     /// Bourne Again SHell (bash)
     Bash,
     /// Elvish shell
@@ -69,33 +69,28 @@ enum MoreShells {
     Nushell,
 }
 
-impl From<&MoreShells> for Shell {
-    fn from(shell: &MoreShells) -> Shell {
-        match shell {
-            MoreShells::Bash => Shell::Bash,
-            MoreShells::Elvish => Shell::Elvish,
-            MoreShells::Fish => Shell::Fish,
-            MoreShells::PowerShell => Shell::PowerShell,
-            MoreShells::Zsh => Shell::Zsh,
-            MoreShells::Nushell => {
-                unreachable!("Nushell is not in the `clap_complete::Shell` enum")
-            }
-        }
-    }
-}
-
-impl Generator for MoreShells {
+impl Generator for ShellCompletion {
+    /// Generate the file name for the completion script.
     fn file_name(&self, name: &str) -> String {
         match self {
-            MoreShells::Nushell => Nushell.file_name(name),
-            _ => Shell::from(self).file_name(name),
+            ShellCompletion::Nushell => Nushell.file_name(name),
+            ShellCompletion::Bash => Shell::Bash.file_name(name),
+            ShellCompletion::Elvish => Shell::Elvish.file_name(name),
+            ShellCompletion::Fish => Shell::Fish.file_name(name),
+            ShellCompletion::PowerShell => Shell::PowerShell.file_name(name),
+            ShellCompletion::Zsh => Shell::Zsh.file_name(name),
         }
     }
 
+    /// Generate the completion script for the shell.
     fn generate(&self, cmd: &clap::Command, buf: &mut dyn std::io::Write) {
         match self {
-            MoreShells::Nushell => Nushell.generate(cmd, buf),
-            _ => Shell::from(self).generate(cmd, buf),
+            ShellCompletion::Nushell => Nushell.generate(cmd, buf),
+            ShellCompletion::Bash => Shell::Bash.generate(cmd, buf),
+            ShellCompletion::Elvish => Shell::Elvish.generate(cmd, buf),
+            ShellCompletion::Fish => Shell::Fish.generate(cmd, buf),
+            ShellCompletion::PowerShell => Shell::PowerShell.generate(cmd, buf),
+            ShellCompletion::Zsh => Shell::Zsh.generate(cmd, buf),
         }
     }
 }
@@ -105,7 +100,7 @@ impl Generator for MoreShells {
 pub struct CompletionCommand {
     /// The shell to generate a completion script for (defaults to 'bash').
     #[arg(short, long)]
-    shell: Option<MoreShells>,
+    shell: Option<ShellCompletion>,
 }
 
 /// Performs an update of rye.
@@ -228,7 +223,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
 fn completion(args: CompletionCommand) -> Result<(), Error> {
     clap_complete::generate(
-        args.shell.unwrap_or(MoreShells::Bash),
+        args.shell.unwrap_or(ShellCompletion::Bash),
         &mut super::Args::command(),
         "rye",
         &mut std::io::stdout(),
