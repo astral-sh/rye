@@ -74,8 +74,8 @@ Use the `add` command to add dependencies to your project.
 rye add "flask>=2.0"
 ```
 
-Use `rye sync` to actually install the added dependency.  If you
-want to add packages from custom indexes, you have to [configure the source](sources.md)
+Followed by `rye sync` to install the dependency into the virtual environment. 
+If you want to add packages from custom indexes, you have to [configure the source](sources.md)
 first.
 
 ## Listing Dependencies
