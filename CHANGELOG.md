@@ -19,7 +19,7 @@ Released on 2024-04-24.
 
 - Preserve trailing newline in templates.  #979
 
-- Update uv to 0.1.39.  #980
+- Update uv to 0.1.37.  #980
 
 - Allow comments in `.python-version`.  #1038
 
