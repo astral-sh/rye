@@ -198,7 +198,7 @@ pub struct Args {
     #[command(flatten)]
     req_extras: ReqExtras,
     /// Add this as dev dependency.
-    #[arg(long)]
+    #[arg(short, long)]
     dev: bool,
     /// Add this as an excluded dependency that will not be installed even if it's a sub dependency.
     #[arg(long, conflicts_with = "dev", conflicts_with = "optional")]
