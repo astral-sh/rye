@@ -217,8 +217,7 @@ pub fn get_python_version_request_from_pyenv_pin(root: &Path) -> Option<PythonVe
     loop {
         here.push(".python-version");
         if let Ok(contents) = fs::read_to_string(&here) {
-            let ver = contents.trim().parse().ok()?;
-            return Some(ver);
+            return read_python_version(&contents);
         }
 
         // pop filename
@@ -231,6 +230,20 @@ pub fn get_python_version_request_from_pyenv_pin(root: &Path) -> Option<PythonVe
     }
 
     None
+}
+
+/// Return the [`PythonVersionRequest`] from a `.python-version` file.
+fn read_python_version(contents: &str) -> Option<PythonVersionRequest> {
+    // Skip empty lines and comments.
+    let ver = contents.lines().find(|line| {
+        let trimmed = line.trim();
+        !(trimmed.is_empty() || trimmed.starts_with('#'))
+    })?;
+
+    // Parse the version.
+    let ver = ver.parse().ok()?;
+
+    Some(ver)
 }
 
 /// Returns the most recent cpython release.
@@ -277,4 +290,23 @@ pub fn write_credentials(doc: &toml_edit::DocumentMut) -> Result<(), Error> {
 
 pub fn get_credentials_filepath() -> Result<PathBuf, Error> {
     Ok(get_app_dir().join("credentials"))
+}
+
+#[cfg(test)]
+mod test {
+
+    #[test]
+    fn test_read_python_version() {
+        // Parse a simple version.
+        let ver = super::read_python_version("3.8.1\n");
+        assert_eq!(ver, Some("3.8.1".parse().unwrap()));
+
+        // Skip empty lines.
+        let ver = super::read_python_version("\n\n3.8.1\n");
+        assert_eq!(ver, Some("3.8.1".parse().unwrap()));
+
+        // Skip comments.
+        let ver = super::read_python_version("# comment\n3.8.1\n");
+        assert_eq!(ver, Some("3.8.1".parse().unwrap()));
+    }
 }
