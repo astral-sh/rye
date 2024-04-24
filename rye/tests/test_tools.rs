@@ -61,7 +61,7 @@ fn test_basic_tool_behavior() {
     success: true
     exit_code: 0
     ----- stdout -----
-    pycowsay 0.0.0.2 (cpython@3.11.8)
+    pycowsay 0.0.0.2 (cpython@3.11.9)
 
     ----- stderr -----
     "###);
@@ -70,13 +70,13 @@ fn test_basic_tool_behavior() {
         space.rye_cmd()
             .arg("toolchain")
             .arg("remove")
-            .arg("cpython@3.11.8"), @r###"
+            .arg("cpython@3.11.9"), @r###"
     success: false
     exit_code: 1
     ----- stdout -----
 
     ----- stderr -----
-    error: toolchain cpython@3.11.8 is still in use by tool pycowsay
+    error: toolchain cpython@3.11.9 is still in use by tool pycowsay
     "###);
 
     rye_cmd_snapshot!(

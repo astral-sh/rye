@@ -15,7 +15,7 @@ fn test_empty_sync() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
@@ -53,7 +53,7 @@ fn test_add_and_sync_no_auto_sync() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
 
@@ -96,7 +96,7 @@ fn test_add_autosync() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -137,7 +137,7 @@ fn test_autosync_remember() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
