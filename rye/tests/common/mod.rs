@@ -55,7 +55,7 @@ fn bootstrap_test_rye() -> PathBuf {
 use-uv = true
 
 [default]
-toolchain = "cpython@3.12.2"
+toolchain = "cpython@3.12.3"
 "#,
         )
         .unwrap();
