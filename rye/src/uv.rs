@@ -272,6 +272,13 @@ impl Uv {
         }
     }
 
+    /// Get uv binary path
+    ///
+    /// Warning: Always use self.cmd() when at all possible
+    pub fn uv_bin(&self) -> &Path {
+        &self.uv_bin
+    }
+
     fn create_venv(
         &self,
         venv_dir: &Path,
