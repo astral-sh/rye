@@ -97,9 +97,9 @@ rye remove flask
 
 ## Working with the Project
 
-To run executables in the context of the virtualenv you can use the `run` command.  For
-instance, if you want to use `black` you can add, install, and run it on the current
-directory like this:
+To run executables in the context of the virtualenv you can use the `run` command. For
+instance, to use `black`, add it to the project, sync the virtual environment, and run it
+over the current directory like this:
 
 ```
 rye add black
