@@ -7,6 +7,9 @@ that were not yet released.
 
 _Unreleased_
 
+- Ensure files created by `rye init`, such as `pyproject.toml` and initial
+  python files end with a newline. #979
+
 <!-- released start -->
 
 ## 0.32.0
