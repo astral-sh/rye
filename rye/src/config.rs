@@ -266,7 +266,7 @@ impl Config {
             .get("behavior")
             .and_then(|x| x.get("use-uv"))
             .and_then(|x| x.as_bool())
-            .unwrap_or(false)
+            .unwrap_or(true)
     }
 
     /// Fetches python installations with build info if possible.
