@@ -3,8 +3,8 @@
 Rye supports two systems to manage dependencies:
 [uv](https://github.com/astral-sh/uv) and
 [pip-tools](https://github.com/jazzband/pip-tools).  It currently defaults to
-`pip-tools` but will offer you the option to use `uv` instead.  `uv` will become
-the default choice once it stabilzes as it offers significantly better performance.
+`uv` as it offers significantly better performance, but will offer you the
+option to use `pip-tools` instead.
 
 In order to download dependencies rye creates two "lockfiles" (called
 `requirements.lock` and `requirements-dev.lock`).  These are not real lockfiles
