@@ -517,7 +517,7 @@ fn perform_install(
 
     // Also pick up the target version from the RYE_TOOLCHAIN_VERSION
     // environment variable.
-    let toolchain_version_request = match toolchain_version {
+    let mut toolchain_version_request = match toolchain_version {
         Some(version) => Some(version),
         None => match env::var("RYE_TOOLCHAIN_VERSION") {
             Ok(val) => Some(val.parse()?),
@@ -624,12 +624,17 @@ fn perform_install(
         // can fill in the default.
         if !matches!(mode, InstallMode::NoPrompts) {
             if toolchain_path.is_none() {
-                prompt_for_default_toolchain(
+                // Prompt the user for the default toolchain version.
+                let user_version_request = prompt_for_default_toolchain(
                     toolchain_version_request
                         .clone()
                         .unwrap_or(SELF_PYTHON_TARGET_VERSION),
                     config_doc,
                 )?;
+
+                // If the user has selected a toolchain version, we should use that as the default,
+                // unless the `RYE_TOOLCHAIN_VERSION` environment variable is set.
+                toolchain_version_request = toolchain_version_request.or(Some(user_version_request));
             } else {
                 prompt_for_toolchain_later = true;
             }
@@ -792,7 +797,7 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
 fn prompt_for_default_toolchain(
     default_toolchain: PythonVersionRequest,
     config_doc: &mut toml_edit::DocumentMut,
-) -> Result<(), Error> {
+) -> Result<PythonVersionRequest, Error> {
     let choice = dialoguer::Input::with_theme(tui_theme())
         .with_prompt("Which version of Python should be used as default toolchain?")
         .default(default_toolchain.clone())
@@ -808,7 +813,7 @@ fn prompt_for_default_toolchain(
         })
         .interact_text()?;
     toml::ensure_table(config_doc, "default")["toolchain"] = toml_edit::value(choice.to_string());
-    Ok(())
+    Ok(choice)
 }
 
 pub fn auto_self_install() -> Result<bool, Error> {
