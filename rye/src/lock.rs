@@ -433,7 +433,7 @@ fn generate_lockfile(
             )?;
     } else {
         if keyring_provider != KeyringProvider::Disabled {
-            bail!("--keyring-provider option is only supported with uv");
+            bail!("`--keyring-provider` option requires the uv backend");
         }
         let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
         // legacy pip tools requires some extra parameters

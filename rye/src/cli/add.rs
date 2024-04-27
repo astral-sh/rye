@@ -281,7 +281,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             )?;
         } else {
             if keyring_provider != KeyringProvider::Disabled {
-                bail!("--keyring-provider option is only supported with uv");
+                bail!("`--keyring-provider` option requires the uv backend");
             }
             for requirement in &mut requirements {
                 resolve_requirements_with_unearth(
