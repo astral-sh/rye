@@ -1,29 +1,11 @@
 use std::path::PathBuf;
 
 use anyhow::Error;
-use clap::{Parser, ValueEnum};
+use clap::Parser;
 
 use crate::lock::{KeyringProvider, LockOptions};
 use crate::sync::{sync, SyncMode, SyncOptions};
 use crate::utils::CommandOutput;
-
-// How to authenticate using keyring
-// (Only supported by `uv` backend, and only for `subprocess` method.)
-#[derive(ValueEnum, Default, Clone, Debug)]
-pub enum KeyringProviderArg {
-    #[default]
-    Disabled,
-    Subprocess,
-}
-
-impl Into<KeyringProvider> for KeyringProviderArg {
-    fn into(self) -> KeyringProvider {
-        match self {
-            KeyringProviderArg::Disabled => KeyringProvider::Disabled,
-            KeyringProviderArg::Subprocess => KeyringProvider::Subprocess,
-        }
-    }
-}
 
 /// Updates the lockfiles without installing dependencies.
 #[derive(Parser, Debug)]
@@ -52,8 +34,9 @@ pub struct Args {
     /// Set to true to lock with sources in the lockfile.
     #[arg(long)]
     with_sources: bool,
-    #[arg(long)]
-    keyring_provider: Option<KeyringProviderArg>,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
     /// Reset prior lock options.
     #[arg(long)]
     reset: bool,
@@ -77,7 +60,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             reset: cmd.reset,
         },
         pyproject: cmd.pyproject,
-        keyring_provider: cmd.keyring_provider.unwrap_or_default().into(),
+        keyring_provider: cmd.keyring_provider,
         ..SyncOptions::default()
     })?;
     Ok(())

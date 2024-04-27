@@ -5,11 +5,10 @@ use clap::Parser;
 use pep508_rs::Requirement;
 
 use crate::config::Config;
+use crate::lock::KeyringProvider;
 use crate::pyproject::{DependencyKind, PyProject};
 use crate::sync::autosync;
 use crate::utils::{format_requirement, CommandOutput};
-
-use crate::cli::lock::KeyringProviderArg;
 
 /// Removes a package from this project.
 #[derive(Parser, Debug)]
@@ -29,8 +28,9 @@ pub struct Args {
     /// Does not run `sync` even if auto-sync is enabled.
     #[arg(long, conflicts_with = "sync")]
     no_sync: bool,
-    #[arg(long)]
-    keyring_provider: Option<KeyringProviderArg>,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -69,11 +69,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (Config::current().autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(
-            &pyproject_toml,
-            output,
-            cmd.keyring_provider.unwrap_or_default().into(),
-        )?;
+        autosync(&pyproject_toml, output, cmd.keyring_provider)?;
     }
 
     Ok(())

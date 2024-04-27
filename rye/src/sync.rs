@@ -56,6 +56,7 @@ pub struct SyncOptions {
     pub lock_options: LockOptions,
     /// Explicit pyproject location (Only usable by PythonOnly mode)
     pub pyproject: Option<PathBuf>,
+    /// Keyring provider to use for credential lookup.
     pub keyring_provider: KeyringProvider,
 }
 

@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::{env, fmt, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
+use clap::ValueEnum;
 use minijinja::render;
 use once_cell::sync::Lazy;
 use pep508_rs::Requirement;
@@ -59,10 +60,15 @@ impl fmt::Display for LockMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default, PartialEq)]
+/// Keyring provider type to use for credential lookup.
+#[derive(ValueEnum, Copy, Clone, Serialize, Debug, Default, PartialEq)]
+#[value(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
 pub enum KeyringProvider {
+    /// Do not use keyring for credential lookup.
     #[default]
     Disabled,
+    /// Use the `keyring` command for credential lookup.
     Subprocess,
 }
 

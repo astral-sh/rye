@@ -11,7 +11,6 @@ use serde::Deserialize;
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
-use crate::cli::lock::KeyringProviderArg;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::lock::KeyringProvider;
@@ -139,7 +138,7 @@ impl ReqExtras {
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
-                None => Some(pep508_rs::VersionOrUrl::Url(
+                None => Some(VersionOrUrl::Url(
                     format!("git+{}{}", git, suffix).parse().with_context(|| {
                         format!("unable to interpret '{}{}' as git reference", git, suffix)
                     })?,
@@ -148,10 +147,11 @@ impl ReqExtras {
         } else if let Some(ref url) = self.url {
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
-                None => Some(pep508_rs::VersionOrUrl::Url(
-                    url.parse()
-                        .with_context(|| format!("unable to parse '{}' as url", url))?,
-                )),
+                None => {
+                    Some(VersionOrUrl::Url(url.parse().with_context(|| {
+                        format!("unable to parse '{}' as url", url)
+                    })?))
+                }
             };
         } else if let Some(ref path) = self.path {
             // For hatchling build backend, it use {root:uri} for file relative path,
@@ -177,7 +177,7 @@ impl ReqExtras {
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
-                None => Some(pep508_rs::VersionOrUrl::Url(file_url)),
+                None => Some(VersionOrUrl::Url(file_url)),
             };
         }
         for feature in self.features.iter().flat_map(|x| x.split(',')) {
@@ -214,8 +214,9 @@ pub struct Args {
     /// Overrides the pin operator
     #[arg(long)]
     pin: Option<Pin>,
-    #[arg(long)]
-    keyring_provider: Option<KeyringProviderArg>,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
     /// Runs `sync` even if auto-sync is disabled.
     #[arg(long)]
     sync: bool,
@@ -263,7 +264,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         requirements.push(requirement);
     }
 
-    let keyring_provider = cmd.keyring_provider.unwrap_or_default().into();
+    let keyring_provider = cmd.keyring_provider;
 
     if !cmd.excluded {
         if cfg.use_uv() {
