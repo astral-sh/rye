@@ -141,6 +141,7 @@ impl LockOptions {
 }
 
 /// Creates lockfiles for all projects in the workspace.
+#[allow(clippy::too_many_arguments)]
 pub fn update_workspace_lockfile(
     py_ver: &PythonVersion,
     workspace: &Arc<Workspace>,
@@ -323,6 +324,7 @@ fn dump_dependencies(
 }
 
 /// Updates the lockfile of the current project.
+#[allow(clippy::too_many_arguments)]
 pub fn update_single_project_lockfile(
     py_ver: &PythonVersion,
     pyproject: &PyProject,

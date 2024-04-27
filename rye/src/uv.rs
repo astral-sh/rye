@@ -320,6 +320,7 @@ impl Uv {
         Ok(UvWithVenv::new(self.clone(), venv_dir, version))
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn lockfile(
         &self,
         py_version: &PythonVersion,
