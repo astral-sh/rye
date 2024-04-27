@@ -624,12 +624,17 @@ fn perform_install(
         // can fill in the default.
         if !matches!(mode, InstallMode::NoPrompts) {
             if toolchain_path.is_none() {
-                toolchain_version_request = Some(prompt_for_default_toolchain(
+                // Prompt the user for the default toolchain version.
+                let user_version_request = prompt_for_default_toolchain(
                     toolchain_version_request
                         .clone()
                         .unwrap_or(SELF_PYTHON_TARGET_VERSION),
                     config_doc,
-                )?);
+                )?;
+
+                // If the user has selected a toolchain version, we should use that as the default,
+                // unless the `RYE_TOOLCHAIN_VERSION` environment variable is set.
+                toolchain_version_request = toolchain_version_request.or(Some(user_version_request));
             } else {
                 prompt_for_toolchain_later = true;
             }
