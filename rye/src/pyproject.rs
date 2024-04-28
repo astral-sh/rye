@@ -386,7 +386,8 @@ impl Workspace {
             .map(|workspace| {
                 // take explicit search root from tool.rye.workspace.root if
                 // specified
-                let search_root = workspace.get("root")
+                let search_root = workspace
+                    .get("root")
                     .and_then(|p| p.as_str())
                     .and_then(|p| {
                         let path = PathBuf::from(p).canonicalize();
@@ -448,7 +449,7 @@ impl Workspace {
         Cow::Borrowed(&self.root)
     }
 
-    /// Checks if a project is a member of the declared workspace, 
+    /// Checks if a project is a member of the declared workspace,
     /// relative to a specific root.
     fn is_member_rooted(&self, path: &Path, root: &Path) -> bool {
         if let Ok(relative) = path.strip_prefix(root) {
@@ -500,7 +501,7 @@ impl Workspace {
                     // search explicit root
                     self.is_member_rooted(path, &self.search_root)
                 }
-            },
+            }
         }
     }
 
