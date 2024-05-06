@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::{env, fmt, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
+use clap::ValueEnum;
 use minijinja::render;
 use once_cell::sync::Lazy;
 use pep508_rs::Requirement;
@@ -57,6 +58,18 @@ impl fmt::Display for LockMode {
             }
         )
     }
+}
+
+/// Keyring provider type to use for credential lookup.
+#[derive(ValueEnum, Copy, Clone, Serialize, Debug, Default, PartialEq)]
+#[value(rename_all = "snake_case")]
+#[serde(rename_all = "snake_case")]
+pub enum KeyringProvider {
+    /// Do not use keyring for credential lookup.
+    #[default]
+    Disabled,
+    /// Use the `keyring` command for credential lookup.
+    Subprocess,
 }
 
 /// Controls how locking should work.
@@ -128,6 +141,7 @@ impl LockOptions {
 }
 
 /// Creates lockfiles for all projects in the workspace.
+#[allow(clippy::too_many_arguments)]
 pub fn update_workspace_lockfile(
     py_ver: &PythonVersion,
     workspace: &Arc<Workspace>,
@@ -136,6 +150,7 @@ pub fn update_workspace_lockfile(
     output: CommandOutput,
     sources: &ExpandedSources,
     lock_options: &LockOptions,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     echo!(if output, "Generating {} lockfile: {}", lock_mode, lockfile.display());
 
@@ -189,6 +204,7 @@ pub fn update_workspace_lockfile(
         &lock_options,
         &exclusions,
         true,
+        keyring_provider,
     )?;
 
     Ok(())
@@ -308,6 +324,7 @@ fn dump_dependencies(
 }
 
 /// Updates the lockfile of the current project.
+#[allow(clippy::too_many_arguments)]
 pub fn update_single_project_lockfile(
     py_ver: &PythonVersion,
     pyproject: &PyProject,
@@ -316,6 +333,7 @@ pub fn update_single_project_lockfile(
     output: CommandOutput,
     sources: &ExpandedSources,
     lock_options: &LockOptions,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     echo!(if output, "Generating {} lockfile: {}", lock_mode, lockfile.display());
 
@@ -356,6 +374,7 @@ pub fn update_single_project_lockfile(
         &lock_options,
         &exclusions,
         false,
+        keyring_provider,
     )?;
 
     Ok(())
@@ -372,6 +391,7 @@ fn generate_lockfile(
     lock_options: &LockOptions,
     exclusions: &HashSet<Requirement>,
     no_deps: bool,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     let use_uv = Config::current().use_uv();
     let scratch = tempfile::tempdir()?;
@@ -409,8 +429,12 @@ fn generate_lockfile(
                 lock_options.pre,
                 env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
                 upgrade,
+                keyring_provider,
             )?;
     } else {
+        if keyring_provider != KeyringProvider::Disabled {
+            bail!("`--keyring-provider` option requires the uv backend");
+        }
         let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
         // legacy pip tools requires some extra parameters
         if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {

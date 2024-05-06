@@ -13,6 +13,7 @@ use url::Url;
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::consts::VENV_BIN;
+use crate::lock::KeyringProvider;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
@@ -137,7 +138,7 @@ impl ReqExtras {
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
-                None => Some(pep508_rs::VersionOrUrl::Url(
+                None => Some(VersionOrUrl::Url(
                     format!("git+{}{}", git, suffix).parse().with_context(|| {
                         format!("unable to interpret '{}{}' as git reference", git, suffix)
                     })?,
@@ -146,10 +147,11 @@ impl ReqExtras {
         } else if let Some(ref url) = self.url {
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
-                None => Some(pep508_rs::VersionOrUrl::Url(
-                    url.parse()
-                        .with_context(|| format!("unable to parse '{}' as url", url))?,
-                )),
+                None => {
+                    Some(VersionOrUrl::Url(url.parse().with_context(|| {
+                        format!("unable to parse '{}' as url", url)
+                    })?))
+                }
             };
         } else if let Some(ref path) = self.path {
             // For hatchling build backend, it use {root:uri} for file relative path,
@@ -175,7 +177,7 @@ impl ReqExtras {
             };
             req.version_or_url = match req.version_or_url {
                 Some(_) => bail!("requirement already has a version marker"),
-                None => Some(pep508_rs::VersionOrUrl::Url(file_url)),
+                None => Some(VersionOrUrl::Url(file_url)),
             };
         }
         for feature in self.features.iter().flat_map(|x| x.split(',')) {
@@ -212,6 +214,9 @@ pub struct Args {
     /// Overrides the pin operator
     #[arg(long)]
     pin: Option<Pin>,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
     /// Runs `sync` even if auto-sync is disabled.
     #[arg(long)]
     sync: bool,
@@ -259,6 +264,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         requirements.push(requirement);
     }
 
+    let keyring_provider = cmd.keyring_provider;
+
     if !cmd.excluded {
         if cfg.use_uv() {
             sync(SyncOptions::python_only().pyproject(None))
@@ -270,8 +277,12 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 cmd.pre,
                 output,
                 &default_operator,
+                keyring_provider,
             )?;
         } else {
+            if keyring_provider != KeyringProvider::Disabled {
+                bail!("`--keyring-provider` option requires the uv backend");
+            }
             for requirement in &mut requirements {
                 resolve_requirements_with_unearth(
                     &pyproject_toml,
@@ -303,7 +314,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (cfg.autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject_toml, output)?;
+        autosync(&pyproject_toml, output, keyring_provider)?;
     }
 
     Ok(())
@@ -448,6 +459,7 @@ fn resolve_requirements_with_uv(
     pre: bool,
     output: CommandOutput,
     default_operator: &Operator,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     let venv_path = pyproject_toml.venv_path();
     let py_bin = get_venv_python_bin(&venv_path);
@@ -460,7 +472,13 @@ fn resolve_requirements_with_uv(
         .venv(&venv_path, &py_bin, py_ver, None)?;
 
     for req in requirements {
-        let mut new_req = uv.resolve(py_ver, req, pre, env::var("__RYE_UV_EXCLUDE_NEWER").ok())?;
+        let mut new_req = uv.resolve(
+            py_ver,
+            req,
+            pre,
+            env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
+            keyring_provider,
+        )?;
 
         // if a version or URL is already provided we just use the normalized package name but
         // retain all old information.

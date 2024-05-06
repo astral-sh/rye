@@ -10,6 +10,7 @@ use same_file::is_same_file;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
+use crate::lock::KeyringProvider;
 use crate::pyproject::{locate_projects, normalize_package_name, DependencyKind, PyProject};
 use crate::sync::autosync;
 use crate::utils::{CommandOutput, QuietExit};
@@ -28,6 +29,9 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
     // Disable test output capture to stdout
     #[arg(long = "no-capture", short = 's')]
     no_capture: bool,
@@ -73,7 +77,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let has_pytest = has_pytest_dependency(&projects)?;
         if has_pytest {
             if Config::current().autosync() {
-                autosync(&projects[0], output)?;
+                autosync(&projects[0], output, cmd.keyring_provider)?;
             } else {
                 bail!("pytest not installed but in dependencies. Run `rye sync`.")
             }

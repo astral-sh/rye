@@ -13,7 +13,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::lock::{
     make_project_root_fragment, update_single_project_lockfile, update_workspace_lockfile,
-    LockMode, LockOptions,
+    KeyringProvider, LockMode, LockOptions,
 };
 use crate::piptools::{get_pip_sync, get_pip_tools_venv_path};
 use crate::platform::get_toolchain_python_bin;
@@ -56,6 +56,8 @@ pub struct SyncOptions {
     pub lock_options: LockOptions,
     /// Explicit pyproject location (Only usable by PythonOnly mode)
     pub pyproject: Option<PathBuf>,
+    /// Keyring provider to use for credential lookup.
+    pub keyring_provider: KeyringProvider,
 }
 
 impl SyncOptions {
@@ -197,6 +199,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 cmd.output,
                 &sources,
                 &cmd.lock_options,
+                cmd.keyring_provider,
             )
             .context("could not write production lockfile for workspace")?;
             update_workspace_lockfile(
@@ -207,6 +210,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 cmd.output,
                 &sources,
                 &cmd.lock_options,
+                cmd.keyring_provider,
             )
             .context("could not write dev lockfile for workspace")?;
         } else {
@@ -219,6 +223,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 cmd.output,
                 &sources,
                 &cmd.lock_options,
+                cmd.keyring_provider,
             )
             .context("could not write production lockfile for project")?;
             update_single_project_lockfile(
@@ -229,6 +234,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                 cmd.output,
                 &sources,
                 &cmd.lock_options,
+                cmd.keyring_provider,
             )
             .context("could not write dev lockfile for project")?;
         }
@@ -310,7 +316,11 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 }
 
 /// Performs an autosync.
-pub fn autosync(pyproject: &PyProject, output: CommandOutput) -> Result<(), Error> {
+pub fn autosync(
+    pyproject: &PyProject,
+    output: CommandOutput,
+    keyring_provider: KeyringProvider,
+) -> Result<(), Error> {
     sync(SyncOptions {
         output,
         dev: true,
@@ -319,6 +329,7 @@ pub fn autosync(pyproject: &PyProject, output: CommandOutput) -> Result<(), Erro
         no_lock: false,
         lock_options: LockOptions::default(),
         pyproject: Some(pyproject.toml_path().to_path_buf()),
+        keyring_provider,
     })
 }
 
