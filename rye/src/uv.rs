@@ -39,6 +39,7 @@ struct UvCompileOptions {
     pub no_deps: bool,
     pub no_header: bool,
     pub keyring_provider: KeyringProvider,
+    pub generate_hashes: bool,
 }
 
 impl UvCompileOptions {
@@ -49,6 +50,10 @@ impl UvCompileOptions {
 
         if self.no_deps {
             cmd.arg("--no-deps");
+        }
+
+        if self.generate_hashes {
+            cmd.arg("--generate-hashes");
         }
 
         if self.allow_prerelease {
@@ -88,6 +93,7 @@ impl Default for UvCompileOptions {
             upgrade: UvPackageUpgrade::Nothing,
             no_deps: false,
             no_header: false,
+            generate_hashes: true,
             keyring_provider: KeyringProvider::Disabled,
         }
     }
@@ -330,6 +336,7 @@ impl Uv {
         exclude_newer: Option<String>,
         upgrade: UvPackageUpgrade,
         keyring_provider: KeyringProvider,
+        generate_hashes: bool,
     ) -> Result<(), Error> {
         let options = UvCompileOptions {
             allow_prerelease,
@@ -337,6 +344,7 @@ impl Uv {
             upgrade,
             no_deps: false,
             no_header: true,
+            generate_hashes,
             keyring_provider,
         };
 
@@ -581,6 +589,7 @@ impl UvWithVenv {
             upgrade: UvPackageUpgrade::Nothing,
             no_deps: true,
             no_header: true,
+            generate_hashes: true,
             keyring_provider,
         };
 
