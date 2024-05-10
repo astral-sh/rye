@@ -459,6 +459,10 @@ fn generate_lockfile(
         if lock_options.pre {
             cmd.arg("--pre");
         }
+        if lock_options.generate_hashes {
+            cmd.arg("--generate-hashes");
+            cmd.arg("--reuse-hashes");
+        }
 
         cmd.arg(if output == CommandOutput::Verbose {
             "--verbose"
