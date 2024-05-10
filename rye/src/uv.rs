@@ -93,7 +93,7 @@ impl Default for UvCompileOptions {
             upgrade: UvPackageUpgrade::Nothing,
             no_deps: false,
             no_header: false,
-            generate_hashes: true,
+            generate_hashes: false,
             keyring_provider: KeyringProvider::Disabled,
         }
     }
@@ -589,7 +589,7 @@ impl UvWithVenv {
             upgrade: UvPackageUpgrade::Nothing,
             no_deps: true,
             no_header: true,
-            generate_hashes: true,
+            generate_hashes: false,
             keyring_provider,
         };
 
