@@ -3,7 +3,7 @@
 Updates the lockfiles without installing dependencies.  Usually one would use
 the [`sync`](sync.md) command instead which both locks and installs dependencies.
 
-For more information see [Synching and Locking](../sync.md).
+For more information see [Syncing and Locking](../sync.md).
 
 ## Example
 
