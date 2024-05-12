@@ -469,6 +469,7 @@ impl Workspace {
         self: &'a Arc<Self>,
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
         walkdir::WalkDir::new(&self.root)
+            .follow_links(true)
             .into_iter()
             .filter_entry(|entry| {
                 !(entry.file_type().is_dir() && skip_recurse_into(entry.file_name()))
