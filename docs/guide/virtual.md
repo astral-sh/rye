@@ -18,11 +18,11 @@ rye run mkdocs
 ```
 
 This will create a `pyproject.toml` but does not actually declare any python code itself.
-Yet when synching you will end up with mkdocs in your project.
+Yet when syncing you will end up with mkdocs in your project.
 
 ## Behavior Changes
 
-When synching the project itself is never installed into the virtualenv as it's not
+When syncing the project itself is never installed into the virtualenv as it's not
 considered to be a valid package.  Likewise you cannot publish virtual packages to
 PyPI or another index.
 

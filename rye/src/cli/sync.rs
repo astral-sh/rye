@@ -34,7 +34,7 @@ pub struct Args {
     /// Update to pre-release versions
     #[arg(long)]
     pre: bool,
-    /// Extras/features to enable when synching the workspace.
+    /// Extras/features to enable when syncing the workspace.
     #[arg(long)]
     features: Vec<String>,
     /// Enables all features.

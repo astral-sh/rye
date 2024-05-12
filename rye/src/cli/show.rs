@@ -40,7 +40,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         echo!("venv python: {}", style(&ver).cyan());
         if let Some(actual) = get_current_venv_python_version(&project.venv_path()) {
             if actual != ver {
-                echo!("last synched venv python: {}", style(&actual).red());
+                echo!("last synced venv python: {}", style(&actual).red());
             }
         }
     }
