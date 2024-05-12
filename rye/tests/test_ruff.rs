@@ -24,10 +24,10 @@ def hello():
     success: false
     exit_code: 1
     ----- stdout -----
-    src/my_project/__init__.py:1:8: F401 [*] `os` imported but unused
+    src/my_project/__init__.py:1:8: F401 `os` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
     src/my_project/__init__.py:6:25: E703 [*] Statement ends with an unnecessary semicolon
     Found 2 errors.
-    [*] 2 fixable with the `--fix` option.
+    [*] 1 fixable with the `--fix` option.
 
     ----- stderr -----
     "###);
