@@ -51,12 +51,13 @@ def hello():
     "###);
 
     // fmt next
+    // Already reformatted file mentioned bellow is `__init__.py`
     rye_cmd_snapshot!(space.rye_cmd().arg("fmt").arg("--check"), @r###"
     success: false
     exit_code: 1
     ----- stdout -----
     Would reformat: src/my_project/test.py
-    1 file would be reformatted
+    1 file would be reformatted, 1 file already formatted
 
     ----- stderr -----
     "###);
@@ -64,7 +65,7 @@ def hello():
     success: true
     exit_code: 0
     ----- stdout -----
-    1 file reformatted
+    1 file reformatted, 1 file left unchanged
 
     ----- stderr -----
     "###);
