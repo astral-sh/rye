@@ -9,7 +9,10 @@ fn test_lint_and_format() {
     let space = Space::new();
     space.init("my-project");
     space.write(
-        "src/my_project/__init__.py",
+        // `test.py` is used instead of `__init__.py` to make ruff consider it a fixable
+        // issue instead of requiring user intervention.
+        // ref: https://github.com/astral-sh/ruff/pull/11168
+        "src/my_project/test.py",
         r#"import os
 
 def hello():
@@ -24,10 +27,10 @@ def hello():
     success: false
     exit_code: 1
     ----- stdout -----
-    src/my_project/__init__.py:1:8: F401 `os` imported but unused; consider removing, adding to `__all__`, or using a redundant alias
+    src/my_project/__init__.py:1:8: F401 [*] `os` imported but unused
     src/my_project/__init__.py:6:25: E703 [*] Statement ends with an unnecessary semicolon
     Found 2 errors.
-    [*] 1 fixable with the `--fix` option.
+    [*] 2 fixable with the `--fix` option.
 
     ----- stderr -----
     "###);
@@ -39,7 +42,7 @@ def hello():
 
     ----- stderr -----
     "###);
-    assert_snapshot!(space.read_string("src/my_project/__init__.py"), @r###"
+    assert_snapshot!(space.read_string("src/my_project/test.py"), @r###"
 
     def hello():
 
@@ -52,7 +55,7 @@ def hello():
     success: false
     exit_code: 1
     ----- stdout -----
-    Would reformat: src/my_project/__init__.py
+    Would reformat: src/my_project/test.py
     1 file would be reformatted
 
     ----- stderr -----
@@ -65,7 +68,7 @@ def hello():
 
     ----- stderr -----
     "###);
-    assert_snapshot!(space.read_string("src/my_project/__init__.py"), @r###"
+    assert_snapshot!(space.read_string("src/my_project/test.py"), @r###"
     def hello():
         return "Hello World"
     "###);
