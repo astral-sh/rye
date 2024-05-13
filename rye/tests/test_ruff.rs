@@ -9,7 +9,10 @@ fn test_lint_and_format() {
     let space = Space::new();
     space.init("my-project");
     space.write(
-        "src/my_project/__init__.py",
+        // `test.py` is used instead of `__init__.py` to make ruff consider it a fixable
+        // issue instead of requiring user intervention.
+        // ref: https://github.com/astral-sh/ruff/pull/11168
+        "src/my_project/test.py",
         r#"import os
 
 def hello():
@@ -24,8 +27,8 @@ def hello():
     success: false
     exit_code: 1
     ----- stdout -----
-    src/my_project/__init__.py:1:8: F401 [*] `os` imported but unused
-    src/my_project/__init__.py:6:25: E703 [*] Statement ends with an unnecessary semicolon
+    src/my_project/test.py:1:8: F401 [*] `os` imported but unused
+    src/my_project/test.py:6:25: E703 [*] Statement ends with an unnecessary semicolon
     Found 2 errors.
     [*] 2 fixable with the `--fix` option.
 
@@ -39,7 +42,7 @@ def hello():
 
     ----- stderr -----
     "###);
-    assert_snapshot!(space.read_string("src/my_project/__init__.py"), @r###"
+    assert_snapshot!(space.read_string("src/my_project/test.py"), @r###"
 
     def hello():
 
@@ -48,12 +51,13 @@ def hello():
     "###);
 
     // fmt next
+    // Already reformatted file mentioned bellow is `__init__.py`
     rye_cmd_snapshot!(space.rye_cmd().arg("fmt").arg("--check"), @r###"
     success: false
     exit_code: 1
     ----- stdout -----
-    Would reformat: src/my_project/__init__.py
-    1 file would be reformatted
+    Would reformat: src/my_project/test.py
+    1 file would be reformatted, 1 file already formatted
 
     ----- stderr -----
     "###);
@@ -61,11 +65,11 @@ def hello():
     success: true
     exit_code: 0
     ----- stdout -----
-    1 file reformatted
+    1 file reformatted, 1 file left unchanged
 
     ----- stderr -----
     "###);
-    assert_snapshot!(space.read_string("src/my_project/__init__.py"), @r###"
+    assert_snapshot!(space.read_string("src/my_project/test.py"), @r###"
     def hello():
         return "Hello World"
     "###);
