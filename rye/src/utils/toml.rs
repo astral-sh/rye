@@ -48,7 +48,9 @@ pub fn reformat_array_multiline(deps: &mut Array) {
                 rv.push_str(comment);
             }
         }
-        rv.push('\n');
+        if !rv.is_empty() || !deps.is_empty() {
+            rv.push('\n');
+        }
         rv
     });
     deps.set_trailing_comma(true);
