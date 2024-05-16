@@ -26,6 +26,17 @@ When syncing the project itself is never installed into the virtualenv as it's n
 considered to be a valid package.  Likewise you cannot publish virtual packages to
 PyPI or another index.
 
+### Run tests outside of application code
+
+If you tests are separated from your application code (typically by putting them in a
+`tests` folder next to the `src` folder) you need to add the `src` folder to the python
+path. With pytest you can achieve this with the following section in your `pyproject.toml`
+file:
+```toml
+[tool.pytest.ini_options]
+pythonpath = "src"
+```
+
 ## Limitations
 
 Virtual projects can not have optional dependencies.  These even if declared are not
