@@ -9,6 +9,8 @@ _Unreleased_
 
 - Use uv in `rye build` when uv is enabled. #978
 
+- Invoke Rye scripts from the project root.  #932
+
 <!-- released start -->
 
 ## 0.33.0

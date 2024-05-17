@@ -138,6 +138,7 @@ fn invoke_script(
     let mut cmd = Command::new(&args[0]);
     cmd.args(&args[1..]);
     cmd.env("VIRTUAL_ENV", &*pyproject.venv_path());
+    cmd.current_dir(pyproject.root_path());
     if let Some(path) = env::var_os("PATH") {
         let mut paths = split_paths(&path).collect::<Vec<_>>();
         paths.insert(0, venv_bin.into());
