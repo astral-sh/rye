@@ -175,15 +175,19 @@ pub fn update_workspace_lockfile(
 
         local_projects.insert(pyproject.normalized_name()?, rel_url);
 
+        projects.push(pyproject);
+    }
+    
+    for pyproject in &projects {
         dump_dependencies(
-            &pyproject,
+            pyproject,
             &local_projects,
             req_file.as_file_mut(),
             DependencyKind::Normal,
         )?;
         if lock_mode == LockMode::Dev {
             dump_dependencies(
-                &pyproject,
+                pyproject,
                 &local_projects,
                 req_file.as_file_mut(),
                 DependencyKind::Dev,
@@ -193,7 +197,7 @@ pub fn update_workspace_lockfile(
         if workspace.per_member_lock && !pyproject.is_workspace_root() {
             update_single_project_lockfile(
                 py_ver,
-                &pyproject,
+                pyproject,
                 lock_mode,
                 &pyproject.root_path().join(lockfile.file_name().unwrap()),
                 output,
@@ -202,8 +206,6 @@ pub fn update_workspace_lockfile(
                 keyring_provider,
             )?;
         }
-
-        projects.push(pyproject);
     }
 
     req_file.flush()?;
