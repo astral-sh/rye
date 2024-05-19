@@ -219,6 +219,40 @@ impl Space {
         assert!(status.success());
     }
 
+    #[allow(unused)]
+    pub fn init_virtual(&self, name: &str) {
+        let status = self
+            .cmd(get_bin())
+            .arg("init")
+            .arg("--name")
+            .arg(name)
+            .arg("--virtual")
+            .arg("-q")
+            .current_dir(self.project_path())
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
+
+    #[allow(unused)]
+    pub fn init_workspace_member(&self, name: &str) {
+        // First we need to create the directory where it will be placed
+        let p = self.project_path().join(name);
+        fs::create_dir(p).ok();
+
+        // Create the workspace member
+        let status = self
+            .cmd(get_bin())
+            .arg("init")
+            .arg("--name")
+            .arg(name)
+            .arg("-q")
+            .current_dir(self.project_path().join(name))
+            .status()
+            .unwrap();
+        assert!(status.success());
+    }
+
     pub fn rye_home(&self) -> &Path {
         &self.rye_home
     }

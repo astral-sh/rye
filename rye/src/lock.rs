@@ -174,24 +174,36 @@ pub fn update_workspace_lockfile(
         }
 
         local_projects.insert(pyproject.normalized_name()?, rel_url);
-        projects.push(pyproject);
-    }
 
-    for pyproject in &projects {
         dump_dependencies(
-            pyproject,
+            &pyproject,
             &local_projects,
             req_file.as_file_mut(),
             DependencyKind::Normal,
         )?;
         if lock_mode == LockMode::Dev {
             dump_dependencies(
-                pyproject,
+                &pyproject,
                 &local_projects,
                 req_file.as_file_mut(),
                 DependencyKind::Dev,
             )?;
         }
+
+        if workspace.per_member_lock && !pyproject.is_workspace_root() {
+            update_single_project_lockfile(
+                py_ver,
+                &pyproject,
+                lock_mode,
+                &pyproject.root_path().join(lockfile.file_name().unwrap()),
+                output,
+                sources,
+                &lock_options,
+                keyring_provider,
+            )?;
+        }
+
+        projects.push(pyproject);
     }
 
     req_file.flush()?;
@@ -347,12 +359,9 @@ pub fn update_single_project_lockfile(
     if !pyproject.is_virtual() {
         let features_by_project = collect_workspace_features(&lock_options);
         let applicable_extras = format_project_extras(features_by_project.as_ref(), pyproject)?;
-        writeln!(
-            req_file,
-            "-e {}{}",
-            make_relative_url(&pyproject.root_path(), &pyproject.workspace_path())?,
-            applicable_extras
-        )?;
+        // We can always write `file:.` here as this will only ever be called when updating
+        // a lockfile of a project de-attached from the workspace
+        writeln!(req_file, "-e file:.{}", applicable_extras)?;
     }
 
     for dep in pyproject.iter_dependencies(DependencyKind::Normal) {

@@ -373,6 +373,7 @@ pub struct Workspace {
     root: PathBuf,
     doc: DocumentMut,
     members: Option<Vec<String>>,
+    pub per_member_lock: bool,
 }
 
 impl Workspace {
@@ -393,6 +394,10 @@ impl Workspace {
                             .filter_map(|item| item.as_str().map(|x| x.to_string()))
                             .collect::<Vec<_>>()
                     }),
+                per_member_lock: workspace
+                    .get("per_member_lock")
+                    .and_then(|x| x.as_bool())
+                    .unwrap_or(false),
             })
     }
 
