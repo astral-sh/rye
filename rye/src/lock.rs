@@ -177,7 +177,7 @@ pub fn update_workspace_lockfile(
 
         projects.push(pyproject);
     }
-    
+
     for pyproject in &projects {
         dump_dependencies(
             pyproject,
