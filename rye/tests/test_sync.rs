@@ -451,11 +451,11 @@ fn test_workspace_sync_with_per_member_lock() {
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
     Python version: cpython@3.12.3
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
-    Generating production lockfile: [TEMP_PATH]/project/my-workspace-member/requirements.lock
     Generating production lockfile: [TEMP_PATH]/project/my-other-workspace-member/requirements.lock
+    Generating production lockfile: [TEMP_PATH]/project/my-workspace-member/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
-    Generating dev lockfile: [TEMP_PATH]/project/my-workspace-member/requirements-dev.lock
     Generating dev lockfile: [TEMP_PATH]/project/my-other-workspace-member/requirements-dev.lock
+    Generating dev lockfile: [TEMP_PATH]/project/my-workspace-member/requirements-dev.lock
     Installing dependencies
     Done!
 
@@ -477,11 +477,11 @@ fn test_workspace_sync_with_per_member_lock() {
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
-    Generating production lockfile: [TEMP_PATH]/project/my-workspace-member/requirements.lock
     Generating production lockfile: [TEMP_PATH]/project/my-other-workspace-member/requirements.lock
+    Generating production lockfile: [TEMP_PATH]/project/my-workspace-member/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
-    Generating dev lockfile: [TEMP_PATH]/project/my-workspace-member/requirements-dev.lock
     Generating dev lockfile: [TEMP_PATH]/project/my-other-workspace-member/requirements-dev.lock
+    Generating dev lockfile: [TEMP_PATH]/project/my-workspace-member/requirements-dev.lock
     Installing dependencies
     Done!
 
@@ -514,11 +514,11 @@ fn test_workspace_sync_with_per_member_lock() {
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
-    Generating production lockfile: [TEMP_PATH]/project/my-workspace-member/requirements.lock
     Generating production lockfile: [TEMP_PATH]/project/my-other-workspace-member/requirements.lock
+    Generating production lockfile: [TEMP_PATH]/project/my-workspace-member/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
-    Generating dev lockfile: [TEMP_PATH]/project/my-workspace-member/requirements-dev.lock
     Generating dev lockfile: [TEMP_PATH]/project/my-other-workspace-member/requirements-dev.lock
+    Generating dev lockfile: [TEMP_PATH]/project/my-workspace-member/requirements-dev.lock
     Installing dependencies
     Done!
 

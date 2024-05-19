@@ -477,7 +477,7 @@ impl Workspace {
             .sort_by(
                 // Perform proper sorting to avoid platform dependency to ensure
                 // output reproducibility. This is important for tests
-                |x,y| x.file_name().cmp(y.file_name())
+                |x, y| x.file_name().cmp(y.file_name()),
             )
             .into_iter()
             .filter_entry(|entry| {
