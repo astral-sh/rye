@@ -474,6 +474,11 @@ impl Workspace {
         self: &'a Arc<Self>,
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
         walkdir::WalkDir::new(&self.root)
+            .sort_by(
+                // Perform proper sorting to avoid platform dependency to ensure
+                // output reproducibility. This is important for tests
+                |x,y| x.file_name().cmp(y.file_name())
+            )
             .into_iter()
             .filter_entry(|entry| {
                 !(entry.file_type().is_dir() && skip_recurse_into(entry.file_name()))
