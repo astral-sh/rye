@@ -238,7 +238,7 @@ impl Space {
     pub fn init_workspace_member(&self, name: &str) {
         // First we need to create the directory where it will be placed
         let p = self.project_path().join(name);
-        fs::create_dir(p).ok();
+        fs::create_dir(p.clone()).ok();
 
         // Create the workspace member
         let status = self
