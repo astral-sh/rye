@@ -265,10 +265,6 @@ fn test_autosync_remember() {
     "###);
 }
 
-// `test_workspace_sync` and `test_workspace_sync_with_per_member_lock` are disabled on Windows
-// due to Windows quirks when it comes to handling directory change times.
-// For more context, see https://github.com/astral-sh/rye/pull/1094
-#[cfg(unix)]
 #[test]
 fn test_workspace_sync() {
     // remove the dependency source markers since they are instable between platforms
@@ -280,14 +276,12 @@ fn test_workspace_sync() {
     let space = Space::new();
     space.init_virtual("my-workspace-project");
     space.init_workspace_member("my-workspace-member");
-    space.init_workspace_member("my-other-workspace-member");
+    space.init_virtual_workspace_member("my-other-workspace-member");
 
     space.edit_toml("pyproject.toml", |doc| {
         let mut member_array = Array::default();
-        member_array.push("my-workspace-member");
-        member_array.push("my-other-workspace-member");
+        member_array.push("my-*");
 
-        doc["tool"]["rye"]["virtual"] = value(true);
         doc["tool"]["rye"]["workspace"]["members"] = value(member_array);
     });
 
@@ -303,9 +297,8 @@ fn test_workspace_sync() {
     Done!
 
     ----- stderr -----
-    Built 2 editables in [EXECUTION_TIME]
-    Installed 2 packages in [EXECUTION_TIME]
-     + my-other-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-other-workspace-member)
+    Built 1 editable in [EXECUTION_TIME]
+    Installed 1 package in [EXECUTION_TIME]
      + my-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-workspace-member)
     "###);
 
@@ -358,17 +351,13 @@ fn test_workspace_sync() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 9 packages in [EXECUTION_TIME]
-    Uninstalled 1 package in [EXECUTION_TIME]
-    Installed 10 packages in [EXECUTION_TIME]
+    Installed 9 packages in [EXECUTION_TIME]
      + annotated-types==0.6.0
      + anyio==3.7.1
      + fastapi==0.104.1
      + idna==3.4
-     - my-other-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-other-workspace-member)
-     + my-other-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-other-workspace-member)
      + pydantic==2.5.1
      + pydantic-core==2.14.3
      + sniffio==1.3.0
@@ -387,7 +376,6 @@ fn test_workspace_sync() {
     #   with-sources: false
     #   generate-hashes: false
 
-    -e file:my-other-workspace-member
     -e file:my-workspace-member
     annotated-types==0.6.0
     anyio==3.7.1
@@ -425,7 +413,6 @@ fn test_workspace_sync() {
     .is_err());
 }
 
-#[cfg(unix)]
 #[test]
 fn test_workspace_sync_with_per_member_lock() {
     // remove the dependency source markers since they are instable between platforms
@@ -435,16 +422,14 @@ fn test_workspace_sync_with_per_member_lock() {
     let _guard = settings.bind_to_scope();
 
     let space = Space::new();
-    space.init_virtual("my-workspace-project");
+    space.init_virtual("my-project");
     space.init_workspace_member("my-workspace-member");
-    space.init_workspace_member("my-other-workspace-member");
+    space.init_virtual_workspace_member("my-other-workspace-member");
 
     space.edit_toml("pyproject.toml", |doc| {
         let mut member_array = Array::default();
-        member_array.push("my-workspace-member");
-        member_array.push("my-other-workspace-member");
+        member_array.push("my-*");
 
-        doc["tool"]["rye"]["virtual"] = value(true);
         doc["tool"]["rye"]["workspace"]["members"] = value(member_array);
         doc["tool"]["rye"]["workspace"]["per_member_lock"] = value(true);
     });
@@ -465,9 +450,8 @@ fn test_workspace_sync_with_per_member_lock() {
     Done!
 
     ----- stderr -----
-    Built 2 editables in [EXECUTION_TIME]
-    Installed 2 packages in [EXECUTION_TIME]
-     + my-other-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-other-workspace-member)
+    Built 1 editable in [EXECUTION_TIME]
+    Installed 1 package in [EXECUTION_TIME]
      + my-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-workspace-member)
     "###);
 
@@ -528,17 +512,13 @@ fn test_workspace_sync_with_per_member_lock() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 9 packages in [EXECUTION_TIME]
-    Uninstalled 1 package in [EXECUTION_TIME]
-    Installed 10 packages in [EXECUTION_TIME]
+    Installed 9 packages in [EXECUTION_TIME]
      + annotated-types==0.6.0
      + anyio==3.7.1
      + fastapi==0.104.1
      + idna==3.4
-     - my-other-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-other-workspace-member)
-     + my-other-workspace-member==0.1.0 (from file:[TEMP_PATH]/project/my-other-workspace-member)
      + pydantic==2.5.1
      + pydantic-core==2.14.3
      + sniffio==1.3.0
@@ -557,7 +537,6 @@ fn test_workspace_sync_with_per_member_lock() {
     #   with-sources: false
     #   generate-hashes: false
 
-    -e file:my-other-workspace-member
     -e file:my-workspace-member
     annotated-types==0.6.0
     anyio==3.7.1
@@ -612,7 +591,6 @@ fn test_workspace_sync_with_per_member_lock() {
     #   with-sources: false
     #   generate-hashes: false
 
-    -e file:.
     annotated-types==0.6.0
     anyio==3.7.1
     colorama==0.4.6
