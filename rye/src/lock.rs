@@ -174,7 +174,6 @@ pub fn update_workspace_lockfile(
         }
 
         local_projects.insert(pyproject.normalized_name()?, rel_url);
-
         projects.push(pyproject);
     }
 

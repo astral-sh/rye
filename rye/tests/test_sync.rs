@@ -265,6 +265,10 @@ fn test_autosync_remember() {
     "###);
 }
 
+// `test_workspace_sync` and `test_workspace_sync_with_per_member_lock` are disabled on Windows
+// due to Windows quirks when it comes to handling directory change times.
+// For more context, see https://github.com/astral-sh/rye/pull/1094
+#[cfg(unix)]
 #[test]
 fn test_workspace_sync() {
     // remove the dependency source markers since they are instable between platforms
@@ -421,6 +425,7 @@ fn test_workspace_sync() {
     .is_err());
 }
 
+#[cfg(unix)]
 #[test]
 fn test_workspace_sync_with_per_member_lock() {
     // remove the dependency source markers since they are instable between platforms
