@@ -3,13 +3,24 @@
 This file contains tracks the changes landing in Rye.  It includes changes
 that were not yet released.
 
+<!-- released start -->
+
 ## 0.34.0
 
-_Unreleased_
+Released on 2024-05-20.
 
-- Use uv in `rye build` when uv is enabled. #978
-
-<!-- released start -->
+* Add nushell completion support by @MilesCranmer in https://github.com/astral-sh/rye/pull/1030
+* Use uv in rye build when enabled by @bluss in https://github.com/astral-sh/rye/pull/978
+* Add short version add -d for rye add --dev by @bluss in https://github.com/astral-sh/rye/pull/1044
+* Flip uv to the default Rye backend by @charliermarsh in https://github.com/astral-sh/rye/pull/1053
+* Fix Rye not using user-chosen toolchain as default during installation by @pjdon in https://github.com/astral-sh/rye/pull/1054
+* Add keyring support for uv by @emarsden-iso in https://github.com/astral-sh/rye/pull/1016
+* Allow to generate lockfiles with hashes when using uv by @mvaled in https://github.com/astral-sh/rye/pull/1070
+* Bump ruff to 0.4.4 by @davfsa in https://github.com/astral-sh/rye/pull/1075
+* Fix TOML array formatting by @my1e5 in https://github.com/astral-sh/rye/pull/1084
+* Bump uv to 0.1.44 in https://github.com/astral-sh/rye/pull/1085
+* Discover cosmo-ified (`.com`) binaries on Windows by @mataha in https://github.com/astral-sh/rye/pull/1091
+* Write `use-uv = true` in no-prompt mode by @charliermarsh in https://github.com/astral-sh/rye/pull/1098
 
 ## 0.33.0
 
