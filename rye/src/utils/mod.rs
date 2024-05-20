@@ -166,7 +166,7 @@ pub fn is_executable(path: &Path) -> bool {
     }
     #[cfg(windows)]
     {
-        ["exe", "bat", "cmd"]
+        ["com", "exe", "bat", "cmd"]
             .iter()
             .any(|x| path.with_extension(x).is_file())
     }
@@ -181,7 +181,7 @@ pub fn get_short_executable_name(path: &Path) -> String {
     #[cfg(windows)]
     {
         let short_name = path.file_name().unwrap().to_string_lossy().to_lowercase();
-        for ext in [".exe", ".bat", ".cmd"] {
+        for ext in [".com", ".exe", ".bat", ".cmd"] {
             if let Some(base_name) = short_name.strip_suffix(ext) {
                 return base_name.into();
             }
