@@ -247,7 +247,7 @@ impl Space {
             .arg("--name")
             .arg(name)
             .arg("-q")
-            .current_dir(self.project_path().join(name))
+            .current_dir(p)
             .status()
             .unwrap();
         assert!(status.success());
