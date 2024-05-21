@@ -208,15 +208,9 @@ pub struct Args {
     /// Add this to an optional dependency group.
     #[arg(long, conflicts_with = "dev", conflicts_with = "excluded")]
     optional: Option<String>,
-    /// Include pre-releases when finding a package version.
-    #[arg(long)]
-    pre: bool,
     /// Overrides the pin operator
     #[arg(long)]
     pin: Option<Pin>,
-    /// Attempt to use `keyring` for authentication for index URLs.
-    #[arg(long, value_enum, default_value_t)]
-    keyring_provider: KeyringProvider,
     /// Runs `sync` even if auto-sync is disabled.
     #[arg(long)]
     sync: bool,
@@ -229,6 +223,19 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
+
+    /// Include pre-releases when finding a package version and automatically syncing the workspace.
+    #[arg(long)]
+    pre: bool,
+    /// Set to `true` to lock with sources in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    with_sources: bool,
+    /// Set to `true` to lock with hashes in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    generate_hashes: bool,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -264,8 +271,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         requirements.push(requirement);
     }
 
-    let keyring_provider = cmd.keyring_provider;
-
     if !cmd.excluded {
         if cfg.use_uv() {
             sync(SyncOptions::python_only().pyproject(None))
@@ -277,10 +282,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 cmd.pre,
                 output,
                 &default_operator,
-                keyring_provider,
+                cmd.keyring_provider,
             )?;
         } else {
-            if keyring_provider != KeyringProvider::Disabled {
+            if cmd.keyring_provider != KeyringProvider::Disabled {
                 bail!("`--keyring-provider` option requires the uv backend");
             }
             for requirement in &mut requirements {
@@ -314,7 +319,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (cfg.autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject_toml, output, keyring_provider)?;
+        autosync(
+            &pyproject_toml,
+            output,
+            cmd.pre,
+            cmd.with_sources,
+            cmd.generate_hashes,
+            cmd.keyring_provider,
+        )?;
     }
 
     Ok(())
