@@ -29,10 +29,7 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
-    /// Attempt to use `keyring` for authentication for index URLs.
-    #[arg(long, value_enum, default_value_t)]
-    keyring_provider: KeyringProvider,
-    // Disable test output capture to stdout
+    /// Disable test output capture to stdout.
     #[arg(long = "no-capture", short = 's')]
     no_capture: bool,
     /// Enables verbose diagnostics.
@@ -44,6 +41,19 @@ pub struct Args {
     /// Extra arguments to pytest
     #[arg(last = true)]
     extra_args: Vec<OsString>,
+
+    /// Include pre-releases when automatically syncing the workspace.
+    #[arg(long)]
+    pre: bool,
+    /// Set to `true` to lock with sources in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    with_sources: bool,
+    /// Set to `true` to lock with hashes in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    generate_hashes: bool,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -77,7 +87,14 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         let has_pytest = has_pytest_dependency(&projects)?;
         if has_pytest {
             if Config::current().autosync() {
-                autosync(&projects[0], output, cmd.keyring_provider)?;
+                autosync(
+                    &projects[0],
+                    output,
+                    cmd.pre,
+                    cmd.with_sources,
+                    cmd.generate_hashes,
+                    cmd.keyring_provider,
+                )?;
             } else {
                 bail!("pytest not installed but in dependencies. Run `rye sync`.")
             }

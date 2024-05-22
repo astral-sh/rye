@@ -319,6 +319,9 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
 pub fn autosync(
     pyproject: &PyProject,
     output: CommandOutput,
+    pre: bool,
+    with_sources: bool,
+    generate_hashes: bool,
     keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     sync(SyncOptions {
@@ -327,7 +330,12 @@ pub fn autosync(
         mode: SyncMode::Regular,
         force: false,
         no_lock: false,
-        lock_options: LockOptions::default(),
+        lock_options: LockOptions {
+            pre,
+            with_sources,
+            generate_hashes,
+            ..Default::default()
+        },
         pyproject: Some(pyproject.toml_path().to_path_buf()),
         keyring_provider,
     })

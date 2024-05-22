@@ -37,15 +37,15 @@ pub struct Args {
     /// Attempt to use `keyring` for authentication for index URLs.
     #[arg(long, value_enum, default_value_t)]
     keyring_provider: KeyringProvider,
+    /// Set to true to lock with hashes in the lockfile.
+    #[arg(long)]
+    generate_hashes: bool,
     /// Reset prior lock options.
     #[arg(long)]
     reset: bool,
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
-    /// Set to true to lock with hashes in the lockfile.
-    #[arg(long)]
-    generate_hashes: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
