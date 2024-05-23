@@ -23,6 +23,7 @@ fn test_empty_sync() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
+    Resolved 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
@@ -71,7 +72,7 @@ fn test_add_and_sync_no_auto_sync() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -107,7 +108,7 @@ fn test_add_autosync() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -145,6 +146,7 @@ fn test_autosync_remember() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
+    Resolved 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
@@ -165,7 +167,7 @@ fn test_autosync_remember() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
@@ -218,7 +220,7 @@ fn test_autosync_remember() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 1 package in [EXECUTION_TIME]
+    Resolved 10 packages in [EXECUTION_TIME]
     Downloaded 1 package in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 2 packages in [EXECUTION_TIME]

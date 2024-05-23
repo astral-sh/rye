@@ -27,7 +27,7 @@ fn test_add_flask() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -63,7 +63,7 @@ fn test_add_flask_dotenv() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 9 packages in [EXECUTION_TIME]
+    Resolved 10 packages in [EXECUTION_TIME]
     Downloaded 9 packages in [EXECUTION_TIME]
     Installed 10 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -116,7 +116,7 @@ fn test_add_from_find_links() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 2 packages in [EXECUTION_TIME]
+    Resolved 3 packages in [EXECUTION_TIME]
     Downloaded 2 packages in [EXECUTION_TIME]
     Installed 3 packages in [EXECUTION_TIME]
      + colorama==0.4.6
@@ -148,7 +148,7 @@ fn test_add_flask_wrong_venv_exported() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -183,7 +183,7 @@ fn test_add_explicit_version_or_url() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 2 packages in [EXECUTION_TIME]
+    Resolved 3 packages in [EXECUTION_TIME]
     Downloaded 2 packages in [EXECUTION_TIME]
     Installed 3 packages in [EXECUTION_TIME]
      + markupsafe==2.1.3
@@ -205,7 +205,7 @@ fn test_add_explicit_version_or_url() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 1 package in [EXECUTION_TIME]
+    Resolved 4 packages in [EXECUTION_TIME]
     Downloaded 1 package in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 2 packages in [EXECUTION_TIME]
