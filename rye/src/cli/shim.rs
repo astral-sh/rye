@@ -327,7 +327,7 @@ pub fn execute_shim(args: &[OsString]) -> Result<(), Error> {
                     "Target Python binary '{}' not found.\nYou are currently outside of a project. \
                     To resolve this, consider enabling global shims. \
                     Global shims allow for a Rye-managed Python installation.\n\
-                    For more information: https://rye-up.com/guide/shims/#global-shims", shim_name
+                    For more information: https://rye.astral.sh/guide/shims/#global-shims", shim_name
                 );
             }
         } else {

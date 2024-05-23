@@ -22,21 +22,21 @@ You can also reach out [via Twitter](https://twitter.com/mitsuhiko) or
 Want to show that you are using Rye?  Why not throw a badge into your project's `README.md`:
 
 ```md
-[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye-up.com)
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye.astral.sh)
 ```
 
 ... or `README.rst`:
 
 ```rst
 .. image:: https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json
-    :target: https://rye-up.com
+    :target: https://rye.astral.sh
     :alt: Rye
 ```
 
 ... or, as HTML:
 
 ```html
-<a href="https://rye-up.com"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json" alt="Rye" style="max-width:100%;"></a>
+<a href="https://rye.astral.sh"><img src="https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json" alt="Rye" style="max-width:100%;"></a>
 ```
 
-[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye-up.com)
+[![Rye](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/rye/main/artwork/badge.json)](https://rye.astral.sh)

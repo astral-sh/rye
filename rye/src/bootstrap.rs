@@ -618,6 +618,6 @@ fn validate_shared_libraries(py: &Path) -> Result<(), Error> {
     }
     bail!(
         "Python installation is unable to run on this machine due to missing libraries.\n\
-        Visit https://rye-up.com/guide/faq/#missing-shared-libraries-on-linux for next steps."
+        Visit https://rye.astral.sh/guide/faq/#missing-shared-libraries-on-linux for next steps."
     );
 }

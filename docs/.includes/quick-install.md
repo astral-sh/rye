@@ -4,7 +4,7 @@
     operating system and CPU architecture and install it:
 
     ```bash
-    curl -sSf https://rye-up.com/get | bash
+    curl -sSf https://rye.astral.sh/get | bash
     ```
 
     Alternatively if you don't trust this approach, you can download the latest release
@@ -25,7 +25,7 @@
     operating system and CPU architecture and install it:
 
     ```bash
-    curl -sSf https://rye-up.com/get | bash
+    curl -sSf https://rye.astral.sh/get | bash
     ```
 
     Alternatively if you don't trust this approach, you can download the latest release
