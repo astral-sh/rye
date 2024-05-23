@@ -47,7 +47,7 @@ The installation takes just a minute:
 * **Linux and macOS:**
 
     ```
-    curl -sSf https://rye.astral.sh/get | sh
+    curl -sSf https://rye.astral.sh/get | bash
     ```
 
 * **Windows:**
