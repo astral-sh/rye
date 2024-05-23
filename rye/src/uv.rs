@@ -311,7 +311,7 @@ impl Uv {
             format!(
                 "unable to create self venv using {}. It might be that \
                       the used Python build is incompatible with this machine. \
-                      For more information see https://rye-up.com/guide/installation/",
+                      For more information see https://rye.astral.sh/guide/installation/",
                 py_bin.display()
             )
         })?;

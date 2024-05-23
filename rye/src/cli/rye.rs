@@ -533,7 +533,7 @@ fn perform_install(
         echo!("automatically started the installer for you. For more information");
         echo!(
             "read {}",
-            style("https://rye-up.com/guide/installation/").yellow()
+            style("https://rye.astral.sh/guide/installation/").yellow()
         );
     }
 
@@ -571,7 +571,7 @@ fn perform_install(
         echo!("enable symlinks. You need to enable this before continuing the setup.");
         echo!(
             "Learn more at {}",
-            style("https://rye-up.com/guide/faq/#windows-developer-mode").yellow()
+            style("https://rye.astral.sh/guide/faq/#windows-developer-mode").yellow()
         );
     }
 
@@ -782,7 +782,7 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
                 );
                 echo!();
             }
-            echo!("For more information read https://rye-up.com/guide/installation/");
+            echo!("For more information read https://rye.astral.sh/guide/installation/");
         }
     }
     // On Windows, we add the rye directory to the user's PATH unconditionally.
