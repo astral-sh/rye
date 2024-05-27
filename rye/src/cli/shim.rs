@@ -186,99 +186,101 @@ fn get_shim_target(
     pyproject: Option<&PyProject>,
 ) -> Result<Option<Vec<OsString>>, Error> {
     // if we can find a project, we always look for a local virtualenv first for shims.
-    if let Some(pyproject) = pyproject {
-        // However we only allow automatic syncing, if we are rye managed.
-        if pyproject.rye_managed() {
+    match pyproject {
+        Some(pyproject) if pyproject.rye_managed() => {
+            // However we only allow automatic syncing, if we are rye managed.
             let _guard = redirect_to_stderr(true);
             sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
-        }
 
-        if is_python_shim(target)
-            && args
-                .get(1)
-                .and_then(|x| x.as_os_str().to_str())
-                .map_or(false, |x| x.starts_with('+'))
-        {
-            bail!("Explicit Python selection is not possible within Rye managed projects.");
-        }
+            if is_python_shim(target)
+                && args
+                    .get(1)
+                    .and_then(|x| x.as_os_str().to_str())
+                    .map_or(false, |x| x.starts_with('+'))
+            {
+                bail!("Explicit Python selection is not possible within Rye managed projects.");
+            }
 
-        let mut args = args.to_vec();
-        let folder = pyproject.venv_path().join(VENV_BIN);
-        if let Some(m) = which::which_in_global(target, Some(&folder))?.next() {
-            args[0] = m.into();
-            return Ok(Some(args));
-        }
+            let mut args = args.to_vec();
+            let folder = pyproject.venv_path().join(VENV_BIN);
+            if let Some(m) = which::which_in_global(target, Some(&folder))?.next() {
+                args[0] = m.into();
+                return Ok(Some(args));
+            }
 
-        // on windows a virtualenv does not contain a python3 executable normally.  In that
-        // case however we want to ensure that we do not shadow out to the global python3
-        // executable which might be from the python store.
-        #[cfg(windows)]
-        {
-            if matches_shim(target, "python3") {
-                if let Some(m) = which::which_in_global("python", Some(folder))?.next() {
-                    args[0] = m.into();
-                    return Ok(Some(args));
+            // on windows a virtualenv does not contain a python3 executable normally.  In that
+            // case however we want to ensure that we do not shadow out to the global python3
+            // executable which might be from the python store.
+            #[cfg(windows)]
+            {
+                if matches_shim(target, "python3") {
+                    if let Some(m) = which::which_in_global("python", Some(folder))?.next() {
+                        args[0] = m.into();
+                        return Ok(Some(args));
+                    }
                 }
             }
+
+            // secret pip shims
+            if matches_shim(target, "pip") || matches_shim(target, "pip3") {
+                return Ok(Some(get_pip_shim(pyproject, args, CommandOutput::Normal)?));
+            }
         }
+        _ => {
+            // Global shims (either implicit or requested)
+            if is_python_shim(target) {
+                let config = Config::current();
+                let mut remove1 = false;
 
-        // secret pip shims
-        if matches_shim(target, "pip") || matches_shim(target, "pip3") {
-            return Ok(Some(get_pip_shim(pyproject, args, CommandOutput::Normal)?));
+                let (version_request, implicit_request) = if let Some(rest) = args
+                    .get(1)
+                    .and_then(|x| x.as_os_str().to_str())
+                    .and_then(|x| x.strip_prefix('+'))
+                {
+                    remove1 = true;
+                    (
+                        PythonVersionRequest::from_str(rest)
+                            .context("invalid Python version requested from command line")?,
+                        false,
+                    )
+                } else if config.global_python() {
+                    (
+                        match get_python_version_request_from_pyenv_pin(&std::env::current_dir()?) {
+                            Some(version_request) => version_request,
+                            None => config.default_toolchain()?,
+                        },
+                        true,
+                    )
+                } else {
+                    // if neither requested explicitly, nor global-python is enabled, we fall
+                    // back to the next shadowed target
+                    return find_shadowed_target(target, args);
+                };
+
+                let py_ver = latest_available_python_version(&version_request)
+                    .ok_or_else(|| anyhow!("Unable to determine target Python version"))?;
+                let py = get_toolchain_python_bin(&py_ver)?;
+                if !py.is_file() {
+                    let hint = if implicit_request {
+                        Cow::Borrowed("rye fetch")
+                    } else {
+                        Cow::Owned(format!("rye fetch {}", py_ver))
+                    };
+                    bail!(
+                        "Requested Python version ({}) is not installed. Install with `{}`",
+                        py_ver,
+                        hint
+                    );
+                }
+
+                let mut args = args.to_vec();
+                args[0] = py.into();
+                if remove1 {
+                    args.remove(1);
+                }
+                return Ok(Some(args));
+            }
         }
-
-    // Global shims (either implicit or requested)
-    } else if is_python_shim(target) {
-        let config = Config::current();
-        let mut remove1 = false;
-
-        let (version_request, implicit_request) = if let Some(rest) = args
-            .get(1)
-            .and_then(|x| x.as_os_str().to_str())
-            .and_then(|x| x.strip_prefix('+'))
-        {
-            remove1 = true;
-            (
-                PythonVersionRequest::from_str(rest)
-                    .context("invalid Python version requested from command line")?,
-                false,
-            )
-        } else if config.global_python() {
-            (
-                match get_python_version_request_from_pyenv_pin(&std::env::current_dir()?) {
-                    Some(version_request) => version_request,
-                    None => config.default_toolchain()?,
-                },
-                true,
-            )
-        } else {
-            // if neither requested explicitly, nor global-python is enabled, we fall
-            // back to the next shadowed target
-            return find_shadowed_target(target, args);
-        };
-
-        let py_ver = latest_available_python_version(&version_request)
-            .ok_or_else(|| anyhow!("Unable to determine target Python version"))?;
-        let py = get_toolchain_python_bin(&py_ver)?;
-        if !py.is_file() {
-            let hint = if implicit_request {
-                Cow::Borrowed("rye fetch")
-            } else {
-                Cow::Owned(format!("rye fetch {}", py_ver))
-            };
-            bail!(
-                "Requested Python version ({}) is not installed. Install with `{}`",
-                py_ver,
-                hint
-            );
-        }
-
-        let mut args = args.to_vec();
-        args[0] = py.into();
-        if remove1 {
-            args.remove(1);
-        }
-        return Ok(Some(args));
     }
 
     // if we make it this far, we did not find a shim in the project, look for
