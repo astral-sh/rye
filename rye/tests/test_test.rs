@@ -64,14 +64,14 @@ fn test_basic_tool_behavior() {
     exit_code: 1
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
     Done!
     Running tests for foo ([TEMP_PATH]/project)
     ============================= test session starts =============================
-    platform [PLATFORM] -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM] -- Python 3.12.3, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 
@@ -91,7 +91,7 @@ fn test_basic_tool_behavior() {
 
     ----- stderr -----
     Built 2 editables in [EXECUTION_TIME]
-    Resolved 3 packages in [EXECUTION_TIME]
+    Resolved 7 packages in [EXECUTION_TIME]
     Downloaded 3 packages in [EXECUTION_TIME]
     Installed 7 packages in [EXECUTION_TIME]
      + child-dep==0.1.0 (from file:[TEMP_PATH]/project/child-dep)
@@ -109,7 +109,7 @@ fn test_basic_tool_behavior() {
     ----- stdout -----
     Running tests for child-dep ([TEMP_PATH]/project/child-dep)
     ============================= test session starts =============================
-    platform [PLATFORM] -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM] -- Python 3.12.3, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project/child-dep
     collected 2 items
 
@@ -129,7 +129,7 @@ fn test_basic_tool_behavior() {
 
     Running tests for foo ([TEMP_PATH]/project)
     ============================= test session starts =============================
-    platform [PLATFORM] -- Python 3.12.2, pytest-7.4.3, pluggy-1.3.0
+    platform [PLATFORM] -- Python 3.12.3, pytest-7.4.3, pluggy-1.3.0
     rootdir: [TEMP_PATH]/project
     collected 2 items
 

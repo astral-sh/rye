@@ -253,7 +253,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
     if metadata.author.is_none() {
         is_metadata_author_none = true;
-        metadata.author = author.clone();
+        metadata.author.clone_from(&author);
     }
     if metadata.requires_python.is_none() {
         metadata.requires_python = Some(requires_python);

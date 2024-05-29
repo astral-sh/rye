@@ -16,7 +16,7 @@ fn test_add_flask() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added flask>=3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -27,7 +27,7 @@ fn test_add_flask() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -52,7 +52,7 @@ fn test_add_flask_dotenv() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added flask[dotenv]>=3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -63,7 +63,7 @@ fn test_add_flask_dotenv() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 9 packages in [EXECUTION_TIME]
+    Resolved 10 packages in [EXECUTION_TIME]
     Downloaded 9 packages in [EXECUTION_TIME]
     Installed 10 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -105,7 +105,7 @@ fn test_add_from_find_links() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added tqdm>=4.66.1 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -116,7 +116,7 @@ fn test_add_from_find_links() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 2 packages in [EXECUTION_TIME]
+    Resolved 3 packages in [EXECUTION_TIME]
     Downloaded 2 packages in [EXECUTION_TIME]
     Installed 3 packages in [EXECUTION_TIME]
      + colorama==0.4.6
@@ -137,7 +137,7 @@ fn test_add_flask_wrong_venv_exported() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -148,7 +148,7 @@ fn test_add_flask_wrong_venv_exported() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -173,7 +173,7 @@ fn test_add_explicit_version_or_url() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added werkzeug==3.0.0 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
@@ -183,7 +183,7 @@ fn test_add_explicit_version_or_url() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 2 packages in [EXECUTION_TIME]
+    Resolved 3 packages in [EXECUTION_TIME]
     Downloaded 2 packages in [EXECUTION_TIME]
     Installed 3 packages in [EXECUTION_TIME]
      + markupsafe==2.1.3
@@ -205,7 +205,7 @@ fn test_add_explicit_version_or_url() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 1 package in [EXECUTION_TIME]
+    Resolved 4 packages in [EXECUTION_TIME]
     Downloaded 1 package in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 2 packages in [EXECUTION_TIME]

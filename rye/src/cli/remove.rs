@@ -5,6 +5,7 @@ use clap::Parser;
 use pep508_rs::Requirement;
 
 use crate::config::Config;
+use crate::lock::KeyringProvider;
 use crate::pyproject::{DependencyKind, PyProject};
 use crate::sync::{autosync, SyncMode};
 use crate::utils::{format_requirement, CommandOutput};
@@ -33,6 +34,19 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
+
+    /// Include pre-releases when automatically syncing the workspace.
+    #[arg(long)]
+    pre: bool,
+    /// Set to `true` to lock with sources in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    with_sources: bool,
+    /// Set to `true` to lock with hashes in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    generate_hashes: bool,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -65,7 +79,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if (Config::current().autosync() && !cmd.no_sync) || cmd.sync {
-        autosync(&pyproject_toml, output, SyncMode::Regular)?;
+        autosync(
+            &pyproject_toml,
+            output,
+            SyncMode::Regular,
+            cmd.pre,
+            cmd.with_sources,
+            cmd.generate_hashes,
+            cmd.keyring_provider,
+        )?;
     }
 
     Ok(())

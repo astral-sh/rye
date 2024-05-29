@@ -14,5 +14,5 @@ variables:
 This for instance installs a specific version of Rye without asking questions:
 
 ```bash
-curl -sSf https://rye-up.com/get | RYE_VERSION="0.4.0" RYE_INSTALL_OPTION="--yes" bash
+curl -sSf https://rye.astral.sh/get | RYE_VERSION="0.4.0" RYE_INSTALL_OPTION="--yes" bash
 ```

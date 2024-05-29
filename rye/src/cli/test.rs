@@ -10,6 +10,7 @@ use same_file::is_same_file;
 
 use crate::config::Config;
 use crate::consts::VENV_BIN;
+use crate::lock::KeyringProvider;
 use crate::pyproject::{locate_projects, normalize_package_name, DependencyKind, PyProject};
 use crate::sync::{autosync, SyncMode};
 use crate::utils::{CommandOutput, QuietExit};
@@ -28,7 +29,7 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
-    // Disable test output capture to stdout
+    /// Disable test output capture to stdout.
     #[arg(long = "no-capture", short = 's')]
     no_capture: bool,
     /// Runs `sync` even if auto-sync is disabled.
@@ -46,6 +47,19 @@ pub struct Args {
     /// Extra arguments to pytest
     #[arg(last = true)]
     extra_args: Vec<OsString>,
+
+    /// Include pre-releases when automatically syncing the workspace.
+    #[arg(long)]
+    pre: bool,
+    /// Set to `true` to lock with sources in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    with_sources: bool,
+    /// Set to `true` to lock with hashes in the lockfile when automatically syncing the workspace.
+    #[arg(long)]
+    generate_hashes: bool,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -78,8 +92,16 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     if !pytest.is_file() {
         let has_pytest = has_pytest_dependency(&projects)?;
         if has_pytest {
-            if (Config::current().autosync_before_run() && !cmd.no_sync) || cmd.sync {
-                autosync(&projects[0], output, SyncMode::OneOffLock)?;
+            if Config::current().autosync() {
+                autosync(
+                    &projects[0],
+                    output,
+                    SyncMode::OneOffLock,
+                    cmd.pre,
+                    cmd.with_sources,
+                    cmd.generate_hashes,
+                    cmd.keyring_provider,
+                )?;
             } else {
                 bail!("pytest not installed but in dependencies. Run `rye sync`.")
             }

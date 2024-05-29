@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::convert::Infallible;
+use std::ffi::OsString;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
 use std::process::{Command, ExitStatus, Stdio};
@@ -165,7 +166,7 @@ pub fn is_executable(path: &Path) -> bool {
     }
     #[cfg(windows)]
     {
-        ["exe", "bat", "cmd"]
+        ["com", "exe", "bat", "cmd"]
             .iter()
             .any(|x| path.with_extension(x).is_file())
     }
@@ -180,7 +181,7 @@ pub fn get_short_executable_name(path: &Path) -> String {
     #[cfg(windows)]
     {
         let short_name = path.file_name().unwrap().to_string_lossy().to_lowercase();
-        for ext in [".exe", ".bat", ".cmd"] {
+        for ext in [".com", ".exe", ".bat", ".cmd"] {
             if let Some(base_name) = short_name.strip_suffix(ext) {
                 return base_name.into();
             }
@@ -232,6 +233,16 @@ where
     F: for<'a> FnMut(&'a str) -> Option<String>,
 {
     ENV_VAR_RE.replace_all(string, |m: &Captures| f(&m[1]).unwrap_or_default())
+}
+
+/// Prepend the given path to the current value of the $PATH environment variable
+pub fn prepend_path_to_path_env(path: &Path) -> Result<OsString, Error> {
+    let mut paths = Vec::new();
+    paths.push(path.to_owned());
+    if let Some(existing_path) = std::env::var_os("PATH") {
+        paths.extend(std::env::split_paths(&existing_path));
+    }
+    Ok(std::env::join_paths(paths)?)
 }
 
 #[derive(Copy, Clone, Debug)]

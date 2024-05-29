@@ -187,7 +187,7 @@ fn get_shim_target(
 ) -> Result<Option<Vec<OsString>>, Error> {
     // if we can find a project, we always look for a local virtualenv first for shims.
     if let Some(pyproject) = pyproject {
-        // However we only allow automatic synching, if we are rye managed.
+        // However we only allow automatic syncing, if we are rye managed.
         if pyproject.rye_managed() {
             let _guard = redirect_to_stderr(true);
             sync(SyncOptions::python_only()).context("sync ahead of shim resolution failed")?;
@@ -327,7 +327,7 @@ pub fn execute_shim(args: &[OsString]) -> Result<(), Error> {
                     "Target Python binary '{}' not found.\nYou are currently outside of a project. \
                     To resolve this, consider enabling global shims. \
                     Global shims allow for a Rye-managed Python installation.\n\
-                    For more information: https://rye-up.com/guide/shims/#global-shims", shim_name
+                    For more information: https://rye.astral.sh/guide/shims/#global-shims", shim_name
                 );
             }
         } else {

@@ -92,7 +92,7 @@ the default one higher priority in the `PATH:
 
 ```
 export PATH="/usr/bin:$PATH"
-curl -sSf https://rye-up.com/get | bash
+curl -sSf https://rye.astral.sh/get | bash
 ```
 
 ## References to Build-Time Paths

@@ -15,7 +15,7 @@ fn test_empty_sync() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
@@ -23,6 +23,7 @@ fn test_empty_sync() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
+    Resolved 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
@@ -53,7 +54,7 @@ fn test_add_and_sync_no_auto_sync() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
 
@@ -71,7 +72,7 @@ fn test_add_and_sync_no_auto_sync() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -96,7 +97,7 @@ fn test_add_autosync() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -107,7 +108,7 @@ fn test_add_autosync() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
@@ -137,7 +138,7 @@ fn test_autosync_remember() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.2
+    Python version: cpython@3.12.3
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
     Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
     Installing dependencies
@@ -145,6 +146,7 @@ fn test_autosync_remember() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
+    Resolved 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
@@ -165,7 +167,7 @@ fn test_autosync_remember() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 8 packages in [EXECUTION_TIME]
+    Resolved 9 packages in [EXECUTION_TIME]
     Downloaded 8 packages in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
@@ -189,6 +191,7 @@ fn test_autosync_remember() {
     #   features: []
     #   all-features: true
     #   with-sources: true
+    #   generate-hashes: false
 
     --index-url https://pypi.org/simple/
 
@@ -217,7 +220,7 @@ fn test_autosync_remember() {
 
     ----- stderr -----
     Built 1 editable in [EXECUTION_TIME]
-    Resolved 1 package in [EXECUTION_TIME]
+    Resolved 10 packages in [EXECUTION_TIME]
     Downloaded 1 package in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 2 packages in [EXECUTION_TIME]
@@ -246,6 +249,7 @@ fn test_autosync_remember() {
     #   features: []
     #   all-features: true
     #   with-sources: true
+    #   generate-hashes: false
 
     --index-url https://pypi.org/simple/
 

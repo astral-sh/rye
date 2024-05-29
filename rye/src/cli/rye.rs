@@ -7,8 +7,9 @@ use std::sync::Arc;
 use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
-use clap::{CommandFactory, Parser};
-use clap_complete::Shell;
+use clap::{CommandFactory, Parser, ValueEnum};
+use clap_complete::{Generator, Shell};
+use clap_complete_nushell::Nushell;
 use console::style;
 use minijinja::render;
 use self_replace::self_delete_outside_path;
@@ -52,12 +53,54 @@ pub struct Args {
     command: SubCommand,
 }
 
+#[derive(Clone, Debug, ValueEnum)]
+enum ShellCompletion {
+    /// Bourne Again SHell (bash)
+    Bash,
+    /// Elvish shell
+    Elvish,
+    /// Friendly Interactive SHell (fish)
+    Fish,
+    /// PowerShell
+    PowerShell,
+    /// Z SHell (zsh)
+    Zsh,
+    /// Nushell
+    Nushell,
+}
+
+impl Generator for ShellCompletion {
+    /// Generate the file name for the completion script.
+    fn file_name(&self, name: &str) -> String {
+        match self {
+            ShellCompletion::Nushell => Nushell.file_name(name),
+            ShellCompletion::Bash => Shell::Bash.file_name(name),
+            ShellCompletion::Elvish => Shell::Elvish.file_name(name),
+            ShellCompletion::Fish => Shell::Fish.file_name(name),
+            ShellCompletion::PowerShell => Shell::PowerShell.file_name(name),
+            ShellCompletion::Zsh => Shell::Zsh.file_name(name),
+        }
+    }
+
+    /// Generate the completion script for the shell.
+    fn generate(&self, cmd: &clap::Command, buf: &mut dyn std::io::Write) {
+        match self {
+            ShellCompletion::Nushell => Nushell.generate(cmd, buf),
+            ShellCompletion::Bash => Shell::Bash.generate(cmd, buf),
+            ShellCompletion::Elvish => Shell::Elvish.generate(cmd, buf),
+            ShellCompletion::Fish => Shell::Fish.generate(cmd, buf),
+            ShellCompletion::PowerShell => Shell::PowerShell.generate(cmd, buf),
+            ShellCompletion::Zsh => Shell::Zsh.generate(cmd, buf),
+        }
+    }
+}
+
 /// Generates a completion script for a shell.
 #[derive(Parser, Debug)]
 pub struct CompletionCommand {
     /// The shell to generate a completion script for (defaults to 'bash').
     #[arg(short, long)]
-    shell: Option<Shell>,
+    shell: Option<ShellCompletion>,
 }
 
 /// Performs an update of rye.
@@ -180,7 +223,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
 fn completion(args: CompletionCommand) -> Result<(), Error> {
     clap_complete::generate(
-        args.shell.unwrap_or(Shell::Bash),
+        args.shell.unwrap_or(ShellCompletion::Bash),
         &mut super::Args::command(),
         "rye",
         &mut std::io::stdout(),
@@ -474,7 +517,7 @@ fn perform_install(
 
     // Also pick up the target version from the RYE_TOOLCHAIN_VERSION
     // environment variable.
-    let toolchain_version_request = match toolchain_version {
+    let mut toolchain_version_request = match toolchain_version {
         Some(version) => Some(version),
         None => match env::var("RYE_TOOLCHAIN_VERSION") {
             Ok(val) => Some(val.parse()?),
@@ -490,7 +533,7 @@ fn perform_install(
         echo!("automatically started the installer for you. For more information");
         echo!(
             "read {}",
-            style("https://rye-up.com/guide/installation/").yellow()
+            style("https://rye.astral.sh/guide/installation/").yellow()
         );
     }
 
@@ -528,7 +571,7 @@ fn perform_install(
         echo!("enable symlinks. You need to enable this before continuing the setup.");
         echo!(
             "Learn more at {}",
-            style("https://rye-up.com/guide/faq/#windows-developer-mode").yellow()
+            style("https://rye.astral.sh/guide/faq/#windows-developer-mode").yellow()
         );
     }
 
@@ -547,15 +590,15 @@ fn perform_install(
         .get("behavior")
         .and_then(|x| x.get("use-uv"))
         .is_none()
-        && !matches!(mode, InstallMode::NoPrompts)
     {
-        let use_uv = dialoguer::Select::with_theme(tui_theme())
-            .with_prompt("Select the preferred package installer")
-            .item("uv (fast, recommended)")
-            .item("pip-tools (slow, higher compatibility)")
-            .default(0)
-            .interact()?
-            == 0;
+        let use_uv = matches!(mode, InstallMode::NoPrompts)
+            || dialoguer::Select::with_theme(tui_theme())
+                .with_prompt("Select the preferred package installer")
+                .item("uv (fast, recommended)")
+                .item("pip-tools (slow, higher compatibility)")
+                .default(0)
+                .interact()?
+                == 0;
         toml::ensure_table(config_doc, "behavior")["use-uv"] = toml_edit::value(use_uv);
     }
 
@@ -581,12 +624,17 @@ fn perform_install(
         // can fill in the default.
         if !matches!(mode, InstallMode::NoPrompts) {
             if toolchain_path.is_none() {
-                prompt_for_default_toolchain(
+                // Prompt the user for the default toolchain version.
+                let user_version_request = prompt_for_default_toolchain(
                     toolchain_version_request
                         .clone()
                         .unwrap_or(SELF_PYTHON_TARGET_VERSION),
                     config_doc,
                 )?;
+
+                // If the user has selected a toolchain version, we should use that as the default,
+                // unless the `RYE_TOOLCHAIN_VERSION` environment variable is set.
+                toolchain_version_request = toolchain_version_request.or(Some(user_version_request));
             } else {
                 prompt_for_toolchain_later = true;
             }
@@ -734,7 +782,7 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
                 );
                 echo!();
             }
-            echo!("For more information read https://rye-up.com/guide/installation/");
+            echo!("For more information read https://rye.astral.sh/guide/installation/");
         }
     }
     // On Windows, we add the rye directory to the user's PATH unconditionally.
@@ -749,7 +797,7 @@ fn add_rye_to_path(mode: &InstallMode, shims: &Path, ask: bool) -> Result<(), Er
 fn prompt_for_default_toolchain(
     default_toolchain: PythonVersionRequest,
     config_doc: &mut toml_edit::DocumentMut,
-) -> Result<(), Error> {
+) -> Result<PythonVersionRequest, Error> {
     let choice = dialoguer::Input::with_theme(tui_theme())
         .with_prompt("Which version of Python should be used as default toolchain?")
         .default(default_toolchain.clone())
@@ -765,7 +813,7 @@ fn prompt_for_default_toolchain(
         })
         .interact_text()?;
     toml::ensure_table(config_doc, "default")["toolchain"] = toml_edit::value(choice.to_string());
-    Ok(())
+    Ok(choice)
 }
 
 pub fn auto_self_install() -> Result<bool, Error> {
