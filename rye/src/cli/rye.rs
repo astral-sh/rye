@@ -7,6 +7,7 @@ use std::sync::Arc;
 use std::{env, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
+use clap::builder::PossibleValue;
 use clap::{CommandFactory, Parser, ValueEnum};
 use clap_complete::{Generator, Shell};
 use clap_complete_nushell::Nushell;
@@ -53,7 +54,7 @@ pub struct Args {
     command: SubCommand,
 }
 
-#[derive(Clone, Debug, ValueEnum)]
+#[derive(Clone, Debug)]
 enum ShellCompletion {
     /// Bourne Again SHell (bash)
     Bash,
@@ -67,6 +68,32 @@ enum ShellCompletion {
     Zsh,
     /// Nushell
     Nushell,
+}
+
+impl ValueEnum for ShellCompletion {
+    /// Returns the variants for the shell completion.
+    fn value_variants<'a>() -> &'a [Self] {
+        &[
+            ShellCompletion::Bash,
+            ShellCompletion::Elvish,
+            ShellCompletion::Fish,
+            ShellCompletion::PowerShell,
+            ShellCompletion::Zsh,
+            ShellCompletion::Nushell,
+        ]
+    }
+
+    /// Returns the possible value for the shell completion.
+    fn to_possible_value<'a>(&self) -> Option<PossibleValue> {
+        Some(match self {
+            ShellCompletion::Bash => PossibleValue::new("bash"),
+            ShellCompletion::Elvish => PossibleValue::new("elvish"),
+            ShellCompletion::Fish => PossibleValue::new("fish"),
+            ShellCompletion::PowerShell => PossibleValue::new("powershell"),
+            ShellCompletion::Zsh => PossibleValue::new("zsh"),
+            ShellCompletion::Nushell => PossibleValue::new("nushell"),
+        })
+    }
 }
 
 impl Generator for ShellCompletion {
