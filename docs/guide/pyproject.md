@@ -64,7 +64,7 @@ excluded-dependencies = ["cffi"]
 
 +++ 0.35.0
 
-When this flag is enabled (and when using `uv`) all `lock` and `sync` operations in the project or workspace
+When this flag is enabled (and using `uv`) all `lock` and `sync` operations in the project or workspace
 operate as if `--generate-hashes` is passed.  This means that all dependencies in all
 lock files will include a hash.
 
