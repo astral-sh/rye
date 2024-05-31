@@ -53,6 +53,8 @@ To exit the sub shell run `exit`.
 
 * `--all-features`: Enables all features
 
+* `--generate-hashes`: Set to true to lock with hashes in the lockfile
+
 * `--with-sources`: Set to true to lock with sources in the lockfile
 
 * `--pyproject <PYPROJECT_TOML>`: Use this pyproject.toml file
