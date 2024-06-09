@@ -66,7 +66,7 @@ impl UvCompileOptions {
 
         match self.upgrade {
             UvPackageUpgrade::All => {
-                cmd.arg("--upgrade");
+                cmd.arg("--upgrade").arg("--no-cache");
             }
             UvPackageUpgrade::Packages(ref pkgs) => {
                 for pkg in pkgs {
