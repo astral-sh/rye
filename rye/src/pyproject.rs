@@ -152,12 +152,12 @@ impl SourceRef {
             .get("name")
             .and_then(|x| x.as_str())
             .map(|x| x.to_string())
-            .ok_or_else(|| anyhow!("expected name"))?;
+            .ok_or_else(|| anyhow!("bad config.toml syntax,expected source.name"))?;
         let url = source
             .get("url")
             .and_then(|x| x.as_str())
             .map(|x| x.to_string())
-            .ok_or_else(|| anyhow!("expected url"))?;
+            .ok_or_else(|| anyhow!("bad config.toml syntax,expected source.url"))?;
         let verify_ssl = source
             .get("verify_ssl")
             .and_then(|x| x.as_bool())
