@@ -1301,7 +1301,7 @@ fn lock_with_sources(doc: &DocumentMut) -> bool {
         .unwrap_or(false)
 }
 
-fn system_site_packages(doc: &Document) -> bool {
+fn system_site_packages(doc: &DocumentMut) -> bool {
     doc.get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("system-site-packages"))
