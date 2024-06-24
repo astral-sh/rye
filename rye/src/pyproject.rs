@@ -152,12 +152,12 @@ impl SourceRef {
             .get("name")
             .and_then(|x| x.as_str())
             .map(|x| x.to_string())
-            .ok_or_else(|| anyhow!("bad config.toml syntax,expected source.name"))?;
+            .ok_or_else(|| anyhow!("expected source.name"))?;
         let url = source
             .get("url")
             .and_then(|x| x.as_str())
             .map(|x| x.to_string())
-            .ok_or_else(|| anyhow!("bad config.toml syntax,expected source.url"))?;
+            .ok_or_else(|| anyhow!("expected source.url"))?;
         let verify_ssl = source
             .get("verify_ssl")
             .and_then(|x| x.as_bool())
@@ -1252,7 +1252,8 @@ fn get_sources(doc: &DocumentMut) -> Result<Vec<SourceRef>, Error> {
     {
         for source in sources {
             let source = source.context("invalid value for pyproject.toml's tool.rye.sources")?;
-            let source_ref = SourceRef::from_toml_table(source)?;
+            let source_ref = SourceRef::from_toml_table(source)
+                .context("invalid source definition in pyproject.toml")?;
             rv.push(source_ref);
         }
     }
@@ -1299,6 +1300,7 @@ fn get_project_metadata(path: &Path) -> Result<Metadata, Error> {
     }
     serde_json::from_slice(&metadata.stdout).map_err(Into::into)
 }
+
 /// Represents expanded sources.
 #[derive(Debug, Clone, Serialize)]
 pub struct ExpandedSources {
