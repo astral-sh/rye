@@ -60,7 +60,7 @@ pulled in as indirect dependencies.  These are added here automatically with `ry
 excluded-dependencies = ["cffi"]
 ```
 
-## `tool.rye.lock-generate-hashes`
+## `tool.rye.generate-hashes`
 
 +++ 0.35.0
 
@@ -70,7 +70,7 @@ lock files will include a hash.
 
 ```toml
 [tool.rye]
-lock-generate-hashes = true
+generate-hashes = true
 ```
 
 ## `tool.rye.lock-with-sources`

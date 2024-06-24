@@ -30,7 +30,7 @@ Done!
 
 * `--all-features`: Enables all features
 
-* `--generate-hashes`: Set to true to lock with hashes in the lockfile (if using `uv`)
+* `--generate-hashes`: Set to true to lock with hashes in the lockfile
 
 * `--with-sources`: Set to true to lock with sources in the lockfile
 

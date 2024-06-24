@@ -106,7 +106,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
     }
 
     // Turn on generate_hashes if the project demands it.
-    if pyproject.lock_generate_hashes() {
+    if pyproject.generate_hashes() {
         cmd.lock_options.generate_hashes = true;
     }
 
