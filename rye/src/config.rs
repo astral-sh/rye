@@ -232,7 +232,8 @@ impl Config {
         if let Some(sources) = self.doc.get("sources").map(|x| toml::iter_tables(x)) {
             for source in sources {
                 let source = source.context("invalid value for source in config.toml")?;
-                let source_ref = SourceRef::from_toml_table(source)?;
+                let source_ref = SourceRef::from_toml_table(source)
+                    .context("invalid source definition in config.toml")?;
                 if source_ref.name == "default" {
                     need_default = false;
                 }
