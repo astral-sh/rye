@@ -174,7 +174,7 @@ impl SourceRef {
             .get("type")
             .and_then(|x| x.as_str())
             .map_or(Ok(SourceRefType::Index), |x| x.parse::<SourceRefType>())
-            .context("invalid value for type")?;
+            .context("invalid value for source.type")?;
         Ok(SourceRef {
             name,
             url,
