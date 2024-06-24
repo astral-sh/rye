@@ -90,9 +90,8 @@ fn test_basic_tool_behavior() {
     ========================= 1 failed, 1 passed in [EXECUTION_TIME] =========================
 
     ----- stderr -----
-    Built 2 editables in [EXECUTION_TIME]
     Resolved 7 packages in [EXECUTION_TIME]
-    Downloaded 3 packages in [EXECUTION_TIME]
+    Downloaded 7 packages in [EXECUTION_TIME]
     Installed 7 packages in [EXECUTION_TIME]
      + child-dep==0.1.0 (from file:[TEMP_PATH]/project/child-dep)
      + colorama==0.4.6
