@@ -29,8 +29,8 @@ fn test_init_lib() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 1 package in [EXECUTION_TIME]
+    Downloaded 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
@@ -78,8 +78,8 @@ fn test_init_default() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 1 package in [EXECUTION_TIME]
+    Downloaded 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
@@ -128,8 +128,8 @@ fn test_init_script() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 1 package in [EXECUTION_TIME]
+    Downloaded 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
     "###);
