@@ -180,7 +180,7 @@ Rye supports generating completion scripts for Bash, Zsh, Fish, Powershell and N
     '@ | Out-File -Append -Encoding utf8 $PROFILE
     # Generate script
     Set-ExecutionPolicy Unrestricted -Scope CurrentUser
-    rye self completion -s powershell | Out-File -Encoding utf8 $PROFILE\..\Completions\rye_completion.ps1
+    rye self completion -s power-shell | Out-File -Encoding utf8 $PROFILE\..\Completions\rye_completion.ps1
     ```
 
 === "NuShell"
