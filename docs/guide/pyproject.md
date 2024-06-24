@@ -60,6 +60,19 @@ pulled in as indirect dependencies.  These are added here automatically with `ry
 excluded-dependencies = ["cffi"]
 ```
 
+## `tool.rye.generate-hashes`
+
++++ 0.35.0
+
+When this flag is enabled all `lock` and `sync` operations in the project or workspace
+operate as if `--generate-hashes` is passed.  This means that all dependencies in all
+lock files will include a hash.
+
+```toml
+[tool.rye]
+generate-hashes = true
+```
+
 ## `tool.rye.lock-with-sources`
 
 +++ 0.18.0

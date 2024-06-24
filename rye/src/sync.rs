@@ -105,6 +105,11 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         bail!("cannot sync or generate lockfile: package needs 'pyproject.toml'");
     }
 
+    // Turn on generate_hashes if the project demands it.
+    if pyproject.generate_hashes() {
+        cmd.lock_options.generate_hashes = true;
+    }
+
     // Turn on locking with sources if the project demands it.
     if pyproject.lock_with_sources() {
         cmd.lock_options.with_sources = true;

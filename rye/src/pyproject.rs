@@ -535,6 +535,11 @@ impl Workspace {
         is_rye_managed(&self.doc)
     }
 
+    /// Should requirements.txt based locking include generating hashes?
+    pub fn generate_hashes(&self) -> bool {
+        generate_hashes(&self.doc)
+    }
+
     /// Should requirements.txt based locking include a find-links reference?
     pub fn lock_with_sources(&self) -> bool {
         lock_with_sources(&self.doc)
@@ -1006,7 +1011,15 @@ impl PyProject {
             .unwrap_or(false)
     }
 
-    /// Should requirements.txt based locking include a find-links reference?
+    /// Should requirements.txt-based locking include generating hashes?
+    pub fn generate_hashes(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.generate_hashes(),
+            None => generate_hashes(&self.doc),
+        }
+    }
+
+    /// Should requirements.txt-based locking include a find-links reference?
     pub fn lock_with_sources(&self) -> bool {
         match self.workspace {
             Some(ref workspace) => workspace.lock_with_sources(),
@@ -1276,6 +1289,14 @@ fn is_rye_managed(doc: &DocumentMut) -> bool {
     doc.get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("managed"))
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false)
+}
+
+fn generate_hashes(doc: &DocumentMut) -> bool {
+    doc.get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("generate-hashes"))
         .and_then(|x| x.as_bool())
         .unwrap_or(false)
 }
