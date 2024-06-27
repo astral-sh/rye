@@ -49,7 +49,7 @@ rye sync --features=myname-bar/foo
 
 ## Per member lockfile
 
-+++ 0.34.0
++++ 0.36.0
 
 Rye will always merge the requirements of all members in a workspace and generate a top level
 lockfile to keep the virtual environment consistent and up to date. In cases where you need to
