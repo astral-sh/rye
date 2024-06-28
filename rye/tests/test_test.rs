@@ -91,7 +91,7 @@ fn test_basic_tool_behavior() {
 
     ----- stderr -----
     Resolved 7 packages in [EXECUTION_TIME]
-    Downloaded 7 packages in [EXECUTION_TIME]
+    Prepared 7 packages in [EXECUTION_TIME]
     Installed 7 packages in [EXECUTION_TIME]
      + child-dep==0.1.0 (from file:[TEMP_PATH]/project/child-dep)
      + colorama==0.4.6
