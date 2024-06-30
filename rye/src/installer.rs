@@ -14,6 +14,7 @@ use url::Url;
 use crate::bootstrap::{ensure_self_venv, fetch, FetchOptions};
 use crate::config::Config;
 use crate::consts::VENV_BIN;
+use crate::lock::KeyringProvider;
 use crate::platform::get_app_dir;
 use crate::pyproject::{normalize_package_name, read_venv_marker, ExpandedSources};
 use crate::sources::py::PythonVersionRequest;
@@ -109,6 +110,7 @@ pub fn install(
     include_deps: &[String],
     extra_requirements: &[Requirement],
     output: CommandOutput,
+    keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
     let config = Config::current();
     let sources = ExpandedSources::from_sources(&config.sources()?)?;
@@ -154,6 +156,7 @@ pub fn install(
                     importlib_workaround: py_ver.major == 3 && py_ver.minor == 7,
                     extras: extra_requirements.to_vec(),
                     refresh: force,
+                    keyring_provider,
                 },
             );
         if result.is_err() {

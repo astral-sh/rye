@@ -23,7 +23,7 @@ use crate::utils::{
     get_venv_python_bin, set_proxy_variables, symlink_dir, update_venv_sync_marker, CommandOutput,
     IoPathContext,
 };
-use crate::uv::UvBuilder;
+use crate::uv::{UvBuilder, UvSyncOptions};
 
 /// Controls the sync mode
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Default)]
@@ -257,6 +257,9 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
             let tempdir = tempdir()?;
             let py_path = get_venv_python_bin(&venv);
             if Config::current().use_uv() {
+                let uv_options = UvSyncOptions {
+                    keyring_provider: cmd.keyring_provider,
+                };
                 UvBuilder::new()
                     .with_output(output.quieter())
                     .with_workdir(&pyproject.workspace_path())
@@ -264,7 +267,7 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
                     .ensure_exists()?
                     .venv(&venv, &py_path, &py_ver, None)?
                     .with_output(output)
-                    .sync(&target_lockfile)?;
+                    .sync(&target_lockfile, uv_options)?;
             } else {
                 let mut pip_sync_cmd = Command::new(get_pip_sync(&py_ver, output)?);
                 let root = pyproject.workspace_path();
