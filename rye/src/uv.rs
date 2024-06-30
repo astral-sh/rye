@@ -21,6 +21,7 @@ pub struct UvInstallOptions {
     pub importlib_workaround: bool,
     pub extras: Vec<Requirement>,
     pub refresh: bool,
+    pub keyring_provider: KeyringProvider,
 }
 
 pub enum UvPackageUpgrade {
@@ -76,12 +77,7 @@ impl UvCompileOptions {
             UvPackageUpgrade::Nothing => {}
         }
 
-        match self.keyring_provider {
-            KeyringProvider::Disabled => {}
-            KeyringProvider::Subprocess => {
-                cmd.arg("--keyring-provider").arg("subprocess");
-            }
-        }
+        self.keyring_provider.add_as_pip_args(cmd);
     }
 }
 
@@ -99,6 +95,23 @@ impl Default for UvCompileOptions {
     }
 }
 
+pub struct UvSyncOptions {
+    pub keyring_provider: KeyringProvider,
+}
+
+impl UvSyncOptions {
+    pub fn add_as_pip_args(self, cmd: &mut Command) {
+        self.keyring_provider.add_as_pip_args(cmd);
+    }
+}
+
+impl Default for UvSyncOptions {
+    fn default() -> Self {
+        Self {
+            keyring_provider: KeyringProvider::Disabled,
+        }
+    }
+}
 pub struct UvBuilder {
     workdir: Option<PathBuf>,
     sources: Option<ExpandedSources>,
@@ -502,6 +515,8 @@ impl UvWithVenv {
             cmd.arg("--refresh");
         }
 
+        options.keyring_provider.add_as_pip_args(&mut cmd);
+
         self.uv.sources.add_as_pip_args(&mut cmd);
 
         cmd.arg("--").arg(requirement.to_string());
@@ -537,9 +552,11 @@ impl UvWithVenv {
     }
 
     /// Syncs the venv
-    pub fn sync(&self, lockfile: &Path) -> Result<(), Error> {
+    pub fn sync(&self, lockfile: &Path, options: UvSyncOptions) -> Result<(), Error> {
         let mut cmd = self.venv_cmd();
         cmd.arg("pip").arg("sync");
+
+        options.add_as_pip_args(&mut cmd);
 
         self.uv.sources.add_as_pip_args(&mut cmd);
 

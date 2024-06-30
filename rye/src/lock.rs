@@ -73,6 +73,17 @@ pub enum KeyringProvider {
     Subprocess,
 }
 
+impl KeyringProvider {
+    pub fn add_as_pip_args(self, cmd: &mut Command) {
+        match self {
+            KeyringProvider::Disabled => {}
+            KeyringProvider::Subprocess => {
+                cmd.arg("--keyring-provider").arg("subprocess");
+            }
+        }
+    }
+}
+
 /// Controls how locking should work.
 #[derive(Debug, Clone, Default, Serialize)]
 pub struct LockOptions {
