@@ -174,7 +174,7 @@ pub(crate) fn add_to_programs(rye_home: &Path) -> Result<(), Error> {
 
     let mut uninstall_cmd = OsString::from("\"");
     uninstall_cmd.push(rye_home);
-    uninstall_cmd.push("\" self uninstall");
+    uninstall_cmd.push("\\shims\\rye.exe\" self uninstall");
 
     let reg_value = RegValue {
         bytes: to_winreg_bytes(uninstall_cmd.encode_wide().collect()),
