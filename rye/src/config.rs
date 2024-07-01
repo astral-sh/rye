@@ -252,11 +252,20 @@ impl Config {
         Ok(rv)
     }
 
-    /// Enable autosync.
+    /// Enable autosync for `add` and `remove`.
     pub fn autosync(&self) -> bool {
         self.doc
             .get("behavior")
             .and_then(|x| x.get("autosync"))
+            .and_then(|x| x.as_bool())
+            .unwrap_or_else(|| self.use_uv())
+    }
+ 
+    /// Enable autosync for `run` and `test`.
+    pub fn autosync_before_run(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("autosync-before-run"))
             .and_then(|x| x.as_bool())
             .unwrap_or_else(|| self.use_uv())
     }

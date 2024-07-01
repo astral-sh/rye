@@ -90,6 +90,11 @@ use-uv = true
 # to `true` when uv is enabled and `false` otherwise.
 autosync = true
 
+# Enable or disable automatic `sync` ahead of `run` and `test`.  This defaults
+# to `true` when uv is enabled and `false` otherwise.  Note that autosync invoked
+# before `run` and `test` will never update your lockfiles. 
+autosync-before-run = true
+
 # Marks the managed .venv in a way that cloud-based synchronization systems
 # like Dropbox and iCloud Files will not upload it.  This defaults to `true`
 # as a .venv in cloud storage typically does not make sense.  Set this to

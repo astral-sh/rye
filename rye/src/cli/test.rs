@@ -12,7 +12,7 @@ use crate::config::Config;
 use crate::consts::VENV_BIN;
 use crate::lock::KeyringProvider;
 use crate::pyproject::{locate_projects, normalize_package_name, DependencyKind, PyProject};
-use crate::sync::autosync;
+use crate::sync::{autosync, SyncMode};
 use crate::utils::{CommandOutput, QuietExit};
 
 /// Run the tests on the project.
@@ -32,6 +32,12 @@ pub struct Args {
     /// Disable test output capture to stdout.
     #[arg(long = "no-capture", short = 's')]
     no_capture: bool,
+    /// Runs `sync` even if auto-sync is disabled.
+    #[arg(long)]
+    sync: bool,
+    /// Does not run `sync` even if auto-sync is enabled.
+    #[arg(long, conflicts_with = "sync")]
+    no_sync: bool,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -90,6 +96,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                 autosync(
                     &projects[0],
                     output,
+                    SyncMode::OneOffLock,
                     cmd.pre,
                     cmd.with_sources,
                     cmd.generate_hashes,
