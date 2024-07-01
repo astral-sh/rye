@@ -31,10 +31,10 @@ pub fn reformat_array_multiline(deps: &mut Array) {
         let decor = item.decor_mut();
         let mut prefix = String::new();
         for comment in find_comments(decor.prefix()).chain(find_comments(decor.suffix())) {
-            prefix.push_str("\n    ");
+            prefix.push_str("\n  ");
             prefix.push_str(comment);
         }
-        prefix.push_str("\n    ");
+        prefix.push_str("\n  ");
         decor.set_prefix(prefix);
         decor.set_suffix("");
     }
@@ -44,7 +44,7 @@ pub fn reformat_array_multiline(deps: &mut Array) {
         let mut rv = String::new();
         if comments.peek().is_some() {
             for comment in comments {
-                rv.push_str("\n    ");
+                rv.push_str("\n  ");
                 rv.push_str(comment);
             }
         }

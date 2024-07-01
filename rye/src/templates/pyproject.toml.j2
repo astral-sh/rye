@@ -4,13 +4,13 @@ version = {{ version }}
 description = {{ description }}
 {%- if author %}
 authors = [
-    { name = {{ author[0] }}, email = {{ author[1] }} }
+  { name = {{ author[0] }}, email = {{ author[1] }} }
 ]
 {%- endif %}
 {%- if dependencies %}
 dependencies = [
 {%- for dependency in dependencies %}
-    {{ dependency }},
+  {{ dependency }},
 {%- endfor %}
 ]
 {%- else %}
@@ -61,7 +61,7 @@ virtual = true
 {%- if dev_dependencies %}
 dev-dependencies = [
 {%- for dependency in dev_dependencies %}
-    {{ dependency }},
+  {{ dependency }},
 {%- endfor %}
 ]
 {%- else %}
