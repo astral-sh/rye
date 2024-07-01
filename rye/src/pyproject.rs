@@ -544,6 +544,11 @@ impl Workspace {
     pub fn lock_with_sources(&self) -> bool {
         lock_with_sources(&self.doc)
     }
+
+    /// Include system site packages when creating virtualenvs?
+    pub fn system_site_packages(&self) -> bool {
+        system_site_packages(&self.doc)
+    }
 }
 
 /// Check if recurse should be skipped into directory with this name
@@ -1027,6 +1032,14 @@ impl PyProject {
         }
     }
 
+    /// Include system site packages when creating virtualenvs?
+    pub fn system_site_packages(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.system_site_packages(),
+            None => system_site_packages(&self.doc),
+        }
+    }
+
     /// Save back changes
     pub fn save(&self) -> Result<(), Error> {
         let path = self.toml_path();
@@ -1306,6 +1319,14 @@ fn lock_with_sources(doc: &DocumentMut) -> bool {
     doc.get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("lock-with-sources"))
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false)
+}
+
+fn system_site_packages(doc: &DocumentMut) -> bool {
+    doc.get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("system-site-packages"))
         .and_then(|x| x.as_bool())
         .unwrap_or(false)
 }
