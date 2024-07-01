@@ -30,6 +30,7 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
     (r" in (\d+\.)?\d+(ms|s)\b", " in [EXECUTION_TIME]"),
     (r"\\\\?([\w\d.])", "/$1"),
     (r"rye.exe", "rye"),
+    (r"exit (code|status)", "exit code"),
 ];
 
 fn marked_tempdir() -> TempDir {

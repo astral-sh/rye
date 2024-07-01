@@ -11,7 +11,7 @@ use console::style;
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
 use crate::tui::redirect_to_stderr;
-use crate::utils::{exec_spawn, get_venv_python_bin, success_status, IoPathContext};
+use crate::utils::{exec_spawn, get_venv_python_bin, success_status, CommandOutput, IoPathContext};
 
 /// Runs a command installed into this package.
 #[derive(Parser, Debug)]
@@ -26,6 +26,12 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Enables verbose diagnostics.
+    #[arg(short, long)]
+    verbose: bool,
+    /// Turns off all output.
+    #[arg(short, long, conflicts_with = "verbose")]
+    quiet: bool,
 }
 
 #[derive(Parser, Debug)]
@@ -36,13 +42,19 @@ enum Cmd {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let _guard = redirect_to_stderr(true);
+    let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only().pyproject(cmd.pyproject))
-        .context("failed to sync ahead of run")?;
+    sync(
+        SyncOptions::python_only()
+            .pyproject(cmd.pyproject)
+            .output(output),
+    )
+    .context("failed to sync ahead of run")?;
 
     if cmd.list || cmd.cmd.is_none() {
+        drop(_guard);
         return list_scripts(&pyproject);
     }
     let args = match cmd.cmd {
