@@ -158,8 +158,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 fn has_pytest_dependency(projects: &[PyProject]) -> Result<bool, Error> {
     for project in projects {
         for dep in project
-            .iter_dependencies(DependencyKind::Dev)
-            .chain(project.iter_dependencies(DependencyKind::Normal))
+            .iter_dependencies(&DependencyKind::Dev)
+            .chain(project.iter_dependencies(&DependencyKind::Normal))
         {
             if let Ok(req) = dep.expand(|name| std::env::var(name).ok()) {
                 if normalize_package_name(&req.name) == "pytest" {

@@ -203,11 +203,29 @@ pub struct Args {
     #[arg(short, long)]
     dev: bool,
     /// Add this as an excluded dependency that will not be installed even if it's a sub dependency.
-    #[arg(long, conflicts_with = "dev", conflicts_with = "optional")]
+    #[arg(
+        long,
+        conflicts_with = "dev",
+        conflicts_with = "optional",
+        conflicts_with = "override"
+    )]
     excluded: bool,
     /// Add this to an optional dependency group.
-    #[arg(long, conflicts_with = "dev", conflicts_with = "excluded")]
+    #[arg(
+        long,
+        conflicts_with = "dev",
+        conflicts_with = "excluded",
+        conflicts_with = "override"
+    )]
     optional: Option<String>,
+    /// Add this as an override dependency.
+    #[arg(
+        long,
+        conflicts_with = "dev",
+        conflicts_with = "optional",
+        conflicts_with = "excluded"
+    )]
+    r#override: bool,
     /// Overrides the pin operator
     #[arg(long)]
     pin: Option<Pin>,
@@ -252,6 +270,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         DependencyKind::Excluded
     } else if let Some(ref section) = cmd.optional {
         DependencyKind::Optional(section.into())
+    } else if cmd.r#override {
+        DependencyKind::Override
     } else {
         DependencyKind::Normal
     };
