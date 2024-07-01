@@ -10,7 +10,6 @@ use console::style;
 
 use crate::pyproject::{PyProject, Script};
 use crate::sync::{sync, SyncOptions};
-use crate::tui::redirect_to_stderr;
 use crate::utils::{exec_spawn, get_venv_python_bin, success_status, IoPathContext};
 
 /// Runs a command installed into this package.
@@ -35,7 +34,6 @@ enum Cmd {
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let _guard = redirect_to_stderr(true);
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     // make sure we have the minimal virtualenv.
