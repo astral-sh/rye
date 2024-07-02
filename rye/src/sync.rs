@@ -110,6 +110,11 @@ pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
         cmd.lock_options.generate_hashes = true;
     }
 
+    // Turn on universal locking if the project demands it.
+    if pyproject.universal() {
+        cmd.lock_options.universal = true;
+    }
+
     // Turn on locking with sources if the project demands it.
     if pyproject.lock_with_sources() {
         cmd.lock_options.with_sources = true;
