@@ -105,7 +105,7 @@ pub struct LockOptions {
     pub reset: bool,
     /// Generate hashes in the lock file.
     pub generate_hashes: bool,
-    /// Use universal lock files
+    /// Use universal lock files.
     pub universal: bool,
 }
 
