@@ -189,6 +189,7 @@ fn test_autosync_remember() {
     #   all-features: true
     #   with-sources: true
     #   generate-hashes: false
+    #   universal: false
 
     --index-url https://pypi.org/simple/
 
@@ -246,6 +247,7 @@ fn test_autosync_remember() {
     #   all-features: true
     #   with-sources: true
     #   generate-hashes: false
+    #   universal: false
 
     --index-url https://pypi.org/simple/
 
