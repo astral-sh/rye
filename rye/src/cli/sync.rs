@@ -55,6 +55,9 @@ pub struct Args {
     /// Do not reuse (reset) prior lock options.
     #[arg(long)]
     reset: bool,
+    /// Use universal lock files
+    #[arg(long)]
+    universal: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -78,6 +81,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             with_sources: cmd.with_sources,
             reset: cmd.reset,
             generate_hashes: cmd.generate_hashes,
+            universal: cmd.universal,
         },
         keyring_provider: cmd.keyring_provider,
         pyproject: cmd.pyproject,

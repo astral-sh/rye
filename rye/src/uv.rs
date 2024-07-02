@@ -41,6 +41,7 @@ struct UvCompileOptions {
     pub no_header: bool,
     pub keyring_provider: KeyringProvider,
     pub generate_hashes: bool,
+    pub universal: bool,
 }
 
 impl UvCompileOptions {
@@ -63,6 +64,10 @@ impl UvCompileOptions {
 
         if let Some(dt) = self.exclude_newer {
             cmd.arg("--exclude-newer").arg(dt);
+        }
+
+        if self.universal {
+            cmd.arg("--universal");
         }
 
         match self.upgrade {
@@ -91,6 +96,7 @@ impl Default for UvCompileOptions {
             no_header: false,
             generate_hashes: false,
             keyring_provider: KeyringProvider::Disabled,
+            universal: false,
         }
     }
 }
@@ -350,6 +356,7 @@ impl Uv {
         upgrade: UvPackageUpgrade,
         keyring_provider: KeyringProvider,
         generate_hashes: bool,
+        universal: bool,
     ) -> Result<(), Error> {
         let options = UvCompileOptions {
             allow_prerelease,
@@ -359,6 +366,7 @@ impl Uv {
             no_header: true,
             generate_hashes,
             keyring_provider,
+            universal,
         };
 
         let mut cmd = self.cmd();
@@ -608,6 +616,7 @@ impl UvWithVenv {
             no_header: true,
             generate_hashes: false,
             keyring_provider,
+            universal: false,
         };
 
         cmd.arg("pip").arg("compile");

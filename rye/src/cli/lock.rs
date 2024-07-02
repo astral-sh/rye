@@ -46,6 +46,9 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Use universal lock files
+    #[arg(long)]
+    universal: bool,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -62,6 +65,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             with_sources: cmd.with_sources,
             reset: cmd.reset,
             generate_hashes: cmd.generate_hashes,
+            universal: cmd.universal,
         },
         pyproject: cmd.pyproject,
         keyring_provider: cmd.keyring_provider,

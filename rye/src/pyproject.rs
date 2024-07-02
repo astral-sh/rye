@@ -540,6 +540,11 @@ impl Workspace {
         generate_hashes(&self.doc)
     }
 
+    /// Should requirements.txt based locking be universal
+    pub fn universal(&self) -> bool {
+        universal(&self.doc)
+    }
+
     /// Should requirements.txt based locking include a find-links reference?
     pub fn lock_with_sources(&self) -> bool {
         lock_with_sources(&self.doc)
@@ -1019,6 +1024,14 @@ impl PyProject {
         }
     }
 
+    /// Should requirements.txt-based locking be universal?
+    pub fn universal(&self) -> bool {
+        match self.workspace {
+            Some(ref workspace) => workspace.universal(),
+            None => universal(&self.doc),
+        }
+    }
+
     /// Should requirements.txt-based locking include a find-links reference?
     pub fn lock_with_sources(&self) -> bool {
         match self.workspace {
@@ -1298,6 +1311,14 @@ fn generate_hashes(doc: &DocumentMut) -> bool {
     doc.get("tool")
         .and_then(|x| x.get("rye"))
         .and_then(|x| x.get("generate-hashes"))
+        .and_then(|x| x.as_bool())
+        .unwrap_or(false)
+}
+
+fn universal(doc: &DocumentMut) -> bool {
+    doc.get("tool")
+        .and_then(|x| x.get("rye"))
+        .and_then(|x| x.get("universal"))
         .and_then(|x| x.as_bool())
         .unwrap_or(false)
 }
