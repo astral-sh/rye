@@ -3,7 +3,7 @@
 +++ 0.2.0
 
 Normally Rye loads packages from PyPI only.  However it is possible to instruct it to
-load packages from other indexes as well.  Be aware that packages on multiple indexes are handled diffrently from `pip` if you use `uv` (see the [uv docs](https://github.com/astral-sh/uv/blob/main/PIP_COMPATIBILITY.md#packages-that-exist-on-multiple-indexes) for details).
+load packages from other indexes as well.  Be aware that packages on multiple indexes are handled differently from `pip` if you use `uv` (see the [uv docs](https://github.com/astral-sh/uv/blob/main/PIP_COMPATIBILITY.md#packages-that-exist-on-multiple-indexes) for details).
 
 ## Adding a Source
 
