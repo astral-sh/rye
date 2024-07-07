@@ -5,6 +5,18 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.36.0
+
+Released on 2024-07-07.
+
+* Upgrade pyyaml to v6.0.1 by @charliermarsh in https://github.com/astral-sh/rye/pull/1170
+* Pass keyring-provider to uv sync and install by @emarsden-iso in https://github.com/astral-sh/rye/pull/1183
+* Add docs hint for packages on multiple indexes by @dennisrall in https://github.com/astral-sh/rye/pull/1188
+* Pass universal flag down to uv by @lbowenwest in https://github.com/astral-sh/rye/pull/1186
+* Use musl build for ARM Linux by @charliermarsh in https://github.com/astral-sh/rye/pull/1192
+* Bump uv to 0.2.22 by @charliermarsh in https://github.com/astral-sh/rye/pull/1192
+* Upgrade twine to v5.1.1 by @charliermarsh in https://github.com/astral-sh/rye/pull/1199
+
 ## 0.35.0
 
 Released on 2024-06-24.
