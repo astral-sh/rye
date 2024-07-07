@@ -33,7 +33,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 19;
+const SELF_VERSION: u64 = 20;
 
 const SELF_REQUIREMENTS: &str = r#"
 build==1.2.1
@@ -48,7 +48,7 @@ platformdirs==4.0.0
 pyproject_hooks==1.0.0
 requests==2.31.0
 tomli==2.0.1
-twine==4.0.2
+twine==5.1.1
 unearth==0.14.0
 urllib3==2.0.7
 virtualenv==20.25.0
