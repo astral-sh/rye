@@ -102,7 +102,7 @@ accommodating to portable builds there are various limitations still with this
 approach.  One of them is that built Python distributions capture some absolute
 paths and other build-time configuration.  These file paths are then often used
 by build tools to invoke C compilers.  For instance you might run into a compiler
-error like ``error: stdio.h: No such file or directory`` when building C
+error like `error: stdio.h: No such file or directory` when building C
 extensions.  There is no known solution to this problem today other than
 [registering a non portable toolchain](toolchains/index.md#registering-toolchains).
 

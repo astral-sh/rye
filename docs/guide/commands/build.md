@@ -46,7 +46,7 @@ By default you will find the artifacts in the `dist` folder.
 
 * `-o, --out <OUT>`: An output directory (defaults to `workspace/dist`)
 
-* `--pyproject <PYPROJECT_TOML>`: Use this `pyproject.toml`` file
+* `--pyproject <PYPROJECT_TOML>`: Use this `pyproject.toml` file
 
 * `-c, --clean`: Clean the output directory first
 
