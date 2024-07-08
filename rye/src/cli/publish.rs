@@ -77,7 +77,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // c. Otherwise prompt for token and provide encryption option, storing the result in credentials.
     let repository = &cmd.repository;
     let mut credentials = get_credentials()?;
-    credentials
+    let repo_credentials = credentials
         .entry(repository)
         .or_insert(Item::Table(Table::new()));
 
@@ -85,9 +85,8 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         Some(url) => url,
         None => {
             let default_repository_url = Url::parse("https://upload.pypi.org/legacy/")?;
-            credentials
-                .get(repository)
-                .and_then(|table| table.get("repository-url"))
+            repo_credentials
+                .get("repository-url")
                 .map(|url| match Url::parse(&escape_string(url.to_string())) {
                     Ok(url) => url,
                     Err(_) => default_repository_url.clone(),
@@ -103,50 +102,35 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
 
     let username = match cmd.username {
         Some(username) => username,
-        None => credentials
-            .get(repository)
-            .and_then(|table| table.get("username"))
+        None => repo_credentials
+            .get("username")
             .map(|username| username.to_string())
             .map(escape_string)
             .unwrap_or("__token__".to_string()),
     };
 
-    let token = if let Some(token) = cmd.token {
-        let secret = Secret::new(token);
-        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
-        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
-        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
-
-        secret
-    } else if let Some(token) = credentials
-        .get(repository)
-        .and_then(|table| table.get("token"))
+    let maybe_secret = if let Some(token) = cmd.token {
+        secret_from_token(token, cmd.yes, repo_credentials)?
+    } else if let Some(token) = repo_credentials
+        .get("token")
         .map(|token| token.to_string())
         .map(escape_string)
     {
         let secret = Secret::new(token);
-
-        maybe_decrypt(&secret, cmd.yes)?
+        let decrypted_secret = maybe_decrypt(&secret, cmd.yes)?;
+        Some(decrypted_secret)
     } else {
-        echo!("No access token found, generate one at: https://pypi.org/manage/account/token/");
         let token = if !cmd.yes {
+            echo!("No access token found, generate one at: https://pypi.org/manage/account/token/");
             prompt_for_token()?
         } else {
             "".to_string()
         };
-        if token.is_empty() {
-            bail!("an access token is required")
-        }
-        let secret = Secret::new(token);
-        let maybe_encrypted = maybe_encrypt(&secret, cmd.yes)?;
-        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
-        credentials[repository]["token"] = Item::Value(maybe_encoded.expose_secret().into());
-
-        secret
+        secret_from_token(token, cmd.yes, repo_credentials)?
     };
 
-    credentials[repository]["repository-url"] = Item::Value(repository_url.to_string().into());
-    credentials[repository]["username"] = Item::Value(username.clone().into());
+    repo_credentials["repository-url"] = Item::Value(repository_url.to_string().into());
+    repo_credentials["username"] = Item::Value(username.clone().into());
     write_credentials(&credentials)?;
 
     let mut publish_cmd = Command::new(get_venv_python_bin(&venv));
@@ -157,10 +141,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .args(files)
         .arg("--username")
         .arg(username)
-        .arg("--password")
-        .arg(token.expose_secret())
         .arg("--repository-url")
         .arg(repository_url.to_string());
+    if let Some(secret) = maybe_secret {
+        publish_cmd.arg("--password").arg(secret.expose_secret());
+    }
     if cmd.sign {
         publish_cmd.arg("--sign");
     }
@@ -253,6 +238,23 @@ fn maybe_decrypt(secret: &Secret<String>, yes: bool) -> Result<Secret<String>, E
     }
 
     bail!("failed to decrypt")
+}
+
+fn secret_from_token(
+    token: String,
+    yes: bool,
+    repo_credentials: &mut Item,
+) -> Result<Option<Secret<String>>, Error> {
+    if token.is_empty() {
+        Ok(None)
+    } else {
+        let secret = Secret::new(token);
+        let maybe_encrypted = maybe_encrypt(&secret, yes)?;
+        let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
+        repo_credentials["token"] = Item::Value(maybe_encoded.expose_secret().into());
+
+        Ok(Some(secret))
+    }
 }
 
 fn get_trimmed_user_input() -> Result<String, Error> {
