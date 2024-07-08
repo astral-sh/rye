@@ -252,7 +252,6 @@ fn secret_from_token(
         let maybe_encrypted = maybe_encrypt(&secret, yes)?;
         let maybe_encoded = maybe_encode(&secret, &maybe_encrypted);
         repo_credentials["token"] = Item::Value(maybe_encoded.expose_secret().into());
-
         Ok(Some(secret))
     }
 }
