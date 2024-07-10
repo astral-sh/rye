@@ -282,7 +282,7 @@ impl Config {
     }
 
     /// determine if we should disable revocation checks
-    /// 
+    ///
     /// This is important for Windows and WSL users
     /// where we want to disable revocation checks.  The reason is that MITM proxies
     /// will otherwise not work.  This is a schannel specific behavior anyways.
