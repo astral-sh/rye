@@ -280,6 +280,21 @@ impl Config {
             .and_then(|x| x.as_bool())
             .unwrap_or(false)
     }
+
+    /// determine if we should disable revocation checks
+    /// 
+    /// This is important for Windows and WSL users
+    /// where we want to disable revocation checks.  The reason is that MITM proxies
+    /// will otherwise not work.  This is a schannel specific behavior anyways.
+    /// for more information see https://github.com/curl/curl/issues/264
+    pub fn disable_revocation_checks(&self) -> bool {
+        self.doc
+            .get("behavior")
+            .and_then(|x| x.get("disable-revocation-checks"))
+            .and_then(|x| x.as_bool())
+            // default to true on Windows to maintain behavior
+            .unwrap_or(cfg!(windows))
+    }
 }
 
 #[cfg(test)]
@@ -416,5 +431,12 @@ author = "John Doe <john@example.com>""#,
         let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
         // Assuming cfg!(windows) is false in this test environment
         assert!(cfg.use_uv());
+    }
+
+    #[test]
+    fn disable_revocation_checks() {
+        let (cfg_path, _temp_dir) = setup_config("[behavior]\ndisable-revocation-checks = true");
+        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
+        assert!(cfg.disable_revocation_checks());
     }
 }
