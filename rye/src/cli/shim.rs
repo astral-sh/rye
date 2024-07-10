@@ -316,7 +316,7 @@ fn matches_shim(s: &str, reference: &str) -> bool {
 /// executable is invoked as a shim executable.
 pub fn execute_shim(args: &[OsString]) -> Result<(), Error> {
     if let Some(shim_name) = detect_shim(args) {
-        let pyproject = PyProject::discover().ok();
+        let pyproject = PyProject::discover(None).ok();
         if let Some(args) = get_shim_target(&shim_name, args, pyproject.as_ref())? {
             match spawn_shim(args)? {}
         } else if is_python_shim(&shim_name) {

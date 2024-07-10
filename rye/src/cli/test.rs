@@ -54,11 +54,14 @@ pub struct Args {
     /// Attempt to use `keyring` for authentication for index URLs.
     #[arg(long, value_enum, default_value_t)]
     keyring_provider: KeyringProvider,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let project = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
+    let project = PyProject::load_or_discover(cmd.pyproject.as_deref(), cmd.venv.as_ref())?;
 
     let mut failed_with = None;
 
@@ -94,6 +97,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
                     cmd.with_sources,
                     cmd.generate_hashes,
                     cmd.keyring_provider,
+                    cmd.venv,
                 )?;
             } else {
                 bail!("pytest not installed but in dependencies. Run `rye sync`.")

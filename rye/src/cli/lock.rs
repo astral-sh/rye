@@ -49,6 +49,9 @@ pub struct Args {
     /// Use this pyproject.toml file.
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -66,6 +69,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             reset: cmd.reset,
             generate_hashes: cmd.generate_hashes,
             universal: cmd.universal,
+            venv: cmd.venv,
         },
         pyproject: cmd.pyproject,
         keyring_provider: cmd.keyring_provider,

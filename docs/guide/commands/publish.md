@@ -48,4 +48,6 @@ $ rye publish dist/example-0.1.0.tar.gz
 
 * `-q, --quiet`: Turns off all output
 
+* `--venv <VENV>`: Use this virtual environment
+
 * `-h, --help`: Print help (see a summary with '-h')

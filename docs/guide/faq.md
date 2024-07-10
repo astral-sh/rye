@@ -191,6 +191,10 @@ of known supported cloud synchronization systems.
 For override this behavior you can set the `behavior.venv-mark-sync-ignore` configuration
 key to `false`.
 
+Various CI and test tools can be aided in intentionally setting a location for the virtualenv,
+as such there is an additional `--venv` option on several commands. For the given invocation 
+the command will override `.venv` to the specified location.
+
 ## Why Does Rye Contain Trojan "Bearfoos"?
 
 Unfortunately Windows likes to complain that Rye contains the trojan "Win32/Bearfoos.A!ml".

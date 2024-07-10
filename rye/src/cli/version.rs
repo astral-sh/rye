@@ -1,4 +1,4 @@
-use std::str::FromStr;
+use std::{path::PathBuf, str::FromStr};
 
 use crate::pyproject::PyProject;
 use anyhow::{anyhow, bail, Error};
@@ -13,6 +13,9 @@ pub struct Args {
     /// The version bump to apply
     #[arg(short, long)]
     bump: Option<Bump>,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 #[derive(Debug, Clone, ValueEnum)]
@@ -23,7 +26,7 @@ pub enum Bump {
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let mut pyproject_toml = PyProject::discover()?;
+    let mut pyproject_toml = PyProject::discover(cmd.venv.as_ref())?;
     match cmd.version {
         Some(version) => {
             let version =

@@ -35,4 +35,6 @@ flask @ git+https://github.com/pallets/flask@4df377cfbf
 
 * `--features <FEATURES>`: Adds a dependency with a specific feature
 
+* `--venv <VENV>`: Use this virtual environment
+
 * `-h, --help`: Print help (see a summary with '-h')

@@ -73,6 +73,11 @@ impl SyncOptions {
         self.pyproject = pyproject;
         self
     }
+
+    pub fn with_venv(mut self, venv: Option<PathBuf>) -> Self {
+        self.lock_options.venv = venv;
+        self
+    }
 }
 
 /// Config written into the virtualenv for sync purposes.
@@ -90,7 +95,8 @@ impl VenvMarker {
 
 /// Synchronizes a project's virtualenv.
 pub fn sync(mut cmd: SyncOptions) -> Result<(), Error> {
-    let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
+    let pyproject =
+        PyProject::load_or_discover(cmd.pyproject.as_deref(), cmd.lock_options.venv.as_ref())?;
     let lockfile = pyproject.workspace_path().join("requirements.lock");
     let dev_lockfile = pyproject.workspace_path().join("requirements-dev.lock");
     let venv = pyproject.venv_path();
@@ -336,6 +342,7 @@ pub fn autosync(
     with_sources: bool,
     generate_hashes: bool,
     keyring_provider: KeyringProvider,
+    venv_path: Option<PathBuf>,
 ) -> Result<(), Error> {
     sync(SyncOptions {
         output,
@@ -347,6 +354,7 @@ pub fn autosync(
             pre,
             with_sources,
             generate_hashes,
+            venv: venv_path,
             ..Default::default()
         },
         pyproject: Some(pyproject.toml_path().to_path_buf()),

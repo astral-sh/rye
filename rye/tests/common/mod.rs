@@ -122,6 +122,7 @@ pub struct Space {
     tempdir: TempDir,
     rye_home: PathBuf,
     project_dir: PathBuf,
+    venv_path: PathBuf,
 }
 
 impl Space {
@@ -132,8 +133,23 @@ impl Space {
         fs::create_dir_all(&project_dir).unwrap();
         Space {
             tempdir,
-            project_dir,
+            project_dir: project_dir.clone(),
             rye_home,
+            venv_path: project_dir.join(".venv"),
+        }
+    }
+
+    #[allow(unused)]
+    pub fn with_venv(venv_path: &str) -> Space {
+        let tempdir = marked_tempdir();
+        let project_dir = tempdir.path().join("project");
+        let rye_home = bootstrap_test_rye();
+        fs::create_dir_all(&project_dir).unwrap();
+        Space {
+            tempdir,
+            project_dir: project_dir.clone(),
+            rye_home,
+            venv_path: project_dir.join(venv_path),
         }
     }
 
@@ -229,7 +245,7 @@ impl Space {
 
     #[allow(unused)]
     pub fn venv_path(&self) -> PathBuf {
-        self.project_dir.join(".venv")
+        self.venv_path.clone()
     }
 
     #[allow(unused)]

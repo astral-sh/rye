@@ -28,7 +28,21 @@ def hello():
     exit_code: 1
     ----- stdout -----
     src/my_project/test.py:1:8: F401 [*] `os` imported but unused
+      |
+    1 | import os
+      |        ^^ F401
+    2 | 
+    3 | def hello():
+      |
+      = help: Remove unused import: `os`
+
     src/my_project/test.py:6:25: E703 [*] Statement ends with an unnecessary semicolon
+      |
+    6 |     return "Hello World";
+      |                         ^ E703
+      |
+      = help: Remove unnecessary semicolon
+
     Found 2 errors.
     [*] 2 fixable with the `--fix` option.
 

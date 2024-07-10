@@ -17,10 +17,13 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pub(crate) pyproject: Option<PathBuf>,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    pub(crate) venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let project = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
+    let project = PyProject::load_or_discover(cmd.pyproject.as_deref(), cmd.venv.as_ref())?;
     let python = get_venv_python_bin(&project.venv_path());
     if !python.is_file() {
         return Ok(());

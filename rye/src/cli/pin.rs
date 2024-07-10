@@ -31,6 +31,9 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -41,7 +44,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let to_write = get_pinnable_version(&req, cmd.relaxed)
         .ok_or_else(|| anyhow!("unsupported/unknown version for this platform"))?;
 
-    let pyproject = match PyProject::load_or_discover(cmd.pyproject.as_deref()) {
+    let pyproject = match PyProject::load_or_discover(cmd.pyproject.as_deref(), cmd.venv.as_ref()) {
         Ok(proj) => Some(proj),
         Err(err) => {
             if err.is::<DiscoveryUnsuccessful>() {

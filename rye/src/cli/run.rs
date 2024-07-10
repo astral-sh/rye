@@ -26,6 +26,9 @@ pub struct Args {
     /// Use this pyproject.toml file
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 #[derive(Parser, Debug)]
@@ -36,11 +39,17 @@ enum Cmd {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let _guard = redirect_to_stderr(true);
-    let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
+    let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref(), cmd.venv.as_ref())?;
 
     // make sure we have the minimal virtualenv.
-    sync(SyncOptions::python_only().pyproject(cmd.pyproject))
-        .context("failed to sync ahead of run")?;
+    //println!("Args: {:?}", cmd);
+    //rintln!("Syncing to {:?}", cmd.venv.clone());
+    sync(
+        SyncOptions::python_only()
+            .pyproject(cmd.pyproject)
+            .with_venv(cmd.venv.clone()),
+    )
+    .context("failed to sync ahead of run")?;
 
     if cmd.list || cmd.cmd.is_none() {
         return list_scripts(&pyproject);
@@ -50,7 +59,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         None => unreachable!(),
     };
 
-    invoke_script(&pyproject, args, true)?;
+    invoke_script(&pyproject, args, true, cmd.venv)?;
     unreachable!();
 }
 
@@ -58,6 +67,7 @@ fn invoke_script(
     pyproject: &PyProject,
     mut args: Vec<OsString>,
     exec: bool,
+    venv: Option<PathBuf>,
 ) -> Result<ExitStatus, Error> {
     let venv_bin = pyproject.venv_bin_path();
     let mut env_overrides = None;
@@ -115,8 +125,12 @@ fn invoke_script(
                 bail!("extra arguments to chained commands are not allowed");
             }
             for args in commands {
-                let status =
-                    invoke_script(pyproject, args.into_iter().map(Into::into).collect(), false)?;
+                let status = invoke_script(
+                    pyproject,
+                    args.into_iter().map(Into::into).collect(),
+                    false,
+                    venv.clone(),
+                )?;
                 if !status.success() {
                     if !exec {
                         return Ok(status);

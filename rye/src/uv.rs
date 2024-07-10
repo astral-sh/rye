@@ -122,6 +122,7 @@ pub struct UvBuilder {
     workdir: Option<PathBuf>,
     sources: Option<ExpandedSources>,
     output: CommandOutput,
+    venv_path: Option<PathBuf>,
 }
 
 impl UvBuilder {
@@ -130,6 +131,7 @@ impl UvBuilder {
             workdir: None,
             sources: None,
             output: CommandOutput::Normal,
+            venv_path: None,
         }
     }
 
@@ -151,10 +153,17 @@ impl UvBuilder {
         Self { output, ..self }
     }
 
+    pub fn with_venv_path(self, venv_path: &Option<PathBuf>) -> Self {
+        Self {
+            venv_path: venv_path.clone(),
+            ..self
+        }
+    }
+
     pub fn ensure_exists(self) -> Result<Uv, Error> {
         let workdir = self.workdir.unwrap_or(std::env::current_dir()?);
         let sources = self.sources.unwrap_or_else(ExpandedSources::empty);
-        Uv::ensure(workdir, sources, self.output)
+        Uv::ensure(workdir, sources, self.output, self.venv_path)
     }
 }
 
@@ -166,6 +175,7 @@ pub struct Uv {
     uv_bin: PathBuf,
     workdir: PathBuf,
     sources: ExpandedSources,
+    venv_path: Option<PathBuf>,
 }
 
 impl Default for Uv {
@@ -175,6 +185,7 @@ impl Default for Uv {
             uv_bin: PathBuf::new(),
             workdir: std::env::current_dir().unwrap_or_default(),
             sources: ExpandedSources::empty(),
+            venv_path: None,
         }
     }
 }
@@ -189,6 +200,7 @@ impl Uv {
         workdir: PathBuf,
         sources: ExpandedSources,
         output: CommandOutput,
+        venv_path: Option<PathBuf>,
     ) -> Result<Self, Error> {
         // Request a download for the default uv binary for this platform.
         // For instance on aarch64 macos this will request a compatible uv version.
@@ -209,6 +221,7 @@ impl Uv {
                 uv_bin,
                 workdir,
                 sources,
+                venv_path,
             });
         }
 
@@ -220,6 +233,7 @@ impl Uv {
                 uv_bin,
                 workdir,
                 sources,
+                venv_path,
             });
         }
 
@@ -267,6 +281,12 @@ impl Uv {
         Ok(())
     }
 
+    /// Set the [`CommandOutput`] level for subsequent invocations of uv.
+    #[allow(dead_code)]
+    pub fn with_output(self, output: CommandOutput) -> Self {
+        Self { output, ..self }
+    }
+
     /// Returns a new command with the uv binary as the command to run.
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     pub fn cmd(&self) -> Command {
@@ -300,9 +320,13 @@ impl Uv {
     ) -> Result<UvWithVenv, Error> {
         match read_venv_marker(venv_dir) {
             Some(venv) if venv.is_compatible(version) => {
+                //println!("Using existing venv at {}", venv_dir.display());
                 Ok(UvWithVenv::new(self.clone(), venv_dir, version))
             }
-            _ => self.create_venv(venv_dir, py_bin, version, prompt),
+            _ => {
+                //println!("Creating venv at {}", venv_dir.display());
+                self.create_venv(venv_dir, py_bin, version, prompt)
+            }
         }
     }
 
@@ -326,6 +350,11 @@ impl Uv {
             cmd.arg("--prompt").arg(prompt);
         }
         cmd.arg(venv_dir);
+        //use backtrace::Backtrace;
+        //let bt = Backtrace::new();
+        //println!("{:?}", bt);
+        //println!("Creating venv at {}", venv_dir.display());
+        //println!("Running: {:?}", cmd);
         let status = cmd.status().with_context(|| {
             format!(
                 "unable to create self venv using {}. It might be that \
@@ -342,6 +371,7 @@ impl Uv {
                 status
             ));
         }
+        //println!("Created venv at {}", venv_dir.display());
         Ok(UvWithVenv::new(self.clone(), venv_dir, version))
     }
 
@@ -370,7 +400,13 @@ impl Uv {
         };
 
         let mut cmd = self.cmd();
-        cmd.arg("pip").arg("compile").env_remove("VIRTUAL_ENV");
+        let venv_path = match self.venv_path.clone() {
+            Some(venv) => venv,
+            None => PathBuf::from(".venv"),
+        };
+        cmd.arg("pip")
+            .arg("compile")
+            .env("VIRTUAL_ENV", venv_path.canonicalize()?);
 
         self.sources.add_as_pip_args(&mut cmd);
         options.add_as_pip_args(&mut cmd);
@@ -381,7 +417,7 @@ impl Uv {
             .arg(target);
 
         cmd.arg(source);
-
+        //println!("387: Running: {:?}", cmd);
         let status = cmd.status().with_context(|| {
             format!(
                 "Unable to run uv pip compile and generate {}",
@@ -538,7 +574,7 @@ impl UvWithVenv {
         if options.importlib_workaround {
             cmd.arg("importlib-metadata==6.6.0");
         }
-
+        //println!("544: Running: {:?}", cmd);
         let status = cmd.status().with_context(|| {
             format!(
                 "unable to install {} in venv at {}",

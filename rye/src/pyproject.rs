@@ -160,6 +160,7 @@ impl SourceRef {
             .ok_or_else(|| anyhow!("expected source.url"))?;
         let verify_ssl = source
             .get("verify_ssl")
+            .or_else(|| source.get("verify-ssl"))
             .and_then(|x| x.as_bool())
             .unwrap_or(true);
         let username = source
@@ -373,11 +374,17 @@ pub struct Workspace {
     root: PathBuf,
     doc: DocumentMut,
     members: Option<Vec<String>>,
+    /// Optional virtualenv path, if not set, the default is `.venv`
+    venv_path: Option<PathBuf>,
 }
 
 impl Workspace {
     /// Loads a workspace from a pyproject.toml and path
-    fn try_load_from_toml(doc: &DocumentMut, path: &Path) -> Option<Workspace> {
+    fn try_load_from_toml(
+        doc: &DocumentMut,
+        path: &Path,
+        venv_path: Option<&PathBuf>,
+    ) -> Option<Workspace> {
         doc.get("tool")
             .and_then(|x| x.get("rye"))
             .and_then(|x| x.get("workspace"))
@@ -393,12 +400,13 @@ impl Workspace {
                             .filter_map(|item| item.as_str().map(|x| x.to_string()))
                             .collect::<Vec<_>>()
                     }),
+                venv_path: venv_path.map(PathBuf::from),
             })
     }
 
     /// Discovers a pyproject toml
     #[allow(unused)]
-    pub fn discover_from_path(path: &Path) -> Option<Workspace> {
+    pub fn discover_from_path(path: &Path, venv_path: Option<&PathBuf>) -> Option<Workspace> {
         let mut here = path;
 
         loop {
@@ -406,7 +414,9 @@ impl Workspace {
             if project_file.is_file() {
                 if let Ok(contents) = fs::read_to_string(&project_file) {
                     if let Ok(doc) = contents.parse::<DocumentMut>() {
-                        if let Some(workspace) = Workspace::try_load_from_toml(&doc, here) {
+                        if let Some(workspace) =
+                            Workspace::try_load_from_toml(&doc, here, venv_path)
+                        {
                             return Some(workspace);
                         }
                     }
@@ -479,12 +489,15 @@ impl Workspace {
                         && entry.file_name() == OsStr::new("pyproject.toml")
                         && self.is_member(entry.path().parent().unwrap())
                     {
-                        let project =
-                            match PyProject::load_with_workspace(entry.path(), self.clone()) {
-                                Ok(Some(project)) => project,
-                                Ok(None) => return None,
-                                Err(err) => return Some(Err(err)),
-                            };
+                        let project = match PyProject::load_with_workspace(
+                            entry.path(),
+                            self.clone(),
+                            self.venv_path.clone(),
+                        ) {
+                            Ok(Some(project)) => project,
+                            Ok(None) => return None,
+                            Err(err) => return Some(Err(err)),
+                        };
                         return Some(Ok(project));
                     }
                     None
@@ -507,7 +520,10 @@ impl Workspace {
 
     /// Returns the virtualenv path of the workspace.
     pub fn venv_path(&self) -> Cow<'_, Path> {
-        Cow::Owned(self.root.join(".venv"))
+        match self.venv_path.as_deref() {
+            Some(path) => Cow::Owned(self.root.join(path)),
+            None => Cow::Owned(self.root.join(".venv")),
+        }
     }
 
     /// Returns the project's target python version.
@@ -576,40 +592,52 @@ pub struct PyProject {
     basename: OsString,
     workspace: Option<Arc<Workspace>>,
     doc: DocumentMut,
+    /// Optional virtualenv path, if not set, the default is `.venv`
+    venv_path: Option<PathBuf>,
+}
+
+/// Returns an implicit table.
+fn implicit() -> Item {
+    let mut table = Table::new();
+    table.set_implicit(true);
+    Item::Table(table)
 }
 
 impl PyProject {
     /// Load a pyproject toml if explicitly given, else discover from current directory
     ///
     /// Used for command line arguments.
-    pub fn load_or_discover(arg: Option<&Path>) -> Result<PyProject, Error> {
+    pub fn load_or_discover(
+        arg: Option<&Path>,
+        venv_path: Option<&PathBuf>,
+    ) -> Result<PyProject, Error> {
         match arg {
             // canonicalize because it comes from a command line argument
-            Some(path) => Self::load(&path.canonicalize()?),
-            None => Self::discover(),
+            Some(path) => Self::load(&path.canonicalize()?, venv_path),
+            None => Self::discover(venv_path),
         }
     }
 
     /// Discovers and loads a pyproject toml.
-    pub fn discover() -> Result<PyProject, Error> {
+    pub fn discover(venv_path: Option<&PathBuf>) -> Result<PyProject, Error> {
         let pyproject_toml = match find_project_root() {
             Some(root) => root.join("pyproject.toml"),
             None => return Err(Error::from(DiscoveryUnsuccessful)),
         };
-        Self::load(&pyproject_toml)
+        Self::load(&pyproject_toml, venv_path)
     }
 
     /// Loads a pyproject toml.
-    pub fn load(filename: &Path) -> Result<PyProject, Error> {
+    pub fn load(filename: &Path, venv_path: Option<&PathBuf>) -> Result<PyProject, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
         let doc = fs::read_to_string(filename)
             .path_context(filename, "failed to read pyproject.toml")?
             .parse::<DocumentMut>()
             .path_context(filename, "failed to parse pyproject.toml")?;
-        let mut workspace = Workspace::try_load_from_toml(&doc, root).map(Arc::new);
+        let mut workspace = Workspace::try_load_from_toml(&doc, root, venv_path).map(Arc::new);
 
         if workspace.is_none() {
-            workspace = Workspace::discover_from_path(root).map(Arc::new);
+            workspace = Workspace::discover_from_path(root, venv_path).map(Arc::new);
         }
 
         if let Some(ref workspace) = workspace {
@@ -632,6 +660,7 @@ impl PyProject {
             basename,
             workspace,
             doc,
+            venv_path: venv_path.map(PathBuf::from),
         })
     }
 
@@ -641,6 +670,7 @@ impl PyProject {
     pub fn load_with_workspace(
         filename: &Path,
         workspace: Arc<Workspace>,
+        venv_path: Option<PathBuf>,
     ) -> Result<Option<PyProject>, Error> {
         let root = filename.parent().unwrap_or(Path::new("."));
         let doc = fs::read_to_string(filename)?
@@ -667,6 +697,7 @@ impl PyProject {
             basename,
             workspace: Some(workspace),
             doc,
+            venv_path,
         }))
     }
 
@@ -707,7 +738,10 @@ impl PyProject {
     pub fn venv_path(&self) -> Cow<'_, Path> {
         match self.workspace() {
             Some(ws) => ws.venv_path(),
-            None => self.root.join(".venv").into(),
+            None => match self.venv_path.as_deref() {
+                Some(path) => Cow::Owned(self.root.join(path)),
+                None => Cow::Owned(self.root.join(".venv")),
+            },
         }
     }
 
@@ -911,8 +945,14 @@ impl PyProject {
     ) -> Result<(), Error> {
         let dependencies = match kind {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
-            DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
-            DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
+            DependencyKind::Dev => self
+                .obtain_tool_config_table()?
+                .entry("dev-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
+            DependencyKind::Excluded => self
+                .obtain_tool_config_table()?
+                .entry("excluded-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
             DependencyKind::Optional(ref section) => {
                 // add this as a proper non-inline table if it's missing
                 let table = &mut self.doc["project"]["optional-dependencies"];
@@ -942,8 +982,14 @@ impl PyProject {
     ) -> Result<Option<Requirement>, Error> {
         let dependencies = match kind {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
-            DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
-            DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
+            DependencyKind::Dev => self
+                .obtain_tool_config_table()?
+                .entry("dev-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
+            DependencyKind::Excluded => self
+                .obtain_tool_config_table()?
+                .entry("excluded-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
             DependencyKind::Optional(ref section) => {
                 &mut self.doc["project"]["optional-dependencies"][section as &str]
             }
@@ -1045,6 +1091,19 @@ impl PyProject {
         let path = self.toml_path();
         fs::write(&path, self.doc.to_string()).path_context(&path, "unable to write changes")?;
         Ok(())
+    }
+
+    /// Gets or creates the [tool.rye] table in pyproject.toml
+    fn obtain_tool_config_table(&mut self) -> Result<&mut Table, Error> {
+        self.doc
+            .entry("tool")
+            .or_insert(implicit())
+            .as_table_mut()
+            .ok_or(anyhow!("[tool.rye] in pyproject.toml is malformed"))?
+            .entry("rye")
+            .or_insert(implicit())
+            .as_table_mut()
+            .ok_or(anyhow!("[tool.rye] in pyproject.toml is malformed"))
     }
 }
 

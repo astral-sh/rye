@@ -56,4 +56,6 @@ $ rye fetch cpython@3.9.1 --target-path=my-interpreter
 
 * `-q, --quiet`: Turns off all output
 
+* `--venv <VENV>`: Use this virtual environment
+
 * `-h, --help`: Print help (see a summary with '-h')

@@ -33,10 +33,13 @@ pub struct RuffArgs {
     /// Extra arguments to ruff
     #[arg(last = true)]
     extra_args: Vec<OsString>,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute_ruff(args: RuffArgs, extra_args: &[&str]) -> Result<(), Error> {
-    let project = PyProject::load_or_discover(args.pyproject.as_deref())?;
+    let project = PyProject::load_or_discover(args.pyproject.as_deref(), args.venv.as_ref())?;
     let output = CommandOutput::from_quiet_and_verbose(args.quiet, args.verbose);
     let venv = ensure_self_venv(output)?;
     let ruff = venv.join(VENV_BIN).join("ruff");

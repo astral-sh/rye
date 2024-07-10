@@ -122,7 +122,11 @@ impl ReqExtras {
         self.absolute = true;
     }
 
-    pub fn apply_to_requirement(&self, req: &mut Requirement) -> Result<(), Error> {
+    pub fn apply_to_requirement(
+        &self,
+        req: &mut Requirement,
+        venv: Option<&PathBuf>,
+    ) -> Result<(), Error> {
         if let Some(ref git) = self.git {
             // XXX: today they are all aliases, it might be better to change
             // tag to refs/tags/<tag> and branch to refs/heads/<branch> but
@@ -158,7 +162,7 @@ impl ReqExtras {
             // but this not supported by pip-tools,
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
-                PyProject::discover()?.build_backend() == Some(BuildSystem::Hatchling);
+                PyProject::discover(venv)?.build_backend() == Some(BuildSystem::Hatchling);
             let file_url = if self.absolute || is_hatchling {
                 Url::from_file_path(env::current_dir()?.join(path))
                     .map_err(|_| anyhow!("unable to interpret '{}' as path", path.display()))?
@@ -236,6 +240,9 @@ pub struct Args {
     /// Attempt to use `keyring` for authentication for index URLs.
     #[arg(long, value_enum, default_value_t)]
     keyring_provider: KeyringProvider,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -244,7 +251,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let python_path = self_venv.join(VENV_BIN).join("python");
     let cfg = Config::current();
 
-    let mut pyproject_toml = PyProject::discover()?;
+    let mut pyproject_toml = PyProject::discover(cmd.venv.as_ref())?;
     let py_ver = pyproject_toml.venv_python_version()?;
     let dep_kind = if cmd.dev {
         DependencyKind::Dev
@@ -267,14 +274,19 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let mut requirements = Vec::new();
     for str_requirement in &cmd.requirements {
         let mut requirement = Requirement::from_str(str_requirement)?;
-        cmd.req_extras.apply_to_requirement(&mut requirement)?;
+        cmd.req_extras
+            .apply_to_requirement(&mut requirement, cmd.venv.as_ref())?;
         requirements.push(requirement);
     }
 
     if !cmd.excluded {
         if cfg.use_uv() {
-            sync(SyncOptions::python_only().pyproject(None))
-                .context("failed to sync ahead of add")?;
+            sync(
+                SyncOptions::python_only()
+                    .pyproject(None)
+                    .with_venv(cmd.venv.clone()),
+            )
+            .context("failed to sync ahead of add")?;
             resolve_requirements_with_uv(
                 &pyproject_toml,
                 &py_ver,
@@ -326,6 +338,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             cmd.with_sources,
             cmd.generate_hashes,
             cmd.keyring_provider,
+            cmd.venv,
         )?;
     }
 

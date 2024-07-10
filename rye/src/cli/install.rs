@@ -1,4 +1,4 @@
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use anyhow::{Context, Error};
 use clap::Parser;
@@ -11,7 +11,7 @@ use crate::lock::KeyringProvider;
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
-/// Installs a package as global tool. This is an alias of `rye tools install`.
+/// Installs a package as global tool.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The name of the package to install.
@@ -39,6 +39,9 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(mut cmd: Args) -> Result<(), Error> {
@@ -50,7 +53,8 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
     // installations here always use absolute paths for local references
     // because we do not have a rye workspace to work with.
     cmd.req_extras.force_absolute();
-    cmd.req_extras.apply_to_requirement(&mut requirement)?;
+    cmd.req_extras
+        .apply_to_requirement(&mut requirement, cmd.venv.as_ref())?;
 
     for req in cmd.extra_requirement {
         extra_requirements.push(handle_requirement(&req, output, false)?);

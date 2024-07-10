@@ -293,9 +293,9 @@ Preferably over time the structure of virtualenvs aligns between different Pytho
 (eg: Windows vs Linux) and the deeply nested `lib/py-ver/site-packages` structure is flattened
 out.
 
-**What needs to be done:**
-
-* Agree on a name for where managed virtualenvs are placed (eg: `.venv` in the workspace root)
+For better integration with external CI tools such as tox and nox we did introduce an optional
+parameter on many of the commands, `--venv` which allows the main `.venv` to be overridden for 
+the given command. 
 
 #### Dev and Tool Dependencies
 

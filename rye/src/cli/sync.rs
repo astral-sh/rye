@@ -58,6 +58,9 @@ pub struct Args {
     /// Use universal lock files
     #[arg(long)]
     universal: bool,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -82,6 +85,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             reset: cmd.reset,
             generate_hashes: cmd.generate_hashes,
             universal: cmd.universal,
+            venv: cmd.venv,
         },
         keyring_provider: cmd.keyring_provider,
         pyproject: cmd.pyproject,

@@ -83,4 +83,6 @@ Added packagename @ file:///path/to/packagename as regular dependency
 
 * `-q, --quiet`: Turns off all output
 
+* `--venv <VENV>`: Use this virtual environment
+
 * `-h, --help`: Print help (see a summary with `-h`)

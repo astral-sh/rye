@@ -10,7 +10,7 @@ use crate::pyproject::PyProject;
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
-/// Fetches a Python interpreter for the local machine. This is an alias of `rye toolchain fetch`.
+/// Fetches a Python interpreter for the local machine.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The version of Python to fetch.
@@ -35,6 +35,9 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -43,7 +46,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let version: PythonVersionRequest = match cmd.version {
         Some(version) => version.parse()?,
         None => {
-            if let Ok(pyproject) = PyProject::discover() {
+            if let Ok(pyproject) = PyProject::discover(cmd.venv.as_ref()) {
                 pyproject.venv_python_version()?.into()
             } else {
                 match get_python_version_request_from_pyenv_pin(&std::env::current_dir()?) {

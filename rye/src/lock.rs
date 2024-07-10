@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 use std::collections::{HashMap, HashSet};
 use std::io::{BufWriter, Write};
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Arc;
 use std::{env, fmt, fs};
@@ -107,6 +107,8 @@ pub struct LockOptions {
     pub generate_hashes: bool,
     /// Use universal lock files.
     pub universal: bool,
+    /// venv location
+    pub venv: Option<PathBuf>,
 }
 
 impl LockOptions {
@@ -440,6 +442,7 @@ fn generate_lockfile(
             .with_output(output.quieter())
             .with_sources(sources.clone())
             .with_workdir(workspace_path)
+            .with_venv_path(&lock_options.venv)
             .ensure_exists()?
             .lockfile(
                 py_ver,

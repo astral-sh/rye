@@ -54,4 +54,6 @@ By default you will find the artifacts in the `dist` folder.
 
 * `-q, --quiet`: Turns off all output
 
+* `--venv <VENV>`: Use this virtual environment
+
 * `-h, --help`: Print help

@@ -8,6 +8,7 @@ use console::style;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
+
 use crate::pyproject::{locate_projects, PyProject};
 use crate::utils::{get_venv_python_bin, prepend_path_to_path_env, CommandOutput, IoPathContext};
 use crate::uv::UvBuilder;
@@ -42,12 +43,15 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let self_venv = ensure_self_venv(output)?;
-    let project = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
+    let project = PyProject::load_or_discover(cmd.pyproject.as_deref(), cmd.venv.as_ref())?;
 
     let out = match cmd.out {
         Some(path) => path,
@@ -66,6 +70,17 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let use_uv = Config::current().use_uv();
     let projects = locate_projects(project, cmd.all, &cmd.package[..])?;
 
+    let all_virtual = projects.iter().all(|p| p.is_virtual());
+    if all_virtual {
+        warn!("skipping build, all projects are virtual");
+        return Ok(());
+    }
+
+    let all_virtual = projects.iter().all(|p| p.is_virtual());
+    if all_virtual {
+        warn!("skipping build, all projects are virtual");
+        return Ok(());
+    }
     for project in projects {
         // skip over virtual packages on build
         if project.is_virtual() {
@@ -118,6 +133,5 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             bail!("failed to build dist");
         }
     }
-
     Ok(())
 }

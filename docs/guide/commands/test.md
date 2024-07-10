@@ -55,4 +55,6 @@ stuff/tests/test_batch.py .                                            [100%]
 
 * `-s`, `--no-capture`: Disable stdout/stderr capture for the test runner
 
+* `--venv <VENV>`: Use this virtual environment
+
 * `-h, --help`: Print help (see a summary with '-h')

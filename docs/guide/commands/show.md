@@ -29,4 +29,6 @@ virtual: false
 
 * `--pyproject`: Use this `pyproject.toml` file
 
+* `--venv <VENV>`: Use this virtual environment
+
 * `-h, --help`: Print help (see a summary with '-h')

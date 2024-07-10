@@ -1,3 +1,4 @@
+use std::path::PathBuf;
 use std::str::FromStr;
 
 use anyhow::Error;
@@ -17,7 +18,7 @@ pub struct Args {
     #[arg(required = true)]
     requirements: Vec<String>,
     /// Remove this from dev dependencies.
-    #[arg(long)]
+    #[arg(short, long)]
     dev: bool,
     /// Remove this from an optional dependency group.
     #[arg(long, conflicts_with = "dev")]
@@ -47,13 +48,16 @@ pub struct Args {
     /// Attempt to use `keyring` for authentication for index URLs.
     #[arg(long, value_enum, default_value_t)]
     keyring_provider: KeyringProvider,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let mut removed_packages = Vec::new();
 
-    let mut pyproject_toml = PyProject::discover()?;
+    let mut pyproject_toml = PyProject::discover(cmd.venv.as_ref())?;
     for str_requirement in cmd.requirements {
         let requirement = Requirement::from_str(&str_requirement)?;
         if let Some(removed) = pyproject_toml.remove_dependency(
@@ -86,6 +90,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             cmd.with_sources,
             cmd.generate_hashes,
             cmd.keyring_provider,
+            cmd.venv,
         )?;
     }
 

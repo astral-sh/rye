@@ -54,6 +54,9 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
+    /// Use this virtual environment.
+    #[arg(long, value_name = "VENV")]
+    venv: Option<PathBuf>,
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
@@ -64,7 +67,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let files = match cmd.dist {
         Some(paths) => paths,
         None => {
-            let project = PyProject::discover()?;
+            let project = PyProject::discover(cmd.venv.as_ref())?;
             if project.is_virtual() {
                 bail!("virtual packages cannot be published");
             }
