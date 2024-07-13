@@ -66,6 +66,11 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let use_uv = Config::current().use_uv();
     let projects = locate_projects(project, cmd.all, &cmd.package[..])?;
 
+    let all_virtual = projects.iter().all(|p| p.is_virtual());
+    if all_virtual {
+        warn!("skipping build, all projects are virtual");
+        return Ok(());
+    }
     for project in projects {
         // skip over virtual packages on build
         if project.is_virtual() {
@@ -118,6 +123,5 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             bail!("failed to build dist");
         }
     }
-
     Ok(())
 }
