@@ -160,6 +160,7 @@ impl SourceRef {
             .ok_or_else(|| anyhow!("expected source.url"))?;
         let verify_ssl = source
             .get("verify_ssl")
+            .or_else(|| source.get("verify-ssl"))
             .and_then(|x| x.as_bool())
             .unwrap_or(true);
         let username = source
