@@ -612,23 +612,6 @@ fn perform_install(
         return Err(QuietExit(1).into());
     }
 
-    // Use uv?
-    if config_doc
-        .get("behavior")
-        .and_then(|x| x.get("use-uv"))
-        .is_none()
-    {
-        let use_uv = matches!(mode, InstallMode::NoPrompts)
-            || dialoguer::Select::with_theme(tui_theme())
-                .with_prompt("Select the preferred package installer")
-                .item("uv (fast, recommended)")
-                .item("pip-tools (slow, higher compatibility)")
-                .default(0)
-                .interact()?
-                == 0;
-        toml::ensure_table(config_doc, "behavior")["use-uv"] = toml_edit::value(use_uv);
-    }
-
     // If the global-python flag is not in the settings, ask the user if they want to turn
     // on global shims upon installation.
     if config_doc

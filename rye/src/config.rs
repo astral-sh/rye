@@ -261,13 +261,25 @@ impl Config {
             .unwrap_or_else(|| self.use_uv())
     }
 
-    /// Indicates if uv should be used instead of pip-tools.
+    /// pip-tools is now deprecated in favor uv. This function is used to warn the user about the
+    /// change and always return true.
     pub fn use_uv(&self) -> bool {
-        self.doc
+        let legacy_use_uv = self
+            .doc
             .get("behavior")
             .and_then(|x| x.get("use-uv"))
-            .and_then(|x| x.as_bool())
-            .unwrap_or(true)
+            .and_then(|x| x.as_bool());
+
+        match legacy_use_uv {
+            Some(use_uv) => {
+                // warn if the user is using the deprecated behavior.use-uv key, and it's set to false
+                if !use_uv {
+                    warn!("behavior.use-uv=false is deprecated, uv is always used now");
+                }
+                true
+            }
+            None => true,
+        }
     }
 
     /// Fetches python installations with build info if possible.

@@ -7,7 +7,6 @@ use clap::Parser;
 use console::style;
 
 use crate::bootstrap::{fetch, FetchOptions};
-use crate::config::Config;
 
 use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{locate_projects, PyProject};
@@ -65,7 +64,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         }
     }
 
-    let use_uv = Config::current().use_uv();
     let projects = locate_projects(project, cmd.all, &cmd.package[..])?;
 
     let all_virtual = projects.iter().all(|p| p.is_virtual());
@@ -91,9 +89,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     uv_venv.write_marker()?;
     uv_venv.bootstrap()?;
 
-    // Respect the output level for the actual builds.
-    let uv = uv.with_output(output);
-
     for project in projects {
         // skip over virtual packages on build
         if project.is_virtual() {
@@ -114,14 +109,17 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .arg(&out)
             .arg(&*project.root_path());
 
-        if use_uv {
-            let uv_dir = uv
-                .uv_bin()
-                .parent()
-                .ok_or_else(|| anyhow!("Could not find uv binary in self venv: empty path"))?;
-            build_cmd.env("PATH", prepend_path_to_path_env(uv_dir)?);
-            build_cmd.arg("--installer=uv");
-        }
+        // we need to ensure uv is available to use without installing it into self_venv
+        let uv = UvBuilder::new()
+            .with_output(output)
+            .ensure_exists()?
+            .with_output(output);
+        let uv_dir = uv
+            .uv_bin()
+            .parent()
+            .ok_or_else(|| anyhow!("Could not find uv binary in self venv: empty path"))?;
+        build_cmd.env("PATH", prepend_path_to_path_env(uv_dir)?);
+        build_cmd.arg("--installer=uv");
 
         if cmd.wheel {
             build_cmd.arg("--wheel");

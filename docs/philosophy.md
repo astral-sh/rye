@@ -14,10 +14,9 @@ on my mind when I built it:
 - **No Core Non Standard Stuff:** Rye (with the exception of it's own `tool` section
   in the `pyproject.toml`) uses standardized keys. That means it uses regular
   requirements as you would expect. It also does not use a custom lock file
-  format and uses [`uv`](https://github.com/astral-sh/uv) and
-  [`pip-tools`](https://github.com/jazzband/pip-tools) behind the scenes.
+  format and uses [`uv`](https://github.com/astral-sh/uv).
 
-- **No Pip:** Rye uses pip, but it does not expose it. It manages dependencies in
+- **No Pip:** Rye uses [`uv`](https://github.com/astral-sh/uv) only at this point. It manages dependencies in
   `pyproject.toml` only.
 
 - **No System Python:** I can't deal with any more linux distribution weird Python
@@ -52,11 +51,6 @@ lack of standardization. Here is what this project ran into over the years:
   dependencies. Rust for this purpose has something like `{ path = "../foo" }`
   which allows both remote and local references to co-exist and it rewrites them
   on publish.
-
-- **No Exposed Pip:** pip is intentionally not exposed. If you were to install something
-  into the virtualenv, it disappears next time you sync. If you symlink `rye` to
-  `~/.rye/shims/pip` you can get access to pip without installing it into the
-  virtualenv. There be dragons.
 
 - **No Workspace Spec:** for monorepos and things of that nature, the Python ecosystem
   would need a definition of workspaces. Today that does not exist which forces every

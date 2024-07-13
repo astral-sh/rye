@@ -12,7 +12,6 @@ use once_cell::sync::Lazy;
 use tempfile::tempdir_in;
 
 use crate::config::Config;
-use crate::piptools::LATEST_PIP;
 use crate::platform::{
     get_app_dir, get_canonical_py_path, get_python_bin_within, get_toolchain_python_bin,
     list_known_toolchains,
@@ -154,8 +153,8 @@ pub fn ensure_self_venv_with_toolchain(
         let uv_venv = uv.venv(&venv_dir, &py_bin, &version, None)?;
         // write our marker
         uv_venv.write_marker()?;
-        // update pip and our requirements
-        uv_venv.update(LATEST_PIP, SELF_REQUIREMENTS)?;
+        // update our requirements
+        uv_venv.update_requirements(SELF_REQUIREMENTS)?;
 
         // Update the shims
         let shims = app_dir.join("shims");
