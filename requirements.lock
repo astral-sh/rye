@@ -6,17 +6,18 @@
 #   features: []
 #   all-features: false
 #   with-sources: false
+#   generate-hashes: false
 
 -e file:rye-devtools
-anyio==4.2.0
+anyio==4.4.0
     # via httpx
-certifi==2023.5.7
+certifi==2024.6.2
     # via httpcore
     # via httpx
     # via requests
-charset-normalizer==3.1.0
+charset-normalizer==3.3.2
     # via requests
-click==8.1.3
+click==8.1.7
     # via mkdocs
 colorama==0.4.6
     # via mkdocs-material
@@ -24,15 +25,15 @@ ghp-import==2.1.0
     # via mkdocs
 h11==0.14.0
     # via httpcore
-httpcore==1.0.2
+httpcore==1.0.5
     # via httpx
-httpx==0.26.0
+httpx==0.27.0
     # via rye-devtools
-idna==3.4
+idna==3.7
     # via anyio
     # via httpx
     # via requests
-jinja2==3.1.2
+jinja2==3.1.4
     # via mkdocs
     # via mkdocs-material
 markdown==3.3.7
@@ -40,46 +41,46 @@ markdown==3.3.7
     # via mkdocs
     # via mkdocs-material
     # via pymdown-extensions
-markupsafe==2.1.2
+markupsafe==2.1.5
     # via jinja2
-mdx-gh-links==0.3
+mdx-gh-links==0.4
 mergedeep==1.3.4
     # via mkdocs
 mkdocs==1.4.3
     # via mkdocs-material
     # via mkdocs-simple-hooks
 mkdocs-include-markdown-plugin==4.0.4
-mkdocs-material==9.1.12
-mkdocs-material-extensions==1.1.1
+mkdocs-material==9.1.20
+mkdocs-material-extensions==1.3.1
     # via mkdocs-material
 mkdocs-simple-hooks==0.1.5
 mkdocs-version-annotations==1.0.0
-packaging==23.1
+packaging==24.1
     # via mkdocs
-pygments==2.15.1
+pygments==2.18.0
     # via mkdocs-material
 pymdown-extensions==9.11
     # via mkdocs-material
-python-dateutil==2.8.2
+python-dateutil==2.9.0.post0
     # via ghp-import
-pyyaml==6.0
+pyyaml==6.0.1
     # via mkdocs
     # via pymdown-extensions
     # via pyyaml-env-tag
 pyyaml-env-tag==0.1
     # via mkdocs
-regex==2023.5.5
+regex==2024.5.15
     # via mkdocs-material
-requests==2.31.0
+requests==2.32.3
     # via mkdocs-material
 six==1.16.0
     # via python-dateutil
-sniffio==1.3.0
+sniffio==1.3.1
     # via anyio
     # via httpx
 socksio==1.0.0
     # via httpx
-urllib3==2.0.2
+urllib3==2.2.2
     # via requests
-watchdog==3.0.0
+watchdog==4.0.1
     # via mkdocs

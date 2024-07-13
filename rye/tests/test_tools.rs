@@ -36,7 +36,7 @@ fn test_basic_tool_behavior() {
 
     ----- stderr -----
     Resolved 1 package in [EXECUTION_TIME]
-    Downloaded 1 package in [EXECUTION_TIME]
+    Prepared 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + pycowsay==0.0.0.2
     "###);

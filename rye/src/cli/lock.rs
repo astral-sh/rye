@@ -40,10 +40,13 @@ pub struct Args {
     /// Set to true to lock with hashes in the lockfile.
     #[arg(long)]
     generate_hashes: bool,
+    /// Use universal lock files.
+    #[arg(long)]
+    universal: bool,
     /// Reset prior lock options.
     #[arg(long)]
     reset: bool,
-    /// Use this pyproject.toml file
+    /// Use this pyproject.toml file.
     #[arg(long, value_name = "PYPROJECT_TOML")]
     pyproject: Option<PathBuf>,
 }
@@ -62,6 +65,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             with_sources: cmd.with_sources,
             reset: cmd.reset,
             generate_hashes: cmd.generate_hashes,
+            universal: cmd.universal,
         },
         pyproject: cmd.pyproject,
         keyring_provider: cmd.keyring_provider,
