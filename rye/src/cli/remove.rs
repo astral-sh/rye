@@ -17,7 +17,7 @@ pub struct Args {
     #[arg(required = true)]
     requirements: Vec<String>,
     /// Remove this from dev dependencies.
-    #[arg(long)]
+    #[arg(short, long)]
     dev: bool,
     /// Remove this from an optional dependency group.
     #[arg(long, conflicts_with = "dev")]
