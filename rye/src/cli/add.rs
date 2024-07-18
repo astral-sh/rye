@@ -16,7 +16,7 @@ use crate::consts::VENV_BIN;
 use crate::lock::KeyringProvider;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
-use crate::sync::{autosync, sync, SyncOptions};
+use crate::sync::{autosync, sync, SyncOptions, SyncMode};
 use crate::utils::{format_requirement, get_venv_python_bin, set_proxy_variables, CommandOutput};
 use crate::uv::UvBuilder;
 
@@ -322,6 +322,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         autosync(
             &pyproject_toml,
             output,
+            SyncMode::Regular,
             cmd.pre,
             cmd.with_sources,
             cmd.generate_hashes,

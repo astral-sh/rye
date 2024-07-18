@@ -42,6 +42,10 @@ fn test_init_lib() {
         Hello from my-project!
 
         ----- stderr -----
+        Reusing already existing virtualenv
+        Installing dependencies
+        Audited 1 package in [EXECUTION_TIME]
+        Done!    
     "###);
 
     assert!(
@@ -91,6 +95,10 @@ fn test_init_default() {
         Hello from my-project!
 
         ----- stderr -----
+        Reusing already existing virtualenv
+        Installing dependencies
+        Audited 1 package in [EXECUTION_TIME]
+        Done!    
     "###);
 
     assert!(
@@ -141,6 +149,10 @@ fn test_init_script() {
         Hello from my-project!
 
         ----- stderr -----
+        Reusing already existing virtualenv
+        Installing dependencies
+        Audited 1 package in [EXECUTION_TIME]
+        Done!    
     "###);
 
     rye_cmd_snapshot!(space.rye_cmd().arg("run").arg("python").arg("-mmy_project"), @r###"
@@ -150,6 +162,10 @@ fn test_init_script() {
         Hello from my-project!
 
         ----- stderr -----
+        Reusing already existing virtualenv
+        Installing dependencies
+        Audited 1 package in [EXECUTION_TIME]
+        Done!    
     "###);
 }
 

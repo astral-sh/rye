@@ -48,5 +48,9 @@ fn test_dotenv() {
     42 23
 
     ----- stderr -----
+    Reusing already existing virtualenv
+    Installing dependencies
+    Audited 1 package in [EXECUTION_TIME]
+    Done!
     "###);
 }

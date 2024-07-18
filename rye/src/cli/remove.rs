@@ -7,7 +7,7 @@ use pep508_rs::Requirement;
 use crate::config::Config;
 use crate::lock::KeyringProvider;
 use crate::pyproject::{DependencyKind, PyProject};
-use crate::sync::autosync;
+use crate::sync::{autosync, SyncMode};
 use crate::utils::{format_requirement, CommandOutput};
 
 /// Removes a package from this project.
@@ -82,6 +82,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         autosync(
             &pyproject_toml,
             output,
+            SyncMode::Regular,
             cmd.pre,
             cmd.with_sources,
             cmd.generate_hashes,
