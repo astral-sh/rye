@@ -11,7 +11,7 @@ use crate::lock::KeyringProvider;
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
-/// Installs a package as global tool. This is an alias of `rye tools install`.
+/// Installs a package as global tool.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The name of the package to install.

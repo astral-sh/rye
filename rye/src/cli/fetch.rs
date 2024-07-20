@@ -10,7 +10,7 @@ use crate::pyproject::PyProject;
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
-/// Fetches a Python interpreter for the local machine. This is an alias of `rye toolchain fetch`.
+/// Fetches a Python interpreter for the local machine.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The version of Python to fetch.
