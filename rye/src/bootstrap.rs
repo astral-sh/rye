@@ -35,7 +35,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
 
 const SELF_VERSION: u64 = 20;
 
-const SELF_REQUIREMENTS: &str = r#"
+pub const SELF_REQUIREMENTS: &str = r#"
 build==1.2.1
 certifi==2024.2.2
 charset-normalizer==3.3.2
