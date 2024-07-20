@@ -1,5 +1,6 @@
-use crate::bootstrap::download_url;
+use crate::bootstrap::{download_url, SELF_REQUIREMENTS};
 use crate::lock::{make_project_root_fragment, KeyringProvider};
+use crate::piptools::LATEST_PIP;
 use crate::platform::get_app_dir;
 use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources};
 use crate::sources::py::PythonVersion;
@@ -267,6 +268,12 @@ impl Uv {
         Ok(())
     }
 
+    /// Set the [`CommandOutput`] level for subsequent invocations of uv.
+    #[must_use]
+    pub fn with_output(self, output: CommandOutput) -> Self {
+        Self { output, ..self }
+    }
+
     /// Returns a new command with the uv binary as the command to run.
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     pub fn cmd(&self) -> Command {
@@ -443,6 +450,12 @@ impl UvWithVenv {
     pub fn update(&self, pip_version: &str, requirements: &str) -> Result<(), Error> {
         self.update_pip(pip_version)?;
         self.update_requirements(requirements)?;
+        Ok(())
+    }
+
+    /// Install the bootstrap requirements in the venv.
+    pub fn bootstrap(&self) -> Result<(), Error> {
+        self.update(LATEST_PIP, SELF_REQUIREMENTS)?;
         Ok(())
     }
 
