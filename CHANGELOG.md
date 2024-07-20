@@ -5,6 +5,19 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.37.0
+
+Released on 2024-07-20.
+
+* Fix verify-ssl option parsing by @taki-d in https://github.com/astral-sh/rye/pull/1208
+* Emit warning when asked to build a virtual project by @nazq in https://github.com/astral-sh/rye/pull/1227
+* Add short version `-d` for `rye remove --dev` by @nikhilweee in https://github.com/astral-sh/rye/pull/1239
+* Remove redundant alias information from CLI by @piotrgredowski in https://github.com/astral-sh/rye/pull/1237
+* Update bundled uv version to `v0.2.27` by @github-actions in https://github.com/astral-sh/rye/pull/1232
+* Update Python releases to include `3.12.4` by @github-actions in https://github.com/astral-sh/rye/pull/1230
+* Respect `.python-version` in Rye builds by @charliermarsh in https://github.com/astral-sh/rye/pull/1250
+* Update bundled Ruff version to `v0.5.4` by @charliermarsh in https://github.com/astral-sh/rye/pull/1251
+
 ## 0.36.0
 
 Released on 2024-07-07.
