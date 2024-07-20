@@ -33,7 +33,7 @@ pub const SELF_PYTHON_TARGET_VERSION: PythonVersionRequest = PythonVersionReques
     suffix: None,
 };
 
-const SELF_VERSION: u64 = 20;
+const SELF_VERSION: u64 = 21;
 
 pub const SELF_REQUIREMENTS: &str = r#"
 build==1.2.1
@@ -52,7 +52,7 @@ twine==5.1.1
 unearth==0.14.0
 urllib3==2.0.7
 virtualenv==20.25.0
-ruff==0.4.4
+ruff==0.5.4
 "#;
 
 static FORCED_TO_UPDATE: AtomicBool = AtomicBool::new(false);
