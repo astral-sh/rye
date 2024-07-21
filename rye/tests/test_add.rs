@@ -245,9 +245,8 @@ fn test_add_dev() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
-    Downloaded 8 packages in [EXECUTION_TIME]
+    Prepared 9 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
      + click==8.1.7
