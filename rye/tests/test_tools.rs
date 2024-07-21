@@ -1,5 +1,6 @@
 use std::env::consts::EXE_EXTENSION;
 use std::fs;
+use tempfile::TempDir;
 
 use crate::common::{rye_cmd_snapshot, Space};
 
@@ -8,6 +9,9 @@ mod common;
 #[test]
 fn test_basic_tool_behavior() {
     let space = Space::new();
+
+    // Cache alongside the home directory, so that the cache lives alongside the tools directory.
+    let cache_dir = TempDir::new_in(space.rye_home()).unwrap();
 
     // in case we left things behind from last run.
     fs::remove_dir_all(space.rye_home().join("tools")).ok();
@@ -22,6 +26,7 @@ fn test_basic_tool_behavior() {
 
     rye_cmd_snapshot!(
         space.rye_cmd()
+            .env("UV_CACHE_DIR", cache_dir.path())
             .arg("tools")
             .arg("install")
             .arg("pycowsay")
@@ -36,13 +41,14 @@ fn test_basic_tool_behavior() {
 
     ----- stderr -----
     Resolved 1 package in [EXECUTION_TIME]
-    Downloaded 1 package in [EXECUTION_TIME]
+    Prepared 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
      + pycowsay==0.0.0.2
     "###);
 
     rye_cmd_snapshot!(
         space.rye_cmd()
+            .env("UV_CACHE_DIR", cache_dir.path())
             .arg("tools")
             .arg("list"), @r###"
     success: true
@@ -55,6 +61,7 @@ fn test_basic_tool_behavior() {
 
     rye_cmd_snapshot!(
         space.rye_cmd()
+            .env("UV_CACHE_DIR", cache_dir.path())
             .arg("tools")
             .arg("list")
             .arg("--include-version"), @r###"
@@ -68,6 +75,7 @@ fn test_basic_tool_behavior() {
 
     rye_cmd_snapshot!(
         space.rye_cmd()
+            .env("UV_CACHE_DIR", cache_dir.path())
             .arg("toolchain")
             .arg("remove")
             .arg("cpython@3.11.9"), @r###"
@@ -81,6 +89,7 @@ fn test_basic_tool_behavior() {
 
     rye_cmd_snapshot!(
         space.rye_cmd()
+            .env("UV_CACHE_DIR", cache_dir.path())
             .arg("tools")
             .arg("uninstall")
             .arg("pycowsay"), @r###"

@@ -26,9 +26,8 @@ fn test_add_flask() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
-    Downloaded 8 packages in [EXECUTION_TIME]
+    Prepared 9 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
      + click==8.1.7
@@ -70,9 +69,8 @@ fn test_add_flask_dotenv() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 10 packages in [EXECUTION_TIME]
-    Downloaded 9 packages in [EXECUTION_TIME]
+    Prepared 10 packages in [EXECUTION_TIME]
     Installed 10 packages in [EXECUTION_TIME]
      + blinker==1.7.0
      + click==8.1.7
@@ -124,9 +122,8 @@ fn test_add_from_find_links() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 3 packages in [EXECUTION_TIME]
-    Downloaded 2 packages in [EXECUTION_TIME]
+    Prepared 3 packages in [EXECUTION_TIME]
     Installed 3 packages in [EXECUTION_TIME]
      + colorama==0.4.6
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
@@ -163,9 +160,8 @@ fn test_add_flask_wrong_venv_exported() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 9 packages in [EXECUTION_TIME]
-    Downloaded 8 packages in [EXECUTION_TIME]
+    Prepared 9 packages in [EXECUTION_TIME]
     Installed 9 packages in [EXECUTION_TIME]
      + blinker==1.7.0
      + click==8.1.7
@@ -198,9 +194,8 @@ fn test_add_explicit_version_or_url() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 3 packages in [EXECUTION_TIME]
-    Downloaded 2 packages in [EXECUTION_TIME]
+    Prepared 3 packages in [EXECUTION_TIME]
     Installed 3 packages in [EXECUTION_TIME]
      + markupsafe==2.1.3
      + my-project==0.1.0 (from file:[TEMP_PATH]/project)
@@ -220,9 +215,8 @@ fn test_add_explicit_version_or_url() {
     Done!
 
     ----- stderr -----
-    Built 1 editable in [EXECUTION_TIME]
     Resolved 4 packages in [EXECUTION_TIME]
-    Downloaded 1 package in [EXECUTION_TIME]
+    Prepared 2 packages in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 2 packages in [EXECUTION_TIME]
      - my-project==0.1.0 (from file:[TEMP_PATH]/project)

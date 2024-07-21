@@ -1,5 +1,6 @@
-use crate::bootstrap::download_url;
+use crate::bootstrap::{download_url, SELF_REQUIREMENTS};
 use crate::lock::{make_project_root_fragment, KeyringProvider};
+use crate::piptools::LATEST_PIP;
 use crate::platform::get_app_dir;
 use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources};
 use crate::sources::py::PythonVersion;
@@ -21,6 +22,7 @@ pub struct UvInstallOptions {
     pub importlib_workaround: bool,
     pub extras: Vec<Requirement>,
     pub refresh: bool,
+    pub keyring_provider: KeyringProvider,
 }
 
 pub enum UvPackageUpgrade {
@@ -40,6 +42,7 @@ struct UvCompileOptions {
     pub no_header: bool,
     pub keyring_provider: KeyringProvider,
     pub generate_hashes: bool,
+    pub universal: bool,
 }
 
 impl UvCompileOptions {
@@ -64,6 +67,10 @@ impl UvCompileOptions {
             cmd.arg("--exclude-newer").arg(dt);
         }
 
+        if self.universal {
+            cmd.arg("--universal");
+        }
+
         match self.upgrade {
             UvPackageUpgrade::All => {
                 cmd.arg("--upgrade");
@@ -76,12 +83,7 @@ impl UvCompileOptions {
             UvPackageUpgrade::Nothing => {}
         }
 
-        match self.keyring_provider {
-            KeyringProvider::Disabled => {}
-            KeyringProvider::Subprocess => {
-                cmd.arg("--keyring-provider").arg("subprocess");
-            }
-        }
+        self.keyring_provider.add_as_pip_args(cmd);
     }
 }
 
@@ -95,10 +97,28 @@ impl Default for UvCompileOptions {
             no_header: false,
             generate_hashes: false,
             keyring_provider: KeyringProvider::Disabled,
+            universal: false,
         }
     }
 }
 
+pub struct UvSyncOptions {
+    pub keyring_provider: KeyringProvider,
+}
+
+impl UvSyncOptions {
+    pub fn add_as_pip_args(self, cmd: &mut Command) {
+        self.keyring_provider.add_as_pip_args(cmd);
+    }
+}
+
+impl Default for UvSyncOptions {
+    fn default() -> Self {
+        Self {
+            keyring_provider: KeyringProvider::Disabled,
+        }
+    }
+}
 pub struct UvBuilder {
     workdir: Option<PathBuf>,
     sources: Option<ExpandedSources>,
@@ -248,6 +268,12 @@ impl Uv {
         Ok(())
     }
 
+    /// Set the [`CommandOutput`] level for subsequent invocations of uv.
+    #[must_use]
+    pub fn with_output(self, output: CommandOutput) -> Self {
+        Self { output, ..self }
+    }
+
     /// Returns a new command with the uv binary as the command to run.
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     pub fn cmd(&self) -> Command {
@@ -337,6 +363,7 @@ impl Uv {
         upgrade: UvPackageUpgrade,
         keyring_provider: KeyringProvider,
         generate_hashes: bool,
+        universal: bool,
     ) -> Result<(), Error> {
         let options = UvCompileOptions {
             allow_prerelease,
@@ -346,6 +373,7 @@ impl Uv {
             no_header: true,
             generate_hashes,
             keyring_provider,
+            universal,
         };
 
         let mut cmd = self.cmd();
@@ -422,6 +450,12 @@ impl UvWithVenv {
     pub fn update(&self, pip_version: &str, requirements: &str) -> Result<(), Error> {
         self.update_pip(pip_version)?;
         self.update_requirements(requirements)?;
+        Ok(())
+    }
+
+    /// Install the bootstrap requirements in the venv.
+    pub fn bootstrap(&self) -> Result<(), Error> {
+        self.update(LATEST_PIP, SELF_REQUIREMENTS)?;
         Ok(())
     }
 
@@ -502,6 +536,8 @@ impl UvWithVenv {
             cmd.arg("--refresh");
         }
 
+        options.keyring_provider.add_as_pip_args(&mut cmd);
+
         self.uv.sources.add_as_pip_args(&mut cmd);
 
         cmd.arg("--").arg(requirement.to_string());
@@ -537,9 +573,11 @@ impl UvWithVenv {
     }
 
     /// Syncs the venv
-    pub fn sync(&self, lockfile: &Path) -> Result<(), Error> {
+    pub fn sync(&self, lockfile: &Path, options: UvSyncOptions) -> Result<(), Error> {
         let mut cmd = self.venv_cmd();
         cmd.arg("pip").arg("sync");
+
+        options.add_as_pip_args(&mut cmd);
 
         self.uv.sources.add_as_pip_args(&mut cmd);
 
@@ -591,6 +629,7 @@ impl UvWithVenv {
             no_header: true,
             generate_hashes: false,
             keyring_provider,
+            universal: false,
         };
 
         cmd.arg("pip").arg("compile");

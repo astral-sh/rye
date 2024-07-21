@@ -7,10 +7,11 @@ use pep508_rs::Requirement;
 use crate::cli::add::ReqExtras;
 use crate::config::Config;
 use crate::installer::{install, resolve_local_requirement};
+use crate::lock::KeyringProvider;
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::CommandOutput;
 
-/// Installs a package as global tool. This is an alias of `rye tools install`.
+/// Installs a package as global tool.
 #[derive(Parser, Debug)]
 pub struct Args {
     /// The name of the package to install.
@@ -29,6 +30,9 @@ pub struct Args {
     /// Force install the package even if it's already there.
     #[arg(short, long)]
     force: bool,
+    /// Attempt to use `keyring` for authentication for index URLs.
+    #[arg(long, value_enum, default_value_t)]
+    keyring_provider: KeyringProvider,
     /// Enables verbose diagnostics.
     #[arg(short, long)]
     verbose: bool,
@@ -74,6 +78,7 @@ pub fn execute(mut cmd: Args) -> Result<(), Error> {
         &cmd.include_dep,
         &extra_requirements,
         output,
+        cmd.keyring_provider,
     )?;
     Ok(())
 }

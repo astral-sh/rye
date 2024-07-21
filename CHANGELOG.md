@@ -5,6 +5,43 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.37.0
+
+Released on 2024-07-20.
+
+* Fix verify-ssl option parsing by @taki-d in https://github.com/astral-sh/rye/pull/1208
+* Emit warning when asked to build a virtual project by @nazq in https://github.com/astral-sh/rye/pull/1227
+* Add short version `-d` for `rye remove --dev` by @nikhilweee in https://github.com/astral-sh/rye/pull/1239
+* Remove redundant alias information from CLI by @piotrgredowski in https://github.com/astral-sh/rye/pull/1237
+* Update bundled uv version to `v0.2.27` by @github-actions in https://github.com/astral-sh/rye/pull/1232
+* Update Python releases to include `3.12.4` by @github-actions in https://github.com/astral-sh/rye/pull/1230
+* Respect `.python-version` in Rye builds by @charliermarsh in https://github.com/astral-sh/rye/pull/1250
+* Update bundled Ruff version to `v0.5.4` by @charliermarsh in https://github.com/astral-sh/rye/pull/1251
+
+## 0.36.0
+
+Released on 2024-07-07.
+
+* Upgrade pyyaml to v6.0.1 by @charliermarsh in https://github.com/astral-sh/rye/pull/1170
+* Pass keyring-provider to uv sync and install by @emarsden-iso in https://github.com/astral-sh/rye/pull/1183
+* Add docs hint for packages on multiple indexes by @dennisrall in https://github.com/astral-sh/rye/pull/1188
+* Pass universal flag down to uv by @lbowenwest in https://github.com/astral-sh/rye/pull/1186
+* Use musl build for ARM Linux by @charliermarsh in https://github.com/astral-sh/rye/pull/1192
+* Bump uv to 0.2.22 by @charliermarsh in https://github.com/astral-sh/rye/pull/1192
+* Upgrade twine to v5.1.1 by @charliermarsh in https://github.com/astral-sh/rye/pull/1199
+
+## 0.35.0
+
+Released on 2024-06-24.
+
+* Enforce `--pre` when auto-syncing by @charliermarsh in https://github.com/astral-sh/rye/pull/1107
+* Move from `rye-up.com` to `rye.astral.sh` by @charliermarsh in https://github.com/astral-sh/rye/pull/1113
+* Fix install instructions on README.md for mac/linux by @timothycrosley in https://github.com/astral-sh/rye/pull/1114
+* Fix CLI deserialization of PowerShell (`powershell`) by @charliermarsh in https://github.com/astral-sh/rye/pull/1125
+* Add ability to specify option to generate hashes within pyproject.toml by @asmith26 in https://github.com/astral-sh/rye/pull/1129
+* Bump uv to 0.2.13 by @charliermarsh in https://github.com/astral-sh/rye/pull/1123
+* Improve `config.toml` error messages by @zys864 in https://github.com/astral-sh/rye/pull/1155
+
 ## 0.34.0
 
 Released on 2024-05-20.
@@ -18,7 +55,7 @@ Released on 2024-05-20.
 * Allow to generate lockfiles with hashes when using uv by @mvaled in https://github.com/astral-sh/rye/pull/1070
 * Bump ruff to 0.4.4 by @davfsa in https://github.com/astral-sh/rye/pull/1075
 * Fix TOML array formatting by @my1e5 in https://github.com/astral-sh/rye/pull/1084
-* Bump uv to 0.1.44 in https://github.com/astral-sh/rye/pull/1085
+* Bump uv to 0.1.44 by @charliermarsh in https://github.com/astral-sh/rye/pull/1085
 * Discover cosmo-ified (`.com`) binaries on Windows by @mataha in https://github.com/astral-sh/rye/pull/1091
 * Write `use-uv = true` in no-prompt mode by @charliermarsh in https://github.com/astral-sh/rye/pull/1098
 

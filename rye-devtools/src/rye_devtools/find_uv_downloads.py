@@ -35,9 +35,15 @@ class UvDownloads:
         "aarch64": "aarch64",
     }
 
+    GLIBC = {
+        "x86_64": "gnu",
+        "i686": "gnu",
+        "aarch64": "musl",
+    }
+
     PLATFORM_ENV = {
         "unknown-linux-gnu": ("linux", "gnu"),
-        # "unknown-linux-musl": ("linux", "musl"),
+        "unknown-linux-musl": ("linux", "musl"),
         "apple-darwin": ("macos", None),
         "pc-windows-msvc": ("windows", None),
     }
@@ -81,9 +87,10 @@ class UvDownloads:
             if arch_str in cls.ARCH and plat_env_str in cls.PLATFORM_ENV:
                 arch = cls.ARCH[arch_str]
                 plat, env = cls.PLATFORM_ENV[plat_env_str]
-                return PlatformTriple(
-                    arch=arch, platform=plat, environment=env, flavor=None
-                )
+                if env is None or env == cls.GLIBC[arch_str]:
+                    return PlatformTriple(
+                        arch=arch, platform=plat, environment=env, flavor=None
+                    )
 
         return None
 
@@ -124,8 +131,6 @@ async def async_main():
         "X-GitHub-Api-Version": "2022-11-28",
         "Authorization": "Bearer " + token,
     }
-
-    downloads = []
 
     log("Fetching all uv downloads.")
     async with httpx.AsyncClient(follow_redirects=True, headers=headers) as client:

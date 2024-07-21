@@ -85,6 +85,9 @@ This is a [PEP 503](https://www.python.org/dev/peps/pep-0503/) type index as pro
 by tools such as PyPI or [devpi](https://github.com/devpi/devpi).  It corresponds to
 the arguments `--index-url` or `--extra-index-url` in pip.
 
+Note: see the [`uv` documentation](https://github.com/astral-sh/uv/blob/main/PIP_COMPATIBILITY.md#packages-that-exist-on-multiple-indexes)
+for more on the use of multiple indexes.
+
 ### `find-links`
 
 This is a source that can be of a variety of types and has to point to a file path

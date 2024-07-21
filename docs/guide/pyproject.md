@@ -60,6 +60,33 @@ pulled in as indirect dependencies.  These are added here automatically with `ry
 excluded-dependencies = ["cffi"]
 ```
 
+## `tool.rye.universal`
+
++++ 0.36.0
+
+When this flag is enabled all `lock` and `sync` operations in the project or workspace
+operate as if `--universal` is passed.  This means that the dependency resolver will
+attempt to generate a resolution that's valid on all platforms, operating systems, and
+architectures, rather than a resolution that's specific to the current platform.
+
+```toml
+[tool.rye]
+universal = true
+```
+
+## `tool.rye.generate-hashes`
+
++++ 0.35.0
+
+When this flag is enabled all `lock` and `sync` operations in the project or workspace
+operate as if `--generate-hashes` is passed.  This means that all dependencies in all
+lock files will include a hash.
+
+```toml
+[tool.rye]
+generate-hashes = true
+```
+
 ## `tool.rye.lock-with-sources`
 
 +++ 0.18.0

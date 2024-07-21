@@ -52,7 +52,7 @@ The installation takes just a minute:
 
 * **Windows:**
 
-    Download and run the installer ([64bit Intel](https://github.com/astral-sh/rye/releases/latest/download/rye-x86_64-windows.exe) or [32bit Intel](https://github.com/astral-sh/rye/releases/latest/download/rye-x86-windows.exe)).
+    Download and run the installer ([64-bit (x86-64)](https://github.com/astral-sh/rye/releases/latest/download/rye-x86_64-windows.exe) or [32-bit (x86)](https://github.com/astral-sh/rye/releases/latest/download/rye-x86-windows.exe)).
 
 For more details and other options, refer to the [installation instructions](https://rye.astral.sh/guide/installation/).
 
