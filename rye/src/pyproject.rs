@@ -579,6 +579,13 @@ pub struct PyProject {
     doc: DocumentMut,
 }
 
+/// Returns an implicit table.
+fn implicit() -> Item {
+    let mut table = Table::new();
+    table.set_implicit(true);
+    Item::Table(table)
+}
+
 impl PyProject {
     /// Load a pyproject toml if explicitly given, else discover from current directory
     ///
@@ -912,8 +919,14 @@ impl PyProject {
     ) -> Result<(), Error> {
         let dependencies = match kind {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
-            DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
-            DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
+            DependencyKind::Dev => self
+                .obtain_tool_config_table()?
+                .entry("dev-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
+            DependencyKind::Excluded => self
+                .obtain_tool_config_table()?
+                .entry("excluded-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
             DependencyKind::Optional(ref section) => {
                 // add this as a proper non-inline table if it's missing
                 let table = &mut self.doc["project"]["optional-dependencies"];
@@ -943,8 +956,14 @@ impl PyProject {
     ) -> Result<Option<Requirement>, Error> {
         let dependencies = match kind {
             DependencyKind::Normal => &mut self.doc["project"]["dependencies"],
-            DependencyKind::Dev => &mut self.doc["tool"]["rye"]["dev-dependencies"],
-            DependencyKind::Excluded => &mut self.doc["tool"]["rye"]["excluded-dependencies"],
+            DependencyKind::Dev => self
+                .obtain_tool_config_table()?
+                .entry("dev-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
+            DependencyKind::Excluded => self
+                .obtain_tool_config_table()?
+                .entry("excluded-dependencies")
+                .or_insert(Item::Value(Value::Array(Array::new()))),
             DependencyKind::Optional(ref section) => {
                 &mut self.doc["project"]["optional-dependencies"][section as &str]
             }
@@ -1046,6 +1065,19 @@ impl PyProject {
         let path = self.toml_path();
         fs::write(&path, self.doc.to_string()).path_context(&path, "unable to write changes")?;
         Ok(())
+    }
+
+    /// Gets or creates the [tool.rye] table in pyproject.toml
+    fn obtain_tool_config_table(&mut self) -> Result<&mut Table, Error> {
+        self.doc
+            .entry("tool")
+            .or_insert(implicit())
+            .as_table_mut()
+            .ok_or(anyhow!("[tool.rye] in pyproject.toml is malformed"))?
+            .entry("rye")
+            .or_insert(implicit())
+            .as_table_mut()
+            .ok_or(anyhow!("[tool.rye] in pyproject.toml is malformed"))
     }
 }
 
