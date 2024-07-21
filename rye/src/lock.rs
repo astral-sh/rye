@@ -212,12 +212,15 @@ pub fn update_workspace_lockfile(
 
     req_file.flush()?;
 
-    let exclusions = find_exclusions(&projects)?;
+    let exclusions = find_requirements(&projects, &DependencyKind::Excluded)?;
+    let overrides = find_requirements(&projects, &DependencyKind::Override)?;
+    let overrides_file = maybe_write_requirements_to_temp(&overrides)?;
     generate_lockfile(
         output,
         py_ver,
         &workspace.path(),
         req_file.path(),
+        overrides_file.as_ref().map(|v| v.path()),
         lockfile,
         sources,
         &lock_options,
@@ -227,6 +230,21 @@ pub fn update_workspace_lockfile(
     )?;
 
     Ok(())
+}
+
+fn maybe_write_requirements_to_temp(
+    requirements: &HashSet<Requirement>,
+) -> Result<Option<NamedTempFile>, Error> {
+    if requirements.is_empty() {
+        Ok(None)
+    } else {
+        let mut nt_file = NamedTempFile::new()?;
+        for dep in requirements {
+            writeln!(&nt_file, "{}", dep)?;
+        }
+        nt_file.flush()?;
+        Ok(Some(nt_file))
+    }
 }
 
 /// Tries to restore the lock options from the given lockfile.
@@ -298,10 +316,13 @@ fn collect_workspace_features(
     Some(features_by_project)
 }
 
-fn find_exclusions(projects: &[PyProject]) -> Result<HashSet<Requirement>, Error> {
+fn find_requirements(
+    projects: &[PyProject],
+    kind: &DependencyKind,
+) -> Result<HashSet<Requirement>, Error> {
     let mut rv = HashSet::new();
     for project in projects {
-        for dep in project.iter_dependencies(DependencyKind::Excluded) {
+        for dep in project.iter_dependencies(kind) {
             rv.insert(dep.expand(|name: &str| {
                 if name == "PROJECT_ROOT" {
                     Some(project.workspace_path().to_string_lossy().to_string())
@@ -320,7 +341,7 @@ fn dump_dependencies(
     out: &mut fs::File,
     dep_kind: DependencyKind,
 ) -> Result<(), Error> {
-    for dep in pyproject.iter_dependencies(dep_kind) {
+    for dep in pyproject.iter_dependencies(&dep_kind) {
         if let Ok(expanded_dep) = dep.expand(|_| {
             // we actually do not care what it expands to much, for as long
             // as the end result parses
@@ -371,23 +392,26 @@ pub fn update_single_project_lockfile(
         )?;
     }
 
-    for dep in pyproject.iter_dependencies(DependencyKind::Normal) {
+    for dep in pyproject.iter_dependencies(&DependencyKind::Normal) {
         writeln!(req_file, "{}", dep)?;
     }
     if lock_mode == LockMode::Dev {
-        for dep in pyproject.iter_dependencies(DependencyKind::Dev) {
+        for dep in pyproject.iter_dependencies(&DependencyKind::Dev) {
             writeln!(req_file, "{}", dep)?;
         }
     }
 
     req_file.flush()?;
 
-    let exclusions = find_exclusions(std::slice::from_ref(pyproject))?;
+    let exclusions = find_requirements(std::slice::from_ref(pyproject), &DependencyKind::Excluded)?;
+    let overrides = find_requirements(std::slice::from_ref(pyproject), &DependencyKind::Override)?;
+    let overrides_file = maybe_write_requirements_to_temp(&overrides)?;
     generate_lockfile(
         output,
         py_ver,
         &pyproject.workspace_path(),
         req_file.path(),
+        overrides_file.as_ref().map(|v| v.path()),
         lockfile,
         sources,
         &lock_options,
@@ -405,6 +429,7 @@ fn generate_lockfile(
     py_ver: &PythonVersion,
     workspace_path: &Path,
     requirements_file_in: &Path,
+    overrides_file_in: Option<&Path>,
     lockfile: &Path,
     sources: &ExpandedSources,
     lock_options: &LockOptions,
@@ -444,6 +469,7 @@ fn generate_lockfile(
             .lockfile(
                 py_ver,
                 requirements_file_in,
+                overrides_file_in,
                 &requirements_file,
                 lock_options.pre,
                 env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
@@ -453,6 +479,9 @@ fn generate_lockfile(
                 lock_options.universal,
             )?;
     } else {
+        if overrides_file_in.is_some() {
+            bail!("dependency overrides require the uv backend");
+        }
         if keyring_provider != KeyringProvider::Disabled {
             bail!("`--keyring-provider` option requires the uv backend");
         }
