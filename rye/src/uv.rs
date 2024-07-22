@@ -484,6 +484,7 @@ impl UvWithVenv {
     }
 
     /// Install the bootstrap requirements in the venv.
+    #[allow(dead_code)]
     pub fn bootstrap(&self) -> Result<(), Error> {
         self.update(LATEST_PIP, SELF_REQUIREMENTS)?;
         Ok(())

@@ -603,13 +603,6 @@ fn implicit() -> Item {
     Item::Table(table)
 }
 
-/// Returns an implicit table.
-fn implicit() -> Item {
-    let mut table = Table::new();
-    table.set_implicit(true);
-    Item::Table(table)
-}
-
 impl PyProject {
     /// Load a pyproject toml if explicitly given, else discover from current directory
     ///

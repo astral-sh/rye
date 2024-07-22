@@ -2,13 +2,14 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::{Command, Stdio};
 
-use anyhow::{anyhow, bail, Error};
+use anyhow::{anyhow, bail, Context, Error};
 use clap::Parser;
 use console::style;
 
-use crate::bootstrap::ensure_self_venv;
+use crate::bootstrap::{ensure_self_venv, fetch, FetchOptions};
 use crate::config::Config;
 
+use crate::platform::get_toolchain_python_bin;
 use crate::pyproject::{locate_projects, PyProject};
 use crate::utils::{get_venv_python_bin, prepend_path_to_path_env, CommandOutput, IoPathContext};
 use crate::uv::UvBuilder;
@@ -52,6 +53,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
     let self_venv = ensure_self_venv(output)?;
     let project = PyProject::load_or_discover(cmd.pyproject.as_deref(), cmd.venv.as_ref())?;
+    let py_ver = project.venv_python_version()?;
 
     let out = match cmd.out {
         Some(path) => path,
@@ -81,6 +83,25 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         warn!("skipping build, all projects are virtual");
         return Ok(());
     }
+
+    // Make sure we have a compatible Python version.
+    let py_ver = fetch(&py_ver.into(), FetchOptions::with_output(output))
+        .context("failed fetching toolchain ahead of sync")?;
+    echo!(if output, "Python version: {}", style(&py_ver).cyan());
+    let py_bin = get_toolchain_python_bin(&py_ver)?;
+
+    // Create a virtual environment in which to perform the builds.
+    let uv = UvBuilder::new()
+        .with_output(CommandOutput::Quiet)
+        .ensure_exists()?
+        .with_output(output);
+    let venv_dir = tempfile::tempdir().context("failed to create temporary directory")?;
+    let uv_venv = uv
+        .venv(venv_dir.path(), &py_bin, &py_ver, None)
+        .context("failed to create build environment")?;
+    uv_venv.write_marker()?;
+    uv_venv.bootstrap()?;
+
     for project in projects {
         // skip over virtual packages on build
         if project.is_virtual() {
