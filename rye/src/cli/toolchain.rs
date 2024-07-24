@@ -13,7 +13,6 @@ use serde::Deserialize;
 use serde::Serialize;
 
 use crate::installer::list_installed_tools;
-use crate::piptools::get_pip_tools_venv_path;
 use crate::platform::{get_app_dir, get_canonical_py_path, list_known_toolchains};
 use crate::pyproject::read_venv_marker;
 use crate::sources::py::{iter_downloadable, PythonVersion};
@@ -113,12 +112,10 @@ fn register(cmd: RegisterCommand) -> Result<(), Error> {
 fn check_in_use(ver: &PythonVersion) -> Result<(), Error> {
     // Check if used by rye itself.
     let app_dir = get_app_dir();
-    for venv in &[app_dir.join("self"), get_pip_tools_venv_path(ver)] {
-        let venv_marker = read_venv_marker(venv);
-        if let Some(ref venv_marker) = venv_marker {
-            if &venv_marker.python == ver {
-                bail!("toolchain {} is still in use by rye itself", ver);
-            }
+    let venv_marker = read_venv_marker(app_dir.join("self").as_path());
+    if let Some(ref venv_marker) = venv_marker {
+        if &venv_marker.python == ver {
+            bail!("toolchain {} is still in use by rye itself", ver);
         }
     }
 

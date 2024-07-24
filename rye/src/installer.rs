@@ -143,61 +143,26 @@ pub fn install(
         requirement.name.as_str(),
     )?;
 
-    if Config::current().use_uv() {
-        let result = UvBuilder::new()
-            .with_output(output.quieter())
-            .with_sources(sources)
-            .ensure_exists()?
-            .venv(&target_venv_path, &py, &py_ver, None)?
-            .with_output(output)
-            .install(
-                &requirement,
-                UvInstallOptions {
-                    importlib_workaround: py_ver.major == 3 && py_ver.minor == 7,
-                    extras: extra_requirements.to_vec(),
-                    refresh: force,
-                    keyring_provider,
-                },
-            );
-        if result.is_err() {
-            uninstall_helper(&target_venv_path, &shim_dir)?;
-            return result;
-        }
-    } else {
-        let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
-        cmd.arg("--python")
-            .arg(&py)
-            .arg("install")
-            .env("PYTHONWARNINGS", "ignore")
-            .env("PIP_DISABLE_PIP_VERSION_CHECK", "1");
+    let result = UvBuilder::new()
+        .with_output(output.quieter())
+        .with_sources(sources)
+        .ensure_exists()?
+        .venv(&target_venv_path, &py, &py_ver, None)?
+        .with_output(output)
+        .install(
+            &requirement,
+            UvInstallOptions {
+                importlib_workaround: py_ver.major == 3 && py_ver.minor == 7,
+                extras: extra_requirements.to_vec(),
+                refresh: force,
+                keyring_provider,
+            },
+        );
+    if result.is_err() {
+        uninstall_helper(&target_venv_path, &shim_dir)?;
+        return result;
+    }
 
-        sources.add_as_pip_args(&mut cmd);
-        if output == CommandOutput::Verbose {
-            cmd.arg("--verbose");
-        } else {
-            if output == CommandOutput::Quiet {
-                cmd.arg("-q");
-            }
-            cmd.env("PYTHONWARNINGS", "ignore");
-        }
-        cmd.arg("--").arg(&requirement.to_string());
-
-        // we don't support versions below 3.7, but for 3.7 we need importlib-metadata
-        // to be installed
-        if py_ver.major == 3 && py_ver.minor == 7 {
-            cmd.arg("importlib-metadata==6.6.0");
-        }
-
-        for extra in extra_requirements {
-            cmd.arg(extra.to_string());
-        }
-
-        let status = cmd.status()?;
-        if !status.success() {
-            uninstall_helper(&target_venv_path, &shim_dir)?;
-            bail!("tool installation failed");
-        }
-    };
     let out = Command::new(py)
         .arg("-c")
         .arg(FIND_SCRIPT_SCRIPT)

@@ -82,7 +82,8 @@ force-rye-managed = false
 global-python = false
 
 # When set to `true`, Rye will use `uv` for package resolution and installation.
-# Set to `false` to fall back to the `pip-tools` resolver.
+# `uv` is the only engine in use at this point and setting this to false will produce a warning
+# This flag will be deprecated in a future version.
 # Learn more about uv here: https://github.com/astral-sh/uv
 use-uv = true
 

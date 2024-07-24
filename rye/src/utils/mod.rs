@@ -16,7 +16,7 @@ use sha2::{Digest, Sha256};
 static ENV_VAR_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\$\{([A-Z0-9_]+)\}").unwrap());
 
 #[cfg(unix)]
-pub use std::os::unix::fs::{symlink as symlink_file, symlink as symlink_dir};
+pub use std::os::unix::fs::symlink as symlink_file;
 #[cfg(windows)]
 pub use std::os::windows::fs::symlink_file;
 

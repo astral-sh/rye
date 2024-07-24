@@ -41,14 +41,6 @@ it as a global tool:
 rye install maturin
 ```
 
-Note that `maturin develop` requires `pip` to be installed into the virtualenv.  Before
-you can use it you need to add it:
-
-```
-rye add --dev pip
-rye sync
-```
-
 Rye recommends mixed python/rust modules.  In that case you can save some valuable
 iteration time by running `maturin develop --skip-install`:
 

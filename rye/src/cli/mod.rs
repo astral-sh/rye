@@ -122,6 +122,9 @@ pub fn execute() -> Result<(), Error> {
         unreachable!()
     };
 
+    // Add this to warn about the deprecated use of pip-tools
+    Config::current().use_uv();
+
     match cmd {
         Command::Add(cmd) => add::execute(cmd),
         Command::Build(cmd) => build::execute(cmd),
@@ -181,6 +184,7 @@ fn print_version() -> Result<(), Error> {
         );
     }
     echo!("symlink support: {}", symlinks_supported());
+    // Possibly best to leave this in case others parse the output
     echo!("uv enabled: {}", Config::current().use_uv());
     Ok(())
 }
