@@ -6,6 +6,10 @@ mod common;
 
 #[test]
 fn test_basic_script() {
+    let mut settings = insta::Settings::clone_current();
+    settings.add_filter(r"(?m)(^py[a-z\d._]+$\r?\n)+", "[PYTHON SCRIPTS]\n");
+    let _guard = settings.bind_to_scope();
+
     let space = Space::new();
     space.init("my-project");
     space.edit_toml("pyproject.toml", |doc| {
@@ -27,9 +31,7 @@ fn test_basic_script() {
     success: true
     exit_code: 0
     ----- stdout -----
-    python
-    python3
-    python3.12
+    [PYTHON SCRIPTS]
     test-script (python -c 'print("Hello World")')
 
     ----- stderr -----
