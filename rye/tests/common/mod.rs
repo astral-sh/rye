@@ -27,7 +27,7 @@ pub const INSTA_FILTERS: &[(&str, &str)] = &[
     (r"/tmp/\.tmp\S+", "[TEMP_FILE]"),
     // windows temp folders
     (r"\b[A-Z]:\\.*\\Local\\Temp\\\S+", "[TEMP_FILE]"),
-    (r" in (\d+\.)?\d+(ms|s)\b", " in [EXECUTION_TIME]"),
+    (r" in (\d+m )?(\d+\.)?\d+(ms|s)\b", " in [EXECUTION_TIME]"),
     (r"\\\\?([\w\d.])", "/$1"),
     (r"rye.exe", "rye"),
 ];
