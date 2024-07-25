@@ -1421,17 +1421,25 @@ impl ExpandedSources {
 
     /// Attach common pip args to a command.
     pub fn add_as_pip_args(&self, cmd: &mut Command) {
-        for (url, default) in self.index_urls.iter() {
-            if *default {
-                cmd.arg("--index-url");
-            } else {
-                cmd.arg("--extra-index-url");
-            }
-            cmd.arg(&url.to_string());
+        for url in self
+            .index_urls
+            .iter()
+            .filter_map(|(url, default)| if *default { Some(url) } else { None })
+        {
+            cmd.arg("--index-url");
+            cmd.arg(url.to_string());
+        }
+        for url in self
+            .index_urls
+            .iter()
+            .filter_map(|(url, default)| if *default { None } else { Some(url) })
+        {
+            cmd.arg("--extra-index-url");
+            cmd.arg(url.to_string());
         }
         for link in &self.find_links {
             cmd.arg("--find-links");
-            cmd.arg(&link.to_string());
+            cmd.arg(link.to_string());
         }
         for host in &self.trusted_hosts {
             cmd.arg("--trusted-host");
@@ -1441,18 +1449,25 @@ impl ExpandedSources {
 
     /// Write the sources to a lockfile.
     pub fn add_to_lockfile(&self, out: &mut dyn std::io::Write) -> std::io::Result<()> {
-        for (url, default) in self.index_urls.iter() {
-            if *default {
-                writeln!(out, "--index-url {}", url)?;
-            } else {
-                writeln!(out, "--extra-index-url {}", url)?;
-            }
+        for url in self
+            .index_urls
+            .iter()
+            .filter_map(|(url, default)| if *default { Some(url) } else { None })
+        {
+            writeln!(out, "--index-url {url}")?;
+        }
+        for url in self
+            .index_urls
+            .iter()
+            .filter_map(|(url, default)| if *default { None } else { Some(url) })
+        {
+            writeln!(out, "--extra-index-url {url}")?;
         }
         for link in &self.find_links {
-            writeln!(out, "--find-links {}", link)?;
+            writeln!(out, "--find-links {link}")?;
         }
         for host in &self.trusted_hosts {
-            writeln!(out, "--trusted-host {}", host)?;
+            writeln!(out, "--trusted-host {host}")?;
         }
         Ok(())
     }

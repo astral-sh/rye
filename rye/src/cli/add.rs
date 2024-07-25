@@ -445,7 +445,7 @@ fn find_best_matches_with_unearth(
             Some(ver) => ver.format_simple(),
             None => "".into(),
         })
-        .arg(&format_requirement(requirement).to_string())
+        .arg(format_requirement(requirement).to_string())
         .arg(serde_json::to_string(&sources)?);
     if pre {
         unearth.arg("--pre");

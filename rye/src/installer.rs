@@ -180,7 +180,7 @@ pub fn install(
             }
             cmd.env("PYTHONWARNINGS", "ignore");
         }
-        cmd.arg("--").arg(&requirement.to_string());
+        cmd.arg("--").arg(requirement.to_string());
 
         // we don't support versions below 3.7, but for 3.7 we need importlib-metadata
         // to be installed
@@ -410,7 +410,7 @@ fn uninstall_helper(target_venv_path: &Path, shim_dir: &Path) -> Result<(), Erro
         let script = script?;
         if let Some(base_name) = script.path().file_name() {
             let shim_path = shim_dir.join(base_name);
-            if let Ok(true) = is_same_file(&shim_path, &script.path()) {
+            if let Ok(true) = is_same_file(&shim_path, script.path()) {
                 fs::remove_file(&shim_path).ok();
             }
         }
