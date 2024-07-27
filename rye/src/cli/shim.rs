@@ -31,7 +31,7 @@ fn detect_shim(args: &[OsString]) -> Option<String> {
 
     // rye is itself placed in the shims folder, so it must not
     // detect itself.
-    if shim_name == "rye" || shim_name == "rye.exe" {
+    if shim_name.eq_ignore_ascii_case("rye") || shim_name.eq_ignore_ascii_case("rye.exe") {
         return None;
     }
 
