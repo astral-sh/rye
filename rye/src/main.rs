@@ -18,6 +18,7 @@ mod sources;
 mod sync;
 mod utils;
 mod uv;
+mod vcs;
 
 static SHOW_CONTINUE_PROMPT: AtomicBool = AtomicBool::new(false);
 static DISABLE_CTRLC_HANDLER: AtomicBool = AtomicBool::new(false);

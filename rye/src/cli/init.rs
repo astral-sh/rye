@@ -19,15 +19,15 @@ use tempfile::tempdir;
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
 use crate::platform::{
-    get_default_author_with_fallback, get_latest_cpython_version, get_pinnable_version,
-    get_python_version_request_from_pyenv_pin,
+    get_latest_cpython_version, get_pinnable_version, get_python_version_request_from_pyenv_pin,
 };
 use crate::pyproject::BuildSystem;
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::{
-    copy_dir, escape_string, format_requirement, get_venv_python_bin, is_inside_git_work_tree,
-    CommandOutput, CopyDirOptions, IoPathContext,
+    copy_dir, escape_string, format_requirement, get_venv_python_bin, CommandOutput,
+    CopyDirOptions, IoPathContext,
 };
+use crate::vcs::ProjectVCS;
 
 /// Initialize a new or existing Python project with Rye.
 #[derive(Parser, Debug)]
@@ -83,6 +83,9 @@ pub struct Args {
     /// Turns off all output.
     #[arg(short, long, conflicts_with = "verbose")]
     quiet: bool,
+    /// Which VCS should be used? (defaults to git)
+    #[arg(long)]
+    vcs: Option<ProjectVCS>,
 }
 
 #[derive(Parser, Debug)]
@@ -127,9 +130,6 @@ const RUST_INIT_PY_TEMPLATE: &str = include_str!("../templates/lib/maturin/__ini
 
 /// Template for the Cargo.toml.
 const CARGO_TOML_TEMPLATE: &str = include_str!("../templates/lib/maturin/Cargo.toml.j2");
-
-/// Template for fresh gitignore files.
-const GITIGNORE_TEMPLATE: &str = include_str!("../templates/gitignore.j2");
 
 /// Script used for setup.py setup proxy.
 const SETUP_PY_PROXY_SCRIPT: &str = r#"
@@ -199,8 +199,13 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
             .unwrap_or_else(|| "unknown".into())
     }));
 
+    let project_vcs = match cmd.vcs {
+        Some(project_vcs) => project_vcs,
+        None => cfg.default_vcs().unwrap_or(ProjectVCS::Git),
+    };
+
     let version = "0.1.0";
-    let author = get_default_author_with_fallback(&dir);
+    let author = flat_author(project_vcs.get_author(&dir, cfg.default_author()));
     let license = match cmd.license {
         Some(license) => Some(license),
         None => cfg.default_license(),
@@ -326,36 +331,10 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         name_safe.insert(0, '_');
     }
 
-    // if git init is successful prepare the local git repository
-    if !is_inside_git_work_tree(&dir)
-        && Command::new("git")
-            .arg("init")
-            .current_dir(&dir)
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .map(|status| status.success())
-            .unwrap_or(false)
-        && is_metadata_author_none
+    if !project_vcs.inside_work_tree(&dir) && project_vcs.init_dir(&dir) && is_metadata_author_none
     {
-        let new_author = get_default_author_with_fallback(&dir);
-        if author != new_author {
-            metadata.author = new_author;
-        }
-    }
-
-    let gitignore = dir.join(".gitignore");
-
-    // create a .gitignore if one is missing
-    if !gitignore.is_file() {
-        let rv = env.render_named_str(
-            "gitignore.txt",
-            GITIGNORE_TEMPLATE,
-            context! {
-                is_rust => matches!(build_system, BuildSystem::Maturin)
-            },
-        )?;
-        fs::write(&gitignore, rv).path_context(&gitignore, "failed to write .gitignore")?;
+        metadata.author = flat_author(project_vcs.get_author(&dir, cfg.default_author()));
+        project_vcs.render_templates(&dir, &env, build_system)?;
     }
 
     let rv = env.render_named_str(
@@ -455,6 +434,15 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     echo!(if output, "  Run `rye sync` to get started");
 
     Ok(())
+}
+
+fn flat_author(author: (Option<String>, Option<String>)) -> Option<(String, String)> {
+    match author {
+        (Some(name), Some(email)) => Some((name, email)),
+        (Some(name), None) => Some((name, "unknown@domain.invalid".to_string())),
+        (None, Some(email)) => Some(("Unknown".to_string(), email)),
+        _ => None,
+    }
 }
 
 #[derive(Default)]

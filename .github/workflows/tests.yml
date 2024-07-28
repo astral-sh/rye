@@ -40,6 +40,8 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-insta
+      - name: Setup Mercurial (macos)
+        run: brew install mercurial
       - name: Check
         run: make check
       - name: Test
