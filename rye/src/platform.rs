@@ -1,11 +1,9 @@
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::sync::Mutex;
 use std::{env, fs};
 
 use anyhow::{anyhow, Context, Error};
 
-use crate::config::Config;
 use crate::pyproject::latest_available_python_version;
 use crate::sources::py::{PythonVersion, PythonVersionRequest};
 use crate::utils::IoPathContext;
@@ -175,39 +173,6 @@ pub fn list_known_toolchains() -> Result<Vec<(PythonVersion, PathBuf)>, Error> {
         }
     }
     Ok(rv)
-}
-
-/// Returns the default author from git or the config.
-pub fn get_default_author_with_fallback(dir: &PathBuf) -> Option<(String, String)> {
-    let (mut name, mut email) = Config::current().default_author();
-    let is_name_none = name.is_none();
-    let is_email_none = email.is_none();
-
-    if let Ok(rv) = Command::new("git")
-        .arg("config")
-        .arg("--get-regexp")
-        .current_dir(dir)
-        .arg("^user.(name|email)$")
-        .stdout(Stdio::piped())
-        .output()
-    {
-        for line in std::str::from_utf8(&rv.stdout).ok()?.lines() {
-            match line.split_once(' ') {
-                Some((key, value)) if key == "user.email" && is_email_none => {
-                    email = Some(value.to_string());
-                }
-                Some((key, value)) if key == "user.name" && is_name_none => {
-                    name = Some(value.to_string());
-                }
-                _ => {}
-            }
-        }
-    }
-
-    Some((
-        name?,
-        email.unwrap_or_else(|| "unknown@domain.invalid".into()),
-    ))
 }
 
 /// Reads the current `.python-version` file.
