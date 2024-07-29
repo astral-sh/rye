@@ -631,6 +631,16 @@ impl PyProject {
             workspace = Workspace::discover_from_path(root).map(Arc::new);
         }
 
+        if let Some(ref workspace) = workspace {
+            if !workspace.is_member(root) {
+                bail!(
+                    "project {} is not part of pyproject workspace {}",
+                    filename.display(),
+                    workspace.path().display()
+                );
+            }
+        }
+
         let basename = match filename.file_name() {
             Some(name) => name.to_os_string(),
             None => bail!("project {} has no file name", root.display()),
