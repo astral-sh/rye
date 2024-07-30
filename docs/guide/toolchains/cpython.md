@@ -28,7 +28,7 @@ different from a regular Python build.
 
 The following changes to a regular Python versions you should be aware of:
 
-* `libedit` instead of `readline`: unfortunately `readline` is GPL2 licensed
+* `libedit` instead of `readline`: unfortunately `readline` is GPLv3 licensed
   and this is a hazard for redistributions.  As such, the portable Python
   builds link against the more freely licensed `libedit` instead.
 
