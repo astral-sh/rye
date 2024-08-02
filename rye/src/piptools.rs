@@ -13,7 +13,7 @@ use crate::utils::{get_venv_python_bin, CommandOutput, IoPathContext};
 
 // When changing these, also update `SELF_VERSION` in bootstrap.rs to ensure
 // that the internals are re-created.
-pub const LATEST_PIP: &str = "pip==23.3.2";
+pub const LATEST_PIP: &str = "pip==24.2.0";
 const PIP_TOOLS_LATEST_REQ: &[&str] = &[LATEST_PIP, "pip-tools==7.3.0"];
 const PIP_TOOLS_LEGACY_REQ: &[&str] = &["pip==22.2.0", "pip-tools==6.14.0"];
 
