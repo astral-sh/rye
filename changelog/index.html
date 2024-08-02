@@ -1,0 +1,2845 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+        <meta name="description" content="An Experimental Package Management Solution for Python">
+      
+      
+      
+      
+        <link rel="prev" href="../community/">
+      
+      
+        <link rel="next" href="../philosophy/">
+      
+      <link rel="icon" href="../static/favicon.svg">
+      <meta name="generator" content="mkdocs-1.4.3, mkdocs-material-9.1.20">
+    
+    
+      
+        <title>Changelog - Rye</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.eebd395e.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.ecc896b0.min.css">
+      
+      
+
+    
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Inter:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Inter";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../static/extra.css">
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  
+  <script>
+    function __primePlatformTabs() {
+      const browserPlatform = navigator.platform || "";
+      const tabs = __md_get("__tabs") || [];
+      let changed = false;
+
+      function unshiftTab(name) {
+        if (tabs.indexOf(name) < 0) {
+          tabs.unshift(name);
+          changed = true;
+        }
+      }
+
+      if (/(mac|iphone|ipad)/i.test(browserPlatform)) {
+        unshiftTab("Unix");
+        unshiftTab("macOS");
+      } else if (/linux/i.test(browserPlatform)) {
+        unshiftTab("Unix");
+        unshiftTab("Linux");
+      } else if (/win/i.test(browserPlatform)) {
+        unshiftTab("Windows");
+      }
+
+      if (changed) {
+        __md_set("__tabs", tabs);
+      }
+    }
+
+    __primePlatformTabs();
+  </script>
+
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="custom" data-md-color-accent="custom">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#changelog" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Rye" class="md-header__button md-logo" aria-label="Rye" data-md-component="logo">
+      
+  <img src="../static/logo.svg" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Rye
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Changelog
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/astral-sh/rye" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    astral-sh/rye
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+<script>
+  (function() {
+    function changeColorScheme(light) {
+      document.body.setAttribute("data-md-color-scheme", light ? "default" : "slate");
+    }
+    const media = matchMedia("(prefers-color-scheme: light)");
+    changeColorScheme(media.matches);
+    media.addEventListener("change", function (e) {
+      changeColorScheme(e.matches);
+    });
+  })();
+</script>
+
+      
+        
+          
+            
+<nav class="md-tabs" aria-label="Tabs" data-md-component="tabs">
+  <div class="md-grid">
+    <ul class="md-tabs__list">
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href=".." class="md-tabs__link">
+      Welcome
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  
+  
+  
+    <li class="md-tabs__item">
+      <a href="../guide/" class="md-tabs__link">
+        User Guide
+      </a>
+    </li>
+  
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../community/" class="md-tabs__link">
+      Community
+    </a>
+  </li>
+
+      
+        
+  
+  
+    
+  
+
+
+  <li class="md-tabs__item">
+    <a href="./" class="md-tabs__link md-tabs__link--active">
+      Changelog
+    </a>
+  </li>
+
+      
+        
+  
+  
+
+
+  <li class="md-tabs__item">
+    <a href="../philosophy/" class="md-tabs__link">
+      Philosophy
+    </a>
+  </li>
+
+      
+    </ul>
+  </div>
+</nav>
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+  
+
+
+  
+
+<nav class="md-nav md-nav--primary md-nav--lifted md-nav--integrated" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Rye" class="md-nav__button md-logo" aria-label="Rye" data-md-component="logo">
+      
+  <img src="../static/logo.svg" alt="logo">
+
+    </a>
+    Rye
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/astral-sh/rye" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    astral-sh/rye
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Welcome
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2" id="__nav_2_label" tabindex="0">
+          User Guide
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          User Guide
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/" class="md-nav__link">
+        Introduction
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/installation/" class="md-nav__link">
+        Installation
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/basics/" class="md-nav__link">
+        Basics
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/config/" class="md-nav__link">
+        Configuration
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/pyproject/" class="md-nav__link">
+        Python Project
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/sync/" class="md-nav__link">
+        Syncing and Locking
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/shims/" class="md-nav__link">
+        Shims
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/publish/" class="md-nav__link">
+        Building and Publishing
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/rust/" class="md-nav__link">
+        Rust Modules
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/sources/" class="md-nav__link">
+        Dependency Sources
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/deps/" class="md-nav__link">
+        Dependencies
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/workspaces/" class="md-nav__link">
+        Workspaces
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/virtual/" class="md-nav__link">
+        Virtual Projects
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/docker/" class="md-nav__link">
+        Docker
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_15" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_15" id="__nav_2_15_label" tabindex="0">
+          Commands
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_15_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_15">
+          <span class="md-nav__icon md-icon"></span>
+          Commands
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/add/" class="md-nav__link">
+        add
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/build/" class="md-nav__link">
+        build
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/config/" class="md-nav__link">
+        config
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/fetch/" class="md-nav__link">
+        fetch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/fmt/" class="md-nav__link">
+        fmt
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/init/" class="md-nav__link">
+        init
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/install/" class="md-nav__link">
+        install
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/lock/" class="md-nav__link">
+        lock
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/lint/" class="md-nav__link">
+        lint
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/make-req/" class="md-nav__link">
+        make-req
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/pin/" class="md-nav__link">
+        pin
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/publish/" class="md-nav__link">
+        publish
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/remove/" class="md-nav__link">
+        remove
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/run/" class="md-nav__link">
+        run
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/show/" class="md-nav__link">
+        show
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/sync/" class="md-nav__link">
+        sync
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/test/" class="md-nav__link">
+        test
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_15_19" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_15_19" id="__nav_2_15_19_label" tabindex="0">
+          toolchain
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_15_19_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_15_19">
+          <span class="md-nav__icon md-icon"></span>
+          toolchain
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/toolchain/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/toolchain/fetch/" class="md-nav__link">
+        fetch
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/toolchain/list/" class="md-nav__link">
+        list
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/toolchain/register/" class="md-nav__link">
+        register
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/toolchain/remove/" class="md-nav__link">
+        remove
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_15_20" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_15_20" id="__nav_2_15_20_label" tabindex="0">
+          tools
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_15_20_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_15_20">
+          <span class="md-nav__icon md-icon"></span>
+          tools
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/tools/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/tools/install/" class="md-nav__link">
+        install
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/tools/uninstall/" class="md-nav__link">
+        uninstall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/tools/list/" class="md-nav__link">
+        list
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_15_21" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_15_21" id="__nav_2_15_21_label" tabindex="0">
+          self
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="3" aria-labelledby="__nav_2_15_21_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_15_21">
+          <span class="md-nav__icon md-icon"></span>
+          self
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/self/" class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/self/completion/" class="md-nav__link">
+        completion
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/self/update/" class="md-nav__link">
+        update
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/self/uninstall/" class="md-nav__link">
+        uninstall
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/uninstall/" class="md-nav__link">
+        uninstall
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/commands/version/" class="md-nav__link">
+        version
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+      
+      
+      <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2_16" >
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_16" id="__nav_2_16_label" tabindex="0">
+          Toolchains
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_2_16_label" aria-expanded="false">
+        <label class="md-nav__title" for="__nav_2_16">
+          <span class="md-nav__icon md-icon"></span>
+          Toolchains
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/toolchains/" class="md-nav__link">
+        Toolchain Management
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/toolchains/cpython/" class="md-nav__link">
+        Portable CPython
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/toolchains/pypy/" class="md-nav__link">
+        PyPy
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/tools/" class="md-nav__link">
+        Tools
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../guide/faq/" class="md-nav__link">
+        FAQ
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../community/" class="md-nav__link">
+        Community
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Changelog
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Changelog
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#0380" class="md-nav__link">
+    0.38.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0370" class="md-nav__link">
+    0.37.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0360" class="md-nav__link">
+    0.36.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0350" class="md-nav__link">
+    0.35.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0340" class="md-nav__link">
+    0.34.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0330" class="md-nav__link">
+    0.33.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0320" class="md-nav__link">
+    0.32.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0310" class="md-nav__link">
+    0.31.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0300" class="md-nav__link">
+    0.30.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0290" class="md-nav__link">
+    0.29.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0280" class="md-nav__link">
+    0.28.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0270" class="md-nav__link">
+    0.27.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0260" class="md-nav__link">
+    0.26.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0250" class="md-nav__link">
+    0.25.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0240" class="md-nav__link">
+    0.24.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0230" class="md-nav__link">
+    0.23.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0220" class="md-nav__link">
+    0.22.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0210" class="md-nav__link">
+    0.21.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0200" class="md-nav__link">
+    0.20.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0190" class="md-nav__link">
+    0.19.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0180" class="md-nav__link">
+    0.18.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0170" class="md-nav__link">
+    0.17.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0160" class="md-nav__link">
+    0.16.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0152" class="md-nav__link">
+    0.15.2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0151" class="md-nav__link">
+    0.15.1
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0150" class="md-nav__link">
+    0.15.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0140" class="md-nav__link">
+    0.14.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0130" class="md-nav__link">
+    0.13.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0120" class="md-nav__link">
+    0.12.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0110" class="md-nav__link">
+    0.11.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#0100" class="md-nav__link">
+    0.10.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#090" class="md-nav__link">
+    0.9.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#080" class="md-nav__link">
+    0.8.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#070" class="md-nav__link">
+    0.7.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#060" class="md-nav__link">
+    0.6.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#050" class="md-nav__link">
+    0.5.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#040" class="md-nav__link">
+    0.4.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#030" class="md-nav__link">
+    0.3.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#020" class="md-nav__link">
+    0.2.0
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#012" class="md-nav__link">
+    0.1.2
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#011" class="md-nav__link">
+    0.1.1
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#010" class="md-nav__link">
+    0.1.0
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../philosophy/" class="md-nav__link">
+        Philosophy
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+    <a href="https://github.com/astral-sh/rye/edit/main/docs/changelog.md" title="Edit this page" class="md-content__button md-icon">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M10 20H6V4h7v5h5v3.1l2-2V8l-6-6H6c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h4v-2m10.2-7c.1 0 .3.1.4.2l1.3 1.3c.2.2.2.6 0 .8l-1 1-2.1-2.1 1-1c.1-.1.2-.2.4-.2m0 3.9L14.1 23H12v-2.1l6.1-6.1 2.1 2.1Z"/></svg>
+    </a>
+  
+  
+
+
+<h1 id="changelog">Changelog</h1>
+<p>Here you can find all the released changes to Rye.  If you want to also see
+the in-development changes that were not released yet, refer to the
+<a href="https://github.com/astral-sh/rye/blob/main/CHANGELOG.md">CHANGELOG.md</a> file
+in the repository.</p>
+<!-- BEGIN INCLUDE ../CHANGELOG.md '&lt;!-- released start --&gt;' '' -->
+
+<h2 id="0380">0.38.0</h2>
+<p>Released on 2024-08-01.</p>
+<ul>
+<li>Fix <code>rye add</code> and <code>rye remove</code> to create proper <code>tool.rye</code> section for <code>--dev</code> and <code>--exclude</code> flags by <a class="gh-link gh-mention" href="https://github.com/flyaroundme" title="GitHub User: @flyaroundme">@flyaroundme</a> in https://github.com/astral-sh/rye/pull/1256</li>
+<li>Fix <code>uninstall_cmd</code> on Windows by <a class="gh-link gh-mention" href="https://github.com/250h" title="GitHub User: @250h">@250h</a> in https://github.com/astral-sh/rye/pull/1153</li>
+<li>Make rye run print script list to stdout by <a class="gh-link gh-mention" href="https://github.com/mitsuhiko" title="GitHub User: @mitsuhiko">@mitsuhiko</a> in https://github.com/astral-sh/rye/pull/1268</li>
+<li>Always write <code>--index-url</code> before <code>--extra-index-url</code> by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1278</li>
+<li>Use case-insensitive comparison for detecting <code>rye.exe</code> by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1286</li>
+<li>Update Python releases to include stripped variants by <a class="gh-link gh-mention" href="https://github.com/github-actions" title="GitHub User: @github-actions">@github-actions</a> in https://github.com/astral-sh/rye/pull/1280</li>
+<li>Fix documentation for readline license by <a class="gh-link gh-mention" href="https://github.com/3w36zj6" title="GitHub User: @3w36zj6">@3w36zj6</a> in https://github.com/astral-sh/rye/pull/1297</li>
+<li>Update bundled uv version to <code>v0.2.33</code> by <a class="gh-link gh-mention" href="https://github.com/github-actions" title="GitHub User: @github-actions">@github-actions</a> in https://github.com/astral-sh/rye/pull/1303</li>
+<li>Update bundled pip to <code>v24.2.0</code> by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1304</li>
+</ul>
+<h2 id="0370">0.37.0</h2>
+<p>Released on 2024-07-20.</p>
+<ul>
+<li>Fix verify-ssl option parsing by <a class="gh-link gh-mention" href="https://github.com/taki-d" title="GitHub User: @taki-d">@taki-d</a> in https://github.com/astral-sh/rye/pull/1208</li>
+<li>Emit warning when asked to build a virtual project by <a class="gh-link gh-mention" href="https://github.com/nazq" title="GitHub User: @nazq">@nazq</a> in https://github.com/astral-sh/rye/pull/1227</li>
+<li>Add short version <code>-d</code> for <code>rye remove --dev</code> by <a class="gh-link gh-mention" href="https://github.com/nikhilweee" title="GitHub User: @nikhilweee">@nikhilweee</a> in https://github.com/astral-sh/rye/pull/1239</li>
+<li>Remove redundant alias information from CLI by <a class="gh-link gh-mention" href="https://github.com/piotrgredowski" title="GitHub User: @piotrgredowski">@piotrgredowski</a> in https://github.com/astral-sh/rye/pull/1237</li>
+<li>Update bundled uv version to <code>v0.2.27</code> by <a class="gh-link gh-mention" href="https://github.com/github-actions" title="GitHub User: @github-actions">@github-actions</a> in https://github.com/astral-sh/rye/pull/1232</li>
+<li>Update Python releases to include <code>3.12.4</code> by <a class="gh-link gh-mention" href="https://github.com/github-actions" title="GitHub User: @github-actions">@github-actions</a> in https://github.com/astral-sh/rye/pull/1230</li>
+<li>Respect <code>.python-version</code> in Rye builds by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1250</li>
+<li>Update bundled Ruff version to <code>v0.5.4</code> by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1251</li>
+</ul>
+<h2 id="0360">0.36.0</h2>
+<p>Released on 2024-07-07.</p>
+<ul>
+<li>Upgrade pyyaml to v6.0.1 by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1170</li>
+<li>Pass keyring-provider to uv sync and install by <a class="gh-link gh-mention" href="https://github.com/emarsden-iso" title="GitHub User: @emarsden-iso">@emarsden-iso</a> in https://github.com/astral-sh/rye/pull/1183</li>
+<li>Add docs hint for packages on multiple indexes by <a class="gh-link gh-mention" href="https://github.com/dennisrall" title="GitHub User: @dennisrall">@dennisrall</a> in https://github.com/astral-sh/rye/pull/1188</li>
+<li>Pass universal flag down to uv by <a class="gh-link gh-mention" href="https://github.com/lbowenwest" title="GitHub User: @lbowenwest">@lbowenwest</a> in https://github.com/astral-sh/rye/pull/1186</li>
+<li>Use musl build for ARM Linux by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1192</li>
+<li>Bump uv to 0.2.22 by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1192</li>
+<li>Upgrade twine to v5.1.1 by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1199</li>
+</ul>
+<h2 id="0350">0.35.0</h2>
+<p>Released on 2024-06-24.</p>
+<ul>
+<li>Enforce <code>--pre</code> when auto-syncing by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1107</li>
+<li>Move from <code>rye-up.com</code> to <code>rye.astral.sh</code> by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1113</li>
+<li>Fix install instructions on README.md for mac/linux by <a class="gh-link gh-mention" href="https://github.com/timothycrosley" title="GitHub User: @timothycrosley">@timothycrosley</a> in https://github.com/astral-sh/rye/pull/1114</li>
+<li>Fix CLI deserialization of PowerShell (<code>powershell</code>) by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1125</li>
+<li>Add ability to specify option to generate hashes within pyproject.toml by <a class="gh-link gh-mention" href="https://github.com/asmith26" title="GitHub User: @asmith26">@asmith26</a> in https://github.com/astral-sh/rye/pull/1129</li>
+<li>Bump uv to 0.2.13 by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1123</li>
+<li>Improve <code>config.toml</code> error messages by <a class="gh-link gh-mention" href="https://github.com/zys864" title="GitHub User: @zys864">@zys864</a> in https://github.com/astral-sh/rye/pull/1155</li>
+</ul>
+<h2 id="0340">0.34.0</h2>
+<p>Released on 2024-05-20.</p>
+<ul>
+<li>Add nushell completion support by <a class="gh-link gh-mention" href="https://github.com/MilesCranmer" title="GitHub User: @MilesCranmer">@MilesCranmer</a> in https://github.com/astral-sh/rye/pull/1030</li>
+<li>Use uv in rye build when enabled by <a class="gh-link gh-mention" href="https://github.com/bluss" title="GitHub User: @bluss">@bluss</a> in https://github.com/astral-sh/rye/pull/978</li>
+<li>Add short version add -d for rye add --dev by <a class="gh-link gh-mention" href="https://github.com/bluss" title="GitHub User: @bluss">@bluss</a> in https://github.com/astral-sh/rye/pull/1044</li>
+<li>Flip uv to the default Rye backend by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1053</li>
+<li>Fix Rye not using user-chosen toolchain as default during installation by <a class="gh-link gh-mention" href="https://github.com/pjdon" title="GitHub User: @pjdon">@pjdon</a> in https://github.com/astral-sh/rye/pull/1054</li>
+<li>Add keyring support for uv by <a class="gh-link gh-mention" href="https://github.com/emarsden-iso" title="GitHub User: @emarsden-iso">@emarsden-iso</a> in https://github.com/astral-sh/rye/pull/1016</li>
+<li>Allow to generate lockfiles with hashes when using uv by <a class="gh-link gh-mention" href="https://github.com/mvaled" title="GitHub User: @mvaled">@mvaled</a> in https://github.com/astral-sh/rye/pull/1070</li>
+<li>Bump ruff to 0.4.4 by <a class="gh-link gh-mention" href="https://github.com/davfsa" title="GitHub User: @davfsa">@davfsa</a> in https://github.com/astral-sh/rye/pull/1075</li>
+<li>Fix TOML array formatting by <a class="gh-link gh-mention" href="https://github.com/my1e5" title="GitHub User: @my1e5">@my1e5</a> in https://github.com/astral-sh/rye/pull/1084</li>
+<li>Bump uv to 0.1.44 by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1085</li>
+<li>Discover cosmo-ified (<code>.com</code>) binaries on Windows by <a class="gh-link gh-mention" href="https://github.com/mataha" title="GitHub User: @mataha">@mataha</a> in https://github.com/astral-sh/rye/pull/1091</li>
+<li>Write <code>use-uv = true</code> in no-prompt mode by <a class="gh-link gh-mention" href="https://github.com/charliermarsh" title="GitHub User: @charliermarsh">@charliermarsh</a> in https://github.com/astral-sh/rye/pull/1098</li>
+</ul>
+<h2 id="0330">0.33.0</h2>
+<p>Released on 2024-04-24.</p>
+<ul>
+<li>
+<p>Ensure files created by <code>rye init</code>, such as <code>pyproject.toml</code> and initial python files end with a newline. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/979" title="GitHub Issue astral-sh/rye #979">#979</a></p>
+</li>
+<li>
+<p>Add <code>--refresh</code> argument on <code>-f</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/994" title="GitHub Issue astral-sh/rye #994">#994</a></p>
+</li>
+<li>
+<p>Preserve trailing newline in templates.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/979" title="GitHub Issue astral-sh/rye #979">#979</a></p>
+</li>
+<li>
+<p>Update uv to 0.1.37.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/980" title="GitHub Issue astral-sh/rye #980">#980</a></p>
+</li>
+<li>
+<p>Allow comments in <code>.python-version</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/1038" title="GitHub Issue astral-sh/rye #1038">#1038</a></p>
+</li>
+<li>
+<p>Update Python releases to include 3.12.3 et al.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/1022" title="GitHub Issue astral-sh/rye #1022">#1022</a></p>
+</li>
+</ul>
+<h2 id="0320">0.32.0</h2>
+<p>Released on 2024-03-29</p>
+<ul>
+<li>
+<p>Update uv to 0.1.26.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/924" title="GitHub Issue astral-sh/rye #924">#924</a></p>
+</li>
+<li>
+<p>Always create <code>.gitignore</code> file in <code>rye init</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/919" title="GitHub Issue astral-sh/rye #919">#919</a></p>
+</li>
+<li>
+<p>Prevent <code>rye fetch --force</code> from removing a target directory that is not a Python installation.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/921" title="GitHub Issue astral-sh/rye #921">#921</a></p>
+</li>
+<li>
+<p><code>rye list</code> always prints the currently installed packages even this project is not managed by Rye.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/940" title="GitHub Issue astral-sh/rye #940">#940</a></p>
+</li>
+<li>
+<p>Fix error on using -v or -q with <code>rye fmt</code> or <code>rye lint</code>. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/959" title="GitHub Issue astral-sh/rye #959">#959</a></p>
+</li>
+<li>
+<p>Fix rye fetch detection of registered toolchain.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/931" title="GitHub Issue astral-sh/rye #931">#931</a></p>
+</li>
+<li>
+<p>Ignore build-system configuration for virtual projects.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/929" title="GitHub Issue astral-sh/rye #929">#929</a></p>
+</li>
+</ul>
+<h2 id="0310">0.31.0</h2>
+<p>Released on 2024-03-22</p>
+<ul>
+<li>
+<p>Update uv to 0.1.23.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/916" title="GitHub Issue astral-sh/rye #916">#916</a></p>
+</li>
+<li>
+<p>Allow <code>rye publish</code> working outside of project.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/910" title="GitHub Issue astral-sh/rye #910">#910</a></p>
+</li>
+<li>
+<p><code>rye test --quiet</code> no longer implies <code>--no-capture</code>. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/915" title="GitHub Issue astral-sh/rye #915">#915</a></p>
+</li>
+<li>
+<p>Rye now can be used to fetch Python installations even when not using Rye
+  and build infos are no longer included by default.  This means that rather
+  than having interpreters at <code>~/.rye/py/cpython@3.11.1/install/bin/python3</code>
+  it will now reside at <code>~/.rye/py/cpython@3.11.1/bin/python3</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/917" title="GitHub Issue astral-sh/rye #917">#917</a></p>
+</li>
+<li>
+<p>Installer now recommends <code>uv</code> over <code>pip-tools</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/918" title="GitHub Issue astral-sh/rye #918">#918</a></p>
+</li>
+</ul>
+<h2 id="0300">0.30.0</h2>
+<p>Released on 2024-03-19</p>
+<ul>
+<li>
+<p>Update uv to 0.1.21.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/884" title="GitHub Issue astral-sh/rye #884">#884</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/890" title="GitHub Issue astral-sh/rye #890">#890</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/904" title="GitHub Issue astral-sh/rye #904">#904</a></p>
+</li>
+<li>
+<p>Fix incorrect flag passing of <code>rye test</code> <code>-q</code> and <code>-v</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/880" title="GitHub Issue astral-sh/rye #880">#880</a></p>
+</li>
+<li>
+<p>Rye now loads <code>.env</code> files.  This applies both for Rye's own
+  use of environment variables but also to scripts launched via
+  <code>run</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/894" title="GitHub Issue astral-sh/rye #894">#894</a></p>
+</li>
+<li>
+<p>Fix <code>rye add m --path ./m</code> causing a panic on windows.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/897" title="GitHub Issue astral-sh/rye #897">#897</a></p>
+</li>
+</ul>
+<h2 id="0290">0.29.0</h2>
+<p>Released on 2024-03-11</p>
+<ul>
+<li>
+<p>Updated to <code>uv</code> 0.1.17.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/850" title="GitHub Issue astral-sh/rye #850">#850</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/867" title="GitHub Issue astral-sh/rye #867">#867</a></p>
+</li>
+<li>
+<p>Trap panics and silence bad pipe errors.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/862" title="GitHub Issue astral-sh/rye #862">#862</a></p>
+</li>
+<li>
+<p>Updating <code>rye</code> will now also ensure that the self-venv is updated.  Previously
+  this was deferred until the next <code>sync</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/863" title="GitHub Issue astral-sh/rye #863">#863</a></p>
+</li>
+<li>
+<p>The <code>self update</code> command now accepts <code>--branch</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/864" title="GitHub Issue astral-sh/rye #864">#864</a></p>
+</li>
+<li>
+<p>Fixed an issue that caused pip-tools to not update.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/865" title="GitHub Issue astral-sh/rye #865">#865</a></p>
+</li>
+<li>
+<p>Updates <code>build</code> and <code>certifi</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/866" title="GitHub Issue astral-sh/rye #866">#866</a></p>
+</li>
+</ul>
+<h2 id="0280">0.28.0</h2>
+<p>Released on 2024-03-07</p>
+<ul>
+<li>
+<p><code>--skip-existing</code> is now available with Rye's <code>publish</code> command. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/831" title="GitHub Issue astral-sh/rye #831">#831</a></p>
+</li>
+<li>
+<p>Bumped <code>uv</code> to 0.1.15.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/760" title="GitHub Issue astral-sh/rye #760">#760</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/820" title="GitHub Issue astral-sh/rye #820">#820</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/837" title="GitHub Issue astral-sh/rye #837">#837</a></p>
+</li>
+<li>
+<p>Bumped <code>ruff</code> to 0.3.0.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/821" title="GitHub Issue astral-sh/rye #821">#821</a></p>
+</li>
+<li>
+<p>The <code>init</code> command now generates a script with the name of the
+  project rather than <code>hello</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/801" title="GitHub Issue astral-sh/rye #801">#801</a></p>
+</li>
+<li>
+<p>Retain markers when adding dependencies with features when uv is used.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/807" title="GitHub Issue astral-sh/rye #807">#807</a></p>
+</li>
+<li>
+<p>Fixed a bug that caused repeated syncs not to recall all previous options.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/830" title="GitHub Issue astral-sh/rye #830">#830</a></p>
+</li>
+<li>
+<p>Report <code>self-python</code> version in <code>--version</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/843" title="GitHub Issue astral-sh/rye #843">#843</a></p>
+</li>
+<li>
+<p>Fixes a bug where <code>rye config</code> would not create the <code>RYE_HOME</code> folder if needed.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/844" title="GitHub Issue astral-sh/rye #844">#844</a></p>
+</li>
+<li>
+<p><code>rye add</code> now retains version and URL for the requirements when <code>uv</code> is used.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/846" title="GitHub Issue astral-sh/rye #846">#846</a></p>
+</li>
+<li>
+<p>Added a <code>rye test</code> command which invokes <code>pytest</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/847" title="GitHub Issue astral-sh/rye #847">#847</a></p>
+</li>
+</ul>
+<h2 id="0270">0.27.0</h2>
+<p>Released on 2024-02-26</p>
+<ul>
+<li>
+<p>rye now uses <code>uv</code> to bootstrap its internal packages and tools. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/754" title="GitHub Issue astral-sh/rye #754">#754</a></p>
+</li>
+<li>
+<p>rye no longer fails if an incorrect <code>VIRTUAL_ENV</code> environment
+  variable is exported.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/766" title="GitHub Issue astral-sh/rye #766">#766</a></p>
+</li>
+<li>
+<p>Added latest Python builds.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/771" title="GitHub Issue astral-sh/rye #771">#771</a></p>
+</li>
+<li>
+<p>When <code>uv</code> is used the prompt is now set to the project name.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/773" title="GitHub Issue astral-sh/rye #773">#773</a></p>
+</li>
+<li>
+<p>Allow <code>rye fetch --force</code> to force re-fetch a downloaded toolchain.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/778" title="GitHub Issue astral-sh/rye #778">#778</a></p>
+</li>
+<li>
+<p>Fixed a panic when adding a package to a virtual project.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/783" title="GitHub Issue astral-sh/rye #783">#783</a></p>
+</li>
+<li>
+<p>Bumped <code>uv</code> to 0.1.11.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/790" title="GitHub Issue astral-sh/rye #790">#790</a></p>
+</li>
+</ul>
+<h2 id="0260">0.26.0</h2>
+<p>Released on 2024-02-23</p>
+<ul>
+<li>
+<p><code>init</code> now supports <code>--script</code> and <code>--lib</code> to generate a script or library project.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/738" title="GitHub Issue astral-sh/rye #738">#738</a></p>
+</li>
+<li>
+<p>Fixed <code>rye config --show-path</code> abort with an error. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/706" title="GitHub Issue astral-sh/rye #706">#706</a></p>
+</li>
+<li>
+<p>Bumped <code>uv</code> to 0.1.9.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/719" title="GitHub Issue astral-sh/rye #719">#719</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/740" title="GitHub Issue astral-sh/rye #740">#740</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/746" title="GitHub Issue astral-sh/rye #746">#746</a></p>
+</li>
+<li>
+<p>Bumped <code>ruff</code> to 0.2.2.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/700" title="GitHub Issue astral-sh/rye #700">#700</a></p>
+</li>
+<li>
+<p>Prevent <code>rye toolchain remove</code> from removing the currently active toolchain.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/693" title="GitHub Issue astral-sh/rye #693">#693</a></p>
+</li>
+<li>
+<p>Sync latest PyPy releases. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/683" title="GitHub Issue astral-sh/rye #683">#683</a></p>
+</li>
+<li>
+<p>Fixes an issue where when <code>uv</code> is enabled, <code>add</code> did not honor custom sources.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/720" title="GitHub Issue astral-sh/rye #720">#720</a></p>
+</li>
+<li>
+<p>When <code>uv</code> is enabled, rye will now automatically sync on <code>add</code> and <code>remove</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/677" title="GitHub Issue astral-sh/rye #677">#677</a></p>
+</li>
+<li>
+<p>Rename <code>rye tools list</code> flags: <code>-i, --include-scripts</code> to <code>-s, --include-scripts</code> and <code>-v, --version-show</code> to <code>-v, --include-version</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/722" title="GitHub Issue astral-sh/rye #722">#722</a></p>
+</li>
+</ul>
+<h2 id="0250">0.25.0</h2>
+<p>Released on 2024-02-19</p>
+<ul>
+<li>
+<p>Improved the error message if <code>config</code> is invoked without arguments.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/660" title="GitHub Issue astral-sh/rye #660">#660</a></p>
+</li>
+<li>
+<p>Bump <code>uv</code> to 0.1.5.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/665" title="GitHub Issue astral-sh/rye #665">#665</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/675" title="GitHub Issue astral-sh/rye #675">#675</a>, <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/698" title="GitHub Issue astral-sh/rye #698">#698</a></p>
+</li>
+<li>
+<p>When <code>uv</code> is enabled, <code>rye add</code> now uses <code>uv</code> instead of <code>unearth</code>
+  internally.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/667" title="GitHub Issue astral-sh/rye #667">#667</a></p>
+</li>
+<li>
+<p>The installer now has slightly better wording for what the shims are doing.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/669" title="GitHub Issue astral-sh/rye #669">#669</a></p>
+</li>
+<li>
+<p><code>uv</code> can now also be enabled on windows.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/675" title="GitHub Issue astral-sh/rye #675">#675</a></p>
+</li>
+<li>
+<p>Removed the unsupported and un-used <code>arch</code> parameter from <code>fetch</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/681" title="GitHub Issue astral-sh/rye #681">#681</a></p>
+</li>
+<li>
+<p>Fixed the <code>-q</code> parameter not working for the <code>init</code> command.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/686" title="GitHub Issue astral-sh/rye #686">#686</a></p>
+</li>
+<li>
+<p><code>rye tools list</code> shows broken tools if the toolchain was removed. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/692" title="GitHub Issue astral-sh/rye #692">#692</a></p>
+</li>
+<li>
+<p>Configure the ruff cache directory to be located within the workspace root. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/689" title="GitHub Issue astral-sh/rye #689">#689</a></p>
+</li>
+<li>
+<p>Use default toolchain to install tools.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/666" title="GitHub Issue astral-sh/rye #666">#666</a></p>
+</li>
+<li>
+<p><code>rye --version</code> now shows if <code>uv</code> is enabled.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/699" title="GitHub Issue astral-sh/rye #699">#699</a></p>
+</li>
+</ul>
+<h2 id="0240">0.24.0</h2>
+<p>Released on 2024-02-15</p>
+<ul>
+<li>
+<p>Added new <code>rye list</code> command and deprecated <code>rye show --installed-deps</code> which it replaces.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/656" title="GitHub Issue astral-sh/rye #656">#656</a></p>
+</li>
+<li>
+<p>Added experimental support for <code>uv</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/657" title="GitHub Issue astral-sh/rye #657">#657</a></p>
+</li>
+</ul>
+<h2 id="0230">0.23.0</h2>
+<p>Released on 2024-02-13</p>
+<ul>
+<li>
+<p>When <code>behavior.venv-mark-sync-ignore</code> is set to <code>false</code> and the file system
+  does not support extended attributes, no longer will a warning be printed.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/633" title="GitHub Issue astral-sh/rye #633">#633</a></p>
+</li>
+<li>
+<p>Fixed a bug that caused warnings about unsupported operations to be shown on Linux. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/634" title="GitHub Issue astral-sh/rye #634">#634</a></p>
+</li>
+<li>
+<p>The venv sync marker is now only updated when a new virtualenv is created.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/638" title="GitHub Issue astral-sh/rye #638">#638</a></p>
+</li>
+<li>
+<p>Lockfiles now contain annotations.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/643" title="GitHub Issue astral-sh/rye #643">#643</a></p>
+</li>
+</ul>
+<h2 id="0220">0.22.0</h2>
+<p>Released on 2024-02-09</p>
+<ul>
+<li>
+<p>Virtual envs managed by Rye will now by default be marked to not sync to
+  known cloud storage systems (Dropbox and iCloud).  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/589" title="GitHub Issue astral-sh/rye #589">#589</a></p>
+</li>
+<li>
+<p>Fixed a bug where pip-tools sometimes did not get initialized.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/596" title="GitHub Issue astral-sh/rye #596">#596</a></p>
+</li>
+<li>
+<p>Rye now prefers installed toolchains over newer latest toolchains unless
+  a precise pin is used.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/598" title="GitHub Issue astral-sh/rye #598">#598</a></p>
+</li>
+<li>
+<p>Removed the non functional <code>shell</code> command.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/602" title="GitHub Issue astral-sh/rye #602">#602</a></p>
+</li>
+<li>
+<p>Upgraded internal unearth dependency which resolved an issue where
+  <code>rye add tensorflow</code> would not work.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/614" title="GitHub Issue astral-sh/rye #614">#614</a></p>
+</li>
+<li>
+<p>The installer now supports <code>RYE_TOOLCHAIN_VERSION</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/606" title="GitHub Issue astral-sh/rye #606">#606</a></p>
+</li>
+<li>
+<p><code>rye init</code> will no longer create packages with leading digits.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/616" title="GitHub Issue astral-sh/rye #616">#616</a></p>
+</li>
+<li>
+<p>Rye now statically links <code>vcruntime</code> on Windows which no longer requires
+  the vs redist to be installed.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/622" title="GitHub Issue astral-sh/rye #622">#622</a></p>
+</li>
+<li>
+<p><code>rye show</code> now prints out which sources are configured for a project.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/631" title="GitHub Issue astral-sh/rye #631">#631</a></p>
+</li>
+</ul>
+<h2 id="0210">0.21.0</h2>
+<p>Released on 2024-02-03</p>
+<ul>
+<li>
+<p><code>rye fetch</code> now is able to fetch impliciit version in all cases.  Previously
+  global shims were not properly defaulted which required the user to be explicit
+  with the fetch request.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/574" title="GitHub Issue astral-sh/rye #574">#574</a></p>
+</li>
+<li>
+<p>The rye installer now prompts for the default toolchain version if global shims
+  are enabled.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/576" title="GitHub Issue astral-sh/rye #576">#576</a></p>
+</li>
+<li>
+<p>The internal Python version was bumped to 3.12.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/576" title="GitHub Issue astral-sh/rye #576">#576</a></p>
+</li>
+<li>
+<p>The installer now can automatically add Rye to <code>PATH</code> on most UNIX environments.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/580" title="GitHub Issue astral-sh/rye #580">#580</a></p>
+</li>
+</ul>
+<h2 id="0200">0.20.0</h2>
+<p>Released on 2024-02-01</p>
+<ul>
+<li>
+<p>Improved the error message when an update could not be performed because files
+  are in use.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/550" title="GitHub Issue astral-sh/rye #550">#550</a></p>
+</li>
+<li>
+<p>Rye now supports virtual projects.  These are themselves not installed into the
+  virtualenv but their dependencies are.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/551" title="GitHub Issue astral-sh/rye #551">#551</a></p>
+</li>
+<li>
+<p>Update the Python internals (python external dependencies) to new versions.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/553" title="GitHub Issue astral-sh/rye #553">#553</a></p>
+</li>
+<li>
+<p>Update to newer versions of pip tools.  For Python 3.7 <code>6.14.0</code> is used, for
+  new Python versions <code>7.3.0</code> is used.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/554" title="GitHub Issue astral-sh/rye #554">#554</a></p>
+</li>
+<li>
+<p>Added <code>rye fmt</code> and <code>rye lint</code> commands to format and lint with
+  the help of Ruff.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/555" title="GitHub Issue astral-sh/rye #555">#555</a></p>
+</li>
+<li>
+<p>Restore cursor state on Ctrl-C.  This fixes some issues where in rare cases the
+  cursor would disappear even after shutting down rye.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/564" title="GitHub Issue astral-sh/rye #564">#564</a></p>
+</li>
+<li>
+<p>Upon installation Rye now prompts if global shims should be enabled.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/566" title="GitHub Issue astral-sh/rye #566">#566</a></p>
+</li>
+<li>
+<p>Add a warning about bugs to the <code>shell</code> command until the behavior has been
+  fixed.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/567" title="GitHub Issue astral-sh/rye #567">#567</a></p>
+</li>
+</ul>
+<h2 id="0190">0.19.0</h2>
+<p>Released on 2024-01-21</p>
+<ul>
+<li>
+<p>Improved the behavior of <code>rye fetch</code>.  When invoked without arguments it will now try to
+  fetch the version of the requested Python interpreter.  Specifically this combining
+  <code>pin</code> and <code>fetch</code> work in a much simplified manner.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/545" title="GitHub Issue astral-sh/rye #545">#545</a></p>
+</li>
+<li>
+<p>Fixed an issue where <code>rye init</code> would pin a much too specific version in the <code>.python-version</code>
+  file that is generated.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/545" title="GitHub Issue astral-sh/rye #545">#545</a></p>
+</li>
+<li>
+<p>On Windows the <code>PATH</code> is now automatically adjusted on install and uninstall.  This means that
+  manually adding the rye folder to the search path is no longer necessary.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/483" title="GitHub Issue astral-sh/rye #483">#483</a></p>
+</li>
+<li>
+<p>Fixed a regression in 0.18 that caused the <code>add</code> command to fail.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/547" title="GitHub Issue astral-sh/rye #547">#547</a></p>
+</li>
+</ul>
+<h2 id="0180">0.18.0</h2>
+<p>Released on 2024-01-20</p>
+<ul>
+<li>
+<p>Incorporate new Python builds.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/535" title="GitHub Issue astral-sh/rye #535">#535</a></p>
+</li>
+<li>
+<p>Disable revocation checks on windows to support corporate MITM proxies.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/537" title="GitHub Issue astral-sh/rye #537">#537</a></p>
+</li>
+<li>
+<p>Detect when a virtualenv relocates and automatically re-create it on sync.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/538" title="GitHub Issue astral-sh/rye #538">#538</a></p>
+</li>
+<li>
+<p>Added <code>lock --with-sources</code>, <code>sync --with-sources</code> and the new <code>rye.tool.lock-with-sources</code>
+  config.  Passing this will ensure that source references are included in the
+  lock files.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/540" title="GitHub Issue astral-sh/rye #540">#540</a></p>
+</li>
+<li>
+<p>When using global python shims, the <code>.python-version</code> file is now correctly
+  picked up in all cases.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/541" title="GitHub Issue astral-sh/rye #541">#541</a></p>
+</li>
+<li>
+<p>Added a helpful message if someone attempts to run the non existing <code>rye list</code>
+  command.  At a later point there should be a real listing command that can print
+  out the dependencies.  Today the only option is the <code>--installed-deps</code> option on
+  the <code>show</code> command which spits out dependencies in the format of the lockfile.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/543" title="GitHub Issue astral-sh/rye #543">#543</a></p>
+</li>
+<li>
+<p>The installer will no longer attempt to symlink targets which are not valid
+  executables on the platform.  This works around some issues with Packages that
+  would prevent to install such as <code>changedetection.io</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/542" title="GitHub Issue astral-sh/rye #542">#542</a></p>
+</li>
+</ul>
+<h2 id="0170">0.17.0</h2>
+<p>Released on 2024-01-15</p>
+<ul>
+<li>
+<p>Fixed default generated script reference.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/527" title="GitHub Issue astral-sh/rye #527">#527</a></p>
+</li>
+<li>
+<p>Correctly fall back to home folder if HOME is unset.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/533" title="GitHub Issue astral-sh/rye #533">#533</a></p>
+</li>
+</ul>
+<h2 id="0160">0.16.0</h2>
+<p>Released on 2023-12-17</p>
+<ul>
+<li>
+<p>By default a script with the name of the project is now also configured.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/519" title="GitHub Issue astral-sh/rye #519">#519</a></p>
+</li>
+<li>
+<p>Rye now configures hatchling better in <code>rye init</code> so that it works with
+  hatchling 1.19 and later.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/521" title="GitHub Issue astral-sh/rye #521">#521</a></p>
+</li>
+<li>
+<p>Rye now detects the dummy Python shim that starts the windows store and
+  refuses to consider it.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/486" title="GitHub Issue astral-sh/rye #486">#486</a></p>
+</li>
+</ul>
+<h2 id="0152">0.15.2</h2>
+<p>Released on 2023-10-04</p>
+<ul>
+<li>Fixed the updater not replacing the python shim correctly on Linux.</li>
+</ul>
+<h2 id="0151">0.15.1</h2>
+<p>Released on 2023-10-03</p>
+<ul>
+<li>Fixed the updater not replacing the python3 shim correctly.</li>
+</ul>
+<h2 id="0150">0.15.0</h2>
+<p>Released on 2023-10-03</p>
+<ul>
+<li>Added support for Python 3.12.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/462" title="GitHub Issue astral-sh/rye #462">#462</a></li>
+</ul>
+<h2 id="0140">0.14.0</h2>
+<p>Released on 2023-10-01</p>
+<ul>
+<li>
+<p>Add support for fetching alternative CPU architectures.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/447" title="GitHub Issue astral-sh/rye #447">#447</a></p>
+</li>
+<li>
+<p>The order of git submodule initialization was changed.  This improves the
+  automatic author detection when <code>includeIf</code> is used.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/443" title="GitHub Issue astral-sh/rye #443">#443</a></p>
+</li>
+<li>
+<p>The linux shim installer code will no longer fall back to symlinks when a
+  hardlink cannot be created.  This is done as a symlinked shim will not
+  ever function correctly on Linux.  This prevents the shim executables like
+  <code>python</code> to instead act as if they are <code>rye</code>.  The fallback behavior is now
+  to copy the executable instead.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/441" title="GitHub Issue astral-sh/rye #441">#441</a></p>
+</li>
+<li>
+<p>The installer now detects <code>fish</code> and will spit out additional instructions
+  for configuring the shell.</p>
+</li>
+<li>
+<p>Fix the wrong behavior when bump version.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/454" title="GitHub Issue astral-sh/rye #454">#454</a></p>
+</li>
+</ul>
+<h2 id="0130">0.13.0</h2>
+<p>Released on 2023-08-29</p>
+<ul>
+<li>
+<p>Add a <code>python3</code> shim on windows.  Previously entering <code>python3</code> in the
+  command line would always bring up the windows store python proxy even
+  when global shims were enabled.  As virtualenvs do not support the
+  <code>python3</code> executable on windows, the internal shim handling is now also
+  changed so that trying to launch <code>python3</code> will fall back to <code>python</code>.
+  This makes it possible to run <code>maturin build</code>.</p>
+</li>
+<li>
+<p>Add <code>maturin</code> build command to start a new maturin PyO3 project.</p>
+</li>
+</ul>
+<h2 id="0120">0.12.0</h2>
+<p>Released on 2023-08-27</p>
+<ul>
+<li>
+<p>Improve handling of the pth files for TCL on pypy. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/409" title="GitHub Issue astral-sh/rye #409">#409</a></p>
+</li>
+<li>
+<p>The <code>rye tools list</code> command now accepts <code>-v</code> to also print out the
+  versions of the installed tools. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/396" title="GitHub Issue astral-sh/rye #396">#396</a></p>
+</li>
+<li>
+<p>Fixed parsing of versions by <code>rye version</code>. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/397" title="GitHub Issue astral-sh/rye #397">#397</a></p>
+</li>
+<li>
+<p>Improved the help message for <code>rye init</code>. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/401" title="GitHub Issue astral-sh/rye #401">#401</a></p>
+</li>
+<li>
+<p>The email address now defaults to a syntactically valid email address
+  if not known to prevent errors with some build tools.</p>
+</li>
+<li>
+<p>Added new Python versions.</p>
+</li>
+<li>
+<p>The rye installer now detects <code>NOEXEC</code> temporary folders and prints out
+  a more helpful error message. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/394" title="GitHub Issue astral-sh/rye #394">#394</a></p>
+</li>
+<li>
+<p>Fixed an issue where the author email was incorrectly detected. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/382" title="GitHub Issue astral-sh/rye #382">#382</a></p>
+</li>
+<li>
+<p>The prompt of new virtualenvs is now set to the project name. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/383" title="GitHub Issue astral-sh/rye #383">#383</a></p>
+</li>
+</ul>
+<h2 id="0110">0.11.0</h2>
+<p>Released on 2023-07-18</p>
+<ul>
+<li>
+<p>Added new Python versions.</p>
+</li>
+<li>
+<p>Added a new config key <code>default.author</code> to configure the default author
+  that should be set.  This overrides the default author that is normally
+  loaded from the git config.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/377" title="GitHub Issue astral-sh/rye #377">#377</a></p>
+</li>
+<li>
+<p>When importing with <code>rye init</code> and no <code>src</code> folder exists, it will not be
+  created.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/375" title="GitHub Issue astral-sh/rye #375">#375</a></p>
+</li>
+<li>
+<p>Added support for <code>shell</code> command on Windows.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/363" title="GitHub Issue astral-sh/rye #363">#363</a></p>
+</li>
+<li>
+<p>Pin down pip to an older version to avoid issues with an incompatible
+  <code>pip-tools</code> version.  This does not yet update pip-tools to 7.0 as there
+  are significant regressions in 7.x. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/374" title="GitHub Issue astral-sh/rye #374">#374</a></p>
+</li>
+<li>
+<p>The <code>version</code> command can show dynamic versions now. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/355" title="GitHub Issue astral-sh/rye #355">#355</a></p>
+</li>
+<li>
+<p><code>rye add</code> now properly checks some incompatible argument combinations.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/347" title="GitHub Issue astral-sh/rye #347">#347</a></p>
+</li>
+<li>
+<p>There is now more toolchain validation.  This better supports cases where
+  rye was interrupted during sync.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/351" title="GitHub Issue astral-sh/rye #351">#351</a></p>
+</li>
+</ul>
+<h2 id="0100">0.10.0</h2>
+<p>Released on 2023-07-07</p>
+<ul>
+<li>
+<p>Fixed a bug with <code>rye init</code> not operating correctly due to a argument conflict.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/346" title="GitHub Issue astral-sh/rye #346">#346</a></p>
+</li>
+<li>
+<p>Scripts now support a PDM style <code>call</code> script type.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/345" title="GitHub Issue astral-sh/rye #345">#345</a></p>
+</li>
+<li>
+<p>The <code>init</code> command is now capable of importing existing projects.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/265" title="GitHub Issue astral-sh/rye #265">#265</a></p>
+</li>
+<li>
+<p>Fixed the global shim behavior on Windows.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/344" title="GitHub Issue astral-sh/rye #344">#344</a></p>
+</li>
+</ul>
+<h2 id="090">0.9.0</h2>
+<p>Released on 2023-06-21</p>
+<ul>
+<li>
+<p>The internal Rye Python version is now 3.11.</p>
+</li>
+<li>
+<p>Rye now emits most messages, most of the time to stdout rather than stderr.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/342" title="GitHub Issue astral-sh/rye #342">#342</a></p>
+</li>
+<li>
+<p><code>rye add</code> now accepts <code>--pin</code> to let one override the type of pin to use.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/341" title="GitHub Issue astral-sh/rye #341">#341</a></p>
+</li>
+<li>
+<p>Added <code>rye config</code> to read and manipulate the <code>config.toml</code> file.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/339" title="GitHub Issue astral-sh/rye #339">#339</a></p>
+</li>
+<li>
+<p>Added support for the new <code>behavior.global-python</code> flag which turns on global
+  Python shimming.  When enabled then the <code>python</code> shim works even outside of
+  Rye managed projects.  Additionally the shim (when run outside of Rye managed
+  projects) supports a special first parameter <code>+VERSION</code> which requests a
+  specific version of Python (eg: <code>python +3.8</code> to request Python 3.8).  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/336" title="GitHub Issue astral-sh/rye #336">#336</a></p>
+</li>
+<li>
+<p>Renamed the config key <code>default.dependency_operator</code> to <code>default.dependency-operator</code>
+  and <code>behavior.force_rye_managed</code> to <code>behavior.force-rye-managed</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/338" title="GitHub Issue astral-sh/rye #338">#338</a></p>
+</li>
+</ul>
+<h2 id="080">0.8.0</h2>
+<p>Released on 2023-06-18</p>
+<ul>
+<li>
+<p>Rye for now prefers <code>&gt;=</code> over <code>~=</code> for newly added dependencies.</p>
+</li>
+<li>
+<p>The workspace member declaration is now platform independent.  If <code>members</code> is
+  now explicitly set to an empty list it will not fall back to auto discovery.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/331" title="GitHub Issue astral-sh/rye #331">#331</a></p>
+</li>
+<li>
+<p><code>rye add</code> now pins versions with <code>==</code> instead of <code>~=</code> when the version of the
+  package does not use at least two components.  This means that for instance it
+  will now correctly use <code>openai-whisper==20230314</code> rather than
+  <code>openai-whisper~=20230314</code> which is not actually satisfiable.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/328" title="GitHub Issue astral-sh/rye #328">#328</a></p>
+</li>
+<li>
+<p><code>rye install</code> now lets you install dependencies into the tool's virtualenv
+  during installation that are undeclared via the new <code>--extra-requirement</code>
+  option.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/326" title="GitHub Issue astral-sh/rye #326">#326</a></p>
+</li>
+<li>
+<p>Improved handling of relative path installations by setting <code>PROJECT_ROOT</code>
+  the same way as PDM does.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/321" title="GitHub Issue astral-sh/rye #321">#321</a></p>
+</li>
+<li>
+<p>Workspaces will now never discover <code>pyproject.toml</code> files in any dot
+  directories. (Name starting with <code>.</code>)  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/329" title="GitHub Issue astral-sh/rye #329">#329</a></p>
+</li>
+<li>
+<p>Fixed <code>rye build</code> not working correctly on Windows.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/327" title="GitHub Issue astral-sh/rye #327">#327</a></p>
+</li>
+</ul>
+<h2 id="070">0.7.0</h2>
+<p>Released on 2023-06-12</p>
+<ul>
+<li>
+<p><code>rye sync</code> and <code>rye lock</code> now accept <code>--pyproject</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/296" title="GitHub Issue astral-sh/rye #296">#296</a></p>
+</li>
+<li>
+<p>Added JSON output to <code>rye toolchain list</code> by adding <code>--format=json</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/306" title="GitHub Issue astral-sh/rye #306">#306</a></p>
+</li>
+<li>
+<p><code>rye version</code> can bump version by <code>--bump</code> option now.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/298" title="GitHub Issue astral-sh/rye #298">#298</a></p>
+</li>
+<li>
+<p>Fixed members not handled correctly in workspaces.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/300" title="GitHub Issue astral-sh/rye #300">#300</a></p>
+</li>
+<li>
+<p>Add <code>--clean</code> for <code>build</code> command.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/297" title="GitHub Issue astral-sh/rye #297">#297</a></p>
+</li>
+<li>
+<p>Fixed an issue where pip was not invoked from the right working directory
+  causing issues for workspace installations.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/292" title="GitHub Issue astral-sh/rye #292">#292</a></p>
+</li>
+<li>
+<p><code>rye init</code> now accepts <code>--private</code> to set the <code>Private :: Do Not Upload</code> classifier
+  that prevents uploads to PyPI.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/291" title="GitHub Issue astral-sh/rye #291">#291</a></p>
+</li>
+</ul>
+<h2 id="060">0.6.0</h2>
+<p>Released on 2023-06-03</p>
+<ul>
+<li>
+<p>Add <code>version</code> subcommand for rye. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/285" title="GitHub Issue astral-sh/rye #285">#285</a></p>
+</li>
+<li>
+<p>Fixed <code>rye pin</code> pinning the wrong version.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/288" title="GitHub Issue astral-sh/rye #288">#288</a></p>
+</li>
+<li>
+<p>Calling <code>rye init</code> on the root directory no longer fails.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/274" title="GitHub Issue astral-sh/rye #274">#274</a></p>
+</li>
+<li>
+<p><code>rye run</code>, <code>show</code>, <code>pin</code>, <code>shell</code> and <code>build</code> now take a <code>--pyproject</code>
+  argument. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/232" title="GitHub Issue astral-sh/rye #232">#232</a></p>
+</li>
+</ul>
+<h2 id="050">0.5.0</h2>
+<p>Released on 2023-05-31</p>
+<ul>
+<li>
+<p>Rye will no longer enforce a downloaded interpreter for the internal
+  toolchain.  If one has been registered that is compatible it will be
+  used.  Additionally the installer now supports the <code>RYE_TOOLCHAIN</code>
+  environment variable which allows a user to supply an already existing
+  Python interpreter at install time.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/267" title="GitHub Issue astral-sh/rye #267">#267</a></p>
+</li>
+<li>
+<p>The <code>publish</code> command now supports <code>--yes</code> to disable prompts.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/270" title="GitHub Issue astral-sh/rye #270">#270</a></p>
+</li>
+<li>
+<p>When a Python debug build (<code>Py_DEBUG</code>) is registered as custom toolchain,
+  <code>-dbg</code> is automatically appended to the name by default.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/269" title="GitHub Issue astral-sh/rye #269">#269</a></p>
+</li>
+<li>
+<p>lto+pgo builds are now preferred for the Python toolchain builds when
+  available.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/268" title="GitHub Issue astral-sh/rye #268">#268</a></p>
+</li>
+<li>
+<p>It's now possible for <code>.python-version</code> to request partial Python versions
+  in which case the latest available is used.  In particular this means that
+  a version like <code>3.10</code> can be written into <code>.python-version</code> rather than
+  <code>3.10.11</code>.  This can be accomplished by invoking <code>pin</code> with the new
+  <code>--relaxed</code> flag.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/255" title="GitHub Issue astral-sh/rye #255">#255</a></p>
+</li>
+<li>
+<p>Workspaces will no longer discover <code>pyproject.toml</code> files in virtualenvs
+  or <code>.git</code> folders.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/266" title="GitHub Issue astral-sh/rye #266">#266</a></p>
+</li>
+<li>
+<p>Adding or removing dependencies with <code>add</code> or <code>remove</code> now reformats
+  the <code>dependencies</code> array in the <code>pyproject.toml</code> file to multi-line
+  with trailing commas.  This should result in significantly better
+  diffing behavior out of the box.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/263" title="GitHub Issue astral-sh/rye #263">#263</a></p>
+</li>
+<li>
+<p>Default build-system and license can be specified in global config.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/244" title="GitHub Issue astral-sh/rye #244">#244</a></p>
+</li>
+<li>
+<p>Fixed an issue where the <code>init</code> command would not let you create
+  <code>flit</code> based projects.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/254" title="GitHub Issue astral-sh/rye #254">#254</a></p>
+</li>
+<li>
+<p>Resolve an error ("No such file or directory") shown after updates on
+  Linux machines.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/252" title="GitHub Issue astral-sh/rye #252">#252</a></p>
+</li>
+<li>
+<p>The built-in updater now validates checksums of updates when updates have
+  SHA-256 hashes available.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/253" title="GitHub Issue astral-sh/rye #253">#253</a></p>
+</li>
+<li>
+<p><code>init</code> now accepts <code>--no-pin</code> to not create a <code>.python-version</code> file.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/247" title="GitHub Issue astral-sh/rye #247">#247</a></p>
+</li>
+</ul>
+<h2 id="040">0.4.0</h2>
+<p>Released on 2023-05-29</p>
+<ul>
+<li>
+<p>Releases starting with <code>0.4.0</code> onwards are published with SHA256 checksum
+  files for all release assets.  These files are not yet validated by the
+  installer or updater however.</p>
+</li>
+<li>
+<p>The <code>install</code> command can now install tools from custom indexes.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/240" title="GitHub Issue astral-sh/rye #240">#240</a></p>
+</li>
+<li>
+<p>Virtualenvs on Unix are now created with a hack to pre-configure TCL and
+  TKinter.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/233" title="GitHub Issue astral-sh/rye #233">#233</a></p>
+</li>
+<li>
+<p>Fix invalid version error when using rye init with custom toolchain.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/234" title="GitHub Issue astral-sh/rye #234">#234</a></p>
+</li>
+<li>
+<p>Failed tool installations now properly clean up.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/225" title="GitHub Issue astral-sh/rye #225">#225</a></p>
+</li>
+<li>
+<p>Correctly swap the rye executable on windows when performing an update
+  to a git version via <code>self update</code>.</p>
+</li>
+</ul>
+<h2 id="030">0.3.0</h2>
+<p>Released on 2023-05-27</p>
+<ul>
+<li>
+<p>Support retrieving username and repository-url from credentials if not
+  provided for the <code>publish</code> command.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/217" title="GitHub Issue astral-sh/rye #217">#217</a></p>
+</li>
+<li>
+<p>The installer now validates the availability of shared libraries
+  on Linux with <code>ldd</code> and emits an error with additional information
+  if necessary shared libraries are missing.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/220" title="GitHub Issue astral-sh/rye #220">#220</a></p>
+</li>
+<li>
+<p>It's now possible to configure http and https proxies.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/215" title="GitHub Issue astral-sh/rye #215">#215</a></p>
+</li>
+<li>
+<p>If a package is not found because it only has matching pre-releases,
+  a warning is now printed to tell the user to pass <code>--pre</code>.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/218" title="GitHub Issue astral-sh/rye #218">#218</a></p>
+</li>
+<li>
+<p>Add <code>--username</code> parameter for rye publish.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/211" title="GitHub Issue astral-sh/rye #211">#211</a></p>
+</li>
+<li>
+<p>The shims are now more resilient.  Previously a <code>pyproject.toml</code> file
+  caused in all cases a virtualenv to be created.  Now this will only
+  happen when the <code>rye.tool.managed</code> flag is set to <code>true</code>.  The old
+  behavior can be forced via the global config.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/212" title="GitHub Issue astral-sh/rye #212">#212</a></p>
+</li>
+</ul>
+<h2 id="020">0.2.0</h2>
+<p>Released on 2023-05-23</p>
+<ul>
+<li>
+<p>Resolved a bug where on Windows hitting the shift key (or some other keys)
+  in confirm prompts would cause an error.</p>
+</li>
+<li>
+<p>The installer on Windows now warns if symlinks are not enabled and directs
+  the user to enable developer mode.  The <code>--version</code> output now also
+  shows if symlinks are available.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/205" title="GitHub Issue astral-sh/rye #205">#205</a></p>
+</li>
+<li>
+<p>Support auto fix requires-python when there is a conflict. <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/160" title="GitHub Issue astral-sh/rye #160">#160</a></p>
+</li>
+<li>
+<p>Added support for custom indexes.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/199" title="GitHub Issue astral-sh/rye #199">#199</a></p>
+</li>
+<li>
+<p><code>rye add</code> no longer complains when a local version information is
+  in the version.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/199" title="GitHub Issue astral-sh/rye #199">#199</a></p>
+</li>
+</ul>
+<h2 id="012">0.1.2</h2>
+<p>Released on 2023-05-22</p>
+<ul>
+<li>
+<p>Fixed dev-dependencies not being installed when using workspace.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/170" title="GitHub Issue astral-sh/rye #170">#170</a></p>
+</li>
+<li>
+<p><code>init</code> no longer creates invalid flit config.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/195" title="GitHub Issue astral-sh/rye #195">#195</a></p>
+</li>
+<li>
+<p>Support direct references when adding a package.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/158" title="GitHub Issue astral-sh/rye #158">#158</a></p>
+</li>
+<li>
+<p>Fixed a bug with uninstall on Unix platforms.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/197" title="GitHub Issue astral-sh/rye #197">#197</a></p>
+</li>
+</ul>
+<h2 id="011">0.1.1</h2>
+<p>Released on 2023-05-18</p>
+<ul>
+<li>
+<p>The installer on windows will now ask for a key to be pressed so it does
+  not close the window without information.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/183" title="GitHub Issue astral-sh/rye #183">#183</a></p>
+</li>
+<li>
+<p>Fixed an issue on macOS where the installer would die with "os error 24"
+  when directly piped to bash.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/184" title="GitHub Issue astral-sh/rye #184">#184</a></p>
+</li>
+</ul>
+<h2 id="010">0.1.0</h2>
+<p>Released on 2023-05-17</p>
+<ul>
+<li>
+<p>Rye now comes with binary releases for some platforms.</p>
+</li>
+<li>
+<p>A new <code>self uninstall</code> command was added to uninstall rye and the new
+  <code>self update</code> command updates to the latest release version.</p>
+</li>
+<li>
+<p>Rye now includes a <code>publish</code> command for publishing Python packages to a
+  package repository.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/86" title="GitHub Issue astral-sh/rye #86">#86</a></p>
+</li>
+<li>
+<p>Script declarations in <code>pyproject.toml</code> now permit chaining and custom
+  environment variables.  <a class="gh-link gh-issue" href="https://github.com/astral-sh/rye/issues/153" title="GitHub Issue astral-sh/rye #153">#153</a></p>
+</li>
+<li>
+<p>Added <code>tools install</code> and <code>tools uninstall</code> as aliases for <code>install</code> and
+  <code>uninstall</code> and added <code>tools list</code> to show all installed tools.</p>
+</li>
+<li>
+<p>Rye is now capable of downloading a selected set of PyPy releases.  To do
+  so use <code>rye pin pypy@3.9.16</code> or any other supported PyPy release.</p>
+</li>
+<li>
+<p>Custom cpython toolchains are now registered just as <code>cpython</code> rather
+  than <code>custom-cpython</code>.</p>
+</li>
+<li>
+<p>Rye now supports Python down to 3.7.</p>
+</li>
+<li>
+<p>Rye's <code>self</code> command now includes a <code>completion</code> subcommand to generate
+  a completion script for your shell.</p>
+</li>
+<li>
+<p>The downloaded Python distributions are now validated against the
+  SHA-256 hashes.</p>
+</li>
+<li>
+<p>Rye now builds on windows.  This is even more experimental though
+  than support for Linux and macOS.</p>
+</li>
+<li>
+<p>Added <code>--features</code> and <code>--all-features</code> for <code>lock</code> and <code>sync</code>.</p>
+</li>
+<li>
+<p>Rye will now look at the <code>RYE_HOME</code> to determine the location of the
+  <code>.rye</code> folder.  If it's not set, <code>$HOME/.rye</code> is used as before.</p>
+</li>
+<li>
+<p>Rye now has a most consistent handling for virtualenv versions.  If
+  <code>.python-version</code> is provided, that version is used.  Otherwise if
+  <code>requires-python</code> is set in the <code>pyproject.toml</code>, that version is used
+  instead.  When a new project is created the <code>.python-version</code> file is
+  written and the current latest cpython version is picked.</p>
+</li>
+<li>
+<p>It's now possible to explicitly set the <code>name</code> of the project when
+  initializing a new one.</p>
+</li>
+<li>
+<p>Rye's <code>init</code> command now attempts to initialize projects with <code>git</code> and
+  will automatically create a <code>src/project_name/__init__.py</code> file.</p>
+</li>
+<li>
+<p>Rye can now also generate a license text when initializing projects.</p>
+</li>
+<li>
+<p>Rye now supports negative (exclusion) dependencies.  These can be used to
+  prevent a dependency from installing, even if something else in the graph
+  depends on it.  Use <code>rye add --exclude package-name</code> to add such a dependency.</p>
+</li>
+<li>
+<p><code>sync</code> now accepts <code>--no-lock</code> to prevent updating the lock file.</p>
+</li>
+<li>
+<p>Rye's <code>add</code> command now accepts a <code>--pre</code> parameter to include pre-release.</p>
+</li>
+<li>
+<p>Rye's <code>pin</code> command now updates the pyproject.toml requires-python.</p>
+</li>
+<li>
+<p>Rye's <code>install</code> command now accepts a <code>--include-dep</code> parameter to include
+  scripts from one or more given dependencies.</p>
+</li>
+<li>
+<p>Rye now honors <code>requires-python</code> in the <code>add</code> command.  This means the the
+  initial resolution will not pick a version higher than what's supported by
+  the lower boundary.</p>
+</li>
+<li>
+<p>When installing packages as global tools, a warning is now emitted if there
+  were no scripts in the package.  Additionally installing packages from local
+  paths and zip files is now supported.</p>
+</li>
+<li>
+<p>A <code>rye self update</code> command was added to compile and install the latest
+  version via cargo.</p>
+</li>
+<li>
+<p>Added more convenient ways to install from git/urls by supplying a <code>--git</code>
+  or <code>--url</code> parameter.  This will behind the scenes format a PEP 508 requirement
+  string.</p>
+</li>
+<li>
+<p>Added a <code>shell</code> command which will spawn a shell with the virtualenv activated.</p>
+</li>
+<li>
+<p>Added a <code>make-req</code> command to conveniently format out PEP 508 requirement
+  strings from parts.</p>
+</li>
+<li>
+<p>The internal virtualenv used to manage <code>pip-tools</code> and other libraries now
+  automatically updates when necessary.</p>
+</li>
+<li>
+<p><code>rye toolchain register</code> can now be used to register a local python installation
+  as toolchain with rye.</p>
+</li>
+<li>
+<p><code>rye build</code> was added to allow building <code>sdist</code> and <code>bdist_wheel</code> distributions.</p>
+</li>
+<li>
+<p>Rye now correctly handles whitespace in folder names.</p>
+</li>
+</ul>
+<!-- END INCLUDE -->
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+  <script>var tabs=__md_get("__tabs");if(Array.isArray(tabs))e:for(var set of document.querySelectorAll(".tabbed-set")){var tab,labels=set.querySelector(".tabbed-labels");for(tab of tabs)for(var label of labels.getElementsByTagName("label"))if(label.innerText.trim()===tab){var input=document.getElementById(label.htmlFor);input.checked=!0;continue e}}</script>
+
+        </div>
+        
+          <button type="button" class="md-top md-icon" data-md-component="top" hidden>
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12Z"/></svg>
+            Back to top
+          </button>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    
+      
+      <nav class="md-footer__inner md-grid" aria-label="Footer" >
+        
+          
+          <a href="../community/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Community" rel="prev">
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+            </div>
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              <div class="md-ellipsis">
+                Community
+              </div>
+            </div>
+          </a>
+        
+        
+          
+          <a href="../philosophy/" class="md-footer__link md-footer__link--next" aria-label="Next: Philosophy" rel="next">
+            <div class="md-footer__title">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              <div class="md-ellipsis">
+                Philosophy
+              </div>
+            </div>
+            <div class="md-footer__button md-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4Z"/></svg>
+            </div>
+          </a>
+        
+      </nav>
+    
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+    <div class="md-copyright__highlight">
+      Copyright &copy; 2023 Armin Ronacher
+    </div>
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+        <div class="md-social">
+  
+    
+    
+    
+    
+    <a href="https://github.com/mitsuhiko" target="_blank" rel="noopener" title="Follow @mitsuhiko on GitHub" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://twitter.com/@mitsuhiko" target="_blank" rel="noopener" title="Follow @mitsuhiko on Twitter" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M459.37 151.716c.325 4.548.325 9.097.325 13.645 0 138.72-105.583 298.558-298.558 298.558-59.452 0-114.68-17.219-161.137-47.106 8.447.974 16.568 1.299 25.34 1.299 49.055 0 94.213-16.568 130.274-44.832-46.132-.975-84.792-31.188-98.112-72.772 6.498.974 12.995 1.624 19.818 1.624 9.421 0 18.843-1.3 27.614-3.573-48.081-9.747-84.143-51.98-84.143-102.985v-1.299c13.969 7.797 30.214 12.67 47.431 13.319-28.264-18.843-46.781-51.005-46.781-87.391 0-19.492 5.197-37.36 14.294-52.954 51.655 63.675 129.3 105.258 216.365 109.807-1.624-7.797-2.599-15.918-2.599-24.04 0-57.828 46.782-104.934 104.934-104.934 30.213 0 57.502 12.67 76.67 33.137 23.715-4.548 46.456-13.32 66.599-25.34-7.798 24.366-24.366 44.833-46.132 57.827 21.117-2.273 41.584-8.122 60.426-16.243-14.292 20.791-32.161 39.308-52.628 54.253z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://bsky.app/profile/mitsuhiko.at" target="_blank" rel="noopener" title="Follow @mitsuhiko.at on Bluesky" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M5 3h14a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2m10 7.5V9a2 2 0 0 0-2-2H9v10h4a2 2 0 0 0 2-2v-1.5c0-.8-.7-1.5-1.5-1.5.8 0 1.5-.7 1.5-1.5M13 15h-2v-2h2v2m0-4h-2V9h2v2Z"/></svg>
+    </a>
+  
+    
+    
+    
+    
+    <a href="https://discord.gg/drbkcdtSbg" target="_blank" rel="noopener" title="Discuss Rye on Discord" class="md-social__link">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M524.531 69.836a1.5 1.5 0 0 0-.764-.7A485.065 485.065 0 0 0 404.081 32.03a1.816 1.816 0 0 0-1.923.91 337.461 337.461 0 0 0-14.9 30.6 447.848 447.848 0 0 0-134.426 0 309.541 309.541 0 0 0-15.135-30.6 1.89 1.89 0 0 0-1.924-.91 483.689 483.689 0 0 0-119.688 37.107 1.712 1.712 0 0 0-.788.676C39.068 183.651 18.186 294.69 28.43 404.354a2.016 2.016 0 0 0 .765 1.375 487.666 487.666 0 0 0 146.825 74.189 1.9 1.9 0 0 0 2.063-.676A348.2 348.2 0 0 0 208.12 430.4a1.86 1.86 0 0 0-1.019-2.588 321.173 321.173 0 0 1-45.868-21.853 1.885 1.885 0 0 1-.185-3.126 251.047 251.047 0 0 0 9.109-7.137 1.819 1.819 0 0 1 1.9-.256c96.229 43.917 200.41 43.917 295.5 0a1.812 1.812 0 0 1 1.924.233 234.533 234.533 0 0 0 9.132 7.16 1.884 1.884 0 0 1-.162 3.126 301.407 301.407 0 0 1-45.89 21.83 1.875 1.875 0 0 0-1 2.611 391.055 391.055 0 0 0 30.014 48.815 1.864 1.864 0 0 0 2.063.7A486.048 486.048 0 0 0 610.7 405.729a1.882 1.882 0 0 0 .765-1.352c12.264-126.783-20.532-236.912-86.934-334.541ZM222.491 337.58c-28.972 0-52.844-26.587-52.844-59.239s23.409-59.241 52.844-59.241c29.665 0 53.306 26.82 52.843 59.239 0 32.654-23.41 59.241-52.843 59.241Zm195.38 0c-28.971 0-52.843-26.587-52.843-59.239s23.409-59.241 52.843-59.241c29.667 0 53.307 26.82 52.844 59.239 0 32.654-23.177 59.241-52.844 59.241Z"/></svg>
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    <script id="__config" type="application/json">{"base": "..", "features": ["navigation.instant", "navigation.tracking", "content.code.annotate", "content.code.copy", "content.tabs.link", "content.action.edit", "toc.integrate", "toc.follow", "navigation.path", "navigation.top", "navigation.tabs", "navigation.footer"], "search": "../assets/javascripts/workers/search.74e28a9f.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.220ee61c.min.js"></script>
+      
+    
+  </body>
+</html>
