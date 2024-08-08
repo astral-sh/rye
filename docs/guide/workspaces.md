@@ -31,6 +31,16 @@ members = ["myname-*"]
 
 For more information on that see [Virtual Packages](../virtual/).
 
+Workspaces can optionally be configured to reference members from root directories.
+This can be used with more complex project structures to store `pyproject.toml` files
+for workspaces separately from the source tree.
+
+```toml
+[tool.rye.workspace]
+root = ".."
+members = ["myname-*"]
+```
+
 ## Syncing
 
 In a workspace it does not matter which project you are working with, the entire

@@ -37,7 +37,6 @@ fn test_basic_tool_behavior() {
         deps.push("pytest>=7.0.0");
         deps.push("colorama==0.4.6");
         let mut workspace_members = Array::new();
-        workspace_members.push(".");
         workspace_members.push("child-dep");
         doc["tool"]["rye"]["dev-dependencies"] = value(deps);
         doc["tool"]["rye"]["workspace"]["members"] = value(workspace_members);
