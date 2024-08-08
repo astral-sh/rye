@@ -231,7 +231,7 @@ hello-world = { call = "builtins:print('Hello World!')" }
 ## `tool.rye.workspace`
 
 When a table with that key is stored, then a project is declared to be a
-[workspace](../workspaces/) root.  By default all Python projects discovered in
+[workspace](../workspaces/) root.  By default, all Python projects discovered in
 sub folders will then become members of this workspace and share a virtualenv.
 Optionally the `members` key (an array) can be used to restrict these members.
 In that list globs can be used.  The root project itself is always a member.
@@ -239,6 +239,7 @@ In that list globs can be used.  The root project itself is always a member.
 ```toml
 [tool.rye.workspace]
 members = ["mylib-*"]
+per_member_lock = false
 ```
 
 For more information consult the [Workspaces Guide](../workspaces/).
