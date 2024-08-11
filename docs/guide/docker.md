@@ -21,6 +21,11 @@ This guide requires some familiarity with Docker and Dockerfiles.
     
     WORKDIR /app
     COPY requirements.lock ./
+    # When using pip to install requirements.lock, it uses the line `-e file:.` to
+    # determine where to find the content when installing package. However, here we
+    # are only installing the dependencies, so this will give an error when we run it.
+    # Thus, we remove it from the file
+    RUN sed -i 's/-e file:\.//g' requirements.lock
     RUN PYTHONDONTWRITEBYTECODE=1 pip install --no-cache-dir -r requirements.lock
     
     COPY src .
