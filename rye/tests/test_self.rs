@@ -52,8 +52,8 @@ fn test_version() {
 
     let mut settings = Settings::clone_current();
     settings.add_filter(r"(?m)^(rye )\d+\.\d+\.\d+?$", "$1[VERSION]");
-    settings.add_filter(r"(?m)^(commit: ).*?$", "$1[COMMIT]");
-    settings.add_filter(r"(?m)^(platform: ).*?$", "$1[PLATFORM]");
+    settings.add_filter(r"(?m)^(commit: ).*", "$1[COMMIT]");
+    settings.add_filter(r"(?m)^(platform: ).*", "$1[PLATFORM]");
     let _guard = settings.bind_to_scope();
 
     rye_cmd_snapshot!(space.rye_cmd().arg("--version"), @r###"
