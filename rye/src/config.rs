@@ -258,28 +258,16 @@ impl Config {
             .get("behavior")
             .and_then(|x| x.get("autosync"))
             .and_then(|x| x.as_bool())
-            .unwrap_or_else(|| self.use_uv())
+            .unwrap_or(true)
     }
 
-    /// pip-tools is now deprecated in favor uv. This function is used to warn the user about the
-    /// change and always return true.
+    /// Indicates if uv should be used.
     pub fn use_uv(&self) -> bool {
-        let legacy_use_uv = self
-            .doc
+        self.doc
             .get("behavior")
             .and_then(|x| x.get("use-uv"))
-            .and_then(|x| x.as_bool());
-
-        match legacy_use_uv {
-            Some(use_uv) => {
-                // warn if the user is using the deprecated behavior.use-uv key, and it's set to false
-                if !use_uv {
-                    warn!("behavior.use-uv=false is deprecated, uv is always used now");
-                }
-                true
-            }
-            None => true,
-        }
+            .and_then(|x| x.as_bool())
+            .unwrap_or(true)
     }
 
     /// Fetches python installations with build info if possible.
@@ -420,13 +408,5 @@ author = "John Doe <john@example.com>""#,
         assert!(sources
             .iter()
             .any(|src| src.name == "default" && src.url == "https://pypi.org/simple/"));
-    }
-
-    #[test]
-    fn test_use_uv() {
-        let (cfg_path, _temp_dir) = setup_config("[behavior]\nuse-uv = true");
-        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
-        // Assuming cfg!(windows) is false in this test environment
-        assert!(cfg.use_uv());
     }
 }

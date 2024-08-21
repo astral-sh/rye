@@ -114,7 +114,7 @@ impl ReqExtras {
             };
         } else if let Some(ref path) = self.path {
             // For hatchling build backend, it use {root:uri} for file relative path,
-            // but this not supported by pip-tools,
+            // but this not supported by uv,
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
                 PyProject::discover()?.build_backend() == Some(BuildSystem::Hatchling);
