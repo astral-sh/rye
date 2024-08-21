@@ -121,12 +121,28 @@ fn check_in_use(ver: &PythonVersion) -> Result<(), Error> {
 
     // Check if used by any tool.
     let installed_tools = list_installed_tools()?;
-    for (tool, info) in &installed_tools {
-        if let Some(ref venv_marker) = info.venv_marker {
-            if &venv_marker.python == ver {
-                bail!("toolchain {} is still in use by tool {}", ver, tool);
+
+    let toolchain_refs = installed_tools
+        .iter()
+        .filter_map(|(tool, info)| {
+            if let Some(ref venv_marker) = info.venv_marker {
+                match &venv_marker.python == ver {
+                    true => Some(tool.clone()),
+                    false => None,
+                }
+            } else {
+                None
             }
-        }
+        })
+        .collect::<Vec<_>>();
+
+    if !toolchain_refs.is_empty() {
+        bail!(
+            "toolchain {} is still in use by tool{} {}",
+            ver,
+            if toolchain_refs.len() > 1 { "s:" } else { "" },
+            toolchain_refs.join(", ")
+        );
     }
 
     Ok(())
