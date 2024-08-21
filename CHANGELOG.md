@@ -5,6 +5,30 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.39.0
+
+Released on 2024-08-20.
+
+* Update Cargo dependencies by @charliermarsh in https://github.com/astral-sh/rye/pull/1310
+* Fix typo in `add.md` by @mikkelam in https://github.com/astral-sh/rye/pull/1322
+* Fix typo in FAQ by @toadjaune in https://github.com/astral-sh/rye/pull/1330
+* Update Python releases to include Python 3.12.4 by @github-actions in https://github.com/astral-sh/rye/pull/1336
+* Update bundled uv version to `v0.3.0` by @github-actions in https://github.com/astral-sh/rye/pull/1332
+
+## 0.38.0
+
+Released on 2024-08-01.
+
+* Fix `rye add` and `rye remove` to create proper `tool.rye` section for `--dev` and `--exclude` flags by @flyaroundme in https://github.com/astral-sh/rye/pull/1256
+* Fix `uninstall_cmd` on Windows by @250h in https://github.com/astral-sh/rye/pull/1153
+* Make rye run print script list to stdout by @mitsuhiko in https://github.com/astral-sh/rye/pull/1268
+* Always write `--index-url` before `--extra-index-url` by @charliermarsh in https://github.com/astral-sh/rye/pull/1278
+* Use case-insensitive comparison for detecting `rye.exe` by @charliermarsh in https://github.com/astral-sh/rye/pull/1286
+* Update Python releases to include stripped variants by @github-actions in https://github.com/astral-sh/rye/pull/1280
+* Fix documentation for readline license by @3w36zj6 in https://github.com/astral-sh/rye/pull/1297
+* Update bundled uv version to `v0.2.33` by @github-actions in https://github.com/astral-sh/rye/pull/1303
+* Update bundled pip to `v24.2.0` by @charliermarsh in https://github.com/astral-sh/rye/pull/1304
+
 ## 0.37.0
 
 Released on 2024-07-20.

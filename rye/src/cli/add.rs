@@ -1,20 +1,23 @@
 use std::env;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::{Parser, ValueEnum};
-use pep440_rs::{Operator, VersionSpecifier, VersionSpecifiers};
+use pep440_rs::{Operator, Version, VersionSpecifier, VersionSpecifiers};
 use pep508_rs::{Requirement, VersionOrUrl};
+use serde::Deserialize;
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
+use crate::consts::VENV_BIN;
 use crate::lock::KeyringProvider;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
-use crate::utils::{format_requirement, get_venv_python_bin, CommandOutput};
+use crate::utils::{format_requirement, get_venv_python_bin, set_proxy_variables, CommandOutput};
 use crate::uv::UvBuilder;
 
 #[derive(Parser, Debug)]
@@ -199,7 +202,7 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let _ = ensure_self_venv(output).context("error bootstrapping venv")?;
+    ensure_self_venv(output).context("error bootstrapping venv")?;
     let cfg = Config::current();
 
     let mut pyproject_toml = PyProject::discover()?;

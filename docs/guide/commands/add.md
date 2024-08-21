@@ -2,7 +2,7 @@
 
 Adds a Python package to this project.  The command takes a PEP 508 requirement string
 but provides additional helper arguments to make this process more user friendly.  For
-instance instead of passing git references within the requiement string, the `--git`
+instance instead of passing git references within the requirement string, the `--git`
 parameter can be used.
 
 If auto sync is disabled, after a dependency is added it's not automatically

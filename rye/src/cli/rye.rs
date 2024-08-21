@@ -454,7 +454,7 @@ fn uninstall(args: UninstallCommand) -> Result<(), Error> {
         let shim_dir = app_dir.join("shims");
         if let Ok(dir) = shim_dir.read_dir() {
             for entry in dir.flatten() {
-                fs::remove_file(&entry.path()).ok();
+                fs::remove_file(entry.path()).ok();
             }
         }
 

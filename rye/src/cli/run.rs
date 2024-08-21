@@ -35,7 +35,7 @@ enum Cmd {
 }
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
-    let _guard = redirect_to_stderr(true);
+    let guard = redirect_to_stderr(true);
     let pyproject = PyProject::load_or_discover(cmd.pyproject.as_deref())?;
 
     // make sure we have the minimal virtualenv.
@@ -43,6 +43,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
         .context("failed to sync ahead of run")?;
 
     if cmd.list || cmd.cmd.is_none() {
+        drop(guard);
         return list_scripts(&pyproject);
     }
     let args = match cmd.cmd {

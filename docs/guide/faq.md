@@ -138,7 +138,7 @@ Standalone Python Builds documentation for solutions.
 
 ## Can I use Rye Alongside Other Python Installations?
 
-Rye given it's experimental nature does not want to disrupt already existing Python
+Rye given its experimental nature does not want to disrupt already existing Python
 workflows.  As such using it alongside other Python installations is intentionally
 supported.  Even if the Rye shims come first on the `PATH`, Rye will automatically
 resolve to a different Python installation on the search path when invoked in a
