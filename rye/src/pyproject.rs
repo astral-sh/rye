@@ -374,6 +374,7 @@ pub struct Workspace {
     root: PathBuf,
     doc: DocumentMut,
     members: Option<Vec<String>>,
+    pub per_member_lock: bool,
 }
 
 impl Workspace {
@@ -394,6 +395,10 @@ impl Workspace {
                             .filter_map(|item| item.as_str().map(|x| x.to_string()))
                             .collect::<Vec<_>>()
                     }),
+                per_member_lock: workspace
+                    .get("per_member_lock")
+                    .and_then(|x| x.as_bool())
+                    .unwrap_or(false),
             })
     }
 
@@ -470,6 +475,11 @@ impl Workspace {
         self: &'a Arc<Self>,
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
         walkdir::WalkDir::new(&self.root)
+            .sort_by(
+                // Perform proper sorting to avoid platform dependency to ensure
+                // output reproducibility. This is important for tests
+                |x, y| x.file_name().cmp(y.file_name()),
+            )
             .into_iter()
             .filter_entry(|entry| {
                 !(entry.file_type().is_dir() && skip_recurse_into(entry.file_name()))

@@ -46,3 +46,19 @@ of the `myname-bar` package you would need to do this:
 ```
 rye sync --features=myname-bar/foo
 ```
+
+## Per member lockfile
+
++++ 0.36.0
+
+Rye will always merge the requirements of all members in a workspace and generate a top level
+lockfile to keep the virtual environment consistent and up to date. In cases where you need to
+still keep a different lockfile per member to split installation (for example, in a docker context,
+where members live in different containers), you can enable `per_member_lock`, which will generate
+a lockfile in the root of each member.
+
+```toml
+[tool.rye.workspace]
+members = ["myname-*"]
+per_member_lock = true
+```
