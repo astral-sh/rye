@@ -23,7 +23,7 @@ This guide requires some familiarity with Docker and Dockerfiles.
 
     WORKDIR /app
     COPY requirements.lock ./
-    uv pip install --no-cache -r requirements.lock
+    RUN uv pip install --no-cache --system -r requirements.lock
     
     COPY src .
     CMD python main.py
