@@ -19,7 +19,6 @@ This guide requires some familiarity with Docker and Dockerfiles.
     ```Dockerfile
     FROM python:slim
     
-    # see below for other uv install options
     RUN pip install uv
 
     WORKDIR /app
@@ -30,9 +29,7 @@ This guide requires some familiarity with Docker and Dockerfiles.
     CMD python main.py
     ```
 
-    Other [`uv`](https://github.com/astral-sh/uv) install options [here](https://github.com/astral-sh/uv?tab=readme-ov-file#getting-started)
-
-    Or using pip:
+    Or, using `pip`:
 
     ```Dockerfile
     FROM python:slim

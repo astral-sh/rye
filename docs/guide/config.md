@@ -81,12 +81,6 @@ force-rye-managed = false
 # virtual environments.
 global-python = false
 
-# When set to `true`, Rye will use `uv` for package resolution and installation.
-# `uv` is the only engine in use at this point and setting this to false will produce a warning
-# This flag will be deprecated in a future version.
-# Learn more about uv here: https://github.com/astral-sh/uv
-use-uv = true
-
 # Enable or disable automatic `sync` after `add` and `remove`.  This defaults
 # to `true` when uv is enabled and `false` otherwise.
 autosync = true
