@@ -304,12 +304,13 @@ impl Uv {
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
+        system_site_packages: bool,
     ) -> Result<UvWithVenv, Error> {
         match read_venv_marker(venv_dir) {
             Some(venv) if venv.is_compatible(version) => {
                 Ok(UvWithVenv::new(self.clone(), venv_dir, version))
             }
-            _ => self.create_venv(venv_dir, py_bin, version, prompt),
+            _ => self.create_venv(venv_dir, py_bin, version, prompt, system_site_packages),
         }
     }
 
@@ -326,11 +327,15 @@ impl Uv {
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
+        system_site_packages: bool,
     ) -> Result<UvWithVenv, Error> {
         let mut cmd = self.cmd();
         cmd.arg("venv").arg("--python").arg(py_bin);
         if let Some(prompt) = prompt {
             cmd.arg("--prompt").arg(prompt);
+        }
+        if system_site_packages {
+            cmd.arg("--system-site-packages");
         }
         cmd.arg(venv_dir);
         let status = cmd.status().with_context(|| {

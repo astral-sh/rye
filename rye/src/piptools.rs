@@ -55,7 +55,7 @@ fn get_pip_tools_bin(py_ver: &PythonVersion, output: CommandOutput) -> Result<Pa
     }
 
     echo!(if output, "Creating virtualenv for pip-tools");
-    create_virtualenv(output, &self_venv, py_ver, &venv, "pip-tools")?;
+    create_virtualenv(output, &self_venv, py_ver, &venv, "pip-tools", false)?;
 
     let mut cmd = Command::new(self_venv.join(VENV_BIN).join("pip"));
     cmd.arg("--python")
