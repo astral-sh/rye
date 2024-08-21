@@ -175,8 +175,7 @@ fn test_autosync_remember() {
      + itsdangerous==2.1.2
      + jinja2==3.1.2
      + markupsafe==2.1.3
-     - my-project==0.1.0 (from file:[TEMP_PATH]/project)
-     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     ~ my-project==0.1.0 (from file:[TEMP_PATH]/project)
      + werkzeug==3.0.1
     "###);
     assert_snapshot!(std::fs::read_to_string(space.project_path().join("requirements.lock")).unwrap(), @r###"
@@ -221,8 +220,7 @@ fn test_autosync_remember() {
     Prepared 2 packages in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 2 packages in [EXECUTION_TIME]
-     - my-project==0.1.0 (from file:[TEMP_PATH]/project)
-     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     ~ my-project==0.1.0 (from file:[TEMP_PATH]/project)
      + urllib3==2.1.0
     "###);
 
