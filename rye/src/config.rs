@@ -258,10 +258,12 @@ impl Config {
             .get("behavior")
             .and_then(|x| x.get("autosync"))
             .and_then(|x| x.as_bool())
-            .unwrap_or_else(|| self.use_uv())
+            .unwrap_or(true)
     }
 
-    /// Indicates if uv should be used instead of pip-tools.
+    /// Indicates if uv should be used.
+    ///
+    /// This setting is deprecated, as pip-tools support was removed in Rye 0.40.
     pub fn use_uv(&self) -> bool {
         self.doc
             .get("behavior")
@@ -408,13 +410,5 @@ author = "John Doe <john@example.com>""#,
         assert!(sources
             .iter()
             .any(|src| src.name == "default" && src.url == "https://pypi.org/simple/"));
-    }
-
-    #[test]
-    fn test_use_uv() {
-        let (cfg_path, _temp_dir) = setup_config("[behavior]\nuse-uv = true");
-        let cfg = Config::from_path(&cfg_path).expect("Failed to load config");
-        // Assuming cfg!(windows) is false in this test environment
-        assert!(cfg.use_uv());
     }
 }

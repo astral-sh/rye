@@ -14,8 +14,23 @@ This guide requires some familiarity with Docker and Dockerfiles.
      - Your `pyproject.toml` should contain `virtual = true` under the `[tool.rye]` section. If it's not there, add it and run `rye sync`.
      - If you're just setting up a project, run `rye init --virtual` instead of `rye init`.
 
-1. Create a `Dockerfile` in your project root with the following content:
+2. Create a `Dockerfile` in your project root with the following content, using [`uv`](https://github.com/astral-sh/uv):
     
+    ```Dockerfile
+    FROM python:slim
+    
+    RUN pip install uv
+
+    WORKDIR /app
+    COPY requirements.lock ./
+    uv pip install --no-cache -r requirements.lock
+    
+    COPY src .
+    CMD python main.py
+    ```
+
+    Or, using `pip`:
+
     ```Dockerfile
     FROM python:slim
     
@@ -27,7 +42,7 @@ This guide requires some familiarity with Docker and Dockerfiles.
     CMD python main.py
     ```
 
-2. You can now build your image like this:
+3. You can now build your image like this:
    
     ```bash
     docker build .
@@ -56,11 +71,12 @@ The `Dockerfile`s in this guide are examples. Some adjustments you might want to
 If your code is an installable package, it's recommended that you first build it, then install it inside your Docker image.
 This way you can be sure that the image is exactly the same as what a user installation would be.
 
-An example `Dockerfile` might look like this:
+An example `Dockerfile` might look like this with [`uv`](https://github.com/astral-sh/uv):
 
 ```Dockerfile
 FROM python:slim
-RUN --mount=source=dist,target=/dist PYTHONDONTWRITEBYTECODE=1 pip install --no-cache-dir /dist/*.whl
+RUN pip install uv
+RUN --mount=source=dist,target=/dist uv pip install --no-cache /dist/*.whl
 CMD python -m my_package
 ```
 
@@ -78,8 +94,12 @@ The [Dockerfile adjustments from the previous section](#dockerfile-adjustments) 
 
 ## Explanations
 
-Rye's lock file standard is the `requirements.txt` format from `pip`, so you don't actually need `rye` in your container to be able to install dependencies.
+Rye's lockfile standard is the `requirements.txt` format from `pip` (and used by [`uv`](https://github.com/astral-sh/uv)), so you don't actually need `rye` in your container to be able to install dependencies.
 This makes the Dockerfile much simpler and avoids the necessity for multi-stage builds if small images are desired.
 
-The `PYTHONDONTWRITEBYTECODE=1` env var and `--no-cache-dir` parameters when invoking Pip both make the image smaller by not writing any temporary files.
-Both Bytecode and Pip caches are speeding things up when running Pip multiple times, but since we are working in a container, we can be pretty sure that we'll never invoke pip again.
+The `--no-cache-dir` and `--no-cache` parameters, passed to `pip` and `uv` respectively, make the image smaller by not
+writing any temporary files. While caching can speed up subsequent builds, it's not necessary in a container where the
+image is built once and then used many times.
+
+Similarly, the `PYTHONDONTWRITEBYTECODE=1` environment variable is set to avoid writing `.pyc` files, which are not
+needed in a container. (`uv` skips writing `.pyc` files by default.) 

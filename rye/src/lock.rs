@@ -6,7 +6,7 @@ use std::process::Command;
 use std::sync::Arc;
 use std::{env, fmt, fs};
 
-use anyhow::{anyhow, bail, Context, Error};
+use anyhow::{anyhow, Context, Error};
 use clap::ValueEnum;
 use minijinja::render;
 use once_cell::sync::Lazy;
@@ -16,13 +16,11 @@ use serde::Serialize;
 use tempfile::NamedTempFile;
 use url::Url;
 
-use crate::config::Config;
-use crate::piptools::{get_pip_compile, get_pip_tools_version, PipToolsVersion};
 use crate::pyproject::{
     normalize_package_name, DependencyKind, ExpandedSources, PyProject, Workspace,
 };
 use crate::sources::py::PythonVersion;
-use crate::utils::{set_proxy_variables, CommandOutput, IoPathContext};
+use crate::utils::{CommandOutput, IoPathContext};
 use crate::uv::{UvBuilder, UvPackageUpgrade};
 
 static FILE_EDITABLE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"^-e (file://.*?)\s*$").unwrap());
@@ -409,104 +407,42 @@ fn generate_lockfile(
     sources: &ExpandedSources,
     lock_options: &LockOptions,
     exclusions: &HashSet<Requirement>,
-    no_deps: bool,
+    _no_deps: bool,
     keyring_provider: KeyringProvider,
 ) -> Result<(), Error> {
-    let use_uv = Config::current().use_uv();
     let scratch = tempfile::tempdir()?;
     let requirements_file = scratch.path().join("requirements.txt");
     if lockfile.is_file() {
         fs::copy(lockfile, &requirements_file)
             .path_context(&requirements_file, "unable to restore requirements file")?;
-    } else if !use_uv {
-        fs::write(&requirements_file, b"").path_context(
-            &requirements_file,
-            "unable to write empty requirements file",
-        )?;
     };
 
-    if use_uv {
-        let upgrade = {
-            if lock_options.update_all {
-                UvPackageUpgrade::All
-            } else if !lock_options.update.is_empty() {
-                UvPackageUpgrade::Packages(lock_options.update.clone())
-            } else {
-                UvPackageUpgrade::Nothing
-            }
-        };
-
-        UvBuilder::new()
-            .with_output(output.quieter())
-            .with_sources(sources.clone())
-            .with_workdir(workspace_path)
-            .ensure_exists()?
-            .lockfile(
-                py_ver,
-                requirements_file_in,
-                &requirements_file,
-                lock_options.pre,
-                env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
-                upgrade,
-                keyring_provider,
-                lock_options.generate_hashes,
-                lock_options.universal,
-            )?;
-    } else {
-        if keyring_provider != KeyringProvider::Disabled {
-            bail!("`--keyring-provider` option requires the uv backend");
-        }
-        let mut cmd = Command::new(get_pip_compile(py_ver, output)?);
-        // legacy pip tools requires some extra parameters
-        if get_pip_tools_version(py_ver) == PipToolsVersion::Legacy {
-            cmd.arg("--resolver=backtracking");
-        }
-        cmd.arg("--strip-extras")
-            .arg("--allow-unsafe")
-            .arg("--no-header")
-            .arg("--annotate")
-            .arg("--pip-args")
-            .arg(format!(
-                "--python-version=\"{}.{}.{}\"{}",
-                py_ver.major,
-                py_ver.minor,
-                py_ver.patch,
-                if no_deps { " --no-deps" } else { "" }
-            ));
-        if lock_options.pre {
-            cmd.arg("--pre");
-        }
-        if lock_options.generate_hashes {
-            cmd.arg("--generate-hashes");
-            cmd.arg("--reuse-hashes");
-        }
-
-        cmd.arg(if output == CommandOutput::Verbose {
-            "--verbose"
-        } else {
-            "-q"
-        })
-        .arg("-o")
-        .arg(&requirements_file)
-        .arg(requirements_file_in)
-        .current_dir(workspace_path)
-        .env("PYTHONWARNINGS", "ignore")
-        .env("PROJECT_ROOT", make_project_root_fragment(workspace_path));
-
-        for pkg in &lock_options.update {
-            cmd.arg("--upgrade-package");
-            cmd.arg(pkg);
-        }
+    let upgrade = {
         if lock_options.update_all {
-            cmd.arg("--upgrade");
+            UvPackageUpgrade::All
+        } else if !lock_options.update.is_empty() {
+            UvPackageUpgrade::Packages(lock_options.update.clone())
+        } else {
+            UvPackageUpgrade::Nothing
         }
-        sources.add_as_pip_args(&mut cmd);
-        set_proxy_variables(&mut cmd);
-        let status = cmd.status().context("unable to run pip-compile")?;
-        if !status.success() {
-            bail!("failed to generate lockfile");
-        };
     };
+
+    UvBuilder::new()
+        .with_output(output.quieter())
+        .with_sources(sources.clone())
+        .with_workdir(workspace_path)
+        .ensure_exists()?
+        .lockfile(
+            py_ver,
+            requirements_file_in,
+            &requirements_file,
+            lock_options.pre,
+            env::var("__RYE_UV_EXCLUDE_NEWER").ok(),
+            upgrade,
+            keyring_provider,
+            lock_options.generate_hashes,
+            lock_options.universal,
+        )?;
 
     finalize_lockfile(
         &requirements_file,

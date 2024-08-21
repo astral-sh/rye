@@ -1,6 +1,5 @@
 use crate::bootstrap::{download_url, SELF_REQUIREMENTS};
 use crate::lock::{make_project_root_fragment, KeyringProvider};
-use crate::piptools::LATEST_PIP;
 use crate::platform::get_app_dir;
 use crate::pyproject::{read_venv_marker, write_venv_marker, ExpandedSources};
 use crate::sources::py::PythonVersion;
@@ -446,34 +445,9 @@ impl UvWithVenv {
         }
     }
 
-    /// Updates the venv to the given pip version and requirements.
-    pub fn update(&self, pip_version: &str, requirements: &str) -> Result<(), Error> {
-        self.update_pip(pip_version)?;
-        self.update_requirements(requirements)?;
-        Ok(())
-    }
-
     /// Install the bootstrap requirements in the venv.
     pub fn bootstrap(&self) -> Result<(), Error> {
-        self.update(LATEST_PIP, SELF_REQUIREMENTS)?;
-        Ok(())
-    }
-
-    /// Updates the pip version in the venv.
-    pub fn update_pip(&self, pip_version: &str) -> Result<(), Error> {
-        self.venv_cmd()
-            .arg("pip")
-            .arg("install")
-            .arg("--upgrade")
-            .arg(pip_version)
-            .status()
-            .with_context(|| {
-                format!(
-                    "unable to update pip in venv at {}",
-                    self.venv_path.display()
-                )
-            })?;
-
+        self.update_requirements(SELF_REQUIREMENTS)?;
         Ok(())
     }
 

@@ -1,13 +1,9 @@
 # Syncing and Locking
 
-Rye supports two systems to manage dependencies:
-[uv](https://github.com/astral-sh/uv) and
-[pip-tools](https://github.com/jazzband/pip-tools).  It currently defaults to
-`uv` as it offers significantly better performance, but will offer you the
-option to use `pip-tools` instead.
+Rye uses [`uv`](https://github.com/astral-sh/uv) to manage dependencies.
 
 In order to download dependencies rye creates two "lockfiles" (called
-`requirements.lock` and `requirements-dev.lock`).  These are not real lockfiles
+`requirements.lock` and `requirements-dev.lock`).  These are not real lockfiles,
 but they fulfill a similar purpose until a better solution has been implemented.
 
 Whenever `rye sync` is called, it will update lockfiles as well as the
@@ -66,12 +62,12 @@ rye lock Flask --pre
 +++ 0.18.0
 
 By default (unless the `tool.rye.lock-with-sources` config key is set to `true` in the
-`pyproject.toml`) lock files are not generated with source references.  This means that
-if custom sources are used the lock file cannot be installed via `pip` unless also
+`pyproject.toml`) lockfiles are not generated with source references.  This means that
+if custom sources are used the lockfile cannot be installed via `uv` or `pip`, unless
 `--find-links` and other parameters are manually passed.  This can be particularly useful
-when the lock file is used for docker image builds.
+when the lockfile is used for Docker image builds.
 
-When this flag is passed then the lock file is generated with references to `--index-url`,
+When this flag is passed then the lockfile is generated with references to `--index-url`,
 `--extra-index-url` or `--find-links`.
 
 ```
@@ -100,11 +96,18 @@ lockfile (`requirements-dev.lock`).
 rye sync --no-dev
 ```
 
-## Limitations
+## Platform Compatibility
 
-Lockfiles depend on the platform they were generated on. This is a known limitation
-in pip-tools.
+By default, lockfiles depend on the platform they were generated on.
 
 For example, if your project relies on platform-specific packages and you generate
 lockfiles on Windows, these lockfiles will include Windows-specific projects.
 Consequently, they won't be compatible with other platforms like Linux or macOS.
+
+To generate a cross-platform lockfile, you can enable uv's `universal` setting
+by adding the following to your `pyproject.toml`:
+
+```toml
+[tool.rye]
+universal = true
+```

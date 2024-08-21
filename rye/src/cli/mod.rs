@@ -122,6 +122,13 @@ pub fn execute() -> Result<(), Error> {
         unreachable!()
     };
 
+    // Add this to warn about the deprecated use of pip-tools
+    if !Config::current().use_uv() {
+        warn!(
+            "The `use-uv` setting is deprecated, as `pip-tools` support was removed in rye 0.40.0"
+        );
+    }
+
     match cmd {
         Command::Add(cmd) => add::execute(cmd),
         Command::Build(cmd) => build::execute(cmd),
@@ -181,6 +188,6 @@ fn print_version() -> Result<(), Error> {
         );
     }
     echo!("symlink support: {}", symlinks_supported());
-    echo!("uv enabled: {}", Config::current().use_uv());
+    echo!("uv enabled: {}", true);
     Ok(())
 }

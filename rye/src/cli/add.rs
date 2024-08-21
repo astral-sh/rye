@@ -1,62 +1,21 @@
 use std::env;
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::str::FromStr;
 
 use anyhow::{anyhow, bail, Context, Error};
 use clap::{Parser, ValueEnum};
-use pep440_rs::{Operator, Version, VersionSpecifier, VersionSpecifiers};
+use pep440_rs::{Operator, VersionSpecifier, VersionSpecifiers};
 use pep508_rs::{Requirement, VersionOrUrl};
-use serde::Deserialize;
 use url::Url;
 
 use crate::bootstrap::ensure_self_venv;
 use crate::config::Config;
-use crate::consts::VENV_BIN;
 use crate::lock::KeyringProvider;
 use crate::pyproject::{BuildSystem, DependencyKind, ExpandedSources, PyProject};
 use crate::sources::py::PythonVersion;
 use crate::sync::{autosync, sync, SyncOptions};
-use crate::utils::{format_requirement, get_venv_python_bin, set_proxy_variables, CommandOutput};
+use crate::utils::{format_requirement, get_venv_python_bin, CommandOutput};
 use crate::uv::UvBuilder;
-
-const PACKAGE_FINDER_SCRIPT: &str = r#"
-import sys
-import json
-from unearth.finder import PackageFinder
-from unearth.session import PyPISession
-from packaging.version import Version
-
-py_ver = sys.argv[1]
-package = sys.argv[2]
-sources = json.loads(sys.argv[3])
-pre = len(sys.argv) > 4 and sys.argv[4] == "--pre"
-
-finder = PackageFinder(
-    index_urls=[x[0] for x in sources["index_urls"]],
-    find_links=sources["find_links"],
-    trusted_hosts=sources["trusted_hosts"],
-)
-if py_ver:
-    finder.target_python.py_ver = tuple(map(int, py_ver.split('.')))
-choices = iter(finder.find_matches(package))
-if not pre:
-    choices = (m for m in choices if not(m.version and Version(m.version).is_prerelease))
-
-print(json.dumps([x.as_json() for x in choices]))
-"#;
-
-#[derive(Deserialize, Debug)]
-struct Match {
-    name: String,
-    version: Option<String>,
-    link: Option<Link>,
-}
-
-#[derive(Deserialize, Debug)]
-struct Link {
-    requires_python: Option<String>,
-}
 
 #[derive(Parser, Debug)]
 pub struct ReqExtras {
@@ -155,7 +114,7 @@ impl ReqExtras {
             };
         } else if let Some(ref path) = self.path {
             // For hatchling build backend, it use {root:uri} for file relative path,
-            // but this not supported by pip-tools,
+            // but this not supported by uv,
             // and use ${PROJECT_ROOT} will cause error in hatchling, so force absolute path.
             let is_hatchling =
                 PyProject::discover()?.build_backend() == Some(BuildSystem::Hatchling);
@@ -240,8 +199,7 @@ pub struct Args {
 
 pub fn execute(cmd: Args) -> Result<(), Error> {
     let output = CommandOutput::from_quiet_and_verbose(cmd.quiet, cmd.verbose);
-    let self_venv = ensure_self_venv(output).context("error bootstrapping venv")?;
-    let python_path = self_venv.join(VENV_BIN).join("python");
+    ensure_self_venv(output).context("error bootstrapping venv")?;
     let cfg = Config::current();
 
     let mut pyproject_toml = PyProject::discover()?;
@@ -272,34 +230,16 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     if !cmd.excluded {
-        if cfg.use_uv() {
-            sync(SyncOptions::python_only().pyproject(None))
-                .context("failed to sync ahead of add")?;
-            resolve_requirements_with_uv(
-                &pyproject_toml,
-                &py_ver,
-                &mut requirements,
-                cmd.pre,
-                output,
-                &default_operator,
-                cmd.keyring_provider,
-            )?;
-        } else {
-            if cmd.keyring_provider != KeyringProvider::Disabled {
-                bail!("`--keyring-provider` option requires the uv backend");
-            }
-            for requirement in &mut requirements {
-                resolve_requirements_with_unearth(
-                    &pyproject_toml,
-                    &python_path,
-                    &py_ver,
-                    requirement,
-                    cmd.pre,
-                    output,
-                    &default_operator,
-                )?;
-            }
-        }
+        sync(SyncOptions::python_only().pyproject(None)).context("failed to sync ahead of add")?;
+        resolve_requirements_with_uv(
+            &pyproject_toml,
+            &py_ver,
+            &mut requirements,
+            cmd.pre,
+            output,
+            &default_operator,
+            cmd.keyring_provider,
+        )?;
     }
 
     for requirement in &requirements {
@@ -330,138 +270,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     }
 
     Ok(())
-}
-
-fn resolve_requirements_with_unearth(
-    pyproject_toml: &PyProject,
-    python_path: &PathBuf,
-    py_ver: &PythonVersion,
-    requirement: &mut Requirement,
-    pre: bool,
-    output: CommandOutput,
-    default_operator: &Operator,
-) -> Result<(), Error> {
-    let matches = find_best_matches_with_unearth(
-        pyproject_toml,
-        python_path,
-        Some(py_ver),
-        requirement,
-        pre,
-    )?;
-    if matches.is_empty() {
-        let all_matches =
-            find_best_matches_with_unearth(pyproject_toml, python_path, None, requirement, pre)
-                .unwrap_or_default();
-        if all_matches.is_empty() {
-            // if we did not consider pre-releases, maybe we could find it by doing so.  In
-            // that case give the user a helpful warning before erroring.
-            if !pre {
-                let all_pre_matches = find_best_matches_with_unearth(
-                    pyproject_toml,
-                    python_path,
-                    None,
-                    requirement,
-                    true,
-                )
-                .unwrap_or_default();
-                if let Some(pre) = all_pre_matches.into_iter().next() {
-                    warn!(
-                        "{} ({}) was found considering pre-releases.  Pass --pre to allow use.",
-                        pre.name,
-                        pre.version.unwrap_or_default()
-                    );
-                }
-                bail!(
-                    "did not find package '{}' without using pre-releases.",
-                    format_requirement(requirement)
-                );
-            } else {
-                bail!("did not find package '{}'", format_requirement(requirement));
-            }
-        } else {
-            if output != CommandOutput::Quiet {
-                echo!("Available package versions:");
-                for pkg in all_matches {
-                    echo!(
-                        "  {} ({}) requires Python {}",
-                        pkg.name,
-                        pkg.version.unwrap_or_default(),
-                        pkg.link
-                            .as_ref()
-                            .and_then(|x| x.requires_python.as_ref())
-                            .map_or("unknown", |x| x as &str)
-                    );
-                }
-                echo!("A possible solution is to raise the version in `requires-python` in `pyproject.toml`.");
-            }
-            bail!(
-                "did not find a version of package '{}' compatible with this version of Python.",
-                format_requirement(requirement)
-            );
-        }
-    }
-    let m = matches.into_iter().next().unwrap();
-    if m.version.is_some() && requirement.version_or_url.is_none() {
-        let version = Version::from_str(m.version.as_ref().unwrap())
-            .map_err(|msg| anyhow!("invalid version: {}", msg))?;
-        requirement.version_or_url = Some(VersionOrUrl::VersionSpecifier(
-            VersionSpecifiers::from_iter(Some(
-                VersionSpecifier::new(
-                    // local versions or versions with only one component cannot
-                    // use ~= but need to use ==.
-                    match *default_operator {
-                        _ if version.is_local() => Operator::Equal,
-                        Operator::TildeEqual if version.release.len() < 2 => {
-                            Operator::GreaterThanEqual
-                        }
-                        ref other => other.clone(),
-                    },
-                    Version::from_str(m.version.as_ref().unwrap())
-                        .map_err(|msg| anyhow!("invalid version: {}", msg))?,
-                    false,
-                )
-                .map_err(|msg| anyhow!("invalid version specifier: {}", msg))?,
-            )),
-        ));
-    }
-    requirement.name = m.name;
-    Ok(())
-}
-
-fn find_best_matches_with_unearth(
-    pyproject: &PyProject,
-    python_path: &PathBuf,
-    py_ver: Option<&PythonVersion>,
-    requirement: &Requirement,
-    pre: bool,
-) -> Result<Vec<Match>, Error> {
-    let mut unearth = Command::new(python_path);
-    let sources = ExpandedSources::from_sources(&pyproject.sources()?)?;
-
-    unearth
-        .arg("-c")
-        .arg(PACKAGE_FINDER_SCRIPT)
-        .arg(match py_ver {
-            Some(ver) => ver.format_simple(),
-            None => "".into(),
-        })
-        .arg(format_requirement(requirement).to_string())
-        .arg(serde_json::to_string(&sources)?);
-    if pre {
-        unearth.arg("--pre");
-    }
-    set_proxy_variables(&mut unearth);
-    let unearth = unearth.stdout(Stdio::piped()).output()?;
-    if unearth.status.success() {
-        Ok(serde_json::from_slice(&unearth.stdout)?)
-    } else {
-        let log = String::from_utf8_lossy(&unearth.stderr);
-        bail!(
-            "failed to resolve package {}\n{}",
-            format_requirement(requirement),
-            log
-        );
-    }
 }
 
 fn resolve_requirements_with_uv(
