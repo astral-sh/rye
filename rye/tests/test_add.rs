@@ -219,8 +219,7 @@ fn test_add_explicit_version_or_url() {
     Prepared 2 packages in [EXECUTION_TIME]
     Uninstalled 1 package in [EXECUTION_TIME]
     Installed 2 packages in [EXECUTION_TIME]
-     - my-project==0.1.0 (from file:[TEMP_PATH]/project)
-     + my-project==0.1.0 (from file:[TEMP_PATH]/project)
+     ~ my-project==0.1.0 (from file:[TEMP_PATH]/project)
      + pip==1.3.1 (from https://github.com/pypa/pip/archive/1.3.1.zip#sha1=da9234ee9982d4bbb3c72346a6de940a148ea686)
     "###);
 }
