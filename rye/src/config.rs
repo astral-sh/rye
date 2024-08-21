@@ -262,6 +262,8 @@ impl Config {
     }
 
     /// Indicates if uv should be used.
+    ///
+    /// This setting is deprecated, as pip-tools support was removed in Rye 0.40.
     pub fn use_uv(&self) -> bool {
         self.doc
             .get("behavior")
