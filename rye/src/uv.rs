@@ -312,6 +312,17 @@ impl Uv {
         }
     }
 
+    /// Ensures a venv is exists or is created at the given path.
+    /// Returns a UvWithVenv that can be used to run commands in the venv.
+    pub fn venv_read_only(&self, venv_dir: &Path) -> Result<UvWithReadOnlyVenv, Error> {
+        if venv_dir.is_dir() {
+            Ok(UvWithReadOnlyVenv::new(self.clone(), venv_dir))
+        } else {
+            Err(anyhow!("Virtualenv not found"))
+                .with_context(|| format!("path: `{}`", venv_dir.display()))
+        }
+    }
+
     /// Get uv binary path
     ///
     /// Warning: Always use self.cmd() when at all possible
@@ -406,11 +417,80 @@ impl Uv {
     }
 }
 
-// Represents a venv generated and managed by uv
+/// Represents uv with any venv
+///
+/// Methods on this type are not allowed to create or modify the underlying virtualenv
+pub struct UvWithReadOnlyVenv {
+    uv: Uv,
+    venv_path: PathBuf,
+}
+
+/// Represents a venv generated and managed by uv
 pub struct UvWithWritableVenv {
     uv: Uv,
     venv_path: PathBuf,
     py_version: PythonVersion,
+}
+
+pub trait UvWithVenvCommon {
+    fn cmd(&self) -> Command;
+    fn venv_path(&self) -> &Path;
+
+    /// Returns a new command with the uv binary as the command to run.
+    /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
+    /// The command will also have the VIRTUAL_ENV environment variable set to the venv path.
+    fn venv_cmd(&self) -> Command {
+        let mut cmd = self.cmd();
+        cmd.env("VIRTUAL_ENV", self.venv_path());
+        cmd
+    }
+
+    /// Freezes the venv.
+    fn freeze(&self) -> Result<(), Error> {
+        let status = self
+            .venv_cmd()
+            .arg("pip")
+            .arg("freeze")
+            .status()
+            .with_context(|| format!("unable to freeze venv at {}", self.venv_path().display()))?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Failed to freeze venv at {}. uv exited with status: {}",
+                self.venv_path().display(),
+                status
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl UvWithVenvCommon for UvWithReadOnlyVenv {
+    fn cmd(&self) -> Command {
+        self.uv.cmd()
+    }
+    fn venv_path(&self) -> &Path {
+        &self.venv_path
+    }
+}
+
+impl UvWithVenvCommon for UvWithWritableVenv {
+    fn cmd(&self) -> Command {
+        self.uv.cmd()
+    }
+    fn venv_path(&self) -> &Path {
+        &self.venv_path
+    }
+}
+
+impl UvWithReadOnlyVenv {
+    pub fn new(uv: Uv, venv_dir: &Path) -> Self {
+        UvWithReadOnlyVenv {
+            uv,
+            venv_path: venv_dir.to_path_buf(),
+        }
+    }
 }
 
 impl UvWithWritableVenv {
@@ -420,15 +500,6 @@ impl UvWithWritableVenv {
             py_version: version.clone(),
             venv_path: venv_dir.to_path_buf(),
         }
-    }
-
-    /// Returns a new command with the uv binary as the command to run.
-    /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
-    /// The command will also have the VIRTUAL_ENV environment variable set to the venv path.
-    fn venv_cmd(&self) -> Command {
-        let mut cmd = self.uv.cmd();
-        cmd.env("VIRTUAL_ENV", &self.venv_path);
-        cmd
     }
 
     /// Writes a rye-venv.json for this venv.
@@ -469,26 +540,6 @@ impl UvWithWritableVenv {
                     self.venv_path.display()
                 )
             })?;
-
-        Ok(())
-    }
-
-    /// Freezes the venv.
-    pub fn freeze(&self) -> Result<(), Error> {
-        let status = self
-            .venv_cmd()
-            .arg("pip")
-            .arg("freeze")
-            .status()
-            .with_context(|| format!("unable to freeze venv at {}", self.venv_path.display()))?;
-
-        if !status.success() {
-            return Err(anyhow!(
-                "Failed to freeze venv at {}. uv exited with status: {}",
-                self.venv_path.display(),
-                status
-            ));
-        }
 
         Ok(())
     }
