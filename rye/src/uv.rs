@@ -296,17 +296,17 @@ impl Uv {
     }
 
     /// Ensures a venv is exists or is created at the given path.
-    /// Returns a UvWithVenv that can be used to run commands in the venv.
+    /// Returns a UvWithWritableVenv that can be used to run commands in the venv.
     pub fn venv(
         &self,
         venv_dir: &Path,
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
-    ) -> Result<UvWithVenv, Error> {
+    ) -> Result<UvWithWritableVenv, Error> {
         match read_venv_marker(venv_dir) {
             Some(venv) if venv.is_compatible(version) => {
-                Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+                Ok(UvWithWritableVenv::new(self.clone(), venv_dir, version))
             }
             _ => self.create_venv(venv_dir, py_bin, version, prompt),
         }
@@ -325,7 +325,7 @@ impl Uv {
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
-    ) -> Result<UvWithVenv, Error> {
+    ) -> Result<UvWithWritableVenv, Error> {
         let mut cmd = self.cmd();
         cmd.arg("venv").arg("--python").arg(py_bin);
         if let Some(prompt) = prompt {
@@ -348,7 +348,7 @@ impl Uv {
                 status
             ));
         }
-        Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+        Ok(UvWithWritableVenv::new(self.clone(), venv_dir, version))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -407,15 +407,15 @@ impl Uv {
 }
 
 // Represents a venv generated and managed by uv
-pub struct UvWithVenv {
+pub struct UvWithWritableVenv {
     uv: Uv,
     venv_path: PathBuf,
     py_version: PythonVersion,
 }
 
-impl UvWithVenv {
+impl UvWithWritableVenv {
     pub fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
-        UvWithVenv {
+        UvWithWritableVenv {
             uv,
             py_version: version.clone(),
             venv_path: venv_dir.to_path_buf(),
@@ -438,7 +438,7 @@ impl UvWithVenv {
 
     /// Set the output level for subsequent invocations of uv.
     pub fn with_output(self, output: CommandOutput) -> Self {
-        UvWithVenv {
+        UvWithWritableVenv {
             uv: Uv { output, ..self.uv },
             venv_path: self.venv_path,
             py_version: self.py_version,
