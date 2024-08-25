@@ -56,3 +56,45 @@ fn test_list_not_rye_managed() {
     ----- stderr -----
     "###);
 }
+
+#[test]
+fn test_list_never_overwrite() {
+    let space = Space::new();
+    space.init("my-project");
+
+    space.rye_cmd().arg("sync").status().expect("Sync failed");
+
+    let venv_marker = space.read_string(".venv/rye-venv.json");
+    assert!(
+        venv_marker.contains("@3.12"),
+        "asserting contents of venv marker: {}",
+        venv_marker
+    );
+
+    // Pick different python version
+    space
+        .rye_cmd()
+        .arg("pin")
+        .arg("3.11")
+        .status()
+        .expect("Sync failed");
+
+    // List keeps the existing virtualenv unchanged
+
+    rye_cmd_snapshot!(
+        space.rye_cmd().arg("list"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    -e file:[TEMP_PATH]/project
+
+    ----- stderr -----
+    "###);
+
+    let venv_marker = space.read_string(".venv/rye-venv.json");
+    assert!(
+        venv_marker.contains("@3.12"),
+        "asserting contents of venv marker: {}",
+        venv_marker
+    );
+}
