@@ -261,3 +261,55 @@ fn test_autosync_remember() {
     werkzeug==3.0.1
     "###);
 }
+
+#[test]
+fn test_exclude_hashes() {
+    let space = Space::new();
+    space.init("my-project");
+
+    fs::write(
+        space.project_path().join("pyproject.toml"),
+        r###"
+        [project]
+        name = "exclude-rye-test"
+        version = "0.1.0"
+        dependencies = ["jinja2"]
+        readme = "README.md"
+        requires-python = ">= 3.8"
+
+        [build-system]
+        requires = ["hatchling"]
+        build-backend = "hatchling.build"
+
+        [tool.rye]
+        generate-hashes = true
+        excluded-dependencies = ["markupsafe"]
+
+        [tool.hatch.metadata]
+        allow-direct-references = true
+
+        [tool.hatch.build.targets.wheel]
+        packages = ["src/exclude_rye_test"]
+    "###,
+    )
+    .unwrap();
+
+    rye_cmd_snapshot!(space.rye_cmd().arg("sync"), @r###"
+    success: true
+    exit_code: 0
+    ----- stdout -----
+    Initializing new virtualenv in [TEMP_PATH]/project/.venv
+    Python version: cpython@3.12.3
+    Generating production lockfile: [TEMP_PATH]/project/requirements.lock
+    Generating dev lockfile: [TEMP_PATH]/project/requirements-dev.lock
+    Installing dependencies
+    Done!
+
+    ----- stderr -----
+    Resolved 2 packages in [EXECUTION_TIME]
+    Prepared 2 packages in [EXECUTION_TIME]
+    Installed 2 packages in [EXECUTION_TIME]
+     + exclude-rye-test==0.1.0 (from file:[TEMP_PATH]/project)
+     + jinja2==3.1.2
+    "###);
+}
