@@ -479,29 +479,34 @@ fn finalize_lockfile(
         .lines()
     {
         // we deal with this explicitly.
-        if line.trim().is_empty()
+        let line = line.trim();
+        if line.is_empty()
             || line.starts_with("--index-url ")
             || line.starts_with("--extra-index-url ")
             || line.starts_with("--find-links ")
+            || line.starts_with("--hash=")
         {
             continue;
         }
+
+        // Strip trailing backslashes.
+        let line = line.strip_suffix('\\').unwrap_or(line);
 
         if let Some(m) = FILE_EDITABLE_RE.captures(line) {
             let url = Url::parse(&m[1]).context("invalid editable URL generated")?;
             if url.scheme() == "file" {
                 let rel_url = make_relative_url(Path::new(url.path()), workspace_root)?;
-                writeln!(rv, "-e {}", rel_url)?;
+                writeln!(rv, "-e {rel_url}")?;
                 continue;
             }
-        } else if let Ok(ref req) = line.trim().parse::<Requirement>() {
+        } else if let Ok(ref req) = line.parse::<Requirement>() {
             // TODO: this does not evaluate markers
             if exclusions.iter().any(|x| {
                 normalize_package_name(&x.name) == normalize_package_name(&req.name)
                     && (x.version_or_url.is_none() || x.version_or_url == req.version_or_url)
             }) {
                 // skip exclusions
-                writeln!(rv, "# {} (excluded)", line)?;
+                writeln!(rv, "# {line} (excluded)")?;
                 continue;
             }
         } else if let Some(m) = DEP_COMMENT_RE.captures(line) {
@@ -510,14 +515,14 @@ fn finalize_lockfile(
                     // we cannot tell today based on the output where this comes from.  This
                     // can show up because it's a root dependency, because it's a dev dependency
                     // or in some cases just because we declared it as a duplicate.
-                    writeln!(rv, "    # via {}", dep)?;
+                    writeln!(rv, "    # via {dep}")?;
                 }
             };
             continue;
         } else if line.starts_with('#') {
             continue;
         }
-        writeln!(rv, "{}", line)?;
+        writeln!(rv, "{line}")?;
     }
     Ok(())
 }
