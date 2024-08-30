@@ -33,6 +33,10 @@ success: Initialized project in /Users/john/Development/my-project.
 
     [possible values: `hatchling`, `setuptools`, `flit`, `pdm`, `maturin`]
 
+* `--vcs <PROJECT_VCS>`: Which version control system should be used (defaults to git)?
+
+    [possible values: `git`. `mercurial`, `none`]
+ 
 * `--license <LICENSE>`: Which license should be used? [SPDX identifier](https://spdx.org/licenses/)
 
 * `--name <NAME>`: The name of the package

@@ -54,6 +54,9 @@ toolchain = "cpython@3.11.1"
 # This is the default build system that is used
 build-system = "hatchling"
 
+# This is the default version control system that is used
+vcs = "git"
+
 # This is the default license that is used
 license = "MIT"
 
