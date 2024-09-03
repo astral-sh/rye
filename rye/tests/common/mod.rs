@@ -41,7 +41,6 @@ fn bootstrap_test_rye() -> PathBuf {
     let home = test_dir.join("home");
 
     fs::create_dir_all(&home).ok();
-    let home = home.canonicalize().unwrap();
     let lock_path = home.join("lock");
     let mut lock = fslock::LockFile::open(&lock_path).unwrap();
     lock.lock().unwrap();

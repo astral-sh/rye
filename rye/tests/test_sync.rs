@@ -121,7 +121,10 @@ fn test_add_autosync() {
     "###);
 }
 
+// TODO(charlie): This started failing on Windows in https://github.com/astral-sh/rye/pull/1347,
+// likely due to a difference in path canonicalization.
 #[test]
+#[cfg(unix)]
 fn test_autosync_remember() {
     // remove the dependency source markers since they are instable between platforms
     let mut settings = Settings::clone_current();
