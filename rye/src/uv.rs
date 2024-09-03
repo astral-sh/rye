@@ -295,8 +295,9 @@ impl Uv {
         cmd
     }
 
-    /// Ensures a venv is exists or is created at the given path.
-    /// Returns a UvWithWritableVenv that can be used to run commands in the venv.
+    /// Ensures a venv exists, creating it at the given path if necessary.
+    ///
+    /// Returns a [`ReadWriteVenv`] that can be used to run commands in the venv.
     pub fn venv(
         &self,
         venv_dir: &Path,
@@ -312,14 +313,17 @@ impl Uv {
         }
     }
 
-    /// Ensures a venv is exists or is created at the given path.
-    /// Returns a UvWithVenv that can be used to run commands in the venv.
-    pub fn venv_read_only(&self, venv_dir: &Path) -> Result<ReadOnlyVenv, Error> {
+    /// Returns a [`ReadOnlyVenv`] that can be used to run commands in the venv.
+    ///
+    /// Returns an error if the venv does not exist.
+    pub fn read_only_venv(&self, venv_dir: &Path) -> Result<ReadOnlyVenv, Error> {
         if venv_dir.is_dir() {
             Ok(ReadOnlyVenv::new(self.clone(), venv_dir))
         } else {
-            Err(anyhow!("Virtualenv not found"))
-                .with_context(|| format!("path: `{}`", venv_dir.display()))
+            Err(anyhow!(
+                "Virtualenv not found at path: {}",
+                venv_dir.display()
+            ))
         }
     }
 

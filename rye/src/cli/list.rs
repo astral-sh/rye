@@ -25,6 +25,6 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     let uv = UvBuilder::new()
         .with_output(CommandOutput::Normal)
         .ensure_exists()?;
-    uv.venv_read_only(&project.venv_path())?.freeze()?;
+    uv.read_only_venv(&project.venv_path())?.freeze()?;
     Ok(())
 }
