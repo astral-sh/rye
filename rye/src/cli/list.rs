@@ -5,7 +5,7 @@ use clap::Parser;
 
 use crate::pyproject::PyProject;
 use crate::utils::{get_venv_python_bin, CommandOutput};
-use crate::uv::{UvBuilder, UvWithVenvCommon};
+use crate::uv::{UvBuilder, Venv};
 
 /// Prints the currently installed packages.
 #[derive(Parser, Debug)]

@@ -303,10 +303,10 @@ impl Uv {
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
-    ) -> Result<UvWithWritableVenv, Error> {
+    ) -> Result<ReadWriteVenv, Error> {
         match read_venv_marker(venv_dir) {
             Some(venv) if venv.is_compatible(version) => {
-                Ok(UvWithWritableVenv::new(self.clone(), venv_dir, version))
+                Ok(ReadWriteVenv::new(self.clone(), venv_dir, version))
             }
             _ => self.create_venv(venv_dir, py_bin, version, prompt),
         }
@@ -314,9 +314,9 @@ impl Uv {
 
     /// Ensures a venv is exists or is created at the given path.
     /// Returns a UvWithVenv that can be used to run commands in the venv.
-    pub fn venv_read_only(&self, venv_dir: &Path) -> Result<UvWithReadOnlyVenv, Error> {
+    pub fn venv_read_only(&self, venv_dir: &Path) -> Result<ReadOnlyVenv, Error> {
         if venv_dir.is_dir() {
-            Ok(UvWithReadOnlyVenv::new(self.clone(), venv_dir))
+            Ok(ReadOnlyVenv::new(self.clone(), venv_dir))
         } else {
             Err(anyhow!("Virtualenv not found"))
                 .with_context(|| format!("path: `{}`", venv_dir.display()))
@@ -336,7 +336,7 @@ impl Uv {
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
-    ) -> Result<UvWithWritableVenv, Error> {
+    ) -> Result<ReadWriteVenv, Error> {
         let mut cmd = self.cmd();
         cmd.arg("venv").arg("--python").arg(py_bin);
         if let Some(prompt) = prompt {
@@ -359,7 +359,7 @@ impl Uv {
                 status
             ));
         }
-        Ok(UvWithWritableVenv::new(self.clone(), venv_dir, version))
+        Ok(ReadWriteVenv::new(self.clone(), venv_dir, version))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -420,20 +420,21 @@ impl Uv {
 /// Represents uv with any venv
 ///
 /// Methods on this type are not allowed to create or modify the underlying virtualenv
-pub struct UvWithReadOnlyVenv {
+pub struct ReadOnlyVenv {
     uv: Uv,
     venv_path: PathBuf,
 }
 
 /// Represents a venv generated and managed by uv
-pub struct UvWithWritableVenv {
+pub struct ReadWriteVenv {
     uv: Uv,
     venv_path: PathBuf,
     py_version: PythonVersion,
 }
 
-pub trait UvWithVenvCommon {
+pub trait Venv {
     fn cmd(&self) -> Command;
+
     fn venv_path(&self) -> &Path;
 
     /// Returns a new command with the uv binary as the command to run.
@@ -466,7 +467,7 @@ pub trait UvWithVenvCommon {
     }
 }
 
-impl UvWithVenvCommon for UvWithReadOnlyVenv {
+impl Venv for ReadOnlyVenv {
     fn cmd(&self) -> Command {
         self.uv.cmd()
     }
@@ -475,7 +476,7 @@ impl UvWithVenvCommon for UvWithReadOnlyVenv {
     }
 }
 
-impl UvWithVenvCommon for UvWithWritableVenv {
+impl Venv for ReadWriteVenv {
     fn cmd(&self) -> Command {
         self.uv.cmd()
     }
@@ -484,18 +485,18 @@ impl UvWithVenvCommon for UvWithWritableVenv {
     }
 }
 
-impl UvWithReadOnlyVenv {
+impl ReadOnlyVenv {
     pub fn new(uv: Uv, venv_dir: &Path) -> Self {
-        UvWithReadOnlyVenv {
+        Self {
             uv,
             venv_path: venv_dir.to_path_buf(),
         }
     }
 }
 
-impl UvWithWritableVenv {
+impl ReadWriteVenv {
     pub fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
-        UvWithWritableVenv {
+        ReadWriteVenv {
             uv,
             py_version: version.clone(),
             venv_path: venv_dir.to_path_buf(),
@@ -509,7 +510,7 @@ impl UvWithWritableVenv {
 
     /// Set the output level for subsequent invocations of uv.
     pub fn with_output(self, output: CommandOutput) -> Self {
-        UvWithWritableVenv {
+        Self {
             uv: Uv { output, ..self.uv },
             venv_path: self.venv_path,
             py_version: self.py_version,
