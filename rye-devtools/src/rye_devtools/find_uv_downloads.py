@@ -48,7 +48,7 @@ class UvDownloads:
         "pc-windows-msvc": ("windows", None),
     }
 
-    RE = re.compile(r"uv-(?P<arch>[^\-]+)-(?P<plat_env>.+)(\.tar\.gz|\.zip)$")
+    RE = re.compile(r"uv-(?P<arch>[^-]+)-(?P<plat_env>.+)(\.tar\.gz|\.zip)$")
 
     def __init__(self, client: httpx.Client) -> None:
         self.client = client

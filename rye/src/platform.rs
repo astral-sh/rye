@@ -187,7 +187,7 @@ pub fn get_default_author_with_fallback(dir: &PathBuf) -> Option<(String, String
         .arg("config")
         .arg("--get-regexp")
         .current_dir(dir)
-        .arg("^user.(name|email)$")
+        .arg(r"^user\.(name|email)$")
         .stdout(Stdio::piped())
         .output()
     {

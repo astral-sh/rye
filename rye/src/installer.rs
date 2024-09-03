@@ -69,7 +69,7 @@ while to_resolve:
 print(json.dumps(result))
 "#;
 static SUCCESSFULLY_DOWNLOADED_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new("(?m)^Successfully downloaded (.*?)$").unwrap());
+    Lazy::new(|| Regex::new("(?m)^Successfully downloaded (.*)").unwrap());
 
 #[derive(Eq, PartialEq)]
 pub struct ToolInfo {
