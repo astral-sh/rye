@@ -295,20 +295,35 @@ impl Uv {
         cmd
     }
 
-    /// Ensures a venv is exists or is created at the given path.
-    /// Returns a UvWithVenv that can be used to run commands in the venv.
+    /// Ensures a venv exists, creating it at the given path if necessary.
+    ///
+    /// Returns a [`ReadWriteVenv`] that can be used to run commands in the venv.
     pub fn venv(
         &self,
         venv_dir: &Path,
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
-    ) -> Result<UvWithVenv, Error> {
+    ) -> Result<ReadWriteVenv, Error> {
         match read_venv_marker(venv_dir) {
             Some(venv) if venv.is_compatible(version) => {
-                Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+                Ok(ReadWriteVenv::new(self.clone(), venv_dir, version))
             }
             _ => self.create_venv(venv_dir, py_bin, version, prompt),
+        }
+    }
+
+    /// Returns a [`ReadOnlyVenv`] that can be used to run commands in the venv.
+    ///
+    /// Returns an error if the venv does not exist.
+    pub fn read_only_venv(&self, venv_dir: &Path) -> Result<ReadOnlyVenv, Error> {
+        if venv_dir.is_dir() {
+            Ok(ReadOnlyVenv::new(self.clone(), venv_dir))
+        } else {
+            Err(anyhow!(
+                "Virtualenv not found at path: {}",
+                venv_dir.display()
+            ))
         }
     }
 
@@ -325,7 +340,7 @@ impl Uv {
         py_bin: &Path,
         version: &PythonVersion,
         prompt: Option<&str>,
-    ) -> Result<UvWithVenv, Error> {
+    ) -> Result<ReadWriteVenv, Error> {
         let mut cmd = self.cmd();
         cmd.arg("venv").arg("--python").arg(py_bin);
         if let Some(prompt) = prompt {
@@ -348,7 +363,7 @@ impl Uv {
                 status
             ));
         }
-        Ok(UvWithVenv::new(self.clone(), venv_dir, version))
+        Ok(ReadWriteVenv::new(self.clone(), venv_dir, version))
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -406,29 +421,90 @@ impl Uv {
     }
 }
 
-// Represents a venv generated and managed by uv
-pub struct UvWithVenv {
+/// Represents uv with any venv
+///
+/// Methods on this type are not allowed to create or modify the underlying virtualenv
+pub struct ReadOnlyVenv {
+    uv: Uv,
+    venv_path: PathBuf,
+}
+
+/// Represents a venv generated and managed by uv
+pub struct ReadWriteVenv {
     uv: Uv,
     venv_path: PathBuf,
     py_version: PythonVersion,
 }
 
-impl UvWithVenv {
-    pub fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
-        UvWithVenv {
-            uv,
-            py_version: version.clone(),
-            venv_path: venv_dir.to_path_buf(),
-        }
-    }
+pub trait Venv {
+    fn cmd(&self) -> Command;
+
+    fn venv_path(&self) -> &Path;
 
     /// Returns a new command with the uv binary as the command to run.
     /// The command will have the correct proxy settings and verbosity level based on CommandOutput.
     /// The command will also have the VIRTUAL_ENV environment variable set to the venv path.
     fn venv_cmd(&self) -> Command {
-        let mut cmd = self.uv.cmd();
-        cmd.env("VIRTUAL_ENV", &self.venv_path);
+        let mut cmd = self.cmd();
+        cmd.env("VIRTUAL_ENV", self.venv_path());
         cmd
+    }
+
+    /// Freezes the venv.
+    fn freeze(&self) -> Result<(), Error> {
+        let status = self
+            .venv_cmd()
+            .arg("pip")
+            .arg("freeze")
+            .status()
+            .with_context(|| format!("unable to freeze venv at {}", self.venv_path().display()))?;
+
+        if !status.success() {
+            return Err(anyhow!(
+                "Failed to freeze venv at {}. uv exited with status: {}",
+                self.venv_path().display(),
+                status
+            ));
+        }
+
+        Ok(())
+    }
+}
+
+impl Venv for ReadOnlyVenv {
+    fn cmd(&self) -> Command {
+        self.uv.cmd()
+    }
+    fn venv_path(&self) -> &Path {
+        &self.venv_path
+    }
+}
+
+impl Venv for ReadWriteVenv {
+    fn cmd(&self) -> Command {
+        self.uv.cmd()
+    }
+    fn venv_path(&self) -> &Path {
+        &self.venv_path
+    }
+}
+
+impl ReadOnlyVenv {
+    pub fn new(uv: Uv, venv_dir: &Path) -> Self {
+        Self {
+            uv,
+            venv_path: venv_dir.to_path_buf(),
+        }
+    }
+}
+
+impl ReadWriteVenv {
+    pub fn new(uv: Uv, venv_dir: &Path, version: &PythonVersion) -> Self {
+        ReadWriteVenv {
+            uv,
+            py_version: version.clone(),
+            venv_path: venv_dir.to_path_buf(),
+        }
     }
 
     /// Writes a rye-venv.json for this venv.
@@ -438,7 +514,7 @@ impl UvWithVenv {
 
     /// Set the output level for subsequent invocations of uv.
     pub fn with_output(self, output: CommandOutput) -> Self {
-        UvWithVenv {
+        Self {
             uv: Uv { output, ..self.uv },
             venv_path: self.venv_path,
             py_version: self.py_version,
@@ -469,26 +545,6 @@ impl UvWithVenv {
                     self.venv_path.display()
                 )
             })?;
-
-        Ok(())
-    }
-
-    /// Freezes the venv.
-    pub fn freeze(&self) -> Result<(), Error> {
-        let status = self
-            .venv_cmd()
-            .arg("pip")
-            .arg("freeze")
-            .status()
-            .with_context(|| format!("unable to freeze venv at {}", self.venv_path.display()))?;
-
-        if !status.success() {
-            return Err(anyhow!(
-                "Failed to freeze venv at {}. uv exited with status: {}",
-                self.venv_path.display(),
-                status
-            ));
-        }
 
         Ok(())
     }
