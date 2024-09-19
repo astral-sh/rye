@@ -1,4 +1,0 @@
-{"run_id":"1725330156-141805000","line":18,"new":{"module_name":"test_list","snapshot_name":"basic_list","metadata":{"source":"rye/tests/test-list.rs","assertion_line":18,"info":{"program":"rye","args":["list"],"env":{"__RYE_UV_EXCLUDE_NEWER":"2023-11-18T12:00:00Z","RYE_HOME":"/Users/crmarsh/workspace/rye/target/debug/rye-test-dir/home","UV_CACHE_DIR":"/var/folders/nt/6gf2v7_s3k13zq_t3944rwz40000gn/T/.rye-tests---5aZXcS/uv-cache"}}},"snapshot":"success: true\nexit_code: 0\n----- stdout -----\n\n----- stderr -----\n"},"old":{"module_name":"test_list","metadata":{},"snapshot":"success: true\nexit_code: 0\n----- stdout -----\njinja2==3.1.2\nmarkupsafe==2.1.3\n-e file:[TEMP_PATH]/project\n\n----- stderr -----"}}
-{"run_id":"1725330156-141805000","line":47,"new":null,"old":null}
-{"run_id":"1725330197-789961000","line":47,"new":null,"old":null}
-{"run_id":"1725330197-789961000","line":18,"new":null,"old":null}

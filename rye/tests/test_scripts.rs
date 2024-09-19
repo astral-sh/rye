@@ -24,7 +24,7 @@ fn test_basic_script() {
 
     ----- stderr -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.3
+    Python version: cpython@3.12.6
     "###);
 
     rye_cmd_snapshot!(space.rye_cmd().arg("run"), @r###"

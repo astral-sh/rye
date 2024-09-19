@@ -16,7 +16,7 @@ fn test_add_flask() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.3
+    Python version: cpython@3.12.6
     Added flask>=3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -59,7 +59,7 @@ fn test_add_flask_dotenv() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.3
+    Python version: cpython@3.12.6
     Added flask[dotenv]>=3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -112,7 +112,7 @@ fn test_add_from_find_links() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.3
+    Python version: cpython@3.12.6
     Added tqdm>=4.66.1 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -150,7 +150,7 @@ fn test_add_flask_wrong_venv_exported() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.3
+    Python version: cpython@3.12.6
     Added flask==3.0.0 as regular dependency
     Added colorama>=0.4.6 as regular dependency
     Reusing already existing virtualenv
@@ -185,7 +185,7 @@ fn test_add_explicit_version_or_url() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.3
+    Python version: cpython@3.12.6
     Added werkzeug==3.0.0 as regular dependency
     Reusing already existing virtualenv
     Generating production lockfile: [TEMP_PATH]/project/requirements.lock
@@ -234,7 +234,7 @@ fn test_add_dev() {
     exit_code: 0
     ----- stdout -----
     Initializing new virtualenv in [TEMP_PATH]/project/.venv
-    Python version: cpython@3.12.3
+    Python version: cpython@3.12.6
     Added flask>=3.0.0 as dev dependency
     Added colorama>=0.4.6 as dev dependency
     Reusing already existing virtualenv

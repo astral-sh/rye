@@ -55,7 +55,7 @@ fn bootstrap_test_rye() -> PathBuf {
 use-uv = true
 
 [default]
-toolchain = "cpython@3.12.3"
+toolchain = "cpython@3.12.6"
 "#,
         )
         .unwrap();
@@ -64,9 +64,9 @@ toolchain = "cpython@3.12.3"
     // fetch the most important interpreters.  Fetch some with and some without
     // build info to make sure we cover our grounds here.
     for (version, build_info) in [
-        ("cpython@3.8.19", false),
-        ("cpython@3.11.9", true),
-        ("cpython@3.12.3", false),
+        ("cpython@3.8.20", false),
+        ("cpython@3.11.10", true),
+        ("cpython@3.12.6", false),
         ("pypy@3.10.13", false),
     ] {
         if home.join("py").join(version).is_dir() {
