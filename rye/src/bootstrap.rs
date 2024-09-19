@@ -475,9 +475,8 @@ pub fn fetch(
     // the folder into the permanent location
     if with_build_info || !installation_has_build_info(temp_dir.path()) {
         let temp_dir = temp_dir.into_path();
-        fs::rename(&temp_dir, &target_dir).map_err(|err| {
+        fs::rename(&temp_dir, &target_dir).inspect_err(|_| {
             fs::remove_dir_all(&temp_dir).ok();
-            err
         })
 
     // otherwise move the contents of the `install` folder over.
