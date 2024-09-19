@@ -63,7 +63,7 @@ fn test_version() {
     rye [VERSION]
     commit: [COMMIT]
     platform: [PLATFORM]
-    self-python: cpython@3.12.3
+    self-python: cpython@3.12.6
     symlink support: true
     uv enabled: true
 
