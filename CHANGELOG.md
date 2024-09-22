@@ -5,6 +5,20 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.40.0
+
+Released on 2024-09-22.
+
+* Remove pip-tools support; use uv for all operations by @nazq in https://github.com/astral-sh/rye/pull/1226
+* Respect exclusions when generating hashes by @charliermarsh in https://github.com/astral-sh/rye/pull/1357
+* List all existing tool references on `rye toolchain remove` by @soof-golan in https://github.com/astral-sh/rye/pull/1346
+* Update bundled Ruff version to v0.6.3 by @charliermarsh in https://github.com/astral-sh/rye/pull/1367
+* Fix a few regex inefficiencies by @InSyncWithFoo in https://github.com/astral-sh/rye/pull/1326
+* Never modify or delete the virtualenv in `rye list` by @bluss in https://github.com/astral-sh/rye/pull/1351
+* Use `inspect_err` over `map_err` by @charliermarsh in https://github.com/astral-sh/rye/pull/1385
+* Upgrade bundled Python releases by @github-actions in https://github.com/astral-sh/rye/pull/1379
+* Upgrade bundled uv version to v0.4.15 by @github-actions in https://github.com/astral-sh/rye/pull/1388
+
 ## 0.39.0
 
 Released on 2024-08-20.
