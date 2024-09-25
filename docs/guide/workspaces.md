@@ -1,15 +1,15 @@
 # Workspaces
 
 Workspaces are a feature that allows you to work with multiple packages that
-have dependencies to each other.  A workspace is declared by setting the
-`tool.rye.workspace` key a `pyproject.toml`.  Afterwards all projects within
+have dependencies on each other.  A workspace is declared by setting the
+`tool.rye.workspace` key in `pyproject.toml`.  Afterwards, all projects within
 that workspace share a singular virtualenv.
 
 ## Declaring Workspaces
 
-A workspace is declared by the "toplevel" `pyproject.toml`.  At the very least
-the key `tool.rye.workspace` needs to be added.  It's recommended that a glob
-pattern is also set in the `members` key to prevent accidentally including
+A workspace is declared in the "toplevel" `pyproject.toml`.  At the very least
+the key `tool.rye.workspace` needs to be added.  It's also recommended to
+set a glob pattern in the `members` key to prevent accidentally including
 unintended folders as projects.
 
 ```toml
@@ -18,7 +18,7 @@ members = ["myname-*"]
 ```
 
 This declares a workspace where all folders starting with the name `myname-`
-are considered.  If the toplevel workspace in itself should not be a project,
+are considered.  If the toplevel workspace itself should not be a project,
 then it should be declared as a virtual package:
 
 ```toml
@@ -29,12 +29,12 @@ virtual = true
 members = ["myname-*"]
 ```
 
-For more information on that see [Virtual Packages](../virtual/).
+For more information on that, see [Virtual Packages](../virtual/).
 
 ## Syncing
 
-In a workspace it does not matter which project you are working with, the entire
-workspace is synchronized at all times.  This has some untypical consequences but
+In a workspace, it does not matter which project you are working with, the entire
+workspace is synchronized at all times.  This has some atypical consequences but
 simplifies the general development workflow.
 
 When a package depends on another package it's first located in the workspace locally
