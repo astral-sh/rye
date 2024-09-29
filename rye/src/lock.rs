@@ -474,23 +474,32 @@ fn finalize_lockfile(
         writeln!(rv)?;
     }
 
+    let mut exclude = false;
     for line in fs::read_to_string(generated)
         .path_context(generated, "unable to parse resolver output")?
         .lines()
     {
-        // we deal with this explicitly.
-        let line = line.trim();
-        if line.is_empty()
+        let trimmed = line.trim();
+
+        // if we're in an exclusion, continue to skip lines
+        if exclude {
+            exclude = trimmed.ends_with('\\');
+            continue;
+        }
+
+        // we deal with these settings explicitly.
+        if trimmed.is_empty()
             || line.starts_with("--index-url ")
             || line.starts_with("--extra-index-url ")
             || line.starts_with("--find-links ")
-            || line.starts_with("--hash=")
         {
             continue;
         }
 
         // Strip trailing backslashes.
-        let line = line.strip_suffix('\\').unwrap_or(line);
+        let stripped = trimmed
+            .strip_suffix('\\')
+            .map_or(trimmed, |rest| rest.trim());
 
         if let Some(m) = FILE_EDITABLE_RE.captures(line) {
             let url = Url::parse(&m[1]).context("invalid editable URL generated")?;
@@ -499,14 +508,20 @@ fn finalize_lockfile(
                 writeln!(rv, "-e {rel_url}")?;
                 continue;
             }
-        } else if let Ok(ref req) = line.parse::<Requirement>() {
+        } else if let Ok(ref req) = stripped.parse::<Requirement>() {
             // TODO: this does not evaluate markers
             if exclusions.iter().any(|x| {
                 normalize_package_name(&x.name) == normalize_package_name(&req.name)
                     && (x.version_or_url.is_none() || x.version_or_url == req.version_or_url)
             }) {
-                // skip exclusions
-                writeln!(rv, "# {line} (excluded)")?;
+                // skip exclusions.
+                writeln!(rv, "# {stripped} (excluded)")?;
+
+                // if the exclusion is followed by hashes, we need to comment out the hashes too.
+                if trimmed.ends_with('\\') {
+                    exclude = true;
+                }
+
                 continue;
             }
         } else if let Some(m) = DEP_COMMENT_RE.captures(line) {
