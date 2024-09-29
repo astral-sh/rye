@@ -5,6 +5,13 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.41.0
+
+Released on 2024-09-29.
+
+* Restore hash annotations in lockfile by @charliermarsh in https://github.com/astral-sh/rye/pull/1403
+* Upgrade bundled uv version to v0.4.17 by @github-actions in https://github.com/astral-sh/rye/pull/1393
+
 ## 0.40.0
 
 Released on 2024-09-22.
