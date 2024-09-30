@@ -10,12 +10,13 @@ hide:
 
 Rye is a comprehensive project and package management solution for Python.
 Born from [its creator's](https://github.com/mitsuhiko) desire to establish a
-one-stop-shop for all Python users, Rye provides a unified experience to install and manages Python
-installations, `pyproject.toml` based projects, dependencies and virtualenvs
-seamlessly.  It's designed to accommodate complex projects, monorepos and to
-facilitate global tool installations.  Curious? [Watch an introduction](https://youtu.be/q99TYA7LnuA).
+one-stop-shop for all Python users, Rye provides a unified experience to install Python, create `pyproject.toml` based projects, manage dependencies, ensure reproducible virtualenvs, and keep track of multiple Python versions
+seamlessly.
 
-A hassle-free experience for Python developers at every level.
+Rye is designed with a "productivity first" mindset. It accommodates complex projects, monorepos and
+facilitates global tool installations. Curious? [Watch an introduction](https://youtu.be/q99TYA7LnuA).
+
+A hassle-free experience for Python developers and users at every level.
 
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <p align="center">
