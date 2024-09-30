@@ -29,6 +29,7 @@ use pep440_rs::{Operator, Version, VersionSpecifiers};
 use pep508_rs::Requirement;
 use python_pkginfo::Metadata;
 use regex::Regex;
+use relative_path::RelativePathBuf;
 use serde::Serialize;
 use toml_edit::{Array, DocumentMut, Formatted, Item, Table, TableLike, Value};
 use url::Url;
@@ -372,6 +373,7 @@ impl fmt::Display for Script {
 #[derive(Debug)]
 pub struct Workspace {
     root: PathBuf,
+    search_root: PathBuf,
     doc: DocumentMut,
     members: Option<Vec<String>>,
 }
@@ -385,6 +387,13 @@ impl Workspace {
             .and_then(|x| x.as_table_like())
             .map(|workspace| Workspace {
                 root: path.to_path_buf(),
+                search_root: workspace
+                    .get("root")
+                    .and_then(|x| x.as_str())
+                    .map_or(RelativePathBuf::from("."), RelativePathBuf::from)
+                    .to_path(path)
+                    .canonicalize()
+                    .unwrap_or(path.into()),
                 doc: doc.clone(),
                 members: workspace
                     .get("members")
@@ -430,7 +439,9 @@ impl Workspace {
 
     /// Checks if a project is a member of the declared workspace.
     pub fn is_member(&self, path: &Path) -> bool {
-        if let Ok(relative) = path.strip_prefix(&self.root) {
+        if path.eq(&self.root) {
+            true
+        } else if let Ok(relative) = path.strip_prefix(&self.search_root) {
             if relative == Path::new("") {
                 true
             } else {
@@ -469,7 +480,7 @@ impl Workspace {
     pub fn iter_projects<'a>(
         self: &'a Arc<Self>,
     ) -> impl Iterator<Item = Result<PyProject, Error>> + 'a {
-        walkdir::WalkDir::new(&self.root)
+        walkdir::WalkDir::new(&self.search_root)
             .into_iter()
             .filter_entry(|entry| {
                 !(entry.file_type().is_dir() && skip_recurse_into(entry.file_name()))
@@ -516,14 +527,14 @@ impl Workspace {
     /// That is the Python version that appears as lower bound in the
     /// pyproject toml.
     pub fn target_python_version(&self) -> Option<PythonVersionRequest> {
-        resolve_target_python_version(&self.doc, &self.root, &self.venv_path())
+        resolve_target_python_version(&self.doc, &self.search_root, &self.venv_path())
     }
 
     /// Returns the project's intended venv python version.
     ///
     /// This is the python version that should be used for virtualenvs.
     pub fn venv_python_version(&self) -> Result<PythonVersion, Error> {
-        resolve_intended_venv_python_version(&self.doc, &self.root)
+        resolve_intended_venv_python_version(&self.doc, &self.search_root)
     }
 
     /// Returns a list of index URLs that should be considered.
