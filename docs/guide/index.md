@@ -1,6 +1,6 @@
 # Introduction
 
-Rye is still a very experimental tool, but this guide is here to help you get
+Rye is still a relatively young tool, and this guide is here to help you get
 started.  Before we dive into the installation and basic usage guide it's
 important for you to understand what Rye actually is.
 
