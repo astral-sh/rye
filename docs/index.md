@@ -8,6 +8,16 @@ hide:
   <h1><strong>Rye:</strong> a Hassle-Free Python Experience</h1>
 </div>
 
+!!! note
+
+    If you're getting started with Rye, consider [uv](https://github.com/astral-sh/uv), the
+    [successor project](https://lucumr.pocoo.org/2024/2/15/rye-grows-with-uv/) from the same maintainers.
+
+    While Rye is actively maintained, uv offers a more stable and feature-complete experience, and is the recommended
+    choice for new projects.
+
+    Having trouble migrating? [Let us know what's missing.](https://github.com/astral-sh/rye/discussions/1342)
+
 Rye is a comprehensive project and package management solution for Python.
 Born from [its creator's](https://github.com/mitsuhiko) desire to establish a
 one-stop-shop for all Python users, Rye provides a unified experience to install and manages Python
