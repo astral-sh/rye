@@ -33,7 +33,7 @@ fn test_empty_sync() {
     {
         let script = space.venv_path().join("bin/activate");
         let contents = fs::read_to_string(script).unwrap();
-        assert!(contents.contains("VIRTUAL_ENV_PROMPT=\"my-project\""));
+        assert!(contents.contains("VIRTUAL_ENV_PROMPT=\"(my-project) \""));
     }
     #[cfg(windows)]
     {

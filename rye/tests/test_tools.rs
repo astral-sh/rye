@@ -40,6 +40,7 @@ fn test_basic_tool_behavior() {
       - pycowsay
 
     ----- stderr -----
+    Using Python 3.11.10 environment at [RYE_HOME]/tools/pycowsay
     Resolved 1 package in [EXECUTION_TIME]
     Prepared 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
