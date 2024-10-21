@@ -5,6 +5,14 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.42.0
+
+Released on 2024-10-21.
+
+* Sync Python Releases by @github-actions in https://github.com/astral-sh/rye/pull/1406
+* Bump bundled Ruff version to v0.7.0 by @charliermarsh in https://github.com/astral-sh/rye/pull/1419
+* Bump bundled uv version to v0.4.25 by @github-actions in https://github.com/astral-sh/rye/pull/1405
+
 ## 0.41.0
 
 Released on 2024-09-29.
