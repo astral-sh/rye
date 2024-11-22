@@ -34,6 +34,7 @@ def test_batched():
             "x86_64-pc-windows-msvc-shared-pgo",
             PlatformTriple("x86_64", "windows", None, "shared-pgo"),
         ),
+        ("aarch64-apple-darwin-freethreaded+pgo-full", None),
     ],
 )
 def test_parse_triplets(input, expected):

@@ -194,6 +194,11 @@ class CPythonFinder(Finder):
         # Map, old, special triplets to proper triples for parsing, or
         # return the triple if it's not a special one
         triple = cls.SPECIAL_TRIPLES.get(triple, triple)
+
+        # freethreaded builds are experimental, ignore them for now
+        if "freethreaded" in triple:
+            return
+
         pieces = triple.split("-")
         flavor = match_flavor(triple)
         env, pieces = match_mapping(pieces, cls.ENV_MAPPING)
