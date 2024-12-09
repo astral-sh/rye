@@ -640,8 +640,8 @@ impl ReadWriteVenv {
     }
 
     /// Resolves the given requirement and returns the resolved requirement.
-
-    /// This will spawn `uv` and read from it's stdout.
+    ///
+    /// This will spawn `uv` and read from its stdout.
     pub fn resolve(
         &self,
         py_version: &PythonVersion,
