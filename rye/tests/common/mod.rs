@@ -12,7 +12,7 @@ pub static EXCLUDE_NEWER: &str = "2023-11-18T12:00:00Z";
 #[allow(unused)]
 pub const INSTA_FILTERS: &[(&str, &str)] = &[
     // TODO(charlie): This should be `debug` logging in uv, but it's going to `stdout` on Windows.
-    (r"Using Python \d+\.\d+\.\d+ environment at \.venv\n", ""),
+    (r"Using Python \d+\.\d+\.\d+ environment at: \.venv\n", ""),
     // general temp folders
     (
         r"(\b[A-Z]:)?[\\/].*?[\\/]\.rye-tests---[^\\/]+[\\/]",
