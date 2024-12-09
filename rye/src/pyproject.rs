@@ -58,7 +58,7 @@ pub enum DependencyKind<'a> {
     Optional(Cow<'a, str>),
 }
 
-impl<'a> fmt::Display for DependencyKind<'a> {
+impl fmt::Display for DependencyKind<'_> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             DependencyKind::Normal => f.write_str("regular"),
