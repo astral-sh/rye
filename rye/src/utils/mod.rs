@@ -194,7 +194,7 @@ pub fn get_short_executable_name(path: &Path) -> String {
 pub fn format_requirement(req: &Requirement) -> impl fmt::Display + '_ {
     struct Helper<'x>(&'x Requirement);
 
-    impl<'x> fmt::Display for Helper<'x> {
+    impl fmt::Display for Helper<'_> {
         fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
             write!(f, "{}", self.0.name)?;
             if let Some(extras) = &self.0.extras {
