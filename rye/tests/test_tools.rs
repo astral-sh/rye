@@ -40,7 +40,7 @@ fn test_basic_tool_behavior() {
       - pycowsay
 
     ----- stderr -----
-    Using Python 3.11.10 environment at [RYE_HOME]/tools/pycowsay
+    Using Python 3.11.11 environment at [RYE_HOME]/tools/pycowsay
     Resolved 1 package in [EXECUTION_TIME]
     Prepared 1 package in [EXECUTION_TIME]
     Installed 1 package in [EXECUTION_TIME]
@@ -69,7 +69,7 @@ fn test_basic_tool_behavior() {
     success: true
     exit_code: 0
     ----- stdout -----
-    pycowsay 0.0.0.2 (cpython@3.11.10)
+    pycowsay 0.0.0.2 (cpython@3.11.11)
 
     ----- stderr -----
     "###);
@@ -79,13 +79,13 @@ fn test_basic_tool_behavior() {
             .env("UV_CACHE_DIR", cache_dir.path())
             .arg("toolchain")
             .arg("remove")
-            .arg("cpython@3.11.10"), @r###"
+            .arg("cpython@3.11.11"), @r###"
     success: false
     exit_code: 1
     ----- stdout -----
 
     ----- stderr -----
-    error: toolchain cpython@3.11.10 is still in use by tool pycowsay
+    error: toolchain cpython@3.11.11 is still in use by tool pycowsay
     "###);
 
     rye_cmd_snapshot!(
