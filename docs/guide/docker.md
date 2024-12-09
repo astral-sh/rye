@@ -22,7 +22,7 @@ This guide requires some familiarity with Docker and Dockerfiles.
     RUN pip install uv
 
     WORKDIR /app
-    COPY requirements.lock ./
+    COPY README.md pyproject.toml requirements.lock ./
     RUN uv pip install --no-cache --system -r requirements.lock
     
     COPY src .
