@@ -5,6 +5,16 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.43.0
+
+Released on 2024-12-09.
+
+* Fix compatible toolchain to allow Python 3.13 by @PushUpek in https://github.com/astral-sh/rye/pull/1429
+* Ignore free-threaded CPython builds by @Alexis-D in https://github.com/astral-sh/rye/pull/1437
+* Bump bundled Ruff version to v0.8.2 by @charliermarsh in https://github.com/astral-sh/rye/pull/1440
+* Add support for Python 3.9.21, 3.10.16, 3.11.11, 3.12.8, and 3.13.1 by @github-actions in https://github.com/astral-sh/rye/pull/1439
+* Upgrade bundled uv version to v0.5.7 by @github-actions in https://github.com/astral-sh/rye/pull/1424
+
 ## 0.42.0
 
 Released on 2024-10-21.
