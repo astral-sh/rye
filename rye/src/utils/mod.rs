@@ -453,6 +453,39 @@ pub fn copy_dir<T: AsRef<Path>>(from: T, to: T, options: &CopyDirOptions) -> Res
                 fs::create_dir_all(&destination)
                     .path_context(&destination, "failed to create directory")?;
                 copy_dir(entry.path(), destination, options)?;
+            } else if entry.file_type()?.is_symlink() {
+                let target = fs::read_link(&entry_path)
+                    .path_context(&entry_path, "failed to read symlink target")?;
+                #[cfg(unix)]
+                {
+                    if target.is_absolute() && target.starts_with(from) {
+                        symlink_file(target.strip_prefix(from).unwrap(), &destination)
+                            .path_context(&destination, "failed to create symlink")?;
+                    } else {
+                        symlink_file(target, &destination)
+                            .path_context(&destination, "failed to create symlink")?;
+                    }
+                }
+                #[cfg(windows)]
+                {
+                    if target.is_absolute() && target.starts_with(from) {
+                        if target.is_dir() {
+                            symlink_dir(target.strip_prefix(from).unwrap(), &destination)
+                                .path_context(&destination, "failed to create symlink")?;
+                        } else {
+                            symlink_file(target.strip_prefix(from).unwrap(), &destination)
+                                .path_context(&destination, "failed to create symlink")?;
+                        }
+                    } else {
+                        if target.is_dir() {
+                            symlink_dir(target, &destination)
+                                .path_context(&destination, "failed to create symlink")?;
+                        } else {
+                            symlink_file(target, &destination)
+                                .path_context(&destination, "failed to create symlink")?;
+                        }
+                    }
+                }
             } else {
                 fs::copy(entry.path(), &destination)
                     .path_context(entry.path(), "failed to copy file")?;
