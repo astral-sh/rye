@@ -117,9 +117,11 @@ fn is_pointless_windows_store_applink(path: &std::path::Path) -> bool {
 
     // only if we are in the special WindowsApps folder and we are called
     // python, we can be a relevant store proxy
-    if !path.as_os_str().to_str().map_or(false, |x| {
-        x.contains("Local\\Microsoft\\WindowsApps\\python")
-    }) {
+    if !path
+        .as_os_str()
+        .to_str()
+        .is_some_and(|x| x.contains("Local\\Microsoft\\WindowsApps\\python"))
+    {
         return false;
     }
 
@@ -197,7 +199,7 @@ fn get_shim_target(
             && args
                 .get(1)
                 .and_then(|x| x.as_os_str().to_str())
-                .map_or(false, |x| x.starts_with('+'))
+                .is_some_and(|x| x.starts_with('+'))
         {
             bail!("Explicit Python selection is not possible within Rye managed projects.");
         }

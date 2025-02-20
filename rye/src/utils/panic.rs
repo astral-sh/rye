@@ -4,7 +4,7 @@ use std::{panic, process};
 fn is_bad_pipe(payload: &dyn Any) -> bool {
     payload
         .downcast_ref::<String>()
-        .map_or(false, |x| x.contains("failed printing to stdout: "))
+        .is_some_and(|x| x.contains("failed printing to stdout: "))
 }
 
 /// Registers a panic hook that hides stdout printing failures.
