@@ -31,7 +31,7 @@ def hello():
       |
     1 | import os
       |        ^^ F401
-    2 | 
+    2 |
     3 | def hello():
       |
       = help: Remove unused import: `os`
