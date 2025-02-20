@@ -265,7 +265,7 @@ fn install_scripts(
             //
             // Also do not try to link things which are not considered executables on
             // this operating system.
-            if !rest.parent().map_or(true, |x| x == Path::new("")) || !is_executable(file) {
+            if rest.parent().is_some_and(|x| x != Path::new("")) || !is_executable(file) {
                 continue;
             }
 
