@@ -1205,7 +1205,7 @@ fn resolve_target_python_version(
 ) -> Option<PythonVersionRequest> {
     resolve_lower_bound_python_version(doc)
         .or_else(|| get_current_venv_python_version(venv_path).map(Into::into))
-        .or_else(|| get_python_version_request_from_pyenv_pin(root).map(Into::into))
+        .or_else(|| get_python_version_request_from_pyenv_pin(root))
         .or_else(|| Config::current().default_toolchain().ok())
 }
 
