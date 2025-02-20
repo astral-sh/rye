@@ -162,7 +162,7 @@ pub fn is_executable(path: &Path) -> bool {
     #[cfg(unix)]
     {
         use std::os::unix::prelude::MetadataExt;
-        path.metadata().map_or(false, |x| x.mode() & 0o111 != 0)
+        path.metadata().is_ok_and(|x| x.mode() & 0o111 != 0)
     }
     #[cfg(windows)]
     {
@@ -257,7 +257,7 @@ impl ArchiveFormat {
     pub fn peek(bytes: &[u8]) -> Option<ArchiveFormat> {
         let mut buf = [0u8; 1];
         if zstd::stream::read::Decoder::with_buffer(bytes)
-            .map_or(false, |x| x.single_frame().read(&mut buf).is_ok())
+            .is_ok_and(|x| x.single_frame().read(&mut buf).is_ok())
         {
             Some(ArchiveFormat::TarZstd)
         } else if flate2::bufread::GzDecoder::new(bytes).header().is_some() {

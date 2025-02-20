@@ -75,7 +75,7 @@ pub fn get_toolchain_python_bin(version: &PythonVersion) -> Result<PathBuf, Erro
         #[cfg(unix)]
         {
             use std::os::unix::prelude::MetadataExt;
-            if p.metadata().map_or(false, |x| x.mode() & 0o001 != 0) {
+            if p.metadata().is_ok_and(|x| x.mode() & 0o001 != 0) {
                 return Ok(p);
             }
         }
