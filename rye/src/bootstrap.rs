@@ -60,7 +60,7 @@ fn is_up_to_date() -> bool {
     static UP_TO_UPDATE: Lazy<bool> = Lazy::new(|| {
         fs::read_to_string(get_app_dir().join("self").join("tool-version.txt"))
             .ok()
-            .map_or(false, |x| x.parse() == Ok(SELF_VERSION))
+            .is_some_and(|x| x.parse() == Ok(SELF_VERSION))
     });
     *UP_TO_UPDATE || FORCED_TO_UPDATE.load(atomic::Ordering::Relaxed)
 }
