@@ -12,10 +12,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: stable
-          components: clippy, rustfmt
       - uses: Swatinem/rust-cache@v2
+      - name: "Install Rust toolchain"
+        run: rustup component add clippy
       - name: Run clippy
         run: make lint
