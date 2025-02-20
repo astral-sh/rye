@@ -318,11 +318,7 @@ pub fn execute(cmd: Args) -> Result<(), Error> {
     // underscores instead of dashes to form a valid python package name and in
     // case it starts with a digit, an underscore is prepended.
     let mut name_safe = metadata.name.as_ref().unwrap().replace('-', "_");
-    if name_safe
-        .chars()
-        .next()
-        .map_or(true, |c| c.is_ascii_digit())
-    {
+    if name_safe.chars().next().is_none_or(|c| c.is_ascii_digit()) {
         name_safe.insert(0, '_');
     }
 
