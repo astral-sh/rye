@@ -172,13 +172,13 @@ jobs:
         gh release upload "${{ needs.create-release.outputs.rye_version }}" "${{ env.SHA256_FILE }}"
 
     - name: Upload artifact
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.ASSET }}
         path: ${{ env.ASSET }}
 
     - name: Upload artifact hash
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ env.SHA256_FILE }}
         path: ${{ env.SHA256_FILE }}
@@ -203,7 +203,7 @@ jobs:
         gh release upload "${{ needs.create-release.outputs.rye_version }}" MANIFEST.json
 
     - name: Upload artifact hash
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: MANIFEST.json
         path: MANIFEST.json
