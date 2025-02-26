@@ -5,6 +5,15 @@ that were not yet released.
 
 <!-- released start -->
 
+## 0.44.0
+
+Released on 2025-02-26.
+
+* Upgrade runners to `macos-14` by @charliermarsh in https://github.com/astral-sh/rye/pull/1443
+* Bump bundled Ruff version to 0.9.6 by @catwell in https://github.com/astral-sh/rye/pull/1457
+* Set Rust toolchain in `rust-toolchain.toml` by @charliermarsh in https://github.com/astral-sh/rye/pull/1460
+* Bump bundled uv version to v0.6.3 by @github-actions in https://github.com/astral-sh/rye/pull/1445
+
 ## 0.43.0
 
 Released on 2024-12-09.
