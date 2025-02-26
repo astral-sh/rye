@@ -88,32 +88,32 @@ jobs:
         include:
         - build: linux
           os: ubuntu-22.04
-          rust: stable
+          rust: 1.84
           target: x86_64-unknown-linux-musl
           name: x86_64-linux
         - build: linux-arm
           os: ubuntu-22.04
-          rust: stable
+          rust: 1.84
           target: aarch64-unknown-linux-musl
           name: aarch64-linux
         - build: macos
           os: macos-14
-          rust: stable
+          rust: 1.84
           target: x86_64-apple-darwin
           name: x86_64-macos
         - build: macos-arm
           os: macos-14
-          rust: stable
+          rust: 1.84
           target: aarch64-apple-darwin
           name: aarch64-macos
         - build: win-msvc
           os: windows-2022
-          rust: stable
+          rust: 1.84
           target: x86_64-pc-windows-msvc
           name: x86_64-windows
         - build: win32-msvc
           os: windows-2022
-          rust: stable
+          rust: 1.84
           target: i686-pc-windows-msvc
           name: x86-windows
 
