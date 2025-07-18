@@ -1,3 +1,5 @@
+# You can preview docs with `rye run serve-docs` or `uv run mkdocs serve`.
+
 site_name: Rye
 site_description: An Experimental Package Management Solution for Python
 repo_name: astral-sh/rye
@@ -8,6 +10,7 @@ copyright: Copyright &copy; 2023 Armin Ronacher
 nav:
   - Welcome: index.md
   - User Guide:
+    - Migrating to uv: guide/uv.md
     - guide/index.md
     - Installation: guide/installation.md
     - Basics: guide/basics.md

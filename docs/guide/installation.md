@@ -1,3 +1,15 @@
+!!! note
+
+    Rye is no longer developed as of February 2025. We encourage all users to use
+    [uv](https://docs.astral.sh/uv/), the [successor project](https://lucumr.pocoo.org/2024/8/21/harvest-season/)
+    from the same maintainers, which is actively maintained and much more widely used.
+
+    For new users, please [install uv](https://docs.astral.sh/uv/getting-started/installation/) instead.
+
+    For current Rye users, please see the [uv migration guide](uv.md). While these installation
+    instructions will continue to work for the foreseeable future, no further updates are planned,
+    including security updates.
+
 # Installation
 
 Rye is built in Rust.  It can either be manually compiled and installed or it can

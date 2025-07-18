@@ -10,13 +10,12 @@ hide:
 
 !!! note
 
-    If you're getting started with Rye, consider [uv](https://github.com/astral-sh/uv), the
-    [successor project](https://lucumr.pocoo.org/2024/2/15/rye-grows-with-uv/) from the same maintainers.
+    Rye is no longer developed. We encourage all users to use [uv](https://docs.astral.sh/uv/), the
+    [successor project](https://lucumr.pocoo.org/2024/8/21/harvest-season/) from the same
+    maintainers, which is actively maintained and much more widely used.
 
-    While Rye is actively maintained, uv offers a more stable and feature-complete experience, and is the recommended
-    choice for new projects.
-
-    Having trouble migrating? [Let us know what's missing.](https://github.com/astral-sh/rye/discussions/1342)
+    For current Rye users, please see the [uv migration guide](./guide/uv.md). While Rye will
+    continue to be available, no further updates are planned, including security updates.
 
 Rye is a comprehensive project and package management solution for Python.
 Born from [its creator's](https://github.com/mitsuhiko) desire to establish a
@@ -30,13 +29,5 @@ A hassle-free experience for Python developers at every level.
 <script async defer src="https://buttons.github.io/buttons.js"></script>
 <p align="center">
   <a class="github-button" href="https://github.com/astral-sh/rye" data-size="large" data-show-count="true" data-color-scheme="light" aria-label="Star astral-sh/rye on GitHub">Star</a>
-<a class="github-button" href="https://github.com/astral-sh/rye/discussions" data-icon="octicon-comment-discussion" data-size="large" aria-label="Discuss astral-sh/rye on GitHub">Discuss</a>
   <a class="github-button" href="https://github.com/sponsors/mitsuhiko" data-size="large" data-icon="octicon-heart" data-color-scheme="light" aria-label="Sponsor @mitsuhiko on GitHub">Sponsor</a>
 </p>
-
-!!! abstract "Installation Instructions"
-
-    {% include-markdown ".includes/quick-install.md" %}
-
-    For the next steps or ways to customize the installation, head over to the detailed
-    [installation](./guide/installation.md) guide.
