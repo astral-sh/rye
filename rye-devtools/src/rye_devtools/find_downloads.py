@@ -71,6 +71,7 @@ class CPythonFinder(Finder):
         "windows-amd64-shared-pgo": "x86_64-pc-windows-msvc-shared-pgo",
         "windows-x86": "i686-pc-windows-msvc",
         "linux64-musl": "x86_64-unknown-linux-musl",
+        "linux64-riscv64": "riscv64-unknown-linux-gnu",
     }
 
     # matches these: https://doc.rust-lang.org/std/env/consts/constant.ARCH.html
@@ -79,6 +80,7 @@ class CPythonFinder(Finder):
         "x86": "x86",
         "i686": "x86",
         "aarch64": "aarch64",
+        "riscv64": "riscv64",
     }
 
     # matches these: https://doc.rust-lang.org/std/env/consts/constant.OS.html
