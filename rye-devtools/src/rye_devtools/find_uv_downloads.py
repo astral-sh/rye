@@ -33,12 +33,14 @@ class UvDownloads:
         "x86_64": "x86_64",
         "i686": "i686",
         "aarch64": "aarch64",
+        "riscv64gc": "riscv64",
     }
 
     GLIBC = {
         "x86_64": "gnu",
         "i686": "gnu",
         "aarch64": "musl",
+        "riscv64gc": "gnu",
     }
 
     PLATFORM_ENV = {
