@@ -56,11 +56,11 @@ As of uv 0.8.0, `uv python install` will install a `python3.x` command for the l
 
 In general, you can use `uv run python` to get a Python shell in the current project, and `uvx python` to get an isolated Python. Both commands support `--with` to add dependencies. See the documentation for [`uv run`](https://docs.astral.sh/uv/reference/cli/#uv-run).
 
-### `rye fmt` and `rye test`
+### `rye lint`, `rye fmt`, and `rye test`
 
-Rye has short commands `rye fmt` and `rye test` that run [Ruff](https://docs.astral.sh/ruff/) and [pytest](https://docs.pytest.org/en/stable/), respectively. uv currently does not have specific aliases for these. (See also the section above about scripts and tasks.)
+Rye has short commands that run other programs. `rye lint` (aka `rye check`) and `rye fmt` (aka `rye format`) both run [Ruff](https://docs.astral.sh/ruff/), and `rye test` runs [pytest](https://docs.pytest.org/en/stable/). uv currently does not have specific aliases for these. (See also the section above about scripts and tasks.)
 
-You can add these to your projects as dev dependencies with `uv add --dev ruff` and `uv add --dev pytest`, which will let you run `uv run ruff format` and `uv run pytest`. The versions of Ruff and pytest will be tracked in your `pyproject.toml` for reproducibility.
+You can add these to your projects as dev dependencies with `uv add --dev ruff` and `uv add --dev pytest`, which will let you run `uv run ruff check`, `uv run ruff format`, and `uv run pytest`. The versions of Ruff and pytest will be tracked in your `pyproject.toml` for reproducibility.
 
 Alternatively, you can use `uvx ruff` to run it without installing it to your project. (This will not work for pytest, which needs to run your project's code; you need to add it as a dev dependency, just as `rye test` requires.)
 
