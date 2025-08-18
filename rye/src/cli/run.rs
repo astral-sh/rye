@@ -106,6 +106,11 @@ fn invoke_script(
                     .map(OsString::from)
                     .chain(args.into_iter().skip(1))
                     .collect();
+
+                let path = std::path::Path::new(&args[0]);
+                if path.starts_with("./") {
+                    args[0] = pyproject.root_path().join(path).into();
+                }
             }
         }
         Some(Script::External(_)) => {
