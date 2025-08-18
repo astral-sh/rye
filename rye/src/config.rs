@@ -12,6 +12,7 @@ use crate::platform::{get_app_dir, get_latest_cpython_version};
 use crate::pyproject::{BuildSystem, SourceRef, SourceRefType};
 use crate::sources::py::PythonVersionRequest;
 use crate::utils::{toml, IoPathContext};
+use crate::vcs::ProjectVCS;
 
 static CONFIG: Mutex<Option<Arc<Config>>> = Mutex::new(None);
 static AUTHOR_REGEX: Lazy<Regex> =
@@ -122,6 +123,18 @@ impl Config {
             .and_then(|x| x.as_str())
         {
             Some(build_system) => build_system.parse::<BuildSystem>().ok(),
+            None => None,
+        }
+    }
+
+    pub fn default_vcs(&self) -> Option<ProjectVCS> {
+        match self
+            .doc
+            .get("default")
+            .and_then(|x| x.get("vcs"))
+            .and_then(|x| x.as_str())
+        {
+            Some(vcs) => vcs.parse::<ProjectVCS>().ok(),
             None => None,
         }
     }

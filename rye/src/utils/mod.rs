@@ -3,7 +3,9 @@ use std::convert::Infallible;
 use std::ffi::OsString;
 use std::io::{Cursor, Read};
 use std::path::{Path, PathBuf};
-use std::process::{Command, ExitStatus, Stdio};
+#[cfg(windows)]
+use std::process::Stdio;
+use std::process::{Command, ExitStatus};
 use std::{fmt, fs};
 
 use anyhow::{anyhow, bail, Context, Error};
@@ -392,18 +394,6 @@ pub fn get_venv_python_bin(venv_path: &Path) -> PathBuf {
     py
 }
 
-pub fn is_inside_git_work_tree(dir: &PathBuf) -> bool {
-    Command::new("git")
-        .arg("rev-parse")
-        .arg("--is-inside-work-tree")
-        .current_dir(dir)
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .map(|status| status.success())
-        .unwrap_or(false)
-}
-
 /// Returns a success exit status.
 pub fn success_status() -> ExitStatus {
     #[cfg(windows)]
@@ -574,21 +564,5 @@ mod test_expand_env_vars {
             }
         });
         assert_eq!("This string has an env var: Example value", output);
-    }
-}
-
-#[cfg(test)]
-mod test_is_inside_git_work_tree {
-    use std::path::PathBuf;
-
-    use super::is_inside_git_work_tree;
-    #[test]
-    fn test_is_inside_git_work_tree_true() {
-        assert!(is_inside_git_work_tree(&PathBuf::from(".")));
-    }
-
-    #[test]
-    fn test_is_inside_git_work_tree_false() {
-        assert!(!is_inside_git_work_tree(&PathBuf::from("/")));
     }
 }
