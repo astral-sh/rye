@@ -4,7 +4,7 @@ Rye is no longer developed. We recommend that Rye users migrate to [uv](https://
 
 Rye and uv have similar philosophies, CLIs, and user experience. Both are project management tools that follow Python standards wherever possible, so migrating your workflows should be easy. Start with [uv's getting started guide](https://docs.astral.sh/uv/getting-started/).
 
-This document has guidance on how to migrate specific Rye features to uv, targeted at uv 0.8.0 / July 2025. If you're on an older version of uv, please upgrade. (If you are reading this page in the future, check the linked issues below to see if even more features have been implemented in uv!)
+This document has guidance on how to migrate specific Rye features to uv, targeted at uv 0.8 / July 2025. If you're on an older version of uv, please upgrade. (If you are reading this page in the future, check the linked issues below to see if even more features have been implemented in uv!)
 
 ## Migrating existing projects
 
@@ -15,7 +15,7 @@ If you have `[tool.rye]` sections in your `pyproject.toml` file, you will need t
 A few configuration keys are slightly different but easy to migrate:
 
 * `tool.rye.universal` and `tool.rye.generate-hashes` are under the `tool.uv.pip` namespace, i.e., `tool.uv.pip.universal` and `tool.uv.pip.generate-hashes`.
-* `tool.rye.lock-with-sources` corresponds to `tool.uv.no-sources` but with the sense inverted, i.e., convert `lock-with-sources = false` to `no-sources = true`.
+* `tool.rye.lock-with-sources` corresponds to `tool.uv.no-sources` but the Boolean value of the setting is inverted, i.e., convert `lock-with-sources = false` to `no-sources = true`.
 * `tool.rye.virtual` corresponds to `tool.uv.package` but with the sense inverted, i.e., convert `virtual = true` to `package = false`.
 * `tool.rye.sources` loosely corresponds to `tool.uv.indexes`. See below for syntax differences.
 * `tool.rye.dev-dependencies` should be converted to the standardized [`dependency-groups.dev`](https://docs.astral.sh/uv/concepts/projects/dependencies/#dependency-groups) key (`tool.uv.dev-dependencies` works too but is deprecated).
@@ -52,7 +52,7 @@ Both uv and Rye support installing the same managed Python releases from [python
 
 Rye supports a [global Python shim](https://rye.astral.sh/guide/shims/) that sets up the `python` and `python3` commands to run a managed version of Python. While this is highly convenient, it does risk breaking existing software on your computer that expects the OS version of Python.
 
-As of uv 0.8.0, `uv python install` will install a `python3.x` command for the latest stable managed Python. If you would like to install `python` and `python3` commands too. you can use `uv python install --preview`. Note that this is _not_ a shim, just a direct link to the Python installation; it does not pick up dependencies from the current project. This behavior may change in the future; [astral-sh/uv#6265](https://github.com/astral-sh/uv/issues/6265) tracks uv adding a Python shim.
+As of uv 0.8.0, `uv python install` will install a `python3.x` command for the latest stable managed Python. If you would like to install `python` and `python3` commands too. you can use `uv python install --default`. Note that this is _not_ a shim, just a direct link to the Python installation; it does not pick up dependencies from the current project. This behavior may change in the future; [astral-sh/uv#6265](https://github.com/astral-sh/uv/issues/6265) tracks uv adding a Python shim.
 
 In general, you can use `uv run python` to get a Python shell in the current project, and `uvx python` to get an isolated Python. Both commands support `--with` to add dependencies. See the documentation for [`uv run`](https://docs.astral.sh/uv/reference/cli/#uv-run).
 
