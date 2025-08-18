@@ -62,8 +62,15 @@ fn invoke_script(
 ) -> Result<ExitStatus, Error> {
     let venv_bin = pyproject.venv_bin_path();
     let mut env_overrides = None;
+    let name = args[0].to_string_lossy();
 
-    match pyproject.get_script_cmd(&args[0].to_string_lossy()) {
+    std::env::set_var("WORKING_DIR", std::env::current_dir()?);
+    std::env::set_var("RYE", std::env::current_exe()?);
+    std::env::set_var("RYE_RUN_CMD", &*name);
+    std::env::set_var("PROJECT_ROOT", &*pyproject.root_path());
+    std::env::set_var("WORKSPACE_ROOT", &*pyproject.workspace_path());
+
+    match pyproject.get_script_cmd(&name) {
         Some(Script::Call(entry, env_vars, env_file)) => {
             let py = OsString::from(get_venv_python_bin(&pyproject.venv_path()));
             env_overrides = Some(load_env_vars(pyproject, env_file, env_vars)?);
