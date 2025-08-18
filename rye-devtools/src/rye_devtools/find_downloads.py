@@ -113,13 +113,15 @@ class CPythonFinder(Finder):
         await self.fetch_indygreg_checksums(downloads, n=20)
         return downloads
 
-    async def fetch_indygreg_downloads(self, pages: int = 100) -> list[PythonDownload]:
+    async def fetch_indygreg_downloads(self, pages: int = 3000) -> list[PythonDownload]:
         """Fetch all the indygreg downloads from the release API."""
         results: dict[Version, dict[tuple[str, str], list[PythonDownload]]] = {}
 
         for page in range(1, pages):
             log(f"Fetching indygreg release page {page}")
-            resp = await fetch(self.client, "%s?page=%d" % (self.RELEASE_URL, page))
+            resp = await fetch(
+                self.client, "%s?per_page=1&page=%d" % (self.RELEASE_URL, page)
+            )
             rows = resp.json()
             if not rows:
                 break
